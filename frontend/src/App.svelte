@@ -46,20 +46,26 @@
     :global(*), :global(*::before), :global(*::after) {
         box-sizing: border-box;
     }
-    :global(html), :global(body) {
-        margin: 0;
-        padding: 0;
-        height: 100%;
+    :global(html) {
+        /* Ensure background covers the entire canvas, even on overscroll */
         background-color: #f1f5f9;
+        /* Prevent horizontal scroll if possible, though overflow-x hidden on body is safer */
     }
     :global(body) {
+        margin: 0;
+        padding: 0;
+        min-height: 100dvh; /* Dynamic viewport height to handle address bars */
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #1e293b;
+        background-color: #f1f5f9;
+        /* Ensure body takes full width */
+        width: 100%;
     }
     .app-container {
-        min-height: 100vh;
+        min-height: 100dvh; /* Ensure container fills the dynamic viewport */
         display: flex;
         flex-direction: column;
+        width: 100%;
     }
     header {
         background-color: white;
@@ -105,8 +111,7 @@
         margin: 0 auto;
         padding: 2rem 1.5rem;
         width: 100%;
-        box-sizing: border-box;
-        flex: 1;
+        flex: 1; /* Pushes footer down if we had one */
     }
     .add-btn {
         background-color: #0f172a;
