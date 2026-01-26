@@ -113,18 +113,17 @@
         display: flex;
         gap: 1rem;
         flex-wrap: wrap;
+        align-items: center;
     }
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
         .filters {
             flex-direction: column;
             gap: 0.75rem;
+            align-items: stretch;
         }
         .search-box, .filter-select {
             width: 100%;
             min-width: 0;
-        }
-        .filter-select {
-            box-sizing: border-box;
         }
     }
     .search-box {
@@ -145,6 +144,9 @@
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         font-size: 0.95rem;
+        background-color: white;
+        color: #1e293b;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
     .filter-select {
         padding: 0.75rem 2rem 0.75rem 1rem;
@@ -154,6 +156,8 @@
         font-size: 0.95rem;
         color: #475569;
         cursor: pointer;
+        flex-shrink: 0;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
 
     .table-wrapper {
