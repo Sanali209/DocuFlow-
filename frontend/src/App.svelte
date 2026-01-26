@@ -71,6 +71,21 @@
         justify-content: space-between;
         align-items: center;
     }
+    @media (max-width: 640px) {
+        .header-content {
+            padding: 0 1rem;
+        }
+        h1 {
+            font-size: 1.25rem;
+        }
+        .add-btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        main {
+            padding: 1.5rem 1rem;
+        }
+    }
     h1 {
         margin: 0;
         font-size: 1.5rem;

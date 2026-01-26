@@ -114,6 +114,19 @@
         gap: 1rem;
         flex-wrap: wrap;
     }
+    @media (max-width: 640px) {
+        .filters {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .search-box, .filter-select {
+            width: 100%;
+            min-width: 0;
+        }
+        .filter-select {
+            box-sizing: border-box;
+        }
+    }
     .search-box {
         position: relative;
         flex-grow: 1;
@@ -149,10 +162,12 @@
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         overflow: hidden;
         border: 1px solid #e2e8f0;
+        overflow-x: auto;
     }
     table {
         width: 100%;
         border-collapse: collapse;
+        min-width: 600px;
     }
     th, td {
         padding: 1rem 1.5rem;

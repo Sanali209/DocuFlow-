@@ -17,3 +17,6 @@ https://svelte.dev/e/a11y_no_noninteractive_tabindex
 12:18:40 PM [vite-plugin-svelte] src/lib/Modal.svelte:13:8 Non-interactive element `<div>` should not be assigned mouse or keyboard event listeners
 https://svelte.dev/e/a11y_no_noninteractive_element_interactions
 12:18:40 PM [vite] (client) hmr update /src/App.svelte, /src/App.svelte?svelte&type=style&lang.css
+12:26:21 PM [vite] (client) hmr update /src/lib/DocumentList.svelte?svelte&type=style&lang.css
+12:26:28 PM [vite] (client) hmr update /src/lib/DocumentList.svelte?svelte&type=style&lang.css
+12:26:57 PM [vite] (client) hmr update /src/App.svelte, /src/App.svelte?svelte&type=style&lang.css
