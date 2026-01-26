@@ -43,10 +43,14 @@
 </div>
 
 <style>
-    :global(body) {
+    :global(html), :global(body) {
         margin: 0;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        padding: 0;
+        height: 100%;
         background-color: #f1f5f9;
+    }
+    :global(body) {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #1e293b;
     }
     .app-container {
