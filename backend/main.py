@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,12 +11,14 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-origins = [
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "")
+origins = [origin.strip() for origin in allowed_origins.split(",")] if allowed_origins else []
+origins.extend([
     "http://localhost:5173",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
     "*" # For sandbox
-]
+])
 
 app.add_middleware(
     CORSMiddleware,

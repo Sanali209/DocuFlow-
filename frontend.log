@@ -8,3 +8,4 @@
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: http://192.168.0.2:5173/
+11:02:10 AM [vite] (client) hmr update /src/lib/DocumentForm.svelte, /src/lib/DocumentList.svelte
