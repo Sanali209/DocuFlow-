@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Enum
+from sqlalchemy import Column, Integer, String, Date, Enum, Text
 import enum
 from datetime import date
 from .database import Base
@@ -20,3 +20,10 @@ class Document(Base):
     type = Column(Enum(DocumentType), default=DocumentType.OTHER)
     status = Column(Enum(DocumentStatus), default=DocumentStatus.IN_PROGRESS)
     registration_date = Column(Date, default=date.today)
+    content = Column(Text, nullable=True)
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    key = Column(String, primary_key=True, index=True)
+    value = Column(String)

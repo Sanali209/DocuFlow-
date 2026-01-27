@@ -31,7 +31,8 @@ def create_document(db: Session, document: schemas.DocumentCreate):
         name=document.name,
         type=document.type,
         status=document.status,
-        registration_date=reg_date
+        registration_date=reg_date,
+        content=document.content
     )
     db.add(db_document)
     db.commit()
@@ -61,3 +62,17 @@ def delete_document(db: Session, document_id: int):
         db.commit()
         return True
     return False
+
+def get_setting(db: Session, key: str):
+    return db.query(models.Setting).filter(models.Setting.key == key).first()
+
+def set_setting(db: Session, key: str, value: str):
+    db_setting = get_setting(db, key)
+    if db_setting:
+        db_setting.value = value
+    else:
+        db_setting = models.Setting(key=key, value=value)
+        db.add(db_setting)
+    db.commit()
+    db.refresh(db_setting)
+    return db_setting
