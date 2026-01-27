@@ -11,10 +11,15 @@
 
     let isScanning = $state(false);
     let scanError = $state('');
+    let imagePreview = $state('');
 
     async function handleFileSelect(e) {
         const file = e.target.files[0];
         if (!file) return;
+
+        // Create preview URL
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        imagePreview = URL.createObjectURL(file);
 
         isScanning = true;
         scanError = '';
@@ -69,6 +74,11 @@
         <div class="form-group">
             <label for="scan">{document ? 'Re-Scan Document (Replace Content)' : 'Scan Document (Image)'}</label>
             <input id="scan" type="file" accept="image/*" onchange={handleFileSelect} />
+            {#if imagePreview}
+                <div class="preview-container">
+                    <img src={imagePreview} alt="Document Preview" />
+                </div>
+            {/if}
             {#if isScanning}
                 <p class="info-text">Scanning... Please wait.</p>
             {/if}
@@ -188,5 +198,20 @@
         font-size: 0.85rem;
         color: #ef4444;
         margin-top: 0.25rem;
+    }
+    .preview-container {
+        margin-top: 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        max-height: 300px;
+        display: flex;
+        justify-content: center;
+        background-color: #f8fafc;
+    }
+    .preview-container img {
+        max-width: 100%;
+        max-height: 300px;
+        object-fit: contain;
     }
 </style>
