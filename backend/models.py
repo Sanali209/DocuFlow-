@@ -21,3 +21,9 @@ class Document(Base):
     status = Column(Enum(DocumentStatus), default=DocumentStatus.IN_PROGRESS)
     registration_date = Column(Date, default=date.today)
     content = Column(Text, nullable=True)
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    key = Column(String, primary_key=True, index=True)
+    value = Column(String)

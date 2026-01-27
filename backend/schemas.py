@@ -24,3 +24,10 @@ class Document(DocumentBase):
 
     class Config:
         from_attributes = True
+
+class Setting(BaseModel):
+    key: str
+    value: str
+
+    class Config:
+        from_attributes = True

@@ -2,9 +2,11 @@
     import DocumentForm from './lib/DocumentForm.svelte';
     import DocumentList from './lib/DocumentList.svelte';
     import Modal from './lib/Modal.svelte';
+    import SettingsModal from './lib/SettingsModal.svelte';
 
     let listComponent;
     let isModalOpen = $state(false);
+    let isSettingsOpen = $state(false);
     let editingDoc = $state(null);
 
     function refreshList() {
@@ -29,16 +31,29 @@
         isModalOpen = false;
         editingDoc = null;
     }
+
+    function openSettings() {
+        isSettingsOpen = true;
+    }
+
+    function closeSettings() {
+        isSettingsOpen = false;
+    }
 </script>
 
 <div class="app-container">
     <header>
         <div class="header-content">
             <h1>DocuFlow</h1>
-            <button class="add-btn" onclick={openCreateModal}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                New Document
-            </button>
+            <div class="header-actions">
+                <button class="icon-btn" onclick={openSettings} title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+                <button class="add-btn" onclick={openCreateModal}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    New Document
+                </button>
+            </div>
         </div>
     </header>
 
@@ -48,6 +63,10 @@
 
     <Modal isOpen={isModalOpen} close={closeModal}>
         <DocumentForm onDocumentCreated={refreshList} onCancel={closeModal} document={editingDoc} />
+    </Modal>
+
+    <Modal isOpen={isSettingsOpen} close={closeSettings}>
+        <SettingsModal isOpen={isSettingsOpen} close={closeSettings} />
     </Modal>
 </div>
 
@@ -121,6 +140,26 @@
         padding: 2rem 1.5rem;
         width: 100%;
         flex: 1; /* Pushes footer down if we had one */
+    }
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+    .icon-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #64748b;
+        padding: 0.5rem;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.2s, color 0.2s;
+    }
+    .icon-btn:hover {
+        background-color: #f1f5f9;
+        color: #0f172a;
     }
     .add-btn {
         background-color: #0f172a;

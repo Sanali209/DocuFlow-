@@ -22,6 +22,9 @@ with engine.connect() as conn:
     except Exception:
         pass
 
+    # Create settings table if not exists (handled by create_all, but just in case of weird state)
+    # models.Base.metadata.create_all(bind=engine) covers it.
+
 app = FastAPI()
 
 DOC_NAME_REGEX = os.getenv("DOC_NAME_REGEX", r"(?i)order\s+(.+)")
@@ -52,15 +55,35 @@ def get_db():
     finally:
         db.close()
 
+@app.get("/settings/{key}", response_model=schemas.Setting)
+def read_setting(key: str, db: Session = Depends(get_db)):
+    setting = crud.get_setting(db, key)
+    if not setting:
+        # Return default if not found
+        if key == "ocr_url":
+            return schemas.Setting(key="ocr_url", value=OCR_SERVICE_URL)
+        raise HTTPException(status_code=404, detail="Setting not found")
+    return setting
+
+@app.put("/settings/", response_model=schemas.Setting)
+def update_setting(setting: schemas.Setting, db: Session = Depends(get_db)):
+    return crud.set_setting(db, setting.key, setting.value)
+
 @app.post("/documents/scan")
-async def scan_document(file: UploadFile = File(...)):
+async def scan_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
     content = await file.read()
+
+    # Get OCR URL from DB or use default
+    db_setting = crud.get_setting(db, "ocr_url")
+    ocr_url = db_setting.value if db_setting else OCR_SERVICE_URL
+    # Remove trailing slash if user added it
+    ocr_url = ocr_url.rstrip("/")
 
     async with httpx.AsyncClient() as client:
         try:
             files = {'file': (file.filename, content, file.content_type)}
             # Use timeout because OCR can be slow
-            response = await client.post(f"{OCR_SERVICE_URL}/process", files=files, timeout=60.0)
+            response = await client.post(f"{ocr_url}/process", files=files, timeout=60.0)
             response.raise_for_status()
             result = response.json()
             markdown = result.get("markdown", "")

@@ -10,6 +10,25 @@ export async function fetchDocuments(search = '', type = '', status = '') {
     return await response.json();
 }
 
+export async function fetchSetting(key) {
+    const response = await fetch(`${API_URL}/settings/${key}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch setting');
+    }
+    return await response.json();
+}
+
+export async function updateSetting(key, value) {
+    const response = await fetch(`${API_URL}/settings/`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ key, value }),
+    });
+    return await response.json();
+}
+
 export async function createDocument(doc) {
     const response = await fetch(`${API_URL}/documents/`, {
         method: 'POST',
