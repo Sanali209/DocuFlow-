@@ -11,15 +11,10 @@
 
     let isScanning = $state(false);
     let scanError = $state('');
-    let imagePreview = $state('');
 
     async function handleFileSelect(e) {
         const file = e.target.files[0];
         if (!file) return;
-
-        // Create preview URL
-        if (imagePreview) URL.revokeObjectURL(imagePreview);
-        imagePreview = URL.createObjectURL(file);
 
         isScanning = true;
         scanError = '';
@@ -74,11 +69,6 @@
         <div class="form-group">
             <label for="scan">{document ? 'Re-Scan Document (Replace Content)' : 'Scan Document (Image)'}</label>
             <input id="scan" type="file" accept="image/*" onchange={handleFileSelect} />
-            {#if imagePreview}
-                <div class="preview-container">
-                    <img src={imagePreview} alt="Document Preview" />
-                </div>
-            {/if}
             {#if isScanning}
                 <p class="info-text">Scanning... Please wait.</p>
             {/if}
@@ -90,6 +80,11 @@
         <div class="form-group">
             <label for="name">Name</label>
             <input id="name" type="text" bind:value={name} required placeholder="e.g. Project Alpha Specs" />
+        </div>
+
+        <div class="form-group">
+            <label for="content">Recognized Content (Markdown)</label>
+            <textarea id="content" bind:value={content} rows="10" placeholder="Recognized document content will appear here..."></textarea>
         </div>
 
         <div class="row">
@@ -146,7 +141,7 @@
         color: #555;
         font-size: 0.9rem;
     }
-    input, select {
+    input, select, textarea {
         width: 100%;
         padding: 0.75rem;
         border: 1px solid #e2e8f0;
@@ -154,8 +149,9 @@
         box-sizing: border-box;
         font-size: 1rem;
         transition: border-color 0.2s;
+        font-family: inherit;
     }
-    input:focus, select:focus {
+    input:focus, select:focus, textarea:focus {
         border-color: #3b82f6;
         outline: none;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -199,19 +195,8 @@
         color: #ef4444;
         margin-top: 0.25rem;
     }
-    .preview-container {
-        margin-top: 1rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        overflow: hidden;
-        max-height: 300px;
-        display: flex;
-        justify-content: center;
-        background-color: #f8fafc;
-    }
-    .preview-container img {
-        max-width: 100%;
-        max-height: 300px;
-        object-fit: contain;
+    textarea {
+        resize: vertical;
+        line-height: 1.5;
     }
 </style>
