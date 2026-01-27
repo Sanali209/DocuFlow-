@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from docling.document_converter import DocumentConverter, PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import EasyOcrOptions
+from docling.datamodel.pipeline_options import PdfPipelineOptions, EasyOcrOptions
 import shutil
 import os
 import tempfile
@@ -28,9 +28,13 @@ def get_converter():
         pipeline_options.ocr_options = EasyOcrOptions() # Use EasyOCR for robust recognition on images
 
         # Initialize converter with explicit formats and options
+        # Note: PdfPipelineOptions is passed via PdfFormatOption for both PDF and Image pipeline config in newer Docling versions
         _converter_instance = DocumentConverter(
             allowed_formats=[InputFormat.IMAGE, InputFormat.PDF],
-            pipeline_options=pipeline_options
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
+                InputFormat.IMAGE: PdfFormatOption(pipeline_options=pipeline_options)
+            }
         )
     return _converter_instance
 
