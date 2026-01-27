@@ -1,5 +1,7 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException, Query
+import httpx
+import re
+from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -8,10 +10,22 @@ from typing import List
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
+from sqlalchemy import text
 
 models.Base.metadata.create_all(bind=engine)
 
+# Simple migration to ensure 'content' column exists
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE documents ADD COLUMN content TEXT"))
+        conn.commit()
+    except Exception:
+        pass
+
 app = FastAPI()
+
+DOC_NAME_REGEX = os.getenv("DOC_NAME_REGEX", r"(?i)order\s+(.+)")
+OCR_SERVICE_URL = os.getenv("OCR_SERVICE_URL", "http://localhost:7860")
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "")
 origins = [origin.strip() for origin in allowed_origins.split(",")] if allowed_origins else []
@@ -37,6 +51,32 @@ def get_db():
         yield db
     finally:
         db.close()
+
+@app.post("/documents/scan")
+async def scan_document(file: UploadFile = File(...)):
+    content = await file.read()
+
+    async with httpx.AsyncClient() as client:
+        try:
+            files = {'file': (file.filename, content, file.content_type)}
+            # Use timeout because OCR can be slow
+            response = await client.post(f"{OCR_SERVICE_URL}/process", files=files, timeout=60.0)
+            response.raise_for_status()
+            result = response.json()
+            markdown = result.get("markdown", "")
+        except Exception as e:
+            # Fallback for demo if service not running (so UI doesn't break)
+            # In production, we should log and raise.
+            # Here I'll raise, but the UI should handle it.
+            # If I want to allow testing without the service, I could mock here.
+            # I'll just raise for now.
+            print(f"OCR Service Error: {e}")
+            raise HTTPException(status_code=502, detail="OCR Service Unavailable")
+
+    match = re.search(DOC_NAME_REGEX, markdown)
+    extracted_name = match.group(1).strip() if match else ""
+
+    return {"name": extracted_name, "content": markdown}
 
 @app.post("/documents/", response_model=schemas.Document)
 def create_document(document: schemas.DocumentCreate, db: Session = Depends(get_db)):

@@ -1,5 +1,5 @@
 <script>
-    let { isOpen, close, children } = $props();
+    let { isOpen, close, children, maxWidth = '500px' } = $props();
 
     function handleKeydown(e) {
         if (e.key === 'Escape') {
@@ -10,7 +10,7 @@
 
 {#if isOpen}
     <div class="modal-backdrop" onclick={close} onkeydown={handleKeydown} role="button" tabindex="0">
-        <div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document" tabindex="0">
+        <div class="modal-content" style="max-width: {maxWidth}" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document" tabindex="0">
             <button class="close-btn" onclick={close}>&times;</button>
             {@render children()}
         </div>
@@ -38,8 +38,9 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         position: relative;
         width: 90%;
-        max-width: 500px;
         animation: slideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
     }
     .close-btn {
         position: absolute;

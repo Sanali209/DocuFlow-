@@ -31,7 +31,8 @@ def create_document(db: Session, document: schemas.DocumentCreate):
         name=document.name,
         type=document.type,
         status=document.status,
-        registration_date=reg_date
+        registration_date=reg_date,
+        content=document.content
     )
     db.add(db_document)
     db.commit()

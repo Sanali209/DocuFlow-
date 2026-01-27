@@ -32,6 +32,32 @@ export async function updateDocumentStatus(id, status) {
     return await response.json();
 }
 
+export async function updateDocument(id, data) {
+    const response = await fetch(`${API_URL}/documents/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    return await response.json();
+}
+
+export async function scanDocument(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/documents/scan`, {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (!response.ok) {
+        throw new Error('Scan failed');
+    }
+    return await response.json();
+}
+
 export async function deleteDocument(id) {
     const response = await fetch(`${API_URL}/documents/${id}`, {
         method: 'DELETE',
