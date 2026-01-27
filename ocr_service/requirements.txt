@@ -1,6 +1,6 @@
 fastapi
 uvicorn
 python-multipart
-docling
+docling[easyocr,rapidocr]
 pydantic
 onnxruntime
