@@ -11,26 +11,50 @@
 
     let isScanning = $state(false);
     let scanError = $state('');
+    let scanStatus = $state('');
 
     async function handleFileSelect(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
 
         isScanning = true;
         scanError = '';
 
+        // If replacing content (e.g. initial scan), we might want to clear it,
+        // but user might be appending.
+        // Logic: If user selects files, we append to existing content?
+        // Or should we ask?
+        // For now, let's assume if it's "New Document" and content is empty, we fill it.
+        // If content exists, we append.
+
         try {
-            const result = await scanDocument(file);
-            // If OCR found a name, use it. Otherwise keep what user might have typed or empty.
-            if (result.name) {
-                name = result.name;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                scanStatus = `Scanning file ${i + 1} of ${files.length}...`;
+
+                const result = await scanDocument(file);
+
+                // If OCR found a name and we don't have one yet, use it.
+                if (result.name && !name) {
+                    name = result.name;
+                }
+
+                // Append content with separator if needed
+                const newContent = result.content || '';
+                if (content && newContent) {
+                    content += '\n\n---\n\n' + newContent;
+                } else if (newContent) {
+                    content = newContent;
+                }
             }
-            content = result.content;
         } catch (err) {
-            scanError = 'Failed to scan document. Please try again or enter details manually.';
+            scanError = 'Failed to scan one or more documents. Please try again or enter details manually.';
             console.error(err);
         } finally {
             isScanning = false;
+            scanStatus = '';
+            // Clear input so same files can be selected again if needed
+            e.target.value = '';
         }
     }
 
@@ -67,10 +91,10 @@
     <h3>{document ? 'Edit Document' : 'New Document'}</h3>
     <form onsubmit={handleSubmit}>
         <div class="form-group">
-            <label for="scan">{document ? 'Re-Scan Document (Replace Content)' : 'Scan Document (Image)'}</label>
-            <input id="scan" type="file" accept="image/*" onchange={handleFileSelect} />
+            <label for="scan">{document ? 'Scan Pages (Appends to Content)' : 'Scan Document(s)'}</label>
+            <input id="scan" type="file" multiple accept="image/*,application/pdf" onchange={handleFileSelect} />
             {#if isScanning}
-                <p class="info-text">Scanning... Please wait.</p>
+                <p class="info-text">{scanStatus || 'Scanning... Please wait.'}</p>
             {/if}
             {#if scanError}
                 <p class="error-text">{scanError}</p>
@@ -80,6 +104,11 @@
         <div class="form-group">
             <label for="name">Name</label>
             <input id="name" type="text" bind:value={name} required placeholder="e.g. Project Alpha Specs" />
+        </div>
+
+        <div class="form-group">
+            <label for="content">Recognized Content (Markdown)</label>
+            <textarea id="content" bind:value={content} rows="10" placeholder="Recognized document content will appear here..."></textarea>
         </div>
 
         <div class="row">
@@ -136,7 +165,7 @@
         color: #555;
         font-size: 0.9rem;
     }
-    input, select {
+    input, select, textarea {
         width: 100%;
         padding: 0.75rem;
         border: 1px solid #e2e8f0;
@@ -144,8 +173,9 @@
         box-sizing: border-box;
         font-size: 1rem;
         transition: border-color 0.2s;
+        font-family: inherit;
     }
-    input:focus, select:focus {
+    input:focus, select:focus, textarea:focus {
         border-color: #3b82f6;
         outline: none;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -188,5 +218,9 @@
         font-size: 0.85rem;
         color: #ef4444;
         margin-top: 0.25rem;
+    }
+    textarea {
+        resize: vertical;
+        line-height: 1.5;
     }
 </style>

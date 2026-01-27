@@ -1,5 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from docling.document_converter import DocumentConverter
+from docling.document_converter import DocumentConverter, PdfFormatOption
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions, EasyOcrOptions
 import shutil
 import os
 import tempfile
@@ -11,6 +13,30 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+# Global converter instance to reuse models
+_converter_instance = None
+
+def get_converter():
+    global _converter_instance
+    if _converter_instance is None:
+        logger.info("Initializing DocumentConverter with TableFormer and EasyOCR...")
+        # Configure pipeline options for enhanced table structure and OCR
+        pipeline_options = PdfPipelineOptions()
+        pipeline_options.do_table_structure = True  # Enable TableFormer
+        pipeline_options.do_ocr = True
+        pipeline_options.ocr_options = EasyOcrOptions() # Use EasyOCR for robust recognition on images
+
+        # Initialize converter with explicit formats and options
+        # Note: PdfPipelineOptions is passed via PdfFormatOption for both PDF and Image pipeline config in newer Docling versions
+        _converter_instance = DocumentConverter(
+            allowed_formats=[InputFormat.IMAGE, InputFormat.PDF],
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
+                InputFormat.IMAGE: PdfFormatOption(pipeline_options=pipeline_options)
+            }
+        )
+    return _converter_instance
 
 class RecognitionResult(BaseModel):
     markdown: str
@@ -29,13 +55,7 @@ async def process_document(file: UploadFile = File(...)):
         tmp_path = tmp.name
 
     try:
-        # Initialize converter
-        # Note: In a production env, you might want to instantiate this once globally
-        # if it loads heavy models, but for now we'll do it here or globally.
-        # Let's do it globally to avoid reloading models on every request if possible,
-        # but docling might handle lazy loading.
-        logger.info("Initializing DocumentConverter...")
-        converter = DocumentConverter()
+        converter = get_converter()
 
         logger.info(f"Converting file at {tmp_path}...")
         result = converter.convert(tmp_path)

@@ -27,7 +27,7 @@ with engine.connect() as conn:
 
 app = FastAPI()
 
-DOC_NAME_REGEX = os.getenv("DOC_NAME_REGEX", r"(?i)order\s+(.+)")
+DOC_NAME_REGEX = os.getenv("DOC_NAME_REGEX", r"(?si)Order:\s*(.*?)\s*Date:")
 OCR_SERVICE_URL = os.getenv("OCR_SERVICE_URL", "http://localhost:7860")
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "")
