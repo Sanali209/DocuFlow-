@@ -1,41 +1,44 @@
 # Docker / Koyeb Deployment
 
-This repository includes Dockerfiles for deploying the application on container-based platforms like **Koyeb**, **Kubernetes**, or vanilla **Docker**.
+This repository is configured for deployment as a **Monolith** (Single Service) on container-based platforms like **Koyeb**, **Render**, **Railway**, or vanilla **Docker**.
 
-## Docker Structure
-
-*   `backend/Dockerfile`: Python FastAPI image.
-*   `frontend/Dockerfile`: Multi-stage build (Node build -> Nginx serve).
-*   `docker-compose.yml`: Orchestration for local development or simple deployment.
+The application uses a single Dockerfile in the root directory that performs a multi-stage build:
+1.  **Frontend Build Stage:** Builds the Svelte frontend using Node.js.
+2.  **Runtime Stage:** Sets up the Python FastAPI backend and serves the frontend static files from the `/static` directory.
 
 ## Deploying on Koyeb
 
 1.  **Create an Account** on [Koyeb](https://www.koyeb.com/).
-2.  **Deploy Backend:**
-    *   Create a new App/Service.
+2.  **Create a New App/Service:**
     *   Select **GitHub** as the source.
     *   Choose this repository.
     *   **Builder:** Dockerfile.
-    *   **Dockerfile Location:** `backend/Dockerfile`.
+    *   **Dockerfile Location:** `Dockerfile` (default, root directory).
     *   **Privileged:** No.
-    *   **Ports:** 8000.
-    *   Deploy. Copy the public URL (e.g., `https://backend-xyz.koyeb.app`).
-3.  **Deploy Frontend:**
-    *   Create another Service (in the same App or new one).
-    *   Select the same repository.
-    *   **Builder:** Dockerfile.
-    *   **Dockerfile Location:** `frontend/Dockerfile`.
-    *   **Ports:** 80.
-    *   **Environment Variables (Build Args):**
-        *   Koyeb allows setting Environment Variables. However, for the Frontend build (which needs `VITE_API_URL` at build time), you might need to ensure the variable is available during the build phase.
-        *   *Note:* Standard Environment Variables in Koyeb are runtime. To pass build arguments, check Koyeb's advanced settings or use a `koyeb.yaml` if supported.
-        *   *Alternative:* If you cannot set build args easily, you can hardcode the URL in `frontend/.env.production` before pushing, or update `api.js` to fallback to a relative path `/api` and configure Nginx to proxy requests to the backend.
+    *   **Ports:** 8000 (The application listens on port 8000 by default, or the port specified by `$PORT`).
+    *   **Environment Variables:**
+        *   `OCR_SERVICE_URL`: URL of the OCR service (optional, defaults to `http://localhost:7860` or can be configured in App Settings).
+        *   `ALLOWED_ORIGINS`: Comma-separated list of allowed origins (e.g. `https://your-app.koyeb.app`).
+    *   **Deploy.**
 
-## Running with Docker Compose (Local)
+The application will be available at your Koyeb public URL (e.g., `https://your-app-xyz.koyeb.app`). The frontend is served automatically by the backend.
+
+## Running with Docker (Local)
+
+To build and run the image locally:
+
+```bash
+# Build the image
+docker build -t doc-tracker .
+
+# Run the container
+docker run -p 8000:8000 doc-tracker
+```
+
+Access the application at `http://localhost:8000`.
+
+## Running with Docker Compose
 
 ```bash
 docker-compose up --build
 ```
-
-Access the frontend at `http://localhost`.
-Access the backend at `http://localhost:8000`.

@@ -83,8 +83,6 @@ export async function deleteDocument(id) {
     });
     return await response.json();
 }
-return await response.json();
-}
 
 export async function fetchJournalEntries(type = '', status = '', document_id = '') {
     const params = new URLSearchParams();
