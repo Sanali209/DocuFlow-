@@ -1,39 +1,37 @@
 # --- Stage 1: Build Frontend ---
-FROM node:22-alpine AS frontend-builder
+FROM node:18-alpine AS frontend-builder
 WORKDIR /app/frontend
 
-# Copy frontend dependency definitions
+# Используем легкий кэш и только необходимые файлы
 COPY frontend/package*.json ./
+# --network-timeout 100000 помогает при плохом соединении
+RUN npm ci --quiet --no-progress 
 
-# Install dependencies
-RUN npm install
-
-# Copy frontend source code
 COPY frontend/ .
-
-# Build the application
-# Vite builds to 'dist' by default
+# Ограничиваем память для Node.js во время билда
+ENV NODE_OPTIONS="--max-old-space-size=512"
 RUN npm run build
 
 # --- Stage 2: Backend & Runtime ---
 FROM python:3.12-slim
 WORKDIR /app
 
-# Install backend dependencies
+# Установка зависимостей бэкенда
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code
+# Копируем код и создаем папку для БД
 COPY backend/ ./backend
-
-# Create data directory for SQLite
 RUN mkdir -p /app/data
 
-# Copy built frontend assets to a 'static' directory
+# Забираем билд фронта
 COPY --from=frontend-builder /app/frontend/dist ./static
 
-# Expose port (Koyeb usually ignores EXPOSE but it's good practice)
+# Настройка порта
+ENV PORT=8000
 EXPOSE 8000
+
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT}"]
 
 # Run the application
 # We use 'sh -c' to expand $PORT variable provided by Koyeb (defaults to 8000 if not set)
