@@ -26,4 +26,24 @@ class Setting(Base):
     __tablename__ = "settings"
 
     key = Column(String, primary_key=True, index=True)
-    value = Column(String)
+
+class JournalEntryType(str, enum.Enum):
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+
+class JournalEntryStatus(str, enum.Enum):
+    PENDING = "pending"
+    DONE = "done"
+
+class JournalEntry(Base):
+    __tablename__ = "journal_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    text = Column(String, index=True)
+    type = Column(Enum(JournalEntryType), default=JournalEntryType.INFO)
+    status = Column(Enum(JournalEntryStatus), default=JournalEntryStatus.PENDING)
+    author = Column(String, index=True, nullable=True)
+    document_id = Column(Integer, index=True, nullable=True) # Logical FK (SQLite weak enforcement by default)
+    created_at = Column(Date, default=date.today)
+

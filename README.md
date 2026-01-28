@@ -35,6 +35,17 @@ A simple application for registering and tracking documents, built with FastAPI 
     ```
 
 ## Running the Application
+### Using Docker Compose (Recommended)
+1. **Build and Run**:
+   ```bash
+   docker-compose up --build
+   ```
+2. **Access**:
+   - Web App: [http://localhost:8000](http://localhost:8000)
+   - OCR Service (Direct): [http://localhost:7860](http://localhost:7860)
+
+### Manual Setup
+
 
 1.  **Start the Backend** (From the project root)
 

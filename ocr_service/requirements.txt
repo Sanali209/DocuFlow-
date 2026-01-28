@@ -4,3 +4,5 @@ python-multipart
 docling[easyocr,rapidocr]
 pydantic
 onnxruntime
+opencv-python-headless
+numpy

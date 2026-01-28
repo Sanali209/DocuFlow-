@@ -7,6 +7,7 @@ import os
 import tempfile
 from pydantic import BaseModel
 import logging
+import preprocessing
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -58,7 +59,26 @@ async def process_document(file: UploadFile = File(...)):
         converter = get_converter()
 
         logger.info(f"Converting file at {tmp_path}...")
-        result = converter.convert(tmp_path)
+        
+        # Determine if it's an image
+        # Simple check by extension or could check mime
+        ext = os.path.splitext(tmp_path)[1].lower()
+        if ext in ['.png', '.jpg', '.jpeg', '.tiff', '.bmp']:
+            logger.info("Image detected, applying preprocessing...")
+            processed_path = preprocessing.preprocess_image(tmp_path)
+            # conversion input is now the processed file
+            conversion_input = processed_path
+        else:
+            conversion_input = tmp_path
+            
+        result = converter.convert(conversion_input)
+        
+        # Cleanup processed file if different
+        if conversion_input != tmp_path and os.path.exists(conversion_input):
+            try:
+                os.remove(conversion_input)
+            except OSError:
+                pass
 
         logger.info("Exporting to markdown...")
         markdown = result.document.export_to_markdown()

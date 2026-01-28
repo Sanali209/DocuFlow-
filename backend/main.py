@@ -145,6 +145,35 @@ def delete_document(document_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Document not found")
     return {"ok": True}
 
+@app.get("/journal/", response_model=List[schemas.JournalEntry])
+def read_journal_entries(
+    skip: int = 0,
+    limit: int = 100,
+    type: models.JournalEntryType | None = Query(None),
+    status: models.JournalEntryStatus | None = Query(None),
+    document_id: int | None = Query(None),
+    db: Session = Depends(get_db)
+):
+    return crud.get_journal_entries(db, skip=skip, limit=limit, filter_type=type, filter_status=status, document_id=document_id)
+
+@app.post("/journal/", response_model=schemas.JournalEntry)
+def create_journal_entry(entry: schemas.JournalEntryCreate, db: Session = Depends(get_db)):
+    return crud.create_journal_entry(db, entry)
+
+@app.put("/journal/{entry_id}", response_model=schemas.JournalEntry)
+def update_journal_entry(entry_id: int, entry: schemas.JournalEntryUpdate, db: Session = Depends(get_db)):
+    db_entry = crud.update_journal_entry(db, entry_id, entry)
+    if not db_entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return db_entry
+
+@app.delete("/journal/{entry_id}")
+def delete_journal_entry(entry_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_journal_entry(db, entry_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return {"ok": True}
+
 # Serve Static Files (Svelte)
 # This must be at the end to avoid conflicts with API routes
 if os.path.exists("static"):

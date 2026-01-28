@@ -83,3 +83,44 @@ export async function deleteDocument(id) {
     });
     return await response.json();
 }
+return await response.json();
+}
+
+export async function fetchJournalEntries(type = '', status = '', document_id = '') {
+    const params = new URLSearchParams();
+    if (type) params.append('type', type);
+    if (status) params.append('status', status);
+    if (document_id) params.append('document_id', document_id);
+
+    const response = await fetch(`${API_URL}/journal/?${params.toString()}`);
+    return await response.json();
+}
+
+export async function createJournalEntry(entry) {
+    const response = await fetch(`${API_URL}/journal/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(entry),
+    });
+    return await response.json();
+}
+
+export async function updateJournalEntry(id, entry) {
+    const response = await fetch(`${API_URL}/journal/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(entry),
+    });
+    return await response.json();
+}
+
+export async function deleteJournalEntry(id) {
+    const response = await fetch(`${API_URL}/journal/${id}`, {
+        method: 'DELETE',
+    });
+    return await response.json();
+}

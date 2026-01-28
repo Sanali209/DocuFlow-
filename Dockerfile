@@ -26,6 +26,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend/ ./backend
 
+# Create data directory for SQLite
+RUN mkdir -p /app/data
+
 # Copy built frontend assets to a 'static' directory
 COPY --from=frontend-builder /app/frontend/dist ./static
 

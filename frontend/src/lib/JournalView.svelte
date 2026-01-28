@@ -1,0 +1,296 @@
+<script>
+    import { onMount } from "svelte";
+    import {
+        fetchJournalEntries,
+        createJournalEntry,
+        updateJournalEntry,
+        deleteJournalEntry,
+    } from "./api.js";
+
+    let entries = $state([]);
+    let loading = $state(false);
+
+    // Filters
+    let filterType = $state("");
+    let filterStatus = $state("");
+
+    // New Entry Form
+    let showForm = $state(false);
+    let newEntryText = $state("");
+    let newEntryType = $state("info");
+    let newEntryAuthor = $state("");
+
+    async function loadEntries() {
+        loading = true;
+        try {
+            entries = await fetchJournalEntries(filterType, filterStatus);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            loading = false;
+        }
+    }
+
+    onMount(() => {
+        newEntryAuthor = localStorage.getItem("journal_author") || "";
+        loadEntries();
+    });
+
+    async function handleAdd() {
+        if (!newEntryText) return;
+
+        // Save author
+        if (newEntryAuthor) {
+            localStorage.setItem("journal_author", newEntryAuthor);
+        }
+
+        try {
+            await createJournalEntry({
+                text: newEntryText,
+                type: newEntryType,
+                status: "pending", // Default
+                author: newEntryAuthor,
+            });
+            newEntryText = "";
+            showForm = false;
+            loadEntries();
+        } catch (e) {
+            console.error("Failed to add entry", e);
+        }
+    }
+
+    async function toggleStatus(entry) {
+        const newStatus = entry.status === "pending" ? "done" : "pending";
+        try {
+            await updateJournalEntry(entry.id, { status: newStatus });
+            loadEntries();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function remove(id) {
+        if (!confirm("Are you sure?")) return;
+        try {
+            await deleteJournalEntry(id);
+            loadEntries();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // React to filter changes
+    $effect(() => {
+        loadEntries();
+    });
+</script>
+
+<div class="journal-container">
+    <div class="toolbar">
+        <div class="filters">
+            <select bind:value={filterType} onchange={loadEntries}>
+                <option value="">All Types</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+            </select>
+            <select bind:value={filterStatus} onchange={loadEntries}>
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="done">Done</option>
+            </select>
+        </div>
+        <button class="add-btn" onclick={() => (showForm = !showForm)}>
+            {showForm ? "Cancel" : "+ New Entry"}
+        </button>
+    </div>
+
+    {#if showForm}
+        <div class="entry-form">
+            <input
+                type="text"
+                placeholder="Author"
+                bind:value={newEntryAuthor}
+                class="author-input"
+            />
+            <select bind:value={newEntryType}>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+            </select>
+            <textarea placeholder="Message..." bind:value={newEntryText}
+            ></textarea>
+            <button onclick={handleAdd}>Save</button>
+        </div>
+    {/if}
+
+    <div class="entries-list">
+        {#if loading}
+            <p>Loading...</p>
+        {:else if entries.length === 0}
+            <p class="empty">No entries found.</p>
+        {:else}
+            {#each entries as entry}
+                <div class="entry-card {entry.type} {entry.status}">
+                    <div class="entry-header">
+                        <span class="badge {entry.type}">{entry.type}</span>
+                        <span class="author">{entry.author || "Unknown"}</span>
+                        <span class="date">{entry.created_at}</span>
+                        <div class="actions">
+                            <button
+                                class="status-btn"
+                                onclick={() => toggleStatus(entry)}
+                            >
+                                {entry.status === "pending"
+                                    ? "☑ Mark Done"
+                                    : "↩ Reopen"}
+                            </button>
+                            <button
+                                class="delete-btn"
+                                onclick={() => remove(entry.id)}>🗑</button
+                            >
+                        </div>
+                    </div>
+                    <p class="text">{entry.text}</p>
+                </div>
+            {/each}
+        {/if}
+    </div>
+</div>
+
+<style>
+    .journal-container {
+        padding: 1rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .filters {
+        display: flex;
+        gap: 1rem;
+    }
+    select,
+    input,
+    textarea {
+        padding: 0.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-family: inherit;
+    }
+    .add-btn {
+        background: #0f172a;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+    }
+    .entry-form {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    .entries-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .entry-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border-left: 5px solid #ccc;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transition: transform 0.1s;
+    }
+    .entry-card:hover {
+        transform: translateY(-2px);
+    }
+    .entry-card.info {
+        border-left-color: #3b82f6;
+    }
+    .entry-card.warning {
+        border-left-color: #f59e0b;
+    }
+    .entry-card.error {
+        border-left-color: #ef4444;
+    }
+    .entry-card.done {
+        opacity: 0.6;
+    }
+
+    .entry-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+    .badge {
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        font-weight: bold;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        color: white;
+    }
+    .badge.info {
+        background: #3b82f6;
+    }
+    .badge.warning {
+        background: #f59e0b;
+    }
+    .badge.error {
+        background: #ef4444;
+    }
+
+    .author {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .actions {
+        margin-left: auto;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .status-btn,
+    .delete-btn {
+        background: none;
+        border: 1px solid #e2e8f0;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+    }
+    .status-btn:hover {
+        background: #f1f5f9;
+    }
+    .delete-btn {
+        color: #ef4444;
+        border-color: #fee2e2;
+    }
+    .delete-btn:hover {
+        background: #fee2e2;
+    }
+
+    .text {
+        color: #334155;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+</style>
