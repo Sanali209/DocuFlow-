@@ -3,6 +3,19 @@ from datetime import date
 from typing import List, Optional
 from .models import DocumentType, DocumentStatus, TaskStatus, JournalEntryType, JournalEntryStatus
 
+# --- Tag ---
+class TagBase(BaseModel):
+    name: str
+
+class TagCreate(TagBase):
+    pass
+
+class Tag(TagBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 # --- Attachment ---
 class AttachmentBase(BaseModel):
     file_path: str
@@ -83,6 +96,7 @@ class DocumentBase(BaseModel):
 
 class DocumentCreate(DocumentBase):
     attachments: Optional[List[AttachmentCreate]] = []
+    tags: Optional[List[str]] = []
 
 class DocumentUpdate(BaseModel):
     name: Optional[str] = None
@@ -94,12 +108,14 @@ class DocumentUpdate(BaseModel):
     author: Optional[str] = None
     done_date: Optional[date] = None
     attachments: Optional[List[AttachmentCreate]] = None
+    tags: Optional[List[str]] = None
 
 class Document(DocumentBase):
     id: int
     attachments: List[Attachment] = []
     tasks: List[Task] = []
     journal_entries: List[JournalEntry] = []
+    tags: List[Tag] = []
 
     class Config:
         from_attributes = True

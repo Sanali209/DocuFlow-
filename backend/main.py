@@ -164,6 +164,7 @@ def read_documents(
     search: str | None = Query(None, description="Search by document part name"),
     type: models.DocumentType | None = Query(None, description="Filter by document type"),
     status: models.DocumentStatus | None = Query(None, description="Filter by document status"),
+    tag: str | None = Query(None, description="Filter by tag name"),
     sort_by: str = "registration_date",
     sort_order: str = "desc",
     db: Session = Depends(get_db)
@@ -175,6 +176,7 @@ def read_documents(
         search_name=search,
         filter_type=type,
         filter_status=status,
+        filter_tag=tag,
         sort_by=sort_by,
         sort_order=sort_order
     )
@@ -260,6 +262,11 @@ def delete_attachment(attachment_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Attachment not found")
     return {"ok": True}
+
+# --- Tag Endpoints ---
+@app.get("/tags", response_model=List[schemas.Tag])
+def read_tags(db: Session = Depends(get_db)):
+    return crud.get_tags(db)
 
 # Serve Static Files (Svelte)
 if os.path.exists("static"):

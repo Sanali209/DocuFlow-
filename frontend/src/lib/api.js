@@ -11,15 +11,21 @@ export async function uploadFile(file) {
     return await response.json();
 }
 
-export async function fetchDocuments(search = '', type = '', status = '', sortBy = 'registration_date', sortOrder = 'desc') {
+export async function fetchDocuments(search = '', type = '', status = '', sortBy = 'registration_date', sortOrder = 'desc', tag = '') {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (type) params.append('type', type);
     if (status) params.append('status', status);
+    if (tag) params.append('tag', tag);
     if (sortBy) params.append('sort_by', sortBy);
     if (sortOrder) params.append('sort_order', sortOrder);
 
     const response = await fetch(`${API_URL}/documents/?${params.toString()}`);
+    return await response.json();
+}
+
+export async function fetchTags() {
+    const response = await fetch(`${API_URL}/tags`);
     return await response.json();
 }
 

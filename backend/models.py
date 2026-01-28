@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Enum, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, Enum, Text, ForeignKey, Table
 from sqlalchemy.orm import relationship
 import enum
 from datetime import date
@@ -17,6 +17,23 @@ class TaskStatus(str, enum.Enum):
     PLANNED = "planned"
     PENDING = "pending"
     DONE = "done"
+
+# Association Table for Tags
+document_tags = Table(
+    "document_tags",
+    Base.metadata,
+    Column("document_id", Integer, ForeignKey("documents.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
+)
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+
+    # Backref is sufficient usually, or explicit relationship
+    documents = relationship("Document", secondary=document_tags, back_populates="tags")
 
 class Attachment(Base):
     __tablename__ = "attachments"
@@ -62,6 +79,7 @@ class Document(Base):
     attachments = relationship("Attachment", back_populates="document", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="document", cascade="all, delete-orphan")
     journal_entries = relationship("JournalEntry", back_populates="document")
+    tags = relationship("Tag", secondary=document_tags, back_populates="documents")
 
 class Setting(Base):
     __tablename__ = "settings"

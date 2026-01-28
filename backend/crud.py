@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, subqueryload
 from sqlalchemy import desc, asc, or_
 from . import models, schemas
 from datetime import date
@@ -10,78 +10,15 @@ def get_documents(
     search_name: str | None = None,
     filter_type: models.DocumentType | None = None,
     filter_status: models.DocumentStatus | None = None,
+    filter_tag: str | None = None,
     sort_by: str = "registration_date",
     sort_order: str = "desc"
 ):
     query = db.query(models.Document).options(
-        joinedload(models.Document.tasks),
-        joinedload(models.Document.journal_entries),
-        joinedload(models.Document.attachments)
-    )
-
-    if search_name:
-        search_pattern = f"%{search_name}%"
-        query = query.filter(or_(
-            models.Document.name.like(search_pattern),
-            models.Document.description.like(search_pattern),
-            models.Document.content.like(search_pattern)
-        ))
-
-    if filter_type:
-        query = query.filter(models.Document.type == filter_type)
-
-    if filter_status:
-        query = query.filter(models.Document.status == filter_status)
-
-    # Sorting
-    if hasattr(models.Document, sort_by):
-        column = getattr(models.Document, sort_by)
-        if sort_order == "desc":
-            query = query.order_by(desc(column))
-        else:
-            query = query.order_by(asc(column))
-    else:
-        query = query.order_by(desc(models.Document.registration_date))
-
-    # Use distinct if needed or rely on python-side unique for joinedload
-    # SQLAlchemy joinedload with one-to-many can produce dupes in SQL result,
-    # but the ORM usually uniques them if identity map is used.
-    # However, limit/offset with joinedload is tricky.
-    # It's better to subquery or rely on unique().
-    # But Query.unique() method might be version dependent or deprecated in 2.0 style?
-    # In 1.4/2.0 transition, .unique() is on Result, not Query.
-    # But here we return .all().
-    # Let's try .distinct() on the query if we weren't doing joinedload, but joinedload breaks distinct sometimes.
-
-    # Correct approach for limit/offset with to-many joins:
-    # 1. Query IDs with limit/offset
-    # 2. Query full objects with those IDs
-
-    # Or, since we are using joinedload, we can just use .unique() on the result execution if possible.
-    # But `query.unique()` doesn't exist on legacy Query object in some versions?
-    # Actually, `query.distinct()` is SQL DISTINCT.
-
-    # Let's try removing .unique() and seeing if joinedload handles it, or using explicit subquery.
-    # For simplicity in this app, let's just return .all() and let SQLAlchemy uniquify in memory
-    # (which it does for joinedload collections).
-    # BUT, if the main rows are duplicated, limit/offset counts rows, not objects.
-    # So 1 doc with 5 tasks = 5 rows. Limit 10 = 2 docs.
-    # This is a classic ORM problem.
-    # Given the scale, I will switch to `selectinload` if possible (async recommended) or separate queries.
-    # Or just remove joinedload and let lazy loading happen (N+1), which is fine for small apps.
-    # But I want to avoid N+1.
-
-    # Let's remove joinedload from the main query logic and rely on lazy loading for now,
-    # OR change to `subqueryload`.
-
-    # Actually, `unique()` IS available on Query in 1.4+, but maybe not in the installed version or I'm using it wrong.
-    # Let's switch to `subqueryload` - it's safer for pagination.
-    from sqlalchemy.orm import subqueryload
-
-    query = db.query(models.Document).options(
         subqueryload(models.Document.tasks),
         subqueryload(models.Document.journal_entries),
-        subqueryload(models.Document.attachments)
+        subqueryload(models.Document.attachments),
+        subqueryload(models.Document.tags)
     )
 
     if search_name:
@@ -97,6 +34,9 @@ def get_documents(
 
     if filter_status:
         query = query.filter(models.Document.status == filter_status)
+
+    if filter_tag:
+        query = query.join(models.Document.tags).filter(models.Tag.name == filter_tag)
 
     if hasattr(models.Document, sort_by):
         column = getattr(models.Document, sort_by)
@@ -108,6 +48,31 @@ def get_documents(
         query = query.order_by(desc(models.Document.registration_date))
 
     return query.offset(skip).limit(limit).all()
+
+def get_tags(db: Session):
+    return db.query(models.Tag).all()
+
+def _sync_tags(db: Session, db_document: models.Document, tags: list[str] | None):
+    if tags is None:
+        return
+
+    # Clear existing tags if you want to replace, or merge?
+    # Usually "update" with a list means replace the list.
+    db_document.tags = []
+
+    for tag_name in tags:
+        tag_name = tag_name.strip()
+        if not tag_name:
+            continue
+
+        db_tag = db.query(models.Tag).filter(models.Tag.name == tag_name).first()
+        if not db_tag:
+            db_tag = models.Tag(name=tag_name)
+            db.add(db_tag)
+            # Flush to get ID if needed, but adding to session is enough for relationship
+
+        if db_tag not in db_document.tags:
+            db_document.tags.append(db_tag)
 
 def create_document(db: Session, document: schemas.DocumentCreate):
     # Set default date if not provided
@@ -123,6 +88,9 @@ def create_document(db: Session, document: schemas.DocumentCreate):
         author=document.author,
         done_date=document.done_date
     )
+
+    _sync_tags(db, db_document, document.tags)
+
     db.add(db_document)
     db.commit()
     db.refresh(db_document)
@@ -152,9 +120,13 @@ def update_document(db: Session, document_id: int, document: schemas.DocumentUpd
 
     update_data = document.model_dump(exclude_unset=True)
     attachments_data = update_data.pop("attachments", None)
+    tags_data = update_data.pop("tags", None)
 
     for key, value in update_data.items():
         setattr(db_document, key, value)
+
+    if tags_data is not None:
+        _sync_tags(db, db_document, tags_data)
 
     if attachments_data:
         for att in attachments_data:
@@ -201,7 +173,7 @@ def get_journal_entries(
     filter_status: models.JournalEntryStatus | None = None,
     document_id: int | None = None
 ):
-    query = db.query(models.JournalEntry).options(joinedload(models.JournalEntry.attachments))
+    query = db.query(models.JournalEntry).options(subqueryload(models.JournalEntry.attachments))
     if filter_type:
         query = query.filter(models.JournalEntry.type == filter_type)
     if filter_status:

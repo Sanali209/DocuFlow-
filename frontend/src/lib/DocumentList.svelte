@@ -5,11 +5,13 @@
     import DocumentTasks from './DocumentTasks.svelte';
     import JournalEntryModal from './JournalEntryModal.svelte';
     import ImagePreviewModal from './ImagePreviewModal.svelte';
+    import TagInput from './TagInput.svelte';
 
     let documents = $state([]);
     let search = $state('');
     let filterType = $state('');
     let filterStatus = $state('');
+    let filterTag = $state('');
     let viewingDoc = $state(null);
     let journalDoc = $state(null);
     let previewAttachments = $state(null);
@@ -18,7 +20,7 @@
     let { onEdit } = $props();
 
     export async function refresh() {
-        documents = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder);
+        documents = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder, filterTag);
     }
 
     // Initial load
@@ -119,6 +121,14 @@
             <option value="done">Done</option>
         </select>
 
+        <input
+            type="text"
+            placeholder="Filter by Tag"
+            bind:value={filterTag}
+            oninput={handleSearch}
+            class="filter-input"
+        />
+
          <select value={sortBy} onchange={(e) => handleSort(e.target.value)} class="filter-select sort-select">
             <option value="registration_date">Sort by Date</option>
             <option value="name">Sort by Name</option>
@@ -155,6 +165,14 @@
                 {#if doc.description}
                     <div class="card-desc">
                         {doc.description}
+                    </div>
+                {/if}
+
+                {#if doc.tags && doc.tags.length > 0}
+                    <div class="tags-row">
+                        {#each doc.tags as tag}
+                            <span class="tag-badge">#{tag.name}</span>
+                        {/each}
                     </div>
                 {/if}
 
@@ -260,7 +278,7 @@
             gap: 0.75rem;
             align-items: stretch;
         }
-        .search-box, .filter-select {
+        .search-box, .filter-select, .filter-input {
             width: 100%;
             min-width: 0;
         }
@@ -297,6 +315,16 @@
         cursor: pointer;
         flex-shrink: 0;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    .filter-input {
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background-color: white;
+        font-size: 0.95rem;
+        color: #1e293b;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        min-width: 150px;
     }
     .sort-order-btn {
         background: white;
@@ -358,6 +386,20 @@
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
+    }
+
+    .tags-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .tag-badge {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
     }
 
     .badges-row {

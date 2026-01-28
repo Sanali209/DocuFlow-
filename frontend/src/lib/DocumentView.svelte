@@ -19,6 +19,14 @@
         {/if}
     </div>
 
+    {#if document?.tags?.length > 0}
+        <div class="tags-row">
+            {#each document.tags as tag}
+                <span class="tag-badge">#{tag.name}</span>
+            {/each}
+        </div>
+    {/if}
+
     <div class="content markdown-body">
         {@html htmlContent}
     </div>
@@ -48,7 +56,7 @@
     .meta {
         display: flex;
         gap: 0.5rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         align-items: center;
         font-size: 0.9rem;
         color: #64748b;
@@ -66,6 +74,21 @@
     .other { background-color: #f3f4f6; color: #374151; }
     .status-in_progress { background-color: #fef3c7; color: #92400e; }
     .status-done { background-color: #dcfce7; color: #166534; }
+
+    .tags-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    .tag-badge {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
 
     .content {
         border-top: 1px solid #e2e8f0;

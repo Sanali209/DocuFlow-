@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { createDocument, scanDocument, updateDocument, deleteAttachment } from './api.js';
+    import TagInput from './TagInput.svelte';
 
     let { onDocumentCreated, onCancel, document = null } = $props();
 
@@ -15,6 +16,7 @@
 
     let attachments = $state(document?.attachments || []);
     let newAttachments = $state([]);
+    let tags = $state(document?.tags?.map(t => t.name) || []);
 
     let isScanning = $state(false);
     let scanError = $state('');
@@ -102,7 +104,8 @@
             content,
             author,
             done_date: done_date || undefined,
-            attachments: newAttachments
+            attachments: newAttachments,
+            tags
         };
 
         if (document) {
@@ -121,6 +124,7 @@
             author = localStorage.getItem('doc_author') || '';
             done_date = '';
             newAttachments = [];
+            tags = [];
         }
 
         onDocumentCreated();
@@ -167,6 +171,11 @@
         <div class="form-group">
             <label for="description">Description</label>
             <textarea id="description" bind:value={description} rows="3" placeholder="Brief description of the document..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="tags">Tags</label>
+            <TagInput bind:selectedTags={tags} />
         </div>
 
         <div class="form-group">
