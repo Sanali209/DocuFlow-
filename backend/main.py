@@ -1,29 +1,52 @@
 import os
 import httpx
 import re
+import shutil
+import uuid
 from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from typing import List
+from datetime import date
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 from sqlalchemy import text
 
+# Create tables
 models.Base.metadata.create_all(bind=engine)
 
-# Simple migration to ensure 'content' column exists
+# Migration for new columns in documents
 with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE documents ADD COLUMN author TEXT"))
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        conn.execute(text("ALTER TABLE documents ADD COLUMN description TEXT"))
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        conn.execute(text("ALTER TABLE documents ADD COLUMN done_date DATE"))
+        conn.commit()
+    except Exception:
+        pass
+
+    # Ensure content column exists (legacy migration)
     try:
         conn.execute(text("ALTER TABLE documents ADD COLUMN content TEXT"))
         conn.commit()
     except Exception:
         pass
 
-    # Create settings table if not exists (handled by create_all, but just in case of weird state)
-    # models.Base.metadata.create_all(bind=engine) covers it.
+# Ensure upload directory
+os.makedirs("static/uploads", exist_ok=True)
 
 app = FastAPI()
 
@@ -62,6 +85,8 @@ def read_setting(key: str, db: Session = Depends(get_db)):
         # Return default if not found
         if key == "ocr_url":
             return schemas.Setting(key="ocr_url", value=OCR_SERVICE_URL)
+        if key == "doc_name_regex":
+            return schemas.Setting(key="doc_name_regex", value=DOC_NAME_REGEX)
         raise HTTPException(status_code=404, detail="Setting not found")
     return setting
 
@@ -69,14 +94,35 @@ def read_setting(key: str, db: Session = Depends(get_db)):
 def update_setting(setting: schemas.Setting, db: Session = Depends(get_db)):
     return crud.set_setting(db, setting.key, setting.value)
 
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    filename = f"{uuid.uuid4()}_{file.filename}"
+    file_path = f"static/uploads/{filename}"
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return {
+        "file_path": f"/uploads/{filename}",
+        "filename": file.filename,
+        "media_type": file.content_type
+    }
+
 @app.post("/documents/scan")
 async def scan_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
     content = await file.read()
 
+    # Save file locally for attachment
+    filename = f"{uuid.uuid4()}_{file.filename}"
+    file_path_disk = f"static/uploads/{filename}"
+    with open(file_path_disk, "wb") as f:
+        f.write(content)
+
+    file_path_url = f"/uploads/{filename}"
+
     # Get OCR URL from DB or use default
     db_setting = crud.get_setting(db, "ocr_url")
     ocr_url = db_setting.value if db_setting else OCR_SERVICE_URL
-    # Remove trailing slash if user added it
     ocr_url = ocr_url.rstrip("/")
 
     async with httpx.AsyncClient() as client:
@@ -88,18 +134,25 @@ async def scan_document(file: UploadFile = File(...), db: Session = Depends(get_
             result = response.json()
             markdown = result.get("markdown", "")
         except Exception as e:
-            # Fallback for demo if service not running (so UI doesn't break)
-            # In production, we should log and raise.
-            # Here I'll raise, but the UI should handle it.
-            # If I want to allow testing without the service, I could mock here.
-            # I'll just raise for now.
             print(f"OCR Service Error: {e}")
             raise HTTPException(status_code=502, detail="OCR Service Unavailable")
 
-    match = re.search(DOC_NAME_REGEX, markdown)
+    # Get Regex from DB
+    db_setting_regex = crud.get_setting(db, "doc_name_regex")
+    regex_pattern = db_setting_regex.value if db_setting_regex else DOC_NAME_REGEX
+
+    match = re.search(regex_pattern, markdown)
     extracted_name = match.group(1).strip() if match else ""
 
-    return {"name": extracted_name, "content": markdown}
+    return {
+        "name": extracted_name,
+        "content": markdown,
+        "attachment": {
+            "file_path": file_path_url,
+            "filename": file.filename,
+            "media_type": file.content_type
+        }
+    }
 
 @app.post("/documents/", response_model=schemas.Document)
 def create_document(document: schemas.DocumentCreate, db: Session = Depends(get_db)):
@@ -112,6 +165,12 @@ def read_documents(
     search: str | None = Query(None, description="Search by document part name"),
     type: models.DocumentType | None = Query(None, description="Filter by document type"),
     status: models.DocumentStatus | None = Query(None, description="Filter by document status"),
+    tag: str | None = Query(None, description="Filter by tag name"),
+    start_date: date | None = Query(None, description="Start date filter"),
+    end_date: date | None = Query(None, description="End date filter"),
+    date_field: str = Query("registration_date", description="Field to filter date on"),
+    sort_by: str = "registration_date",
+    sort_order: str = "desc",
     db: Session = Depends(get_db)
 ):
     documents = crud.get_documents(
@@ -120,7 +179,13 @@ def read_documents(
         limit=limit,
         search_name=search,
         filter_type=type,
-        filter_status=status
+        filter_status=status,
+        filter_tag=tag,
+        start_date=start_date,
+        end_date=end_date,
+        date_field=date_field,
+        sort_by=sort_by,
+        sort_order=sort_order
     )
     return documents
 
@@ -174,16 +239,66 @@ def delete_journal_entry(entry_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Entry not found")
     return {"ok": True}
 
+# --- Task Endpoints ---
+@app.get("/documents/{document_id}/tasks", response_model=List[schemas.Task])
+def read_tasks(document_id: int, db: Session = Depends(get_db)):
+    return crud.get_tasks(db, document_id)
+
+@app.post("/documents/{document_id}/tasks", response_model=schemas.Task)
+def create_task(document_id: int, task: schemas.TaskCreate, db: Session = Depends(get_db)):
+    return crud.create_task(db, document_id, task)
+
+@app.put("/tasks/{task_id}", response_model=schemas.Task)
+def update_task(task_id: int, task: schemas.TaskUpdate, db: Session = Depends(get_db)):
+    db_task = crud.update_task(db, task_id, task)
+    if not db_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return db_task
+
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_task(db, task_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"ok": True}
+
+# --- Attachment Endpoints ---
+@app.delete("/attachments/{attachment_id}")
+def delete_attachment(attachment_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_attachment(db, attachment_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    return {"ok": True}
+
+# --- Tag Endpoints ---
+@app.get("/tags", response_model=List[schemas.Tag])
+def read_tags(db: Session = Depends(get_db)):
+    return crud.get_tags(db)
+
+# --- Filter Presets ---
+@app.get("/filter-presets", response_model=List[schemas.FilterPreset])
+def read_filter_presets(db: Session = Depends(get_db)):
+    return crud.get_filter_presets(db)
+
+@app.post("/filter-presets", response_model=schemas.FilterPreset)
+def create_filter_preset(preset: schemas.FilterPresetCreate, db: Session = Depends(get_db)):
+    return crud.create_filter_preset(db, preset)
+
+@app.delete("/filter-presets/{preset_id}")
+def delete_filter_preset(preset_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_filter_preset(db, preset_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Preset not found")
+    return {"ok": True}
+
 # Serve Static Files (Svelte)
-# This must be at the end to avoid conflicts with API routes
 if os.path.exists("static"):
     app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
+    app.mount("/uploads", StaticFiles(directory="static/uploads"), name="uploads")
 
     # Catch-all for SPA
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
-        # Allow API calls to pass through if they weren't caught above (though API routes are defined first)
-        # But if it's a file in static root (like favicon.ico), serve it
         file_path = os.path.join("static", full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)

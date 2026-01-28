@@ -1,0 +1,23 @@
+INFO:     Started server process [43199]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:43074 - "GET /filter-presets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43058 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43058 - "GET /tags HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43058 - "OPTIONS /documents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "POST /documents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "GET /tags HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "POST /documents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "GET /documents/?start_date=2023-01-15&date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "GET /documents/?start_date=2023-01-15&date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "GET /documents/?start_date=2023-01-15&date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43074 - "OPTIONS /filter-presets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43058 - "POST /filter-presets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43058 - "GET /filter-presets HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43199]

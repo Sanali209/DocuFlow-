@@ -11,11 +11,41 @@
         <span class="badge {document?.type}">{document?.type}</span>
         <span class="badge status-{document?.status}">{document?.status.replace('_', ' ')}</span>
         <span class="date">{document?.registration_date}</span>
+        {#if document?.author}
+            <span class="author">By {document.author}</span>
+        {/if}
+         {#if document?.done_date}
+            <span class="date">Done: {document.done_date}</span>
+        {/if}
     </div>
+
+    {#if document?.tags?.length > 0}
+        <div class="tags-row">
+            {#each document.tags as tag}
+                <span class="tag-badge">#{tag.name}</span>
+            {/each}
+        </div>
+    {/if}
 
     <div class="content markdown-body">
         {@html htmlContent}
     </div>
+
+    {#if document?.attachments?.length > 0}
+        <div class="attachments">
+            <h3>Attachments</h3>
+            <div class="grid">
+                {#each document.attachments as att}
+                    <div class="attachment-card">
+                         {#if att.media_type && att.media_type.startsWith('image/')}
+                            <img src={att.file_path} alt={att.filename} />
+                         {/if}
+                         <a href={att.file_path} target="_blank" rel="noreferrer">{att.filename}</a>
+                    </div>
+                {/each}
+            </div>
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -26,10 +56,11 @@
     .meta {
         display: flex;
         gap: 0.5rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         align-items: center;
         font-size: 0.9rem;
         color: #64748b;
+        flex-wrap: wrap;
     }
     .badge {
         padding: 0.25rem 0.5rem;
@@ -43,6 +74,21 @@
     .other { background-color: #f3f4f6; color: #374151; }
     .status-in_progress { background-color: #fef3c7; color: #92400e; }
     .status-done { background-color: #dcfce7; color: #166534; }
+
+    .tags-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    .tag-badge {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
 
     .content {
         border-top: 1px solid #e2e8f0;
@@ -71,5 +117,42 @@
     }
     :global(.markdown-body p) {
         margin-bottom: 1rem;
+    }
+
+    .attachments {
+        margin-top: 2rem;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 1rem;
+    }
+    .attachments h3 {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .attachment-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.5rem;
+        text-align: center;
+        background: #f8fafc;
+    }
+    .attachment-card img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+    }
+    .attachment-card a {
+        font-size: 0.85rem;
+        color: #3b82f6;
+        text-decoration: none;
+        word-break: break-all;
     }
 </style>

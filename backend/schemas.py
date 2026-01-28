@@ -1,61 +1,147 @@
 from pydantic import BaseModel
 from datetime import date
-from .models import DocumentType, DocumentStatus
+from typing import List, Optional
+from .models import DocumentType, DocumentStatus, TaskStatus, JournalEntryType, JournalEntryStatus
 
-class DocumentBase(BaseModel):
+# --- Filter Preset ---
+class FilterPresetBase(BaseModel):
     name: str
-    type: DocumentType
-    status: DocumentStatus
-    registration_date: date | None = None
-    content: str | None = None
+    config: str
 
-class DocumentCreate(DocumentBase):
+class FilterPresetCreate(FilterPresetBase):
     pass
 
-class DocumentUpdate(BaseModel):
-    name: str | None = None
-    type: DocumentType | None = None
-    status: DocumentStatus | None = None
-    registration_date: date | None = None
-    content: str | None = None
-
-class Document(DocumentBase):
+class FilterPreset(FilterPresetBase):
     id: int
 
     class Config:
         from_attributes = True
 
-class Setting(BaseModel):
-    key: str
-    value: str
+# --- Tag ---
+class TagBase(BaseModel):
+    name: str
 
+class TagCreate(TagBase):
+    pass
+
+class Tag(TagBase):
+    id: int
 
     class Config:
         from_attributes = True
 
-from .models import JournalEntryType, JournalEntryStatus
+# --- Attachment ---
+class AttachmentBase(BaseModel):
+    file_path: str
+    filename: str
+    media_type: str
+    created_at: Optional[date] = None
 
+class AttachmentCreate(AttachmentBase):
+    pass
+
+class Attachment(AttachmentBase):
+    id: int
+    document_id: Optional[int] = None
+    journal_entry_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+# --- Task ---
+class TaskBase(BaseModel):
+    name: str
+    status: TaskStatus = TaskStatus.PLANNED
+    assignee: Optional[str] = None
+
+class TaskCreate(TaskBase):
+    pass
+
+class TaskUpdate(BaseModel):
+    name: Optional[str] = None
+    status: Optional[TaskStatus] = None
+    assignee: Optional[str] = None
+
+class Task(TaskBase):
+    id: int
+    document_id: int
+
+    class Config:
+        from_attributes = True
+
+# --- Journal (Forward Declaration for Document) ---
 class JournalEntryBase(BaseModel):
     text: str
     type: JournalEntryType
     status: JournalEntryStatus
-    author: str | None = None
-    document_id: int | None = None
-    created_at: date | None = None
+    author: Optional[str] = None
+    document_id: Optional[int] = None
+    created_at: Optional[date] = None
 
 class JournalEntryCreate(JournalEntryBase):
-    pass
+    attachments: Optional[List[AttachmentCreate]] = []
 
 class JournalEntryUpdate(BaseModel):
-    text: str | None = None
-    type: JournalEntryType | None = None
-    status: JournalEntryStatus | None = None
-    author: str | None = None
-    document_id: int | None = None
+    text: Optional[str] = None
+    type: Optional[JournalEntryType] = None
+    status: Optional[JournalEntryStatus] = None
+    author: Optional[str] = None
+    document_id: Optional[int] = None
+    attachments: Optional[List[AttachmentCreate]] = None
 
 class JournalEntry(JournalEntryBase):
     id: int
+    attachments: List[Attachment] = []
+    # document: Optional['DocumentBase'] = None # Avoid circular dependency complexity if not strictly needed in list, or use specific schema
 
     class Config:
         from_attributes = True
 
+# --- Document ---
+class DocumentBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    type: DocumentType
+    status: DocumentStatus
+    registration_date: Optional[date] = None
+    content: Optional[str] = None
+    author: Optional[str] = None
+    done_date: Optional[date] = None
+
+class DocumentCreate(DocumentBase):
+    attachments: Optional[List[AttachmentCreate]] = []
+    tags: Optional[List[str]] = []
+
+class DocumentUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    type: Optional[DocumentType] = None
+    status: Optional[DocumentStatus] = None
+    registration_date: Optional[date] = None
+    content: Optional[str] = None
+    author: Optional[str] = None
+    done_date: Optional[date] = None
+    attachments: Optional[List[AttachmentCreate]] = None
+    tags: Optional[List[str]] = None
+
+class Document(DocumentBase):
+    id: int
+    attachments: List[Attachment] = []
+    tasks: List[Task] = []
+    journal_entries: List[JournalEntry] = []
+    tags: List[Tag] = []
+
+    class Config:
+        from_attributes = True
+
+# --- Setting ---
+class Setting(BaseModel):
+    key: str
+    value: str
+
+    class Config:
+        from_attributes = True
+
+# Update JournalEntry to have document info if needed (using DocumentBase to avoid recursion loop with Document.journal_entries)
+class JournalEntryWithDoc(JournalEntry):
+    document: Optional[DocumentBase] = None

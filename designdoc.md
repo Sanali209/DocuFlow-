@@ -27,26 +27,39 @@ The core entity is the **Document**.
 | :--- | :--- | :--- |
 | `id` | Integer | Primary Key (Auto-increment) |
 | `name` | String | Document Name (Indexed) |
+| `description` | Text | Brief description of the document |
 | `type` | String | Type of document (e.g., "Plan", "Mail", "Other") |
 | `status` | String | Status (e.g., "In Progress", "Done") |
 | `registration_date` | Date | Date when the document was registered |
+| `done_date` | Date | Date when status changed to Done |
+| `author` | String | Person responsible for the document |
 | `content` | Text | Markdown content extracted via OCR |
+
+**Related Entities:**
+*   **Task**: Embedded tasks linked to a document (`status`, `assignee`, `name`).
+*   **Attachment**: Files linked to a Document or Journal Entry.
+*   **JournalEntry**: Notes/Activity logs, can be linked to a specific Document.
+*   **Tag**: Many-to-Many relationship with Documents for categorization.
+*   **FilterPreset**: Saved user configurations for list filtering.
 
 **Settings Table**: Used to store dynamic configuration.
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `key` | String | Setting Key (PK), e.g., "ocr_url" |
+| `key` | String | Setting Key (PK), e.g., "ocr_url", "doc_name_regex" |
 | `value` | String | Setting Value |
 
 ### 3.3 API Endpoints
-*   `GET /documents/`: List all documents with filtering.
+*   `GET /documents/`: List all documents with filtering (search, type, status, tag, date range) and sorting.
 *   `POST /documents/`: Create a new document.
-*   `POST /documents/scan`: Proxy endpoint for OCR. Accepts file upload, calls OCR service, and extracts metadata.
+*   `POST /documents/scan`: Proxy endpoint for OCR. Accepts file upload, calls OCR service, extracts metadata, and saves attachment.
 *   `DELETE /documents/{id}`: Delete a document.
-*   `GET/PUT /settings/{key}`: Manage application settings (e.g., OCR URL).
+*   `GET/POST/DELETE /documents/{id}/tasks`: Manage document tasks.
+*   `GET /tags`: List all available tags.
+*   `GET/POST/DELETE /filter-presets`: Manage saved filters.
+*   `GET/PUT /settings/{key}`: Manage application settings.
 
 ### 3.4 Static File Serving
-The backend serves the built frontend assets from `/static` in production.
+The backend serves the built frontend assets from `/static` in production and user uploads from `/static/uploads`.
 
 ## 4. Frontend Design (`/frontend`)
 
@@ -57,10 +70,14 @@ The backend serves the built frontend assets from `/static` in production.
 
 ### 4.2 Component Architecture
 *   **`App.svelte`**: Root component.
-*   **`DocumentList.svelte`**: Document table/list view.
-*   **`DocumentForm.svelte`**: Create/Edit form. Handles multi-file scanning, sequential OCR calls, and content appending.
-*   **`DocumentView.svelte`**: Renders markdown content (including tables) for a selected document.
-*   **`SettingsModal.svelte`**: Configuration interface for the OCR Service URL.
+*   **`DocumentList.svelte`**: Main view. Renders documents as Cards. Features integrated filtering bar (Search, Type, Status, Tag, Date Range, Presets).
+*   **`DocumentForm.svelte`**: Create/Edit form. Handles multi-file scanning, sequential OCR calls, tagging (`TagInput`), and content appending.
+*   **`DocumentTasks.svelte`**: Embedded component within the Document Card for managing tasks inline.
+*   **`DocumentView.svelte`**: Read-only detailed view rendering markdown content and attachments.
+*   **`JournalEntryModal.svelte`**: Popup to add notes linked to a specific document.
+*   **`ImagePreviewModal.svelte`**: Gallery modal for viewing attached images.
+*   **`TagInput.svelte`**: Reusable component for tag selection with autocomplete.
+*   **`SettingsModal.svelte`**: Configuration interface for OCR Service URL and Regex.
 
 ## 5. OCR Service (`/ocr_service`)
 

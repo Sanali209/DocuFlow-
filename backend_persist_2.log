@@ -1,0 +1,30 @@
+INFO:     Started server process [47531]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:58244 - "GET /filter-presets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58240 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58240 - "GET /tags HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58240 - "OPTIONS /documents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58244 - "POST /documents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58244 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58244 - "OPTIONS /documents/20/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58240 - "POST /documents/20/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58240 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50994 - "GET /filter-presets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50992 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50992 - "GET /tags HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50992 - "OPTIONS /documents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50994 - "POST /documents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50994 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50994 - "OPTIONS /documents/21/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50992 - "POST /documents/21/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50992 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50992 - "POST /documents/21/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50992 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50994 - "GET /filter-presets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50992 - "GET /documents/?date_field=registration_date&sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [47531]

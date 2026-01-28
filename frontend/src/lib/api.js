@@ -1,12 +1,34 @@
 const API_URL = import.meta.env.VITE_API_URL || '';
 
-export async function fetchDocuments(search = '', type = '', status = '') {
+export async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+    });
+    if (!response.ok) throw new Error('Upload failed');
+    return await response.json();
+}
+
+export async function fetchDocuments(search = '', type = '', status = '', sortBy = 'registration_date', sortOrder = 'desc', tag = '', startDate = '', endDate = '', dateField = 'registration_date') {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (type) params.append('type', type);
     if (status) params.append('status', status);
+    if (tag) params.append('tag', tag);
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (dateField) params.append('date_field', dateField);
+    if (sortBy) params.append('sort_by', sortBy);
+    if (sortOrder) params.append('sort_order', sortOrder);
 
     const response = await fetch(`${API_URL}/documents/?${params.toString()}`);
+    return await response.json();
+}
+
+export async function fetchTags() {
+    const response = await fetch(`${API_URL}/tags`);
     return await response.json();
 }
 
@@ -118,6 +140,66 @@ export async function updateJournalEntry(id, entry) {
 
 export async function deleteJournalEntry(id) {
     const response = await fetch(`${API_URL}/journal/${id}`, {
+        method: 'DELETE',
+    });
+    return await response.json();
+}
+
+// Tasks
+export async function fetchTasks(documentId) {
+    const response = await fetch(`${API_URL}/documents/${documentId}/tasks`);
+    return await response.json();
+}
+
+export async function createTask(documentId, task) {
+    const response = await fetch(`${API_URL}/documents/${documentId}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task),
+    });
+    return await response.json();
+}
+
+export async function updateTask(taskId, task) {
+    const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task),
+    });
+    return await response.json();
+}
+
+export async function deleteTask(taskId) {
+    const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+        method: 'DELETE',
+    });
+    return await response.json();
+}
+
+export async function deleteAttachment(attachmentId) {
+    const response = await fetch(`${API_URL}/attachments/${attachmentId}`, {
+        method: 'DELETE',
+    });
+    return await response.json();
+}
+
+// Filter Presets
+export async function fetchFilterPresets() {
+    const response = await fetch(`${API_URL}/filter-presets`);
+    return await response.json();
+}
+
+export async function createFilterPreset(preset) {
+    const response = await fetch(`${API_URL}/filter-presets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preset),
+    });
+    return await response.json();
+}
+
+export async function deleteFilterPreset(id) {
+    const response = await fetch(`${API_URL}/filter-presets/${id}`, {
         method: 'DELETE',
     });
     return await response.json();

@@ -5,6 +5,7 @@
         createJournalEntry,
         updateJournalEntry,
         deleteJournalEntry,
+        uploadFile
     } from "./api.js";
 
     let entries = $state([]);
@@ -19,6 +20,7 @@
     let newEntryText = $state("");
     let newEntryType = $state("info");
     let newEntryAuthor = $state("");
+    let newEntryAttachments = $state([]);
 
     async function loadEntries() {
         loading = true;
@@ -36,8 +38,24 @@
         loadEntries();
     });
 
+    async function handleFileSelect(e) {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        for (const file of files) {
+            try {
+                const result = await uploadFile(file);
+                newEntryAttachments.push(result);
+            } catch (err) {
+                console.error("Upload failed", err);
+                alert("Upload failed for " + file.name);
+            }
+        }
+        e.target.value = '';
+    }
+
     async function handleAdd() {
-        if (!newEntryText) return;
+        if (!newEntryText && newEntryAttachments.length === 0) return;
 
         // Save author
         if (newEntryAuthor) {
@@ -50,8 +68,10 @@
                 type: newEntryType,
                 status: "pending", // Default
                 author: newEntryAuthor,
+                attachments: newEntryAttachments
             });
             newEntryText = "";
+            newEntryAttachments = [];
             showForm = false;
             loadEntries();
         } catch (e) {
@@ -120,6 +140,18 @@
             </select>
             <textarea placeholder="Message..." bind:value={newEntryText}
             ></textarea>
+
+            <div class="file-input-group">
+                <input type="file" multiple onchange={handleFileSelect} />
+                 {#if newEntryAttachments.length > 0}
+                    <div class="attachments-preview">
+                        {#each newEntryAttachments as att}
+                            <span class="att-badge">{att.filename}</span>
+                        {/each}
+                    </div>
+                {/if}
+            </div>
+
             <button onclick={handleAdd}>Save</button>
         </div>
     {/if}
@@ -136,6 +168,11 @@
                         <span class="badge {entry.type}">{entry.type}</span>
                         <span class="author">{entry.author || "Unknown"}</span>
                         <span class="date">{entry.created_at}</span>
+
+                        {#if entry.document_id}
+                            <span class="doc-ref">Ref: Doc #{entry.document_id}</span>
+                        {/if}
+
                         <div class="actions">
                             <button
                                 class="status-btn"
@@ -152,6 +189,22 @@
                         </div>
                     </div>
                     <p class="text">{entry.text}</p>
+
+                    {#if entry.attachments && entry.attachments.length > 0}
+                        <div class="entry-attachments">
+                             {#each entry.attachments as att}
+                                  <div class="attachment-thumb">
+                                        {#if att.media_type && att.media_type.startsWith('image/')}
+                                            <a href={att.file_path} target="_blank">
+                                                <img src={att.file_path} alt={att.filename} />
+                                            </a>
+                                        {:else}
+                                            <a href={att.file_path} target="_blank">📄 {att.filename}</a>
+                                        {/if}
+                                  </div>
+                             {/each}
+                        </div>
+                    {/if}
                 </div>
             {/each}
         {/if}
@@ -203,6 +256,23 @@
         gap: 1rem;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     }
+    .file-input-group {
+        border: 1px dashed #cbd5e1;
+        padding: 0.5rem;
+        border-radius: 6px;
+    }
+    .attachments-preview {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+    }
+    .att-badge {
+        background: #e2e8f0;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
     .entries-list {
         display: flex;
         flex-direction: column;
@@ -239,6 +309,7 @@
         margin-bottom: 0.5rem;
         font-size: 0.875rem;
         color: #64748b;
+        flex-wrap: wrap;
     }
     .badge {
         text-transform: uppercase;
@@ -262,6 +333,15 @@
         font-weight: 600;
         color: #1e293b;
     }
+
+    .doc-ref {
+        background: #f1f5f9;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        color: #475569;
+    }
+
     .actions {
         margin-left: auto;
         display: flex;
@@ -292,5 +372,23 @@
         color: #334155;
         line-height: 1.5;
         white-space: pre-wrap;
+    }
+
+    .entry-attachments {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .attachment-thumb img {
+        height: 60px;
+        width: auto;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+    .attachment-thumb a {
+        color: #3b82f6;
+        text-decoration: none;
+        font-size: 0.9rem;
     }
 </style>
