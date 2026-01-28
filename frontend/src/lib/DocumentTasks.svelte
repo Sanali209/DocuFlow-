@@ -1,4 +1,5 @@
 <script>
+    import { onMount } from 'svelte';
     import { updateTask, deleteTask, createTask } from './api.js';
 
     let { document, refresh } = $props();
@@ -7,6 +8,13 @@
 
     let newTaskName = $state('');
     let newTaskAssignee = $state('');
+
+    onMount(() => {
+        const savedAssignee = localStorage.getItem('task_assignee');
+        if (savedAssignee) {
+            newTaskAssignee = savedAssignee;
+        }
+    });
 
     // Sort tasks: pending/planned first, then done
     let sortedTasks = $derived(
@@ -59,6 +67,11 @@
     async function handleAdd(e) {
         e.preventDefault();
         if (!newTaskName) return;
+
+        if (newTaskAssignee) {
+            localStorage.setItem('task_assignee', newTaskAssignee);
+        }
+
         try {
             const newTask = await createTask(document.id, {
                 name: newTaskName,
@@ -67,7 +80,8 @@
             });
             tasks = [...tasks, newTask];
             newTaskName = '';
-            // newTaskAssignee = ''; // Keep assignee
+            // newTaskAssignee = ''; // Keep assignee for rapid entry? User asked to persist "last entered", implying keeping it or reloading it.
+            // If we reload from storage on mount, we should probably keep it in the input too for multiple entries.
             refresh();
         } catch (e) {
             console.error(e);

@@ -17,3 +17,7 @@ INFO:     127.0.0.1:43074 - "GET /documents/?start_date=2023-01-15&date_field=re
 INFO:     127.0.0.1:43074 - "OPTIONS /filter-presets HTTP/1.1" 200 OK
 INFO:     127.0.0.1:43058 - "POST /filter-presets HTTP/1.1" 200 OK
 INFO:     127.0.0.1:43058 - "GET /filter-presets HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43199]
