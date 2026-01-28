@@ -13,7 +13,7 @@ def test_read_main():
 def test_scan_document(mock_post):
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.json.return_value = {"markdown": "Order Project Alpha Specs\n\nSome content..."}
+    mock_response.json.return_value = {"markdown": "Order: Project Alpha Specs\nDate: 2023-01-01\n\nSome content..."}
     mock_response.raise_for_status.return_value = None
 
     if not isinstance(mock_post, AsyncMock):
