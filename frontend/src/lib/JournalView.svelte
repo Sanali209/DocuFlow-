@@ -5,25 +5,30 @@
         createJournalEntry,
         updateJournalEntry,
         deleteJournalEntry,
+        fetchDocuments,
     } from "./api.js";
 
     let entries = $state([]);
+    let documents = $state([]);
     let loading = $state(false);
 
     // Filters
     let filterType = $state("");
     let filterStatus = $state("");
+    let filterDate = $state("");
+    let filterDocId = $state("");
 
     // New Entry Form
     let showForm = $state(false);
     let newEntryText = $state("");
     let newEntryType = $state("info");
     let newEntryAuthor = $state("");
+    let newEntryDocId = $state("");
 
     async function loadEntries() {
         loading = true;
         try {
-            entries = await fetchJournalEntries(filterType, filterStatus);
+            entries = await fetchJournalEntries(filterType, filterStatus, filterDocId, filterDate);
         } catch (e) {
             console.error(e);
         } finally {
@@ -31,9 +36,14 @@
         }
     }
 
-    onMount(() => {
+    onMount(async () => {
         newEntryAuthor = localStorage.getItem("journal_author") || "";
         loadEntries();
+        try {
+            documents = await fetchDocuments();
+        } catch (e) {
+            console.error("Failed to fetch documents", e);
+        }
     });
 
     async function handleAdd() {
@@ -48,10 +58,12 @@
             await createJournalEntry({
                 text: newEntryText,
                 type: newEntryType,
-                status: "pending", // Default
+                status: "in_progress", // Default
                 author: newEntryAuthor,
+                document_id: newEntryDocId ? parseInt(newEntryDocId) : null,
             });
             newEntryText = "";
+            newEntryDocId = "";
             showForm = false;
             loadEntries();
         } catch (e) {
@@ -60,7 +72,7 @@
     }
 
     async function toggleStatus(entry) {
-        const newStatus = entry.status === "pending" ? "done" : "pending";
+        const newStatus = entry.status === "in_progress" ? "done" : "in_progress";
         try {
             await updateJournalEntry(entry.id, { status: newStatus });
             loadEntries();
@@ -96,9 +108,20 @@
             </select>
             <select bind:value={filterStatus} onchange={loadEntries}>
                 <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
+                <option value="in_progress">In Progress</option>
                 <option value="done">Done</option>
             </select>
+            <select bind:value={filterDocId} onchange={loadEntries}>
+                <option value="">All Documents</option>
+                {#each documents as doc}
+                    <option value={doc.id}>{doc.name}</option>
+                {/each}
+            </select>
+            <input
+                type="date"
+                bind:value={filterDate}
+                onchange={loadEntries}
+            />
         </div>
         <button class="add-btn" onclick={() => (showForm = !showForm)}>
             {showForm ? "Cancel" : "+ New Entry"}
@@ -107,16 +130,24 @@
 
     {#if showForm}
         <div class="entry-form">
-            <input
-                type="text"
-                placeholder="Author"
-                bind:value={newEntryAuthor}
-                class="author-input"
-            />
-            <select bind:value={newEntryType}>
-                <option value="info">Info</option>
-                <option value="warning">Warning</option>
-                <option value="error">Error</option>
+            <div class="form-row">
+                <input
+                    type="text"
+                    placeholder="Author"
+                    bind:value={newEntryAuthor}
+                    class="author-input"
+                />
+                <select bind:value={newEntryType}>
+                    <option value="info">Info</option>
+                    <option value="warning">Warning</option>
+                    <option value="error">Error</option>
+                </select>
+            </div>
+            <select bind:value={newEntryDocId} class="doc-select">
+                <option value="">-- No Document --</option>
+                {#each documents as doc}
+                    <option value={doc.id}>{doc.name}</option>
+                {/each}
             </select>
             <textarea placeholder="Message..." bind:value={newEntryText}
             ></textarea>
@@ -141,7 +172,7 @@
                                 class="status-btn"
                                 onclick={() => toggleStatus(entry)}
                             >
-                                {entry.status === "pending"
+                                {entry.status === "in_progress"
                                     ? "☑ Mark Done"
                                     : "↩ Reopen"}
                             </button>
@@ -202,6 +233,20 @@
         flex-direction: column;
         gap: 1rem;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    .form-row {
+        display: flex;
+        gap: 1rem;
+    }
+    .form-row input, .form-row select {
+        flex: 1;
+    }
+    .doc-select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background-color: white; /* Ensure visible on form background */
     }
     .entries-list {
         display: flex;

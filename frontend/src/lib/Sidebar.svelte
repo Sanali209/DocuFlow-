@@ -1,14 +1,31 @@
 <script>
-    export let activeView = 'documents';
-    export let onSelect; // Function to handle selection
+    let { activeView = 'documents', onSelect } = $props();
+
+    let isExpanded = $state(false);
 
     function select(view) {
         onSelect(view);
     }
+
+    function toggle() {
+        isExpanded = !isExpanded;
+    }
+
+    function handleKeydown(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            toggle();
+            e.preventDefault();
+        }
+    }
 </script>
 
-<aside class="sidebar">
-    <div class="sidebar-header">
+<aside class="sidebar" class:expanded={isExpanded}>
+    <div class="sidebar-header"
+         onclick={toggle}
+         onkeydown={handleKeydown}
+         role="button"
+         tabindex="0"
+         title="Toggle Sidebar">
         <span class="logo-icon">DF</span>
     </div>
     <nav>
@@ -40,7 +57,7 @@
         z-index: 200;
     }
     
-    .sidebar:hover {
+    .sidebar.expanded {
         width: 200px;
     }
 
@@ -50,6 +67,7 @@
         display: flex;
         justify-content: center;
         width: 100%;
+        cursor: pointer;
     }
 
     .logo-icon {
@@ -106,7 +124,7 @@
         transition: opacity 0.2s;
     }
 
-    .sidebar:hover .label {
+    .sidebar.expanded .label {
         opacity: 1;
     }
 </style>

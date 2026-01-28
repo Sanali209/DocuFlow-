@@ -1,6 +1,7 @@
 import os
 import httpx
 import re
+from datetime import date
 from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +10,7 @@ from fastapi.responses import FileResponse
 from typing import List
 
 from . import crud, models, schemas
+from .repositories import journal as journal_repo
 from .database import SessionLocal, engine
 from sqlalchemy import text
 
@@ -151,25 +153,34 @@ def read_journal_entries(
     limit: int = 100,
     type: models.JournalEntryType | None = Query(None),
     status: models.JournalEntryStatus | None = Query(None),
+    date: date | None = Query(None),
     document_id: int | None = Query(None),
     db: Session = Depends(get_db)
 ):
-    return crud.get_journal_entries(db, skip=skip, limit=limit, filter_type=type, filter_status=status, document_id=document_id)
+    return journal_repo.get_journal_entries(
+        db,
+        skip=skip,
+        limit=limit,
+        filter_type=type,
+        filter_status=status,
+        filter_date=date,
+        document_id=document_id
+    )
 
 @app.post("/journal/", response_model=schemas.JournalEntry)
 def create_journal_entry(entry: schemas.JournalEntryCreate, db: Session = Depends(get_db)):
-    return crud.create_journal_entry(db, entry)
+    return journal_repo.create_journal_entry(db, entry)
 
 @app.put("/journal/{entry_id}", response_model=schemas.JournalEntry)
 def update_journal_entry(entry_id: int, entry: schemas.JournalEntryUpdate, db: Session = Depends(get_db)):
-    db_entry = crud.update_journal_entry(db, entry_id, entry)
+    db_entry = journal_repo.update_journal_entry(db, entry_id, entry)
     if not db_entry:
         raise HTTPException(status_code=404, detail="Entry not found")
     return db_entry
 
 @app.delete("/journal/{entry_id}")
 def delete_journal_entry(entry_id: int, db: Session = Depends(get_db)):
-    success = crud.delete_journal_entry(db, entry_id)
+    success = journal_repo.delete_journal_entry(db, entry_id)
     if not success:
         raise HTTPException(status_code=404, detail="Entry not found")
     return {"ok": True}

@@ -84,11 +84,12 @@ export async function deleteDocument(id) {
     return await response.json();
 }
 
-export async function fetchJournalEntries(type = '', status = '', document_id = '') {
+export async function fetchJournalEntries(type = '', status = '', document_id = '', date = '') {
     const params = new URLSearchParams();
     if (type) params.append('type', type);
     if (status) params.append('status', status);
     if (document_id) params.append('document_id', document_id);
+    if (date) params.append('date', date);
 
     const response = await fetch(`${API_URL}/journal/?${params.toString()}`);
     return await response.json();

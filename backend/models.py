@@ -34,7 +34,7 @@ class JournalEntryType(str, enum.Enum):
     ERROR = "error"
 
 class JournalEntryStatus(str, enum.Enum):
-    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
     DONE = "done"
 
 class JournalEntry(Base):
@@ -43,7 +43,7 @@ class JournalEntry(Base):
     id = Column(Integer, primary_key=True, index=True)
     text = Column(String, index=True)
     type = Column(Enum(JournalEntryType), default=JournalEntryType.INFO)
-    status = Column(Enum(JournalEntryStatus), default=JournalEntryStatus.PENDING)
+    status = Column(Enum(JournalEntryStatus), default=JournalEntryStatus.IN_PROGRESS)
     author = Column(String, index=True, nullable=True)
     document_id = Column(Integer, index=True, nullable=True) # Logical FK (SQLite weak enforcement by default)
     created_at = Column(Date, default=date.today)
