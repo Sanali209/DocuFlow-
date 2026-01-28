@@ -168,6 +168,11 @@
                         <span class="badge {entry.type}">{entry.type}</span>
                         <span class="author">{entry.author || "Unknown"}</span>
                         <span class="date">{entry.created_at}</span>
+
+                        {#if entry.document_id}
+                            <span class="doc-ref">Ref: Doc #{entry.document_id}</span>
+                        {/if}
+
                         <div class="actions">
                             <button
                                 class="status-btn"
@@ -304,6 +309,7 @@
         margin-bottom: 0.5rem;
         font-size: 0.875rem;
         color: #64748b;
+        flex-wrap: wrap;
     }
     .badge {
         text-transform: uppercase;
@@ -327,6 +333,15 @@
         font-weight: 600;
         color: #1e293b;
     }
+
+    .doc-ref {
+        background: #f1f5f9;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        color: #475569;
+    }
+
     .actions {
         margin-left: auto;
         display: flex;

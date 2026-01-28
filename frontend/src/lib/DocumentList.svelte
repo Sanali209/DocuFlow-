@@ -3,6 +3,8 @@
     import Modal from './Modal.svelte';
     import DocumentView from './DocumentView.svelte';
     import TaskModal from './TaskModal.svelte';
+    import JournalEntryModal from './JournalEntryModal.svelte';
+    import ImagePreviewModal from './ImagePreviewModal.svelte';
 
     let documents = $state([]);
     let search = $state('');
@@ -10,6 +12,8 @@
     let filterStatus = $state('');
     let viewingDoc = $state(null);
     let taskDoc = $state(null);
+    let journalDoc = $state(null);
+    let previewAttachments = $state(null);
     let sortBy = $state('registration_date');
     let sortOrder = $state('desc');
     let { onEdit } = $props();
@@ -61,6 +65,42 @@
 
     function closeTasks() {
         taskDoc = null;
+        refresh(); // Refresh to update task badges
+    }
+
+    function openJournalEntry(doc) {
+        journalDoc = doc;
+    }
+
+    function closeJournalEntry() {
+        journalDoc = null;
+        refresh(); // Refresh to update journal badges
+    }
+
+    function openImagePreview(attachments) {
+        previewAttachments = attachments;
+    }
+
+    function closeImagePreview() {
+        previewAttachments = null;
+    }
+
+    function getTaskCounts(tasks) {
+        if (!tasks) return null;
+        const counts = { planned: 0, pending: 0, done: 0 };
+        tasks.forEach(t => {
+            if (counts[t.status] !== undefined) counts[t.status]++;
+        });
+        return counts;
+    }
+
+    function getJournalCounts(entries) {
+        if (!entries) return null;
+        const counts = { info: 0, warning: 0, error: 0 };
+        entries.forEach(e => {
+            if (counts[e.type] !== undefined) counts[e.type]++;
+        });
+        return counts;
     }
 </script>
 
@@ -103,6 +143,9 @@
 
     <div class="cards-wrapper">
         {#each documents as doc (doc.id)}
+            {@const taskCounts = getTaskCounts(doc.tasks)}
+            {@const journalCounts = getJournalCounts(doc.journal_entries)}
+
             <div class="card">
                 <div class="card-header">
                      <div class="title-group">
@@ -125,6 +168,26 @@
                     </div>
                 {/if}
 
+                <div class="badges-row">
+                    {#if doc.attachments && doc.attachments.length > 0}
+                        <button class="icon-badge attachment-badge" onclick={() => openImagePreview(doc.attachments)} title="View Attachments">
+                            📷 {doc.attachments.length}
+                        </button>
+                    {/if}
+
+                    {#if taskCounts}
+                        {#if taskCounts.planned > 0}<span class="icon-badge task-planned" title="Planned Tasks">📅 {taskCounts.planned}</span>{/if}
+                        {#if taskCounts.pending > 0}<span class="icon-badge task-pending" title="Pending Tasks">⏳ {taskCounts.pending}</span>{/if}
+                        {#if taskCounts.done > 0}<span class="icon-badge task-done" title="Completed Tasks">✅ {taskCounts.done}</span>{/if}
+                    {/if}
+
+                    {#if journalCounts}
+                        {#if journalCounts.info > 0}<span class="icon-badge journal-info" title="Info Notes">ℹ️ {journalCounts.info}</span>{/if}
+                        {#if journalCounts.warning > 0}<span class="icon-badge journal-warning" title="Warnings">⚠️ {journalCounts.warning}</span>{/if}
+                        {#if journalCounts.error > 0}<span class="icon-badge journal-error" title="Errors">❌ {journalCounts.error}</span>{/if}
+                    {/if}
+                </div>
+
                 <div class="card-meta">
                     <div class="meta-item">
                         <span class="label">Author:</span>
@@ -143,6 +206,9 @@
                 </div>
 
                 <div class="card-actions">
+                     <button class="action-btn" onclick={() => openJournalEntry(doc)} title="Add Note">
+                        📝 Note
+                    </button>
                      <button class="action-btn task-btn" onclick={() => openTasks(doc)} title="Tasks">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                         Tasks
@@ -175,6 +241,19 @@
     </Modal>
 
     <TaskModal isOpen={!!taskDoc} close={closeTasks} document={taskDoc} />
+
+    <JournalEntryModal
+        isOpen={!!journalDoc}
+        close={closeJournalEntry}
+        documentId={journalDoc?.id}
+        documentName={journalDoc?.name}
+    />
+
+    <ImagePreviewModal
+        isOpen={!!previewAttachments}
+        close={closeImagePreview}
+        attachments={previewAttachments || []}
+    />
 </div>
 
 <style>
@@ -294,6 +373,37 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
+
+    .badges-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .icon-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        cursor: default;
+    }
+    button.icon-badge {
+        cursor: pointer;
+    }
+    button.icon-badge:hover {
+        background: #e2e8f0;
+    }
+    .attachment-badge { background: #f0f9ff; color: #0284c7; border-color: #bae6fd; }
+    .task-planned { background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; }
+    .task-pending { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+    .task-done { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .journal-info { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+    .journal-warning { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .journal-error { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
 
     .card-meta {
         display: flex;

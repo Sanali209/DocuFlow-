@@ -1,0 +1,18 @@
+INFO:     Started server process [20829]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:53526 - "GET /documents/?sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53526 - "OPTIONS /documents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53540 - "POST /documents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53540 - "GET /documents/?sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53540 - "GET /documents/7/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53540 - "OPTIONS /documents/7/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53526 - "POST /documents/7/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53526 - "GET /documents/7/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53526 - "GET /documents/?sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53526 - "OPTIONS /journal/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53540 - "POST /journal/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53540 - "GET /documents/?sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53540 - "GET /journal/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53526 - "GET /journal/ HTTP/1.1" 200 OK

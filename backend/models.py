@@ -61,6 +61,7 @@ class Document(Base):
     # Relationships
     attachments = relationship("Attachment", back_populates="document", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="document", cascade="all, delete-orphan")
+    journal_entries = relationship("JournalEntry", back_populates="document")
 
 class Setting(Base):
     __tablename__ = "settings"
@@ -85,7 +86,8 @@ class JournalEntry(Base):
     type = Column(Enum(JournalEntryType), default=JournalEntryType.INFO)
     status = Column(Enum(JournalEntryStatus), default=JournalEntryStatus.PENDING)
     author = Column(String, index=True, nullable=True)
-    document_id = Column(Integer, index=True, nullable=True) # Logical FK (SQLite weak enforcement by default)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=True)
     created_at = Column(Date, default=date.today)
 
+    document = relationship("Document", back_populates="journal_entries")
     attachments = relationship("Attachment", back_populates="journal_entry", cascade="all, delete-orphan")
