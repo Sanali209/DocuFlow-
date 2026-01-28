@@ -1,6 +1,6 @@
 # Document Tracker
 
-A simple application for registering and tracking documents, built with FastAPI and Svelte 5, featuring AI-powered OCR using IBM Docling.
+A robust application for registering and tracking documents, built with FastAPI and Svelte 5, featuring AI-powered OCR using IBM Docling.
 
 ## Prerequisites
 
@@ -46,7 +46,6 @@ A simple application for registering and tracking documents, built with FastAPI 
 
 ### Manual Setup
 
-
 1.  **Start the Backend** (From the project root)
 
     ```bash
@@ -71,12 +70,22 @@ A simple application for registering and tracking documents, built with FastAPI 
 
 ## Features
 
-* **Document Management**: Register, list, update, and delete documents.
+* **Document Management**:
+    * Register, update, and delete documents with rich metadata (Author, Description, Dates).
+    * **Card View**: Modern card-based layout displaying status, tags, and summary.
+    * **Tasks**: Embedded task list for each document with status tracking (Planned, Pending, Done) and assignee management.
+    * **Notes (Journal)**: Create journal entries directly linked to documents. Displayed inline within the document card.
+    * **Attachments**: Upload and attach images/PDFs to documents. Quick preview gallery.
+    * **Tags**: Tagging system with autocomplete for easy categorization.
+* **Advanced Filtering & Search**:
+    * Unified search across Name, Description, and Content.
+    * Filter by Type, Status, Tag, and Date Range (Registration or Done Date).
+    * **Filter Presets**: Save and load custom filter configurations.
 * **OCR Scanning**:
     * Scan images or PDFs to extract text and tables using Docling.
     * Supports multi-page scanning (select multiple files).
     * Auto-extracts "Order Name" based on configured Regex.
     * Appends recognized content sequentially.
+    * Auto-saves scanned files as attachments.
 * **Markdown Viewer**: View recognized content with formatted tables and headers.
-* **Settings**: Configure the OCR Service URL directly from the application.
-* **Filtering & Search**: Filter by type/status and search by name.
+* **Settings**: Configure the OCR Service URL and Document Name Extraction Regex directly from the application.
