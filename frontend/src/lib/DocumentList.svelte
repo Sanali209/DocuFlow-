@@ -215,9 +215,28 @@
 
                 <DocumentTasks document={doc} refresh={refresh} />
 
+                {#if doc.journal_entries && doc.journal_entries.length > 0}
+                    <div class="embedded-notes">
+                        <h4>Notes</h4>
+                        <div class="notes-list">
+                            {#each doc.journal_entries as entry}
+                                <div class="note-item {entry.type}">
+                                    <div class="note-header">
+                                        <span class="note-badge {entry.type}">{entry.type}</span>
+                                        <span class="note-author">{entry.author || 'Unknown'}</span>
+                                        <span class="note-date">{entry.created_at}</span>
+                                        <span class="note-status">{entry.status}</span>
+                                    </div>
+                                    <p class="note-text">{entry.text}</p>
+                                </div>
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
+
                 <div class="card-actions">
                      <button class="action-btn" onclick={() => openJournalEntry(doc)} title="Add Note">
-                        📝 Note
+                        📝 Add Note
                     </button>
                     <button class="action-btn view-btn" onclick={() => handleView(doc)} title="View Content">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -517,5 +536,65 @@
         padding: 3rem;
         text-align: center;
         color: #64748b;
+    }
+
+    .embedded-notes {
+        border-top: 1px solid #f1f5f9;
+        margin-top: 1rem;
+        padding-top: 1rem;
+    }
+    .embedded-notes h4 {
+        margin: 0 0 0.75rem 0;
+        font-size: 0.95rem;
+        color: #475569;
+        font-weight: 600;
+    }
+    .notes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .note-item {
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 8px;
+        border-left: 3px solid #ccc;
+        font-size: 0.9rem;
+    }
+    .note-item.info { border-left-color: #3b82f6; }
+    .note-item.warning { border-left-color: #f59e0b; }
+    .note-item.error { border-left-color: #ef4444; }
+
+    .note-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .note-badge {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: bold;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        color: white;
+    }
+    .note-badge.info { background: #3b82f6; }
+    .note-badge.warning { background: #f59e0b; }
+    .note-badge.error { background: #ef4444; }
+
+    .note-author {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .note-date, .note-status {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+    .note-text {
+        margin: 0;
+        color: #334155;
+        white-space: pre-wrap;
     }
 </style>
