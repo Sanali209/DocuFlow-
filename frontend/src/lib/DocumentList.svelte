@@ -2,7 +2,7 @@
     import { fetchDocuments, updateDocumentStatus, deleteDocument } from './api.js';
     import Modal from './Modal.svelte';
     import DocumentView from './DocumentView.svelte';
-    import TaskModal from './TaskModal.svelte';
+    import DocumentTasks from './DocumentTasks.svelte';
     import JournalEntryModal from './JournalEntryModal.svelte';
     import ImagePreviewModal from './ImagePreviewModal.svelte';
 
@@ -11,7 +11,6 @@
     let filterType = $state('');
     let filterStatus = $state('');
     let viewingDoc = $state(null);
-    let taskDoc = $state(null);
     let journalDoc = $state(null);
     let previewAttachments = $state(null);
     let sortBy = $state('registration_date');
@@ -57,15 +56,6 @@
 
     function closeView() {
         viewingDoc = null;
-    }
-
-    function openTasks(doc) {
-        taskDoc = doc;
-    }
-
-    function closeTasks() {
-        taskDoc = null;
-        refresh(); // Refresh to update task badges
     }
 
     function openJournalEntry(doc) {
@@ -205,13 +195,11 @@
                     {/if}
                 </div>
 
+                <DocumentTasks document={doc} refresh={refresh} />
+
                 <div class="card-actions">
                      <button class="action-btn" onclick={() => openJournalEntry(doc)} title="Add Note">
                         📝 Note
-                    </button>
-                     <button class="action-btn task-btn" onclick={() => openTasks(doc)} title="Tasks">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                        Tasks
                     </button>
                     <button class="action-btn view-btn" onclick={() => handleView(doc)} title="View Content">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -239,8 +227,6 @@
     <Modal isOpen={!!viewingDoc} close={closeView} maxWidth="800px">
         <DocumentView document={viewingDoc} />
     </Modal>
-
-    <TaskModal isOpen={!!taskDoc} close={closeTasks} document={taskDoc} />
 
     <JournalEntryModal
         isOpen={!!journalDoc}

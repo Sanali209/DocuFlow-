@@ -16,3 +16,7 @@ INFO:     127.0.0.1:53540 - "POST /journal/ HTTP/1.1" 200 OK
 INFO:     127.0.0.1:53540 - "GET /documents/?sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
 INFO:     127.0.0.1:53540 - "GET /journal/ HTTP/1.1" 200 OK
 INFO:     127.0.0.1:53526 - "GET /journal/ HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [20829]
