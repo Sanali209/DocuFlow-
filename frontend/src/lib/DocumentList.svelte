@@ -88,59 +88,80 @@
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
         </select>
+
+         <select value={sortBy} onchange={(e) => handleSort(e.target.value)} class="filter-select sort-select">
+            <option value="registration_date">Sort by Date</option>
+            <option value="name">Sort by Name</option>
+            <option value="author">Sort by Author</option>
+            <option value="status">Sort by Status</option>
+            <option value="done_date">Sort by Done Date</option>
+        </select>
+         <button class="sort-order-btn" onclick={() => handleSort(sortBy)} title="Toggle Order">
+            {sortOrder === 'desc' ? '↓' : '↑'}
+        </button>
     </div>
 
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th onclick={() => handleSort('name')} class="sortable">Name {sortBy === 'name' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
-                    <th onclick={() => handleSort('author')} class="sortable">Author {sortBy === 'author' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
-                    <th onclick={() => handleSort('type')} class="sortable">Type {sortBy === 'type' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
-                    <th onclick={() => handleSort('status')} class="sortable">Status {sortBy === 'status' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
-                    <th onclick={() => handleSort('registration_date')} class="sortable">Reg. Date {sortBy === 'registration_date' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
-                    <th onclick={() => handleSort('done_date')} class="sortable">Done Date {sortBy === 'done_date' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
-                    <th class="text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each documents as doc (doc.id)}
-                    <tr>
-                        <td class="font-medium">{doc.name}</td>
-                        <td class="text-gray">{doc.author || '-'}</td>
-                        <td>
-                            <span class="badge badge-type">{doc.type}</span>
-                        </td>
-                        <td>
-                            <select
-                                value={doc.status}
-                                onchange={(e) => handleStatusChange(doc, e.target.value)}
-                                class="status-select {doc.status}"
-                            >
-                                <option value="in_progress">In Progress</option>
-                                <option value="done">Done</option>
-                            </select>
-                        </td>
-                        <td class="text-gray">{doc.registration_date}</td>
-                        <td class="text-gray">{doc.done_date || '-'}</td>
-                        <td class="text-right actions-cell">
-                             <button class="action-btn task-btn" onclick={() => openTasks(doc)} title="Tasks">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                            </button>
-                            <button class="action-btn view-btn" onclick={() => handleView(doc)} title="View Content">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            </button>
-                            <button class="action-btn edit-btn" onclick={() => onEdit(doc)} title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </button>
-                            <button class="action-btn delete-btn" onclick={() => handleDelete(doc.id)} title="Delete">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
+    <div class="cards-wrapper">
+        {#each documents as doc (doc.id)}
+            <div class="card">
+                <div class="card-header">
+                     <div class="title-group">
+                        <h3>{doc.name}</h3>
+                        <span class="badge badge-type">{doc.type}</span>
+                    </div>
+                     <select
+                        value={doc.status}
+                        onchange={(e) => handleStatusChange(doc, e.target.value)}
+                        class="status-select {doc.status}"
+                    >
+                        <option value="in_progress">In Progress</option>
+                        <option value="done">Done</option>
+                    </select>
+                </div>
+
+                {#if doc.description}
+                    <div class="card-desc">
+                        {doc.description}
+                    </div>
+                {/if}
+
+                <div class="card-meta">
+                    <div class="meta-item">
+                        <span class="label">Author:</span>
+                        <span class="value">{doc.author || '-'}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="label">Date:</span>
+                        <span class="value">{doc.registration_date}</span>
+                    </div>
+                     {#if doc.done_date}
+                        <div class="meta-item">
+                            <span class="label">Done:</span>
+                            <span class="value">{doc.done_date}</span>
+                        </div>
+                    {/if}
+                </div>
+
+                <div class="card-actions">
+                     <button class="action-btn task-btn" onclick={() => openTasks(doc)} title="Tasks">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                        Tasks
+                    </button>
+                    <button class="action-btn view-btn" onclick={() => handleView(doc)} title="View Content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        View
+                    </button>
+                    <button class="action-btn edit-btn" onclick={() => onEdit(doc)} title="Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Edit
+                    </button>
+                    <button class="action-btn delete-btn" onclick={() => handleDelete(doc.id)} title="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        {/each}
 
         {#if documents.length === 0}
             <div class="empty-state">
@@ -212,59 +233,97 @@
         flex-shrink: 0;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
-
-    .table-wrapper {
+    .sort-order-btn {
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        overflow: hidden;
         border: 1px solid #e2e8f0;
-        overflow-x: auto;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 800px;
-    }
-    th, td {
-        padding: 1rem 1.5rem;
-        text-align: left;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    th {
-        background-color: #f8fafc;
-        font-weight: 600;
-        color: #475569;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        border-radius: 8px;
+        padding: 0.75rem;
         cursor: pointer;
-        user-select: none;
+        color: #475569;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
-    th:hover {
-        background-color: #f1f5f9;
+
+    .cards-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
     }
-    tr:last-child td {
-        border-bottom: none;
+
+    .card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
-    tr:hover {
-        background-color: #f8fafc;
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
-    .font-medium {
-        font-weight: 500;
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .title-group h3 {
+        margin: 0;
+        font-size: 1.1rem;
         color: #1e293b;
+        font-weight: 600;
     }
-    .text-gray {
+
+    .card-desc {
+        color: #475569;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        /* Truncate multi-line if needed, but "multiline items" implies showing more */
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .card-meta {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.85rem;
         color: #64748b;
-        font-size: 0.9rem;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 0.75rem;
+        flex-wrap: wrap;
     }
-    .text-right {
-        text-align: right;
+    .meta-item {
+        display: flex;
+        gap: 0.25rem;
     }
+    .meta-item .label {
+        font-weight: 500;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-top: auto;
+        flex-wrap: wrap;
+    }
+
     .badge {
         display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
         font-size: 0.75rem;
         font-weight: 600;
         text-transform: capitalize;
@@ -276,7 +335,7 @@
     .status-select {
         padding: 0.25rem 0.75rem;
         border-radius: 9999px;
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         font-weight: 500;
         border: none;
         appearance: none;
@@ -292,46 +351,29 @@
         color: #15803d;
     }
 
-    .actions-cell {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.25rem;
-    }
     .action-btn {
-        background-color: transparent;
-        border: none;
-        padding: 0.5rem;
+        background-color: white;
+        border: 1px solid #e2e8f0;
+        padding: 0.4rem 0.8rem;
         border-radius: 6px;
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: all 0.2s;
         display: inline-flex;
         align-items: center;
-        justify-content: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #475569;
     }
-    .view-btn {
-        color: #3b82f6;
+    .action-btn:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
     }
-    .view-btn:hover {
-        background-color: #dbeafe;
-    }
-    .edit-btn {
-        color: #f59e0b;
-    }
-    .edit-btn:hover {
-        background-color: #fef3c7;
-    }
-    .delete-btn {
-        color: #ef4444;
-    }
-    .delete-btn:hover {
-        background-color: #fee2e2;
-    }
-    .task-btn {
-        color: #10b981;
-    }
-    .task-btn:hover {
-        background-color: #d1fae5;
-    }
+
+    .view-btn:hover { color: #3b82f6; background-color: #eff6ff; border-color: #bfdbfe; }
+    .edit-btn:hover { color: #f59e0b; background-color: #fffbeb; border-color: #fde68a; }
+    .delete-btn:hover { color: #ef4444; background-color: #fef2f2; border-color: #fecaca; }
+    .task-btn:hover { color: #10b981; background-color: #ecfdf5; border-color: #a7f3d0; }
 
     .empty-state {
         padding: 3rem;

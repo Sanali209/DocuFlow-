@@ -45,6 +45,7 @@ class Task(TaskBase):
 # --- Document ---
 class DocumentBase(BaseModel):
     name: str
+    description: Optional[str] = None
     type: DocumentType
     status: DocumentStatus
     registration_date: Optional[date] = None
@@ -57,6 +58,7 @@ class DocumentCreate(DocumentBase):
 
 class DocumentUpdate(BaseModel):
     name: Optional[str] = None
+    description: Optional[str] = None
     type: Optional[DocumentType] = None
     status: Optional[DocumentStatus] = None
     registration_date: Optional[date] = None

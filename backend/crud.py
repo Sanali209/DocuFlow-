@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, asc
+from sqlalchemy import desc, asc, or_
 from . import models, schemas
 from datetime import date
 
@@ -16,7 +16,12 @@ def get_documents(
     query = db.query(models.Document)
 
     if search_name:
-        query = query.filter(models.Document.name.contains(search_name))
+        search_pattern = f"%{search_name}%"
+        query = query.filter(or_(
+            models.Document.name.like(search_pattern),
+            models.Document.description.like(search_pattern),
+            models.Document.content.like(search_pattern)
+        ))
 
     if filter_type:
         query = query.filter(models.Document.type == filter_type)
@@ -42,6 +47,7 @@ def create_document(db: Session, document: schemas.DocumentCreate):
 
     db_document = models.Document(
         name=document.name,
+        description=document.description,
         type=document.type,
         status=document.status,
         registration_date=reg_date,

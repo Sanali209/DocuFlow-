@@ -21,3 +21,8 @@ INFO:     127.0.0.1:54606 - "POST /documents/2/tasks HTTP/1.1" 200 OK
 INFO:     127.0.0.1:54606 - "GET /documents/2/tasks HTTP/1.1" 200 OK
 INFO:     127.0.0.1:54606 - "GET /journal/ HTTP/1.1" 200 OK
 INFO:     127.0.0.1:54612 - "GET /journal/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51202 - "POST /documents/ HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [7389]

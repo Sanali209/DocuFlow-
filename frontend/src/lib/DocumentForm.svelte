@@ -5,6 +5,7 @@
     let { onDocumentCreated, onCancel, document = null } = $props();
 
     let name = $state(document?.name || '');
+    let description = $state(document?.description || '');
     let type = $state(document?.type || 'plan');
     let status = $state(document?.status || 'in_progress');
     let registration_date = $state(document?.registration_date || '');
@@ -94,6 +95,7 @@
 
         const docData = {
             name,
+            description,
             type,
             status,
             registration_date: registration_date || undefined,
@@ -111,6 +113,7 @@
 
         if (!document) {
             name = '';
+            description = '';
             type = 'plan';
             status = 'in_progress';
             registration_date = '';
@@ -162,8 +165,8 @@
         </div>
 
         <div class="form-group">
-            <label for="author">Author</label>
-            <input id="author" type="text" bind:value={author} placeholder="Your Name" />
+            <label for="description">Description</label>
+            <textarea id="description" bind:value={description} rows="3" placeholder="Brief description of the document..."></textarea>
         </div>
 
         <div class="form-group">
@@ -199,6 +202,11 @@
                 <label for="done_date">Done Date</label>
                 <input id="done_date" type="date" bind:value={done_date} disabled={status !== 'done'} />
             </div>
+        </div>
+
+        <div class="form-group">
+            <label for="author">Author</label>
+            <input id="author" type="text" bind:value={author} placeholder="Your Name" />
         </div>
 
         <div class="actions">

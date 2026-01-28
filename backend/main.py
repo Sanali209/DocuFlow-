@@ -26,6 +26,12 @@ with engine.connect() as conn:
         pass
 
     try:
+        conn.execute(text("ALTER TABLE documents ADD COLUMN description TEXT"))
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
         conn.execute(text("ALTER TABLE documents ADD COLUMN done_date DATE"))
         conn.commit()
     except Exception:
