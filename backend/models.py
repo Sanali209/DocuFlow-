@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Date, Enum, Text
+from sqlalchemy import Column, Integer, String, Date, Enum, Text, ForeignKey
+from sqlalchemy.orm import relationship
 import enum
 from datetime import date
 from .database import Base
@@ -12,6 +13,36 @@ class DocumentStatus(str, enum.Enum):
     IN_PROGRESS = "in_progress"
     DONE = "done"
 
+class TaskStatus(str, enum.Enum):
+    PLANNED = "planned"
+    PENDING = "pending"
+    DONE = "done"
+
+class Attachment(Base):
+    __tablename__ = "attachments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=True)
+    journal_entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=True)
+    file_path = Column(String)
+    filename = Column(String)
+    media_type = Column(String) # e.g. "image/png", "application/pdf"
+    created_at = Column(Date, default=date.today)
+
+    document = relationship("Document", back_populates="attachments")
+    journal_entry = relationship("JournalEntry", back_populates="attachments")
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"))
+    name = Column(String)
+    status = Column(Enum(TaskStatus), default=TaskStatus.PLANNED)
+    assignee = Column(String, nullable=True)
+
+    document = relationship("Document", back_populates="tasks")
+
 class Document(Base):
     __tablename__ = "documents"
 
@@ -21,6 +52,14 @@ class Document(Base):
     status = Column(Enum(DocumentStatus), default=DocumentStatus.IN_PROGRESS)
     registration_date = Column(Date, default=date.today)
     content = Column(Text, nullable=True)
+
+    # New fields
+    author = Column(String, nullable=True)
+    done_date = Column(Date, nullable=True)
+
+    # Relationships
+    attachments = relationship("Attachment", back_populates="document", cascade="all, delete-orphan")
+    tasks = relationship("Task", back_populates="document", cascade="all, delete-orphan")
 
 class Setting(Base):
     __tablename__ = "settings"
@@ -48,3 +87,4 @@ class JournalEntry(Base):
     document_id = Column(Integer, index=True, nullable=True) # Logical FK (SQLite weak enforcement by default)
     created_at = Column(Date, default=date.today)
 
+    attachments = relationship("Attachment", back_populates="journal_entry", cascade="all, delete-orphan")

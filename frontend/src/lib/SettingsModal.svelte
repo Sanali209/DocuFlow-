@@ -3,6 +3,7 @@
 
     let { isOpen, close } = $props();
     let ocrUrl = $state('');
+    let docNameRegex = $state('');
     let loading = $state(false);
     let message = $state('');
     let isError = $state(false);
@@ -17,8 +18,16 @@
         loading = true;
         message = '';
         try {
-            const result = await fetchSetting('ocr_url');
-            ocrUrl = result.value;
+            const resultUrl = await fetchSetting('ocr_url');
+            ocrUrl = resultUrl.value;
+            try {
+                const resultRegex = await fetchSetting('doc_name_regex');
+                docNameRegex = resultRegex.value;
+            } catch (e) {
+                // Ignore if not set (backend defaults will be used, but we might want to show them?
+                // Currently backend returns default if missing, so this should work unless 404 behavior changed)
+                console.warn("Regex setting might be missing", e);
+            }
         } catch (e) {
             console.error(e);
             message = 'Failed to load settings';
@@ -36,6 +45,7 @@
 
         try {
             await updateSetting('ocr_url', ocrUrl);
+            await updateSetting('doc_name_regex', docNameRegex);
             message = 'Settings saved successfully';
         } catch (e) {
             console.error(e);
@@ -61,6 +71,17 @@
                 required
             />
             <p class="help-text">URL of the Docling OCR service.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="doc_name_regex">Document Name Regex</label>
+            <input
+                id="doc_name_regex"
+                type="text"
+                bind:value={docNameRegex}
+                placeholder="(?si)Order:\s*(.*?)\s*Date:"
+            />
+            <p class="help-text">Regex to extract document name from OCR content.</p>
         </div>
 
         {#if message}

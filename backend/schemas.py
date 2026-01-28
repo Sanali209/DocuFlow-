@@ -1,61 +1,109 @@
 from pydantic import BaseModel
 from datetime import date
-from .models import DocumentType, DocumentStatus
+from typing import List, Optional
+from .models import DocumentType, DocumentStatus, TaskStatus, JournalEntryType, JournalEntryStatus
 
+# --- Attachment ---
+class AttachmentBase(BaseModel):
+    file_path: str
+    filename: str
+    media_type: str
+    created_at: Optional[date] = None
+
+class AttachmentCreate(AttachmentBase):
+    pass
+
+class Attachment(AttachmentBase):
+    id: int
+    document_id: Optional[int] = None
+    journal_entry_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+# --- Task ---
+class TaskBase(BaseModel):
+    name: str
+    status: TaskStatus = TaskStatus.PLANNED
+    assignee: Optional[str] = None
+
+class TaskCreate(TaskBase):
+    pass
+
+class TaskUpdate(BaseModel):
+    name: Optional[str] = None
+    status: Optional[TaskStatus] = None
+    assignee: Optional[str] = None
+
+class Task(TaskBase):
+    id: int
+    document_id: int
+
+    class Config:
+        from_attributes = True
+
+# --- Document ---
 class DocumentBase(BaseModel):
     name: str
     type: DocumentType
     status: DocumentStatus
-    registration_date: date | None = None
-    content: str | None = None
+    registration_date: Optional[date] = None
+    content: Optional[str] = None
+    author: Optional[str] = None
+    done_date: Optional[date] = None
 
 class DocumentCreate(DocumentBase):
-    pass
+    attachments: Optional[List[AttachmentCreate]] = []
 
 class DocumentUpdate(BaseModel):
-    name: str | None = None
-    type: DocumentType | None = None
-    status: DocumentStatus | None = None
-    registration_date: date | None = None
-    content: str | None = None
+    name: Optional[str] = None
+    type: Optional[DocumentType] = None
+    status: Optional[DocumentStatus] = None
+    registration_date: Optional[date] = None
+    content: Optional[str] = None
+    author: Optional[str] = None
+    done_date: Optional[date] = None
+    attachments: Optional[List[AttachmentCreate]] = None
 
 class Document(DocumentBase):
     id: int
+    attachments: List[Attachment] = []
+    tasks: List[Task] = []
 
     class Config:
         from_attributes = True
 
+# --- Setting ---
 class Setting(BaseModel):
     key: str
     value: str
 
-
     class Config:
         from_attributes = True
 
-from .models import JournalEntryType, JournalEntryStatus
-
+# --- Journal ---
 class JournalEntryBase(BaseModel):
     text: str
     type: JournalEntryType
     status: JournalEntryStatus
-    author: str | None = None
-    document_id: int | None = None
-    created_at: date | None = None
+    author: Optional[str] = None
+    document_id: Optional[int] = None
+    created_at: Optional[date] = None
 
 class JournalEntryCreate(JournalEntryBase):
-    pass
+    attachments: Optional[List[AttachmentCreate]] = []
 
 class JournalEntryUpdate(BaseModel):
-    text: str | None = None
-    type: JournalEntryType | None = None
-    status: JournalEntryStatus | None = None
-    author: str | None = None
-    document_id: int | None = None
+    text: Optional[str] = None
+    type: Optional[JournalEntryType] = None
+    status: Optional[JournalEntryStatus] = None
+    author: Optional[str] = None
+    document_id: Optional[int] = None
+    attachments: Optional[List[AttachmentCreate]] = None
 
 class JournalEntry(JournalEntryBase):
     id: int
+    attachments: List[Attachment] = []
 
     class Config:
         from_attributes = True
-

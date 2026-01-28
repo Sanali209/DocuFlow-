@@ -2,16 +2,20 @@
     import { fetchDocuments, updateDocumentStatus, deleteDocument } from './api.js';
     import Modal from './Modal.svelte';
     import DocumentView from './DocumentView.svelte';
+    import TaskModal from './TaskModal.svelte';
 
     let documents = $state([]);
     let search = $state('');
     let filterType = $state('');
     let filterStatus = $state('');
     let viewingDoc = $state(null);
+    let taskDoc = $state(null);
+    let sortBy = $state('registration_date');
+    let sortOrder = $state('desc');
     let { onEdit } = $props();
 
     export async function refresh() {
-        documents = await fetchDocuments(search, filterType, filterStatus);
+        documents = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder);
     }
 
     // Initial load
@@ -33,12 +37,30 @@
         refresh();
     }
 
+    function handleSort(field) {
+        if (sortBy === field) {
+            sortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+        } else {
+            sortBy = field;
+            sortOrder = 'desc';
+        }
+        refresh();
+    }
+
     function handleView(doc) {
         viewingDoc = doc;
     }
 
     function closeView() {
         viewingDoc = null;
+    }
+
+    function openTasks(doc) {
+        taskDoc = doc;
+    }
+
+    function closeTasks() {
+        taskDoc = null;
     }
 </script>
 
@@ -72,10 +94,12 @@
         <table>
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Date</th>
+                    <th onclick={() => handleSort('name')} class="sortable">Name {sortBy === 'name' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
+                    <th onclick={() => handleSort('author')} class="sortable">Author {sortBy === 'author' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
+                    <th onclick={() => handleSort('type')} class="sortable">Type {sortBy === 'type' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
+                    <th onclick={() => handleSort('status')} class="sortable">Status {sortBy === 'status' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
+                    <th onclick={() => handleSort('registration_date')} class="sortable">Reg. Date {sortBy === 'registration_date' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
+                    <th onclick={() => handleSort('done_date')} class="sortable">Done Date {sortBy === 'done_date' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}</th>
                     <th class="text-right">Actions</th>
                 </tr>
             </thead>
@@ -83,6 +107,7 @@
                 {#each documents as doc (doc.id)}
                     <tr>
                         <td class="font-medium">{doc.name}</td>
+                        <td class="text-gray">{doc.author || '-'}</td>
                         <td>
                             <span class="badge badge-type">{doc.type}</span>
                         </td>
@@ -97,7 +122,11 @@
                             </select>
                         </td>
                         <td class="text-gray">{doc.registration_date}</td>
+                        <td class="text-gray">{doc.done_date || '-'}</td>
                         <td class="text-right actions-cell">
+                             <button class="action-btn task-btn" onclick={() => openTasks(doc)} title="Tasks">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                            </button>
                             <button class="action-btn view-btn" onclick={() => handleView(doc)} title="View Content">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                             </button>
@@ -123,6 +152,8 @@
     <Modal isOpen={!!viewingDoc} close={closeView} maxWidth="800px">
         <DocumentView document={viewingDoc} />
     </Modal>
+
+    <TaskModal isOpen={!!taskDoc} close={closeTasks} document={taskDoc} />
 </div>
 
 <style>
@@ -193,7 +224,7 @@
     table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 600px;
+        min-width: 800px;
     }
     th, td {
         padding: 1rem 1.5rem;
@@ -207,6 +238,11 @@
         font-size: 0.875rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        cursor: pointer;
+        user-select: none;
+    }
+    th:hover {
+        background-color: #f1f5f9;
     }
     tr:last-child td {
         border-bottom: none;
@@ -289,6 +325,12 @@
     }
     .delete-btn:hover {
         background-color: #fee2e2;
+    }
+    .task-btn {
+        color: #10b981;
+    }
+    .task-btn:hover {
+        background-color: #d1fae5;
     }
 
     .empty-state {
