@@ -1,17 +1,30 @@
 <script>
-    import { fetchDocuments, updateDocumentStatus, deleteDocument } from './api.js';
+    import {
+        fetchDocuments,
+        updateDocumentStatus,
+        deleteDocument,
+        fetchFilterPresets,
+        createFilterPreset,
+        deleteFilterPreset
+    } from './api.js';
     import Modal from './Modal.svelte';
     import DocumentView from './DocumentView.svelte';
     import DocumentTasks from './DocumentTasks.svelte';
     import JournalEntryModal from './JournalEntryModal.svelte';
     import ImagePreviewModal from './ImagePreviewModal.svelte';
     import TagInput from './TagInput.svelte';
+    import { onMount } from 'svelte';
 
     let documents = $state([]);
     let search = $state('');
     let filterType = $state('');
     let filterStatus = $state('');
     let filterTag = $state('');
+    let startDate = $state('');
+    let endDate = $state('');
+    let dateField = $state('registration_date');
+    let presets = $state([]);
+
     let viewingDoc = $state(null);
     let journalDoc = $state(null);
     let previewAttachments = $state(null);
@@ -20,11 +33,17 @@
     let { onEdit } = $props();
 
     export async function refresh() {
-        documents = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder, filterTag);
+        documents = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder, filterTag, startDate, endDate, dateField);
     }
 
-    // Initial load
-    refresh();
+    async function loadPresets() {
+        presets = await fetchFilterPresets();
+    }
+
+    onMount(() => {
+        refresh();
+        loadPresets();
+    });
 
     async function handleStatusChange(doc, newStatus) {
         await updateDocumentStatus(doc.id, newStatus);
@@ -66,7 +85,7 @@
 
     function closeJournalEntry() {
         journalDoc = null;
-        refresh(); // Refresh to update journal badges
+        refresh();
     }
 
     function openImagePreview(attachments) {
@@ -94,51 +113,129 @@
         });
         return counts;
     }
+
+    async function savePreset() {
+        const name = prompt("Enter a name for this filter preset:");
+        if (!name) return;
+
+        const config = JSON.stringify({
+            search, filterType, filterStatus, filterTag, startDate, endDate, dateField, sortBy, sortOrder
+        });
+
+        try {
+            await createFilterPreset({ name, config });
+            await loadPresets();
+            alert("Preset saved!");
+        } catch (e) {
+            console.error(e);
+            alert("Failed to save preset");
+        }
+    }
+
+    async function loadPreset(configStr) {
+        if (!configStr) return;
+        try {
+            const config = JSON.parse(configStr);
+            search = config.search || '';
+            filterType = config.filterType || '';
+            filterStatus = config.filterStatus || '';
+            filterTag = config.filterTag || '';
+            startDate = config.startDate || '';
+            endDate = config.endDate || '';
+            dateField = config.dateField || 'registration_date';
+            sortBy = config.sortBy || 'registration_date';
+            sortOrder = config.sortOrder || 'desc';
+            refresh();
+        } catch (e) {
+            console.error("Failed to parse preset", e);
+        }
+    }
+
+    async function removePreset(id, e) {
+        e.stopPropagation(); // prevent selection change
+        if(!confirm("Delete this preset?")) return;
+        try {
+            await deleteFilterPreset(id);
+            await loadPresets();
+        } catch(e) {
+            console.error(e);
+        }
+    }
 </script>
 
 <div class="list-container">
-    <div class="filters">
-        <div class="search-box">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <div class="filters-bar">
+        <div class="main-filters">
+            <div class="search-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input
+                    type="text"
+                    placeholder="Search..."
+                    bind:value={search}
+                    oninput={handleSearch}
+                />
+            </div>
+
+            <select bind:value={filterType} onchange={handleSearch} class="filter-select">
+                <option value="">All Types</option>
+                <option value="plan">Plan</option>
+                <option value="mail">Mail</option>
+                <option value="other">Other</option>
+            </select>
+
+            <select bind:value={filterStatus} onchange={handleSearch} class="filter-select">
+                <option value="">All Statuses</option>
+                <option value="in_progress">In Progress</option>
+                <option value="done">Done</option>
+            </select>
+
             <input
                 type="text"
-                placeholder="Search documents..."
-                bind:value={search}
+                placeholder="Tag"
+                bind:value={filterTag}
                 oninput={handleSearch}
+                class="filter-input tag-filter"
             />
         </div>
 
-        <select bind:value={filterType} onchange={handleSearch} class="filter-select">
-            <option value="">All Types</option>
-            <option value="plan">Plan</option>
-            <option value="mail">Mail</option>
-            <option value="other">Other</option>
-        </select>
+        <div class="advanced-filters">
+            <select bind:value={dateField} onchange={handleSearch} class="filter-select date-field-select">
+                <option value="registration_date">Reg. Date</option>
+                <option value="done_date">Done Date</option>
+            </select>
+            <input type="date" bind:value={startDate} onchange={handleSearch} class="date-input" title="Start Date"/>
+            <span class="date-sep">-</span>
+            <input type="date" bind:value={endDate} onchange={handleSearch} class="date-input" title="End Date"/>
 
-        <select bind:value={filterStatus} onchange={handleSearch} class="filter-select">
-            <option value="">All Statuses</option>
-            <option value="in_progress">In Progress</option>
-            <option value="done">Done</option>
-        </select>
+            <div class="sort-controls">
+                 <select value={sortBy} onchange={(e) => handleSort(e.target.value)} class="filter-select sort-select">
+                    <option value="registration_date">Date</option>
+                    <option value="name">Name</option>
+                    <option value="author">Author</option>
+                    <option value="status">Status</option>
+                    <option value="done_date">Done</option>
+                </select>
+                 <button class="sort-order-btn" onclick={() => handleSort(sortBy)} title="Toggle Order">
+                    {sortOrder === 'desc' ? '↓' : '↑'}
+                </button>
+            </div>
 
-        <input
-            type="text"
-            placeholder="Filter by Tag"
-            bind:value={filterTag}
-            oninput={handleSearch}
-            class="filter-input"
-        />
-
-         <select value={sortBy} onchange={(e) => handleSort(e.target.value)} class="filter-select sort-select">
-            <option value="registration_date">Sort by Date</option>
-            <option value="name">Sort by Name</option>
-            <option value="author">Sort by Author</option>
-            <option value="status">Sort by Status</option>
-            <option value="done_date">Sort by Done Date</option>
-        </select>
-         <button class="sort-order-btn" onclick={() => handleSort(sortBy)} title="Toggle Order">
-            {sortOrder === 'desc' ? '↓' : '↑'}
-        </button>
+            <div class="preset-controls">
+                <select onchange={(e) => loadPreset(e.target.value)} class="filter-select preset-select">
+                    <option value="">Load Preset...</option>
+                    {#each presets as p (p.id)}
+                        <option value={p.config}>{p.name}</option>
+                    {/each}
+                </select>
+                <button class="preset-btn save" onclick={savePreset} title="Save Filter">💾</button>
+                <!-- Hacky way to delete presets: usually UI would be better -->
+                <!-- We can add a "Manage" modal, but let's keep it simple:
+                     If user selects a preset, maybe show a delete button next to it?
+                     For now, let's just list them in a separate small list or rely on a "Manage" button.
+                     Let's add a "Manage" button that opens a simple modal list.
+                -->
+            </div>
+        </div>
     </div>
 
     <div class="cards-wrapper">
@@ -285,23 +382,35 @@
         flex-direction: column;
         gap: 1.5rem;
     }
-    .filters {
+    .filters-bar {
         display: flex;
-        gap: 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .main-filters, .advanced-filters {
+        display: flex;
+        gap: 0.75rem;
         flex-wrap: wrap;
         align-items: center;
     }
+
     @media (max-width: 768px) {
-        .filters {
+        .main-filters, .advanced-filters {
             flex-direction: column;
-            gap: 0.75rem;
             align-items: stretch;
         }
-        .search-box, .filter-select, .filter-input {
+        .search-box, .filter-select, .filter-input, .date-input {
             width: 100%;
-            min-width: 0;
+        }
+        .date-sep {
+            display: none;
         }
     }
+
     .search-box {
         position: relative;
         flex-grow: 1;
@@ -316,43 +425,58 @@
     }
     .search-box input {
         width: 100%;
-        padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+        padding: 0.6rem 0.6rem 0.6rem 2.2rem;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: 6px;
         font-size: 0.95rem;
-        background-color: white;
-        color: #1e293b;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
-    .filter-select {
-        padding: 0.75rem 2rem 0.75rem 1rem;
+
+    .filter-select, .filter-input, .date-input {
+        padding: 0.6rem;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        background-color: white;
-        font-size: 0.95rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background: white;
         color: #475569;
-        cursor: pointer;
-        flex-shrink: 0;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
-    .filter-input {
-        padding: 0.75rem 1rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        background-color: white;
-        font-size: 0.95rem;
-        color: #1e293b;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        min-width: 150px;
+    .tag-filter {
+        min-width: 100px;
     }
-    .sort-order-btn {
+    .date-input {
+        max-width: 140px;
+    }
+    .date-sep {
+        color: #94a3b8;
+    }
+
+    .sort-controls, .preset-controls {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin-left: auto;
+    }
+    @media (max-width: 768px) {
+        .sort-controls, .preset-controls {
+            margin-left: 0;
+            width: 100%;
+        }
+        .preset-select {
+            flex-grow: 1;
+        }
+    }
+
+    .sort-order-btn, .preset-btn {
         background: white;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 0.75rem;
+        border-radius: 6px;
+        padding: 0.6rem;
         cursor: pointer;
         color: #475569;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    .preset-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .cards-wrapper {

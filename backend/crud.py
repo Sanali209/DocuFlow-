@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, subqueryload
-from sqlalchemy import desc, asc, or_
+from sqlalchemy import desc, asc, or_, and_
 from . import models, schemas
 from datetime import date
 
@@ -11,6 +11,9 @@ def get_documents(
     filter_type: models.DocumentType | None = None,
     filter_status: models.DocumentStatus | None = None,
     filter_tag: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    date_field: str = "registration_date",
     sort_by: str = "registration_date",
     sort_order: str = "desc"
 ):
@@ -37,6 +40,15 @@ def get_documents(
 
     if filter_tag:
         query = query.join(models.Document.tags).filter(models.Tag.name == filter_tag)
+
+    # Date Range Filtering
+    if start_date or end_date:
+        if hasattr(models.Document, date_field):
+            column = getattr(models.Document, date_field)
+            if start_date:
+                query = query.filter(column >= start_date)
+            if end_date:
+                query = query.filter(column <= end_date)
 
     if hasattr(models.Document, sort_by):
         column = getattr(models.Document, sort_by)
@@ -286,6 +298,25 @@ def delete_attachment(db: Session, attachment_id: int):
     db_att = db.query(models.Attachment).filter(models.Attachment.id == attachment_id).first()
     if db_att:
         db.delete(db_att)
+        db.commit()
+        return True
+    return False
+
+# --- Filter Preset CRUD ---
+def get_filter_presets(db: Session):
+    return db.query(models.FilterPreset).all()
+
+def create_filter_preset(db: Session, preset: schemas.FilterPresetCreate):
+    db_preset = models.FilterPreset(name=preset.name, config=preset.config)
+    db.add(db_preset)
+    db.commit()
+    db.refresh(db_preset)
+    return db_preset
+
+def delete_filter_preset(db: Session, preset_id: int):
+    db_preset = db.query(models.FilterPreset).filter(models.FilterPreset.id == preset_id).first()
+    if db_preset:
+        db.delete(db_preset)
         db.commit()
         return True
     return False

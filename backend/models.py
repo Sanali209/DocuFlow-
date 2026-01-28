@@ -32,7 +32,6 @@ class Tag(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
 
-    # Backref is sufficient usually, or explicit relationship
     documents = relationship("Document", secondary=document_tags, back_populates="tags")
 
 class Attachment(Base):
@@ -43,7 +42,7 @@ class Attachment(Base):
     journal_entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=True)
     file_path = Column(String)
     filename = Column(String)
-    media_type = Column(String) # e.g. "image/png", "application/pdf"
+    media_type = Column(String)
     created_at = Column(Date, default=date.today)
 
     document = relationship("Document", back_populates="attachments")
@@ -71,11 +70,9 @@ class Document(Base):
     registration_date = Column(Date, default=date.today)
     content = Column(Text, nullable=True)
 
-    # New fields
     author = Column(String, nullable=True)
     done_date = Column(Date, nullable=True)
 
-    # Relationships
     attachments = relationship("Attachment", back_populates="document", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="document", cascade="all, delete-orphan")
     journal_entries = relationship("JournalEntry", back_populates="document")
@@ -86,6 +83,13 @@ class Setting(Base):
 
     key = Column(String, primary_key=True, index=True)
     value = Column(String)
+
+class FilterPreset(Base):
+    __tablename__ = "filter_presets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    config = Column(Text) # JSON string
 
 class JournalEntryType(str, enum.Enum):
     INFO = "info"

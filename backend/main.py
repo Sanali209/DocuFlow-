@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from typing import List
+from datetime import date
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
@@ -165,6 +166,9 @@ def read_documents(
     type: models.DocumentType | None = Query(None, description="Filter by document type"),
     status: models.DocumentStatus | None = Query(None, description="Filter by document status"),
     tag: str | None = Query(None, description="Filter by tag name"),
+    start_date: date | None = Query(None, description="Start date filter"),
+    end_date: date | None = Query(None, description="End date filter"),
+    date_field: str = Query("registration_date", description="Field to filter date on"),
     sort_by: str = "registration_date",
     sort_order: str = "desc",
     db: Session = Depends(get_db)
@@ -177,6 +181,9 @@ def read_documents(
         filter_type=type,
         filter_status=status,
         filter_tag=tag,
+        start_date=start_date,
+        end_date=end_date,
+        date_field=date_field,
         sort_by=sort_by,
         sort_order=sort_order
     )
@@ -267,6 +274,22 @@ def delete_attachment(attachment_id: int, db: Session = Depends(get_db)):
 @app.get("/tags", response_model=List[schemas.Tag])
 def read_tags(db: Session = Depends(get_db)):
     return crud.get_tags(db)
+
+# --- Filter Presets ---
+@app.get("/filter-presets", response_model=List[schemas.FilterPreset])
+def read_filter_presets(db: Session = Depends(get_db)):
+    return crud.get_filter_presets(db)
+
+@app.post("/filter-presets", response_model=schemas.FilterPreset)
+def create_filter_preset(preset: schemas.FilterPresetCreate, db: Session = Depends(get_db)):
+    return crud.create_filter_preset(db, preset)
+
+@app.delete("/filter-presets/{preset_id}")
+def delete_filter_preset(preset_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_filter_preset(db, preset_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Preset not found")
+    return {"ok": True}
 
 # Serve Static Files (Svelte)
 if os.path.exists("static"):

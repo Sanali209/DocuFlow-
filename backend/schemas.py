@@ -3,6 +3,20 @@ from datetime import date
 from typing import List, Optional
 from .models import DocumentType, DocumentStatus, TaskStatus, JournalEntryType, JournalEntryStatus
 
+# --- Filter Preset ---
+class FilterPresetBase(BaseModel):
+    name: str
+    config: str
+
+class FilterPresetCreate(FilterPresetBase):
+    pass
+
+class FilterPreset(FilterPresetBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 # --- Tag ---
 class TagBase(BaseModel):
     name: str
