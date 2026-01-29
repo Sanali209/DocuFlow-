@@ -1,7 +1,8 @@
 <script>
     import { onMount } from 'svelte';
-    import { createDocument, scanDocument, updateDocument, deleteAttachment } from './api.js';
+    import { createDocument, scanDocument, updateDocument, deleteAttachment, uploadFile } from './api.js';
     import TagInput from './TagInput.svelte';
+    import ImagePreviewModal from './ImagePreviewModal.svelte';
 
     let { onDocumentCreated, onCancel, document = null } = $props();
 
@@ -19,8 +20,11 @@
     let tags = $state(document?.tags?.map(t => t.name) || []);
 
     let isScanning = $state(false);
+    let isUploading = $state(false);
     let scanError = $state('');
     let scanStatus = $state('');
+
+    let previewAttachments = $state(null);
 
     onMount(() => {
         if (!document) {
@@ -35,7 +39,7 @@
         }
     });
 
-    async function handleFileSelect(e) {
+    async function handleScanSelect(e) {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
@@ -72,6 +76,36 @@
             scanStatus = '';
             e.target.value = '';
         }
+    }
+
+    async function handleAttachmentSelect(e) {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        isUploading = true;
+        try {
+             for (const file of files) {
+                const result = await uploadFile(file);
+                // result format: { file_path: "/uploads/...", filename: "...", media_type: "..." }
+                // Need to match Attachment structure
+                newAttachments.push({
+                    file_path: result.file_path,
+                    filename: result.filename,
+                    media_type: result.media_type
+                });
+            }
+        } catch(e) {
+            console.error("Upload failed", e);
+            alert("Failed to upload attachment");
+        } finally {
+            isUploading = false;
+            e.target.value = '';
+        }
+    }
+
+    function openGallery() {
+        // Combine existing and new for preview
+        previewAttachments = [...attachments, ...newAttachments];
     }
 
     async function handleRemoveAttachment(index, isNew) {
@@ -134,34 +168,49 @@
 <div class="form-container">
     <h3>{document ? 'Edit Document' : 'New Document'}</h3>
     <form onsubmit={handleSubmit}>
-        <div class="form-group">
-            <label for="scan">{document ? 'Scan Pages (Appends to Content)' : 'Scan Document(s)'}</label>
-            <input id="scan" type="file" multiple accept="image/*,application/pdf" onchange={handleFileSelect} />
-            {#if isScanning}
+        <div class="form-section upload-section">
+            <h4>Files & Scanning</h4>
+            <div class="upload-buttons">
+                <div class="upload-btn-wrapper">
+                    <button type="button" class="btn-outline">📄 Add Attachments</button>
+                    <input type="file" multiple onchange={handleAttachmentSelect} title="Add Attachments (No Scan)" />
+                </div>
+                 <div class="upload-btn-wrapper">
+                    <button type="button" class="btn-outline">🔍 Scan Documents (OCR)</button>
+                    <input type="file" multiple accept="image/*,application/pdf" onchange={handleScanSelect} title="Scan (OCR)" />
+                </div>
+                 {#if attachments.length > 0 || newAttachments.length > 0}
+                    <button type="button" class="btn-outline" onclick={openGallery}>📷 View Gallery</button>
+                 {/if}
+            </div>
+
+             {#if isScanning}
                 <p class="info-text">{scanStatus || 'Scanning... Please wait.'}</p>
+            {/if}
+            {#if isUploading}
+                <p class="info-text">Uploading...</p>
             {/if}
             {#if scanError}
                 <p class="error-text">{scanError}</p>
             {/if}
-        </div>
 
-        {#if attachments.length > 0 || newAttachments.length > 0}
-            <div class="attachments-list">
-                <h4>Attachments</h4>
-                {#each attachments as att, i}
-                    <div class="attachment-item">
-                         <a href={att.file_path} target="_blank" rel="noreferrer">{att.filename}</a>
-                         <button type="button" class="remove-btn" onclick={() => handleRemoveAttachment(i, false)}>❌</button>
-                    </div>
-                {/each}
-                 {#each newAttachments as att, i}
-                    <div class="attachment-item new">
-                         <span>(New) {att.filename}</span>
-                         <button type="button" class="remove-btn" onclick={() => handleRemoveAttachment(i, true)}>❌</button>
-                    </div>
-                {/each}
-            </div>
-        {/if}
+            {#if attachments.length > 0 || newAttachments.length > 0}
+                <div class="attachments-list">
+                    {#each attachments as att, i}
+                        <div class="attachment-item">
+                            <span class="file-name" title={att.filename}>{att.filename}</span>
+                            <button type="button" class="remove-btn" onclick={() => handleRemoveAttachment(i, false)}>❌</button>
+                        </div>
+                    {/each}
+                    {#each newAttachments as att, i}
+                        <div class="attachment-item new">
+                            <span class="file-name" title={att.filename}>(New) {att.filename}</span>
+                            <button type="button" class="remove-btn" onclick={() => handleRemoveAttachment(i, true)}>❌</button>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+        </div>
 
         <div class="form-group">
             <label for="name">Name</label>
@@ -223,6 +272,12 @@
             <button type="submit" class="btn-primary">{document ? 'Save Changes' : 'Register Document'}</button>
         </div>
     </form>
+
+    <ImagePreviewModal
+        isOpen={!!previewAttachments}
+        close={() => previewAttachments = null}
+        attachments={previewAttachments || []}
+    />
 </div>
 
 <style>
@@ -307,28 +362,76 @@
         line-height: 1.5;
     }
 
-    .attachments-list {
+    .form-section {
         margin-bottom: 1.5rem;
-        background: #f8fafc;
+        border: 1px solid #e2e8f0;
         padding: 1rem;
         border-radius: 8px;
+        background: #f8fafc;
     }
-    .attachments-list h4 {
-        margin-top: 0;
-        margin-bottom: 0.5rem;
+    .form-section h4 {
+        margin: 0 0 1rem 0;
+        font-size: 0.95rem;
+        color: #475569;
+    }
+    .upload-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .upload-btn-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+    }
+    .upload-btn-wrapper input[type=file] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+    .btn-outline {
+        background: white;
+        border: 1px solid #cbd5e1;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        color: #475569;
         font-size: 0.9rem;
-        color: #64748b;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .btn-outline:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+    }
+
+    .attachments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
     .attachment-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 0.5rem;
         background: white;
         padding: 0.5rem;
         border-radius: 4px;
         border: 1px solid #e2e8f0;
         font-size: 0.9rem;
+    }
+    .file-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 250px;
     }
     .attachment-item.new {
         border-style: dashed;

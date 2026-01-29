@@ -20,6 +20,24 @@
 
     function handleInput(e) {
         inputValue = e.target.value;
+
+        // Check for comma
+        if (inputValue.includes(',')) {
+            const parts = inputValue.split(',');
+            // If comma is not at start, process preceding part
+            for (let part of parts) {
+                part = part.trim();
+                if (part) {
+                     if (!selectedTags.includes(part)) {
+                        selectedTags = [...selectedTags, part];
+                     }
+                }
+            }
+             inputValue = ''; // Clear input after comma
+             showSuggestions = false;
+             return;
+        }
+
         if (inputValue) {
             suggestions = allTags.filter(t =>
                 t.name.toLowerCase().includes(inputValue.toLowerCase()) &&

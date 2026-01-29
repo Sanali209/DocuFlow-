@@ -20,6 +20,7 @@
     let filterType = $state('');
     let filterStatus = $state('');
     let filterTag = $state('');
+    let filterAssignee = $state('');
     let startDate = $state('');
     let endDate = $state('');
     let dateField = $state('registration_date');
@@ -33,7 +34,7 @@
     let { onEdit } = $props();
 
     export async function refresh() {
-        documents = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder, filterTag, startDate, endDate, dateField);
+        documents = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder, filterTag, startDate, endDate, dateField, filterAssignee);
     }
 
     async function loadPresets() {
@@ -119,7 +120,7 @@
         if (!name) return;
 
         const config = JSON.stringify({
-            search, filterType, filterStatus, filterTag, startDate, endDate, dateField, sortBy, sortOrder
+            search, filterType, filterStatus, filterTag, filterAssignee, startDate, endDate, dateField, sortBy, sortOrder
         });
 
         try {
@@ -140,6 +141,7 @@
             filterType = config.filterType || '';
             filterStatus = config.filterStatus || '';
             filterTag = config.filterTag || '';
+            filterAssignee = config.filterAssignee || '';
             startDate = config.startDate || '';
             endDate = config.endDate || '';
             dateField = config.dateField || 'registration_date';
@@ -195,6 +197,13 @@
                 bind:value={filterTag}
                 oninput={handleSearch}
                 class="filter-input tag-filter"
+            />
+             <input
+                type="text"
+                placeholder="Assignee"
+                bind:value={filterAssignee}
+                oninput={handleSearch}
+                class="filter-input assignee-filter"
             />
         </div>
 
@@ -310,7 +319,7 @@
                     {/if}
                 </div>
 
-                <DocumentTasks document={doc} refresh={refresh} />
+                <DocumentTasks document={doc} refresh={refresh} filterAssignee={filterAssignee} />
 
                 {#if doc.journal_entries && doc.journal_entries.length > 0}
                     <div class="embedded-notes">
@@ -442,6 +451,9 @@
     .tag-filter {
         min-width: 100px;
     }
+    .assignee-filter {
+        min-width: 120px;
+    }
     .date-input {
         max-width: 140px;
     }
@@ -567,8 +579,9 @@
     }
     button.icon-badge:hover {
         background: #e2e8f0;
+        transform: scale(1.05);
     }
-    .attachment-badge { background: #f0f9ff; color: #0284c7; border-color: #bae6fd; }
+    .attachment-badge { background: #f0f9ff; color: #0284c7; border-color: #bae6fd; font-weight: 600; }
     .task-planned { background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; }
     .task-pending { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
     .task-done { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
