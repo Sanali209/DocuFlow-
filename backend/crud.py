@@ -20,8 +20,8 @@ def get_documents(
     assignee: str | None = None
 ):
     query = db.query(models.Document).options(
-        subqueryload(models.Document.tasks),
-        subqueryload(models.Document.journal_entries),
+        subqueryload(models.Document.tasks).subqueryload(models.Task.material),
+        subqueryload(models.Document.journal_entries).subqueryload(models.JournalEntry.attachments),
         subqueryload(models.Document.attachments),
         subqueryload(models.Document.tags)
     )
@@ -277,6 +277,34 @@ def delete_journal_entry(db: Session, entry_id: int):
         return True
     return False
 
+# --- Material CRUD ---
+def get_materials(db: Session):
+    return db.query(models.Material).all()
+
+def create_material(db: Session, material: schemas.MaterialCreate):
+    db_material = models.Material(name=material.name)
+    db.add(db_material)
+    db.commit()
+    db.refresh(db_material)
+    return db_material
+
+def update_material(db: Session, material_id: int, name: str):
+    db_material = db.query(models.Material).filter(models.Material.id == material_id).first()
+    if not db_material:
+        return None
+    db_material.name = name
+    db.commit()
+    db.refresh(db_material)
+    return db_material
+
+def delete_material(db: Session, material_id: int):
+    db_material = db.query(models.Material).filter(models.Material.id == material_id).first()
+    if db_material:
+        db.delete(db_material)
+        db.commit()
+        return True
+    return False
+
 # --- Task CRUD ---
 def get_tasks(db: Session, document_id: int):
     return db.query(models.Task).filter(models.Task.document_id == document_id).all()
@@ -286,7 +314,8 @@ def create_task(db: Session, document_id: int, task: schemas.TaskCreate):
         document_id=document_id,
         name=task.name,
         status=task.status,
-        assignee=task.assignee
+        assignee=task.assignee,
+        material_id=task.material_id
     )
     db.add(db_task)
     db.commit()

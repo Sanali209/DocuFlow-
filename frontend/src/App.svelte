@@ -5,12 +5,14 @@
     import SettingsModal from "./lib/SettingsModal.svelte";
     import Sidebar from "./lib/Sidebar.svelte";
     import JournalView from "./lib/JournalView.svelte";
+    import JobView from "./lib/JobView.svelte";
+    import DashboardView from "./lib/DashboardView.svelte";
 
     let listComponent;
     let isModalOpen = $state(false);
     let isSettingsOpen = $state(false);
     let editingDoc = $state(null);
-    let currentView = $state("documents"); // 'documents' | 'journal'
+    let currentView = $state("dashboard"); // 'dashboard' | 'documents' | 'journal' | 'job'
 
     function refreshList() {
         if (listComponent) {
@@ -54,7 +56,17 @@
     <div class="main-content-wrapper">
         <header>
             <div class="header-content">
-                <h1>{currentView === "documents" ? "DocuFlow" : "Journal"}</h1>
+                <h1>
+                    {#if currentView === "dashboard"}
+                        Dashboard
+                    {:else if currentView === "documents"}
+                        DocuFlow
+                    {:else if currentView === "journal"}
+                        Journal
+                    {:else if currentView === "job"}
+                        Job Tracking
+                    {/if}
+                </h1>
                 <div class="header-actions">
                     <button
                         class="icon-btn"
@@ -100,13 +112,17 @@
         </header>
 
         <main>
-            {#if currentView === "documents"}
+            {#if currentView === "dashboard"}
+                <DashboardView />
+            {:else if currentView === "documents"}
                 <DocumentList
                     bind:this={listComponent}
                     onEdit={openEditModal}
                 />
             {:else if currentView === "journal"}
                 <JournalView />
+            {:else if currentView === "job"}
+                <JobView />
             {/if}
         </main>
     </div>

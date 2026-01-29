@@ -1,13 +1,26 @@
 <script>
+    import { onMount } from 'svelte';
+    import { fetchMaterials } from './api.js';
+    import MaterialLibraryModal from './MaterialLibraryModal.svelte';
+
     let { isOpen, close, onSubmit } = $props();
     let name = $state('');
     let assignee = $state('');
+    let materialId = $state(null);
     let loading = $state(false);
+    let materials = $state([]);
+    let isLibraryOpen = $state(false);
+
+    async function loadMaterials() {
+        materials = await fetchMaterials();
+    }
 
     $effect(() => {
         if (isOpen) {
             assignee = localStorage.getItem('task_assignee') || '';
             name = '';
+            materialId = null;
+            loadMaterials();
         }
     });
 
@@ -20,7 +33,7 @@
             if (assignee) {
                 localStorage.setItem('task_assignee', assignee);
             }
-            await onSubmit({ name, assignee });
+            await onSubmit({ name, assignee, material_id: materialId });
             close();
         } catch (err) {
             console.error(err);
@@ -28,6 +41,15 @@
         } finally {
             loading = false;
         }
+    }
+
+    function openLibrary() {
+        isLibraryOpen = true;
+    }
+
+    function closeLibrary() {
+        isLibraryOpen = false;
+        loadMaterials(); // Reload materials after library is closed
     }
 </script>
 
@@ -48,6 +70,21 @@
             </div>
 
             <div class="form-group">
+                <label for="material">Material</label>
+                <div class="material-row">
+                    <select id="material" bind:value={materialId} class="material-select">
+                        <option value={null}>-- No Material --</option>
+                        {#each materials as material}
+                            <option value={material.id}>{material.name}</option>
+                        {/each}
+                    </select>
+                    <button type="button" class="btn-library" onclick={openLibrary} title="Edit Material Library">
+                        📚
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label for="assignee">Assignee</label>
                 <input id="assignee" type="text" bind:value={assignee} placeholder="Enter assignee name..." />
             </div>
@@ -62,6 +99,8 @@
     </div>
 </div>
 {/if}
+
+<MaterialLibraryModal isOpen={isLibraryOpen} close={closeLibrary} />
 
 <style>
     .modal-overlay {
@@ -145,4 +184,27 @@
     }
     .btn-primary { background: #3b82f6; color: white; }
     .btn-secondary { background: #f1f5f9; color: #475569; }
+    .material-row {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .material-select {
+        flex: 1;
+        padding: 0.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 0.9rem;
+    }
+    .btn-library {
+        padding: 0.5rem;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        font-size: 1.2rem;
+    }
+    .btn-library:hover {
+        background: #e2e8f0;
+    }
 </style>

@@ -204,3 +204,82 @@ export async function deleteFilterPreset(id) {
     });
     return await response.json();
 }
+
+// Materials
+export async function fetchMaterials() {
+    const response = await fetch(`${API_URL}/materials`);
+    return await response.json();
+}
+
+export async function createMaterial(material) {
+    const response = await fetch(`${API_URL}/materials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(material),
+    });
+    return await response.json();
+}
+
+export async function updateMaterial(materialId, name) {
+    const response = await fetch(`${API_URL}/materials/${materialId}?name=${encodeURIComponent(name)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+    });
+    return await response.json();
+}
+
+export async function deleteMaterial(materialId) {
+    const response = await fetch(`${API_URL}/materials/${materialId}`, {
+        method: 'DELETE',
+    });
+    return await response.json();
+}
+
+// Backup and Restore
+export async function downloadBackup() {
+    const response = await fetch(`${API_URL}/backup`);
+    if (!response.ok) {
+        throw new Error('Backup download failed');
+    }
+    
+    // Get the blob
+    const blob = await response.blob();
+    
+    // Create a download link
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'docuflow_backup.zip';
+    if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?(.+)"?/);
+        if (match) {
+            filename = match[1];
+        }
+    }
+    
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+export async function uploadRestore(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch(`${API_URL}/restore`, {
+        method: 'POST',
+        body: formData,
+    });
+    
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Restore failed');
+    }
+    
+    return await response.json();
+}
