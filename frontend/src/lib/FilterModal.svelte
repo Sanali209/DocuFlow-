@@ -11,17 +11,29 @@
         filterStatus: '',
         filterTag: '',
         filterAssignee: '',
+        filterTaskTypes: [], // Array of task types: planned, pending, done
         startDate: '',
         endDate: '',
         dateField: 'registration_date',
         sortBy: 'registration_date',
         sortOrder: 'desc'
     });
+    
+    // Track previous isOpen state to detect when modal opens
+    let wasOpen = false;
 
     $effect(() => {
-        if (isOpen && filters) {
-            localFilters = { ...filters };
+        // Only update when modal transitions from closed to open
+        if (isOpen && !wasOpen) {
+            if (filters) {
+                localFilters = { ...filters };
+                // Ensure filterTaskTypes is always an array
+                if (!Array.isArray(localFilters.filterTaskTypes)) {
+                    localFilters.filterTaskTypes = [];
+                }
+            }
         }
+        wasOpen = isOpen;
     });
 
     function handleApply() {
@@ -35,12 +47,21 @@
             filterStatus: '',
             filterTag: '',
             filterAssignee: '',
+            filterTaskTypes: [],
             startDate: '',
             endDate: '',
             dateField: 'registration_date',
             sortBy: 'registration_date',
             sortOrder: 'desc'
         };
+    }
+    
+    function toggleTaskType(type) {
+        if (localFilters.filterTaskTypes.includes(type)) {
+            localFilters.filterTaskTypes = localFilters.filterTaskTypes.filter(t => t !== type);
+        } else {
+            localFilters.filterTaskTypes = [...localFilters.filterTaskTypes, type];
+        }
     }
 </script>
 
@@ -92,6 +113,36 @@
                     bind:value={localFilters.filterAssignee}
                     class="filter-input"
                 />
+            </div>
+
+            <div class="filter-section">
+                <h4>Task Types (Show documents with these task types)</h4>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={localFilters.filterTaskTypes.includes('planned')}
+                            onchange={() => toggleTaskType('planned')}
+                        />
+                        <span class="checkbox-text">Planned</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={localFilters.filterTaskTypes.includes('pending')}
+                            onchange={() => toggleTaskType('pending')}
+                        />
+                        <span class="checkbox-text">Pending</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={localFilters.filterTaskTypes.includes('done')}
+                            onchange={() => toggleTaskType('done')}
+                        />
+                        <span class="checkbox-text">Done</span>
+                    </label>
+                </div>
             </div>
 
             <div class="filter-section">
@@ -243,6 +294,38 @@
         outline: none;
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+    }
+    
+    .checkbox-label:hover {
+        background-color: #f8fafc;
+    }
+    
+    .checkbox-label input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    
+    .checkbox-text {
+        font-size: 0.95rem;
+        color: #475569;
+        font-weight: 500;
     }
     
     .date-range {

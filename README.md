@@ -79,8 +79,10 @@ A robust application for registering and tracking documents, built with FastAPI 
     * **Tags**: Tagging system with autocomplete for easy categorization.
 * **Advanced Filtering & Search**:
     * Unified search across Name, Description, and Content.
-    * Filter by Type, Status, Tag, and Date Range (Registration or Done Date).
-    * **Filter Presets**: Save and load custom filter configurations.
+    * Filter by Type, Status, Tag, Assignee, and Date Range (Registration or Done Date).
+    * **Task Type Filter**: Filter documents by task types (Planned, Pending, Done) - shows documents containing tasks with selected types.
+    * **Assignee Filter**: Filter tasks within documents by assignee/executor.
+    * **Filter Presets**: Save and load custom filter configurations including task type filters.
 * **OCR Scanning**:
     * Scan images or PDFs to extract text and tables using Docling.
     * Supports multi-page scanning (select multiple files).
@@ -88,4 +90,8 @@ A robust application for registering and tracking documents, built with FastAPI 
     * Appends recognized content sequentially.
     * Auto-saves scanned files as attachments.
 * **Markdown Viewer**: View recognized content with formatted tables and headers.
+* **Mobile Optimized**: 
+    * Responsive sidebar that displays only icons on mobile devices.
+    * Compact card layouts with reduced padding for mobile screens.
+    * Touch-friendly interface with optimized spacing.
 * **Settings**: Configure the OCR Service URL and Document Name Extraction Regex directly from the application.

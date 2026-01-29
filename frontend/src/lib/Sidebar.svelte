@@ -40,8 +40,20 @@
         z-index: 200;
     }
     
-    .sidebar:hover {
-        width: 200px;
+    /* Only enable hover expansion on desktop */
+    @media (min-width: 768px) {
+        .sidebar:hover {
+            width: 200px;
+        }
+        
+        .sidebar:hover .label {
+            opacity: 1;
+        }
+        
+        /* Align content left when expanded */
+        .sidebar:hover button {
+            justify-content: flex-start;
+        }
     }
 
     .sidebar-header {
@@ -76,6 +88,7 @@
         cursor: pointer;
         display: flex;
         align-items: center;
+        justify-content: center; /* Center icon on mobile */
         gap: 1rem;
         width: 100%;
         transition: all 0.2s;
@@ -106,7 +119,37 @@
         transition: opacity 0.2s;
     }
 
-    .sidebar:hover .label {
-        opacity: 1;
+    /* Mobile: keep sidebar compact, hide labels */
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 56px; /* Slightly narrower on mobile */
+            padding-top: 0.75rem;
+        }
+        
+        .sidebar-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .logo-icon {
+            font-size: 1rem;
+            padding: 0.4rem;
+        }
+        
+        nav {
+            padding: 0 0.25rem;
+            gap: 0.25rem;
+        }
+        
+        button {
+            padding: 0.6rem;
+        }
+        
+        .icon {
+            font-size: 1.1rem;
+        }
+        
+        .label {
+            display: none; /* Completely hide labels on mobile */
+        }
     }
 </style>

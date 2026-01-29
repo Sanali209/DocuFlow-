@@ -23,6 +23,7 @@
     let filterStatus = $state('');
     let filterTag = $state('');
     let filterAssignee = $state('');
+    let filterTaskTypes = $state([]);
     let startDate = $state('');
     let endDate = $state('');
     let dateField = $state('registration_date');
@@ -38,7 +39,19 @@
     let { onEdit } = $props();
 
     export async function refresh() {
-        documents = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder, filterTag, startDate, endDate, dateField, filterAssignee);
+        let docs = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder, filterTag, startDate, endDate, dateField, filterAssignee);
+        
+        // Client-side filtering by task types if specified
+        // Note: For better performance with large datasets, this should be moved to server-side filtering
+        if (filterTaskTypes && filterTaskTypes.length > 0) {
+            docs = docs.filter(doc => {
+                if (!doc.tasks || doc.tasks.length === 0) return false;
+                // Check if document has any tasks with the selected types
+                return doc.tasks.some(task => filterTaskTypes.includes(task.status));
+            });
+        }
+        
+        documents = docs;
     }
 
     async function loadPresets() {
@@ -143,7 +156,7 @@
         if (!name) return;
 
         const config = JSON.stringify({
-            search, filterType, filterStatus, filterTag, filterAssignee, startDate, endDate, dateField, sortBy, sortOrder
+            search, filterType, filterStatus, filterTag, filterAssignee, filterTaskTypes, startDate, endDate, dateField, sortBy, sortOrder
         });
 
         try {
@@ -165,6 +178,7 @@
             filterStatus = config.filterStatus || '';
             filterTag = config.filterTag || '';
             filterAssignee = config.filterAssignee || '';
+            filterTaskTypes = config.filterTaskTypes || [];
             startDate = config.startDate || '';
             endDate = config.endDate || '';
             dateField = config.dateField || 'registration_date';
@@ -200,6 +214,7 @@
         filterStatus = newFilters.filterStatus;
         filterTag = newFilters.filterTag;
         filterAssignee = newFilters.filterAssignee;
+        filterTaskTypes = newFilters.filterTaskTypes || [];
         startDate = newFilters.startDate;
         endDate = newFilters.endDate;
         dateField = newFilters.dateField;
@@ -227,7 +242,7 @@
                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                 </svg>
                 Filters
-                {#if filterType || filterStatus || filterTag || filterAssignee || startDate || endDate}
+                {#if filterType || filterStatus || filterTag || filterAssignee || startDate || endDate || (filterTaskTypes && filterTaskTypes.length > 0)}
                     <span class="filter-badge">●</span>
                 {/if}
             </button>
@@ -393,6 +408,7 @@
             filterStatus,
             filterTag,
             filterAssignee,
+            filterTaskTypes,
             startDate,
             endDate,
             dateField,
@@ -407,7 +423,7 @@
     .list-container {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 0;
     }
     .filters-bar {
         display: flex;
@@ -486,7 +502,7 @@
     .cards-wrapper {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 1px;
     }
 
     .card {

@@ -49,13 +49,14 @@ The core entity is the **Document**.
 | `value` | String | Setting Value |
 
 ### 3.3 API Endpoints
-*   `GET /documents/`: List all documents with filtering (search, type, status, tag, date range) and sorting.
+*   `GET /documents/`: List all documents with filtering (search, type, status, tag, date range, assignee) and sorting.
 *   `POST /documents/`: Create a new document.
 *   `POST /documents/scan`: Proxy endpoint for OCR. Accepts file upload, calls OCR service, extracts metadata, and saves attachment.
 *   `DELETE /documents/{id}`: Delete a document.
 *   `GET/POST/DELETE /documents/{id}/tasks`: Manage document tasks.
+*   `PUT /tasks/{id}`: Update task status and assignee.
 *   `GET /tags`: List all available tags.
-*   `GET/POST/DELETE /filter-presets`: Manage saved filters.
+*   `GET/POST/DELETE /filter-presets`: Manage saved filters. Presets store all filter configurations including task types.
 *   `GET/PUT /settings/{key}`: Manage application settings.
 
 ### 3.4 Static File Serving
@@ -68,16 +69,24 @@ The backend serves the built frontend assets from `/static` in production and us
 *   **Build Tool:** Vite.
 *   **Libraries:** `marked` (Markdown rendering).
 
-### 4.2 Component Architecture
+### 4.2 Mobile Optimizations
+*   **Responsive Sidebar**: Displays only icons on mobile devices (<= 768px). Hover expansion is disabled on mobile to prevent accidental expansion.
+*   **Compact Layouts**: Reduced padding and spacing on cards, tasks, and notes for mobile screens (<= 640px).
+*   **Touch-Friendly**: Larger touch targets and optimized spacing for mobile interaction.
+*   **Adaptive Typography**: Font sizes scale down appropriately for mobile devices.
+
+### 4.3 Component Architecture
 *   **`App.svelte`**: Root component.
-*   **`DocumentList.svelte`**: Main view. Renders documents as Cards. Features integrated filtering bar (Search, Type, Status, Tag, Date Range, Presets).
+*   **`DocumentList.svelte`**: Main view. Renders documents as Cards. Features integrated filtering bar (Search, Type, Status, Tag, Date Range, Presets). Supports filtering by task types and assignee.
 *   **`DocumentForm.svelte`**: Create/Edit form. Handles multi-file scanning, sequential OCR calls, tagging (`TagInput`), and content appending.
-*   **`DocumentTasks.svelte`**: Embedded component within the Document Card for managing tasks inline.
+*   **`DocumentTasks.svelte`**: Embedded component within the Document Card for managing tasks inline. Supports filtering by assignee when provided via props.
 *   **`DocumentView.svelte`**: Read-only detailed view rendering markdown content and attachments.
 *   **`JournalEntryModal.svelte`**: Popup to add notes linked to a specific document.
 *   **`ImagePreviewModal.svelte`**: Gallery modal for viewing attached images.
-*   **`TagInput.svelte`**: Reusable component for tag selection with autocomplete.
+*   **`TagInput.svelte`**: Reusable component for tag selection with autocomplete based on existing tags.
 *   **`SettingsModal.svelte`**: Configuration interface for OCR Service URL and Regex.
+*   **`Sidebar.svelte`**: Navigation sidebar with icon-only display on mobile devices (< 768px). Expands on hover for desktop.
+*   **`FilterModal.svelte`**: Advanced filter interface supporting task type filtering, assignee filtering, and preset management.
 
 ## 5. OCR Service (`/ocr_service`)
 
