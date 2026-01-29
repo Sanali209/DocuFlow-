@@ -59,6 +59,7 @@ export async function createDocument(doc) {
         },
         body: JSON.stringify(doc),
     });
+    if (!response.ok) throw new Error('Failed to create document');
     return await response.json();
 }
 
@@ -81,6 +82,7 @@ export async function updateDocument(id, data) {
         },
         body: JSON.stringify(data),
     });
+    if (!response.ok) throw new Error('Failed to update document');
     return await response.json();
 }
 
