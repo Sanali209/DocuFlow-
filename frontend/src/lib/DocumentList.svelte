@@ -775,4 +775,85 @@
         color: #334155;
         white-space: pre-wrap;
     }
+
+    /* Mobile optimization - reduce spacing and font sizes */
+    @media (max-width: 640px) {
+        .card {
+            border-radius: 8px;
+            padding: 0.75rem;
+            gap: 0.5rem;
+        }
+        .card-header {
+            gap: 0.5rem;
+        }
+        .title-group h3 {
+            font-size: 0.95rem;
+        }
+        .card-desc {
+            font-size: 0.85rem;
+        }
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+        .tags-row {
+            gap: 0.25rem;
+        }
+        .tag-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+        }
+        .badges-row {
+            gap: 0.25rem;
+        }
+        .icon-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+        .card-meta {
+            gap: 0.75rem;
+            font-size: 0.8rem;
+        }
+        .card-actions {
+            gap: 0.25rem;
+        }
+        .action-btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+        }
+        .embedded-notes {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+        }
+        .embedded-notes h4 {
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+        .notes-list {
+            gap: 0.5rem;
+        }
+        .note-item {
+            padding: 0.5rem;
+            border-radius: 6px;
+            border-left-width: 2px;
+            font-size: 0.8rem;
+        }
+        .note-header {
+            gap: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .note-badge {
+            font-size: 0.65rem;
+        }
+        .note-author {
+            font-size: 0.8rem;
+        }
+        .note-date {
+            font-size: 0.75rem;
+        }
+        .note-status-btn {
+            font-size: 0.7rem;
+            padding: 0.125rem 0.4rem;
+        }
+    }
 </style>

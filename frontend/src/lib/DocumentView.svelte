@@ -276,4 +276,85 @@
     .note-attachment-link:hover {
         text-decoration: underline;
     }
+
+    /* Mobile optimization */
+    @media (max-width: 640px) {
+        h2 {
+            font-size: 1.1rem;
+        }
+        .meta {
+            gap: 0.25rem;
+            font-size: 0.8rem;
+        }
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+        .tags-row {
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .tag-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+        }
+        .content {
+            padding-top: 0.75rem;
+            font-size: 0.9rem;
+        }
+        .attachments, .notes-section {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+        }
+        .attachments h3, .notes-section h3 {
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+        .grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.5rem;
+        }
+        .attachment-card {
+            padding: 0.4rem;
+        }
+        .attachment-card a {
+            font-size: 0.75rem;
+        }
+        .notes-list {
+            gap: 0.75rem;
+        }
+        .note-card {
+            padding: 0.75rem;
+            border-radius: 6px;
+            border-left-width: 2px;
+        }
+        .note-header {
+            gap: 0.25rem;
+            margin-bottom: 0.4rem;
+            font-size: 0.8rem;
+        }
+        .note-badge {
+            font-size: 0.65rem;
+        }
+        .note-author {
+            font-size: 0.8rem;
+        }
+        .note-date {
+            font-size: 0.75rem;
+        }
+        .note-status {
+            font-size: 0.7rem;
+        }
+        .note-text {
+            font-size: 0.85rem;
+        }
+        .note-attachments {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+        }
+        .note-attachment-link {
+            font-size: 0.8rem;
+        }
+    }
 </style>
