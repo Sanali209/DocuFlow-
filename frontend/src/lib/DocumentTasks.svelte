@@ -3,7 +3,7 @@
     import { updateTask, deleteTask, createTask } from './api.js';
     import TaskModal from './TaskModal.svelte';
 
-    let { document, refresh } = $props();
+    let { document, refresh, filterAssignee = '' } = $props();
     let tasks = $state(document.tasks || []);
     let filter = $state('hide_done'); // 'hide_done' | 'all' | 'pending'
     let isAddModalOpen = $state(false);
@@ -19,8 +19,17 @@
 
     let filteredTasks = $derived(
         sortedTasks.filter(t => {
-            if (filter === 'hide_done') return t.status !== 'done';
-            if (filter === 'pending') return t.status === 'pending';
+            // Filter by status
+            if (filter === 'hide_done' && t.status === 'done') return false;
+            if (filter === 'pending' && t.status !== 'pending') return false;
+            
+            // Filter by assignee if specified
+            if (filterAssignee && filterAssignee.trim()) {
+                const assigneeLower = (t.assignee || '').toLowerCase();
+                const filterLower = filterAssignee.toLowerCase();
+                if (!assigneeLower.includes(filterLower)) return false;
+            }
+            
             return true;
         })
     );
