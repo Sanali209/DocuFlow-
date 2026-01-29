@@ -31,6 +31,12 @@ def teardown_module(module):
     Base.metadata.drop_all(bind=engine)
     if os.path.exists("test_attachment.db"):
         os.remove("test_attachment.db")
+    # Clean up test attachment files
+    test_files = ["test_attachment.txt", "file1.txt", "file2.txt", "file3.txt"]
+    for filename in test_files:
+        file_path = f"static/uploads/{filename}"
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 def test_update_document_with_attachments():
     """Test updating a document with new attachments."""
