@@ -171,6 +171,7 @@ def read_documents(
     date_field: str = Query("registration_date", description="Field to filter date on"),
     sort_by: str = "registration_date",
     sort_order: str = "desc",
+    assignee: str | None = Query(None, description="Filter by task assignee"),
     db: Session = Depends(get_db)
 ):
     documents = crud.get_documents(
@@ -185,7 +186,8 @@ def read_documents(
         end_date=end_date,
         date_field=date_field,
         sort_by=sort_by,
-        sort_order=sort_order
+        sort_order=sort_order,
+        assignee=assignee
     )
     return documents
 

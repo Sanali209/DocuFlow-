@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session, subqueryload
 from sqlalchemy import desc, asc, or_, and_
 from . import models, schemas
 from datetime import date
+import os
 
 def get_documents(
     db: Session,
@@ -15,7 +16,8 @@ def get_documents(
     end_date: date | None = None,
     date_field: str = "registration_date",
     sort_by: str = "registration_date",
-    sort_order: str = "desc"
+    sort_order: str = "desc",
+    assignee: str | None = None
 ):
     query = db.query(models.Document).options(
         subqueryload(models.Document.tasks),
@@ -40,6 +42,9 @@ def get_documents(
 
     if filter_tag:
         query = query.join(models.Document.tags).filter(models.Tag.name == filter_tag)
+
+    if assignee:
+        query = query.join(models.Document.tasks).filter(models.Task.assignee == assignee)
 
     # Date Range Filtering
     if start_date or end_date:
@@ -158,6 +163,20 @@ def update_document(db: Session, document_id: int, document: schemas.DocumentUpd
 def delete_document(db: Session, document_id: int):
     db_document = db.query(models.Document).filter(models.Document.id == document_id).first()
     if db_document:
+        # Delete attachments files
+        for att in db_document.attachments:
+             try:
+                # att.file_path is like "/uploads/filename"
+                # actual path is "static/uploads/filename"
+                if att.file_path.startswith("/uploads/"):
+                     # Securely get filename
+                     filename = os.path.basename(att.file_path)
+                     file_path = os.path.join("static/uploads", filename)
+                     if os.path.exists(file_path):
+                        os.remove(file_path)
+             except Exception as e:
+                 print(f"Error deleting file {att.file_path}: {e}")
+
         db.delete(db_document)
         db.commit()
         return True
@@ -193,7 +212,7 @@ def get_journal_entries(
     if document_id:
         query = query.filter(models.JournalEntry.document_id == document_id)
         
-    return query.order_by(models.JournalEntry.created_at.desc()).offset(skip).limit(limit).unique().all()
+    return query.order_by(models.JournalEntry.created_at.desc()).offset(skip).limit(limit).all()
 
 def create_journal_entry(db: Session, entry: schemas.JournalEntryCreate):
     entry_date = entry.created_at if entry.created_at else date.today()
@@ -297,6 +316,16 @@ def delete_task(db: Session, task_id: int):
 def delete_attachment(db: Session, attachment_id: int):
     db_att = db.query(models.Attachment).filter(models.Attachment.id == attachment_id).first()
     if db_att:
+        # Delete physical file
+        try:
+             if db_att.file_path.startswith("/uploads/"):
+                 filename = os.path.basename(db_att.file_path)
+                 file_path = os.path.join("static/uploads", filename)
+                 if os.path.exists(file_path):
+                    os.remove(file_path)
+        except Exception as e:
+             print(f"Error deleting file {db_att.file_path}: {e}")
+
         db.delete(db_att)
         db.commit()
         return True
