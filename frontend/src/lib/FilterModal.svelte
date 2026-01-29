@@ -18,15 +18,22 @@
         sortBy: 'registration_date',
         sortOrder: 'desc'
     });
+    
+    // Track previous isOpen state to detect when modal opens
+    let wasOpen = false;
 
     $effect(() => {
-        if (isOpen && filters) {
-            localFilters = { ...filters };
-            // Ensure filterTaskTypes is always an array
-            if (!Array.isArray(localFilters.filterTaskTypes)) {
-                localFilters.filterTaskTypes = [];
+        // Only update when modal transitions from closed to open
+        if (isOpen && !wasOpen) {
+            if (filters) {
+                localFilters = { ...filters };
+                // Ensure filterTaskTypes is always an array
+                if (!Array.isArray(localFilters.filterTaskTypes)) {
+                    localFilters.filterTaskTypes = [];
+                }
             }
         }
+        wasOpen = isOpen;
     });
 
     function handleApply() {

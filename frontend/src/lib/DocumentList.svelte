@@ -423,7 +423,7 @@
     .list-container {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 0;
     }
     .filters-bar {
         display: flex;
@@ -433,6 +433,7 @@
         padding: 1rem;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 0;
     }
     .main-filters, .advanced-filters {
         display: flex;
@@ -502,7 +503,7 @@
     .cards-wrapper {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 1px;
     }
 
     .card {
