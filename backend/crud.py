@@ -149,9 +149,9 @@ def update_document(db: Session, document_id: int, document: schemas.DocumentUpd
         for att in attachments_data:
              db_att = models.Attachment(
                 document_id=db_document.id,
-                file_path=att.file_path,
-                filename=att.filename,
-                media_type=att.media_type,
+                file_path=att['file_path'],
+                filename=att['filename'],
+                media_type=att['media_type'],
                 created_at=date.today()
             )
              db.add(db_att)
@@ -258,9 +258,9 @@ def update_journal_entry(db: Session, entry_id: int, entry: schemas.JournalEntry
         for att in attachments_data:
             db_att = models.Attachment(
                 journal_entry_id=db_entry.id,
-                file_path=att.file_path,
-                filename=att.filename,
-                media_type=att.media_type,
+                file_path=att['file_path'],
+                filename=att['filename'],
+                media_type=att['media_type'],
                 created_at=date.today()
             )
             db.add(db_att)
