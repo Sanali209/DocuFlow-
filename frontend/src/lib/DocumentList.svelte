@@ -285,33 +285,34 @@
                     </div>
                 {/if}
 
-                {#if doc.tags && doc.tags.length > 0}
-                    <div class="tags-row">
-                        {#each doc.tags as tag}
-                            <span class="tag-badge">#{tag.name}</span>
-                        {/each}
+                <!-- Combined tags and badges row -->
+                {#if (doc.tags && doc.tags.length > 0) || (doc.attachments && doc.attachments.length > 0) || taskCounts || journalCounts}
+                    <div class="badges-tags-row">
+                        {#if doc.tags && doc.tags.length > 0}
+                            {#each doc.tags as tag}
+                                <span class="tag-badge">#{tag.name}</span>
+                            {/each}
+                        {/if}
+
+                        {#if doc.attachments && doc.attachments.length > 0}
+                            <button class="icon-badge attachment-badge" onclick={() => openImagePreview(doc.attachments)} title="View Attachments">
+                                📷 {doc.attachments.length}
+                            </button>
+                        {/if}
+
+                        {#if taskCounts}
+                            {#if taskCounts.planned > 0}<span class="icon-badge task-planned" title="Planned Tasks">📅 {taskCounts.planned}</span>{/if}
+                            {#if taskCounts.pending > 0}<span class="icon-badge task-pending" title="Pending Tasks">⏳ {taskCounts.pending}</span>{/if}
+                            {#if taskCounts.done > 0}<span class="icon-badge task-done" title="Completed Tasks">✅ {taskCounts.done}</span>{/if}
+                        {/if}
+
+                        {#if journalCounts}
+                            {#if journalCounts.info > 0}<span class="icon-badge journal-info" title="Info Notes">ℹ️ {journalCounts.info}</span>{/if}
+                            {#if journalCounts.warning > 0}<span class="icon-badge journal-warning" title="Warnings">⚠️ {journalCounts.warning}</span>{/if}
+                            {#if journalCounts.error > 0}<span class="icon-badge journal-error" title="Errors">❌ {journalCounts.error}</span>{/if}
+                        {/if}
                     </div>
                 {/if}
-
-                <div class="badges-row">
-                    {#if doc.attachments && doc.attachments.length > 0}
-                        <button class="icon-badge attachment-badge" onclick={() => openImagePreview(doc.attachments)} title="View Attachments">
-                            📷 {doc.attachments.length}
-                        </button>
-                    {/if}
-
-                    {#if taskCounts}
-                        {#if taskCounts.planned > 0}<span class="icon-badge task-planned" title="Planned Tasks">📅 {taskCounts.planned}</span>{/if}
-                        {#if taskCounts.pending > 0}<span class="icon-badge task-pending" title="Pending Tasks">⏳ {taskCounts.pending}</span>{/if}
-                        {#if taskCounts.done > 0}<span class="icon-badge task-done" title="Completed Tasks">✅ {taskCounts.done}</span>{/if}
-                    {/if}
-
-                    {#if journalCounts}
-                        {#if journalCounts.info > 0}<span class="icon-badge journal-info" title="Info Notes">ℹ️ {journalCounts.info}</span>{/if}
-                        {#if journalCounts.warning > 0}<span class="icon-badge journal-warning" title="Warnings">⚠️ {journalCounts.warning}</span>{/if}
-                        {#if journalCounts.error > 0}<span class="icon-badge journal-error" title="Errors">❌ {journalCounts.error}</span>{/if}
-                    {/if}
-                </div>
 
                 <div class="card-meta">
                     <div class="meta-item">
@@ -584,10 +585,11 @@
         overflow: hidden;
     }
 
-    .tags-row {
+    .badges-tags-row {
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
+        align-items: center;
     }
     .tag-badge {
         background: #e0e7ff;
@@ -598,11 +600,6 @@
         font-weight: 500;
     }
 
-    .badges-row {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
     .icon-badge {
         display: inline-flex;
         align-items: center;
