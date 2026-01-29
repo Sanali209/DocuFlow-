@@ -70,8 +70,8 @@ The backend serves the built frontend assets from `/static` in production and us
 *   **Libraries:** `marked` (Markdown rendering).
 
 ### 4.2 Mobile Optimizations
-*   **Responsive Sidebar**: Displays only icons on mobile devices (< 768px). Hover expansion is disabled on mobile to prevent accidental expansion.
-*   **Compact Layouts**: Reduced padding and spacing on cards, tasks, and notes for mobile screens (< 640px).
+*   **Responsive Sidebar**: Displays only icons on mobile devices (<= 768px). Hover expansion is disabled on mobile to prevent accidental expansion.
+*   **Compact Layouts**: Reduced padding and spacing on cards, tasks, and notes for mobile screens (<= 640px).
 *   **Touch-Friendly**: Larger touch targets and optimized spacing for mobile interaction.
 *   **Adaptive Typography**: Font sizes scale down appropriately for mobile devices.
 

@@ -22,6 +22,15 @@
             // Filter by status
             if (filter === 'hide_done' && t.status === 'done') return false;
             if (filter === 'pending' && t.status !== 'pending') return false;
+            if (filter === 'all') {
+                // For 'all', only apply assignee filter if specified
+                if (filterAssignee && filterAssignee.trim()) {
+                    const assigneeLower = (t.assignee || '').toLowerCase();
+                    const filterLower = filterAssignee.toLowerCase();
+                    return assigneeLower.includes(filterLower);
+                }
+                return true;
+            }
             
             // Filter by assignee if specified
             if (filterAssignee && filterAssignee.trim()) {

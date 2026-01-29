@@ -41,13 +41,18 @@
     }
     
     /* Only enable hover expansion on desktop */
-    @media (min-width: 769px) {
+    @media (min-width: 768px) {
         .sidebar:hover {
             width: 200px;
         }
         
         .sidebar:hover .label {
             opacity: 1;
+        }
+        
+        /* Align content left when expanded */
+        .sidebar:hover button {
+            justify-content: flex-start;
         }
     }
 

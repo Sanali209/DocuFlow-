@@ -42,6 +42,7 @@
         let docs = await fetchDocuments(search, filterType, filterStatus, sortBy, sortOrder, filterTag, startDate, endDate, dateField, filterAssignee);
         
         // Client-side filtering by task types if specified
+        // Note: For better performance with large datasets, this should be moved to server-side filtering
         if (filterTaskTypes && filterTaskTypes.length > 0) {
             docs = docs.filter(doc => {
                 if (!doc.tasks || doc.tasks.length === 0) return false;
