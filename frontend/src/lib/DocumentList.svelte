@@ -23,6 +23,7 @@
     let filterStatus = $state('');
     let filterTag = $state('');
     let filterAssignee = $state('');
+    let filterMaterial = $state(''); // New: material filter
     let filterTaskTypes = $state([]);
     let startDate = $state('');
     let endDate = $state('');
@@ -49,6 +50,15 @@
                 if (!doc.tasks || doc.tasks.length === 0) return false;
                 // Check if document has any tasks with the selected types
                 return doc.tasks.some(task => filterTaskTypes.includes(task.status));
+            });
+        }
+
+        // Client-side filtering by material if specified
+        if (filterMaterial) {
+            docs = docs.filter(doc => {
+                if (!doc.tasks || doc.tasks.length === 0) return false;
+                // Check if document has any tasks with the selected material
+                return doc.tasks.some(task => task.material_id && task.material_id.toString() === filterMaterial.toString());
             });
         }
         
@@ -157,7 +167,7 @@
         if (!name) return;
 
         const config = JSON.stringify({
-            search, filterType, filterStatus, filterTag, filterAssignee, filterTaskTypes, startDate, endDate, dateField, sortBy, sortOrder
+            search, filterType, filterStatus, filterTag, filterAssignee, filterMaterial, filterTaskTypes, startDate, endDate, dateField, sortBy, sortOrder
         });
 
         try {
@@ -179,6 +189,7 @@
             filterStatus = config.filterStatus || '';
             filterTag = config.filterTag || '';
             filterAssignee = config.filterAssignee || '';
+            filterMaterial = config.filterMaterial || '';
             filterTaskTypes = config.filterTaskTypes || [];
             startDate = config.startDate || '';
             endDate = config.endDate || '';
@@ -215,6 +226,7 @@
         filterStatus = newFilters.filterStatus;
         filterTag = newFilters.filterTag;
         filterAssignee = newFilters.filterAssignee;
+        filterMaterial = newFilters.filterMaterial || '';
         filterTaskTypes = newFilters.filterTaskTypes || [];
         startDate = newFilters.startDate;
         endDate = newFilters.endDate;
@@ -442,6 +454,7 @@
             filterStatus,
             filterTag,
             filterAssignee,
+            filterMaterial,
             filterTaskTypes,
             startDate,
             endDate,

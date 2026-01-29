@@ -7,6 +7,7 @@
     let tasks = $state(document.tasks || []);
     let filter = $state('hide_done'); // 'hide_done' | 'all' | 'pending'
     let isAddModalOpen = $state(false);
+    let groupByMaterial = $state(true); // Toggle for material grouping
 
     // Sort tasks: pending/planned first, then done
     let sortedTasks = $derived(
@@ -42,6 +43,36 @@
             return true;
         })
     );
+
+    // Group tasks by material
+    let groupedTasks = $derived(() => {
+        if (!groupByMaterial) {
+            return { 'All Tasks': filteredTasks };
+        }
+
+        const groups = {};
+        filteredTasks.forEach(task => {
+            const materialName = task.material ? task.material.name : '(No Material)';
+            if (!groups[materialName]) {
+                groups[materialName] = [];
+            }
+            groups[materialName].push(task);
+        });
+
+        // Sort groups: put "(No Material)" last
+        const sortedGroups = {};
+        const groupNames = Object.keys(groups).sort((a, b) => {
+            if (a === '(No Material)') return 1;
+            if (b === '(No Material)') return -1;
+            return a.localeCompare(b);
+        });
+
+        groupNames.forEach(name => {
+            sortedGroups[name] = groups[name];
+        });
+
+        return sortedGroups;
+    });
 
     async function handleStatusChange(task, newStatus) {
         try {
@@ -93,6 +124,13 @@
     <div class="tasks-header">
         <h4>Tasks</h4>
         <div class="header-actions">
+            <button 
+                class="group-toggle-btn" 
+                onclick={() => groupByMaterial = !groupByMaterial}
+                title={groupByMaterial ? "Show flat list" : "Group by material"}
+            >
+                {groupByMaterial ? '📦' : '📋'}
+            </button>
             <select bind:value={filter} class="filter-select">
                 <option value="hide_done">Hide Done</option>
                 <option value="all">Show All</option>
@@ -103,36 +141,45 @@
     </div>
 
     <div class="tasks-list">
-        {#each filteredTasks as task (task.id)}
-            <div class="task-item">
-                <div class="task-line-1">
-                    <span class="task-name {task.status === 'done' ? 'done-text' : ''}">{task.name}</span>
-                    <button class="delete-btn" onclick={() => handleDelete(task.id)} title="Delete">×</button>
+        {#each Object.entries(groupedTasks()) as [materialName, tasksInGroup] (materialName)}
+            {#if groupByMaterial && Object.keys(groupedTasks()).length > 1}
+                <div class="material-group-header">
+                    <span class="material-group-name">{materialName}</span>
+                    <span class="material-group-count">({tasksInGroup.length})</span>
                 </div>
-                <div class="task-line-2">
-                    <select
-                        value={task.status}
-                        onchange={(e) => handleStatusChange(task, e.target.value)}
-                        class="status-select {task.status}"
-                    >
-                        <option value="planned">Planned</option>
-                        <option value="pending">Pending</option>
-                        <option value="done">Done</option>
-                    </select>
-                    <input
-                        type="text"
-                        class="assignee-input"
-                        placeholder="Assignee"
-                        bind:value={task.assignee}
-                        onchange={() => handleAssigneeChange(task, task.assignee)}
-                    />
-                    {#if task.material}
-                        <span class="material-badge" title="Material: {task.material.name}">
-                            📦 {task.material.name}
-                        </span>
-                    {/if}
+            {/if}
+            
+            {#each tasksInGroup as task (task.id)}
+                <div class="task-item">
+                    <div class="task-line-1">
+                        <span class="task-name {task.status === 'done' ? 'done-text' : ''}">{task.name}</span>
+                        <button class="delete-btn" onclick={() => handleDelete(task.id)} title="Delete">×</button>
+                    </div>
+                    <div class="task-line-2">
+                        <select
+                            value={task.status}
+                            onchange={(e) => handleStatusChange(task, e.target.value)}
+                            class="status-select {task.status}"
+                        >
+                            <option value="planned">Planned</option>
+                            <option value="pending">Pending</option>
+                            <option value="done">Done</option>
+                        </select>
+                        <input
+                            type="text"
+                            class="assignee-input"
+                            placeholder="Assignee"
+                            bind:value={task.assignee}
+                            onchange={() => handleAssigneeChange(task, task.assignee)}
+                        />
+                        {#if task.material}
+                            <span class="material-badge" title="Material: {task.material.name}">
+                                📦 {task.material.name}
+                            </span>
+                        {/if}
+                    </div>
                 </div>
-            </div>
+            {/each}
         {/each}
 
         {#if filteredTasks.length === 0}
@@ -173,6 +220,21 @@
         gap: 0.25rem;
         align-items: center;
     }
+    .group-toggle-btn {
+        padding: 0.15rem 0.4rem;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        border-radius: 3px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .group-toggle-btn:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
     .filter-select {
         padding: 0.15rem 0.25rem;
         border: 1px solid #e2e8f0;
@@ -198,6 +260,25 @@
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
+    }
+    .material-group-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.5rem;
+        background: #f0fdf4;
+        border-radius: 4px;
+        margin-top: 0.5rem;
+        border-left: 3px solid #166534;
+    }
+    .material-group-name {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #166534;
+    }
+    .material-group-count {
+        font-size: 0.75rem;
+        color: #16a34a;
     }
     .task-item {
         display: flex;

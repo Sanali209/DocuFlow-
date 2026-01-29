@@ -13,6 +13,12 @@
     </div>
     <nav>
         <button 
+            class:active={activeView === 'dashboard'} 
+            onclick={() => select('dashboard')}>
+            <span class="icon">📊</span>
+            <span class="label">Dashboard</span>
+        </button>
+        <button 
             class:active={activeView === 'documents'} 
             onclick={() => select('documents')}>
             <span class="icon">📄</span>

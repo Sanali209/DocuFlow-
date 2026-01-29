@@ -1,4 +1,7 @@
 <script>
+    import { onMount } from 'svelte';
+    import { fetchMaterials } from './api.js';
+
     let { 
         isOpen, 
         close, 
@@ -11,6 +14,7 @@
         filterStatus: '',
         filterTag: '',
         filterAssignee: '',
+        filterMaterial: '', // New: filter by material
         filterTaskTypes: [], // Array of task types: planned, pending, done
         startDate: '',
         endDate: '',
@@ -18,6 +22,8 @@
         sortBy: 'registration_date',
         sortOrder: 'desc'
     });
+    
+    let materials = $state([]);
     
     // Track previous isOpen state to detect when modal opens
     let wasOpen = false;
@@ -32,9 +38,19 @@
                     localFilters.filterTaskTypes = [];
                 }
             }
+            // Load materials when modal opens
+            loadMaterials();
         }
         wasOpen = isOpen;
     });
+
+    async function loadMaterials() {
+        try {
+            materials = await fetchMaterials();
+        } catch (e) {
+            console.error('Failed to load materials', e);
+        }
+    }
 
     function handleApply() {
         onApply(localFilters);
@@ -47,6 +63,7 @@
             filterStatus: '',
             filterTag: '',
             filterAssignee: '',
+            filterMaterial: '',
             filterTaskTypes: [],
             startDate: '',
             endDate: '',
@@ -113,6 +130,16 @@
                     bind:value={localFilters.filterAssignee}
                     class="filter-input"
                 />
+            </div>
+
+            <div class="filter-section">
+                <h4>Material</h4>
+                <select bind:value={localFilters.filterMaterial} class="filter-input">
+                    <option value="">All Materials</option>
+                    {#each materials as material}
+                        <option value={material.id}>{material.name}</option>
+                    {/each}
+                </select>
             </div>
 
             <div class="filter-section">
