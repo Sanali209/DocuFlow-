@@ -5,7 +5,8 @@
         deleteDocument,
         fetchFilterPresets,
         createFilterPreset,
-        deleteFilterPreset
+        deleteFilterPreset,
+        updateJournalEntry
     } from './api.js';
     import Modal from './Modal.svelte';
     import DocumentView from './DocumentView.svelte';
@@ -87,6 +88,18 @@
     function closeJournalEntry() {
         journalDoc = null;
         refresh();
+    }
+
+    async function toggleNoteStatus(entryId, currentStatus) {
+        const newStatus = currentStatus === 'pending' ? 'done' : 'pending';
+        try {
+            await updateJournalEntry(entryId, { status: newStatus });
+            refresh();
+            // Also dispatch event to refresh journal view
+            window.dispatchEvent(new CustomEvent('journal-entry-created'));
+        } catch (e) {
+            console.error('Failed to update note status', e);
+        }
     }
 
     function openImagePreview(attachments) {
@@ -331,7 +344,13 @@
                                         <span class="note-badge {entry.type}">{entry.type}</span>
                                         <span class="note-author">{entry.author || 'Unknown'}</span>
                                         <span class="note-date">{entry.created_at}</span>
-                                        <span class="note-status">{entry.status}</span>
+                                        <button 
+                                            class="note-status-btn {entry.status}"
+                                            onclick={() => toggleNoteStatus(entry.id, entry.status)}
+                                            title="Toggle status"
+                                        >
+                                            {entry.status}
+                                        </button>
                                     </div>
                                     <p class="note-text">{entry.text}</p>
                                 </div>
@@ -728,6 +747,35 @@
     .note-date, .note-status {
         color: #64748b;
         font-size: 0.8rem;
+    }
+    .note-status-btn {
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: capitalize;
+        cursor: pointer;
+        border: 1px solid;
+        margin-left: auto;
+        transition: all 0.2s;
+    }
+    .note-status-btn.pending {
+        background: #fff7ed;
+        color: #c2410c;
+        border-color: #fed7aa;
+    }
+    .note-status-btn.pending:hover {
+        background: #ffedd5;
+        transform: scale(1.05);
+    }
+    .note-status-btn.done {
+        background: #f0fdf4;
+        color: #15803d;
+        border-color: #bbf7d0;
+    }
+    .note-status-btn.done:hover {
+        background: #dcfce7;
+        transform: scale(1.05);
     }
     .note-text {
         margin: 0;

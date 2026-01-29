@@ -36,6 +36,16 @@
     onMount(() => {
         newEntryAuthor = localStorage.getItem("journal_author") || "";
         loadEntries();
+        
+        // Listen for journal entries created from other components
+        const handleJournalCreated = () => {
+            loadEntries();
+        };
+        window.addEventListener('journal-entry-created', handleJournalCreated);
+        
+        return () => {
+            window.removeEventListener('journal-entry-created', handleJournalCreated);
+        };
     });
 
     async function handleFileSelect(e) {

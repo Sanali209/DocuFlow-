@@ -28,6 +28,8 @@
                 author,
                 document_id: documentId
             });
+            // Dispatch custom event to notify other components
+            window.dispatchEvent(new CustomEvent('journal-entry-created'));
             close();
         } catch (err) {
             console.error(err);
