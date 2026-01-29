@@ -5,13 +5,15 @@
         deleteDocument,
         fetchFilterPresets,
         createFilterPreset,
-        deleteFilterPreset
+        deleteFilterPreset,
+        updateJournalEntry
     } from './api.js';
     import Modal from './Modal.svelte';
     import DocumentView from './DocumentView.svelte';
     import DocumentTasks from './DocumentTasks.svelte';
     import JournalEntryModal from './JournalEntryModal.svelte';
     import ImagePreviewModal from './ImagePreviewModal.svelte';
+    import FilterModal from './FilterModal.svelte';
     import TagInput from './TagInput.svelte';
     import { onMount } from 'svelte';
 
@@ -28,7 +30,9 @@
 
     let viewingDoc = $state(null);
     let journalDoc = $state(null);
+    let editingEntry = $state(null);
     let previewAttachments = $state(null);
+    let isFilterModalOpen = $state(false);
     let sortBy = $state('registration_date');
     let sortOrder = $state('desc');
     let { onEdit } = $props();
@@ -82,11 +86,30 @@
 
     function openJournalEntry(doc) {
         journalDoc = doc;
+        editingEntry = null;
+    }
+
+    function openEditEntry(doc, entry) {
+        journalDoc = doc;
+        editingEntry = entry;
     }
 
     function closeJournalEntry() {
         journalDoc = null;
+        editingEntry = null;
         refresh();
+    }
+
+    async function toggleNoteStatus(entryId, currentStatus) {
+        const newStatus = currentStatus === 'pending' ? 'done' : 'pending';
+        try {
+            await updateJournalEntry(entryId, { status: newStatus });
+            refresh();
+            // Dispatch event to refresh journal view
+            window.dispatchEvent(new CustomEvent('journal-entries-updated'));
+        } catch (e) {
+            console.error('Failed to update note status', e);
+        }
     }
 
     function openImagePreview(attachments) {
@@ -163,6 +186,27 @@
             console.error(e);
         }
     }
+
+    function openFilterModal() {
+        isFilterModalOpen = true;
+    }
+
+    function closeFilterModal() {
+        isFilterModalOpen = false;
+    }
+
+    function applyFilters(newFilters) {
+        filterType = newFilters.filterType;
+        filterStatus = newFilters.filterStatus;
+        filterTag = newFilters.filterTag;
+        filterAssignee = newFilters.filterAssignee;
+        startDate = newFilters.startDate;
+        endDate = newFilters.endDate;
+        dateField = newFilters.dateField;
+        sortBy = newFilters.sortBy;
+        sortOrder = newFilters.sortOrder;
+        refresh();
+    }
 </script>
 
 <div class="list-container">
@@ -172,78 +216,21 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input
                     type="text"
-                    placeholder="Search..."
+                    placeholder="Search documents..."
                     bind:value={search}
                     oninput={handleSearch}
                 />
             </div>
 
-            <select bind:value={filterType} onchange={handleSearch} class="filter-select">
-                <option value="">All Types</option>
-                <option value="plan">Plan</option>
-                <option value="mail">Mail</option>
-                <option value="other">Other</option>
-            </select>
-
-            <select bind:value={filterStatus} onchange={handleSearch} class="filter-select">
-                <option value="">All Statuses</option>
-                <option value="in_progress">In Progress</option>
-                <option value="done">Done</option>
-            </select>
-
-            <input
-                type="text"
-                placeholder="Tag"
-                bind:value={filterTag}
-                oninput={handleSearch}
-                class="filter-input tag-filter"
-            />
-             <input
-                type="text"
-                placeholder="Assignee"
-                bind:value={filterAssignee}
-                oninput={handleSearch}
-                class="filter-input assignee-filter"
-            />
-        </div>
-
-        <div class="advanced-filters">
-            <select bind:value={dateField} onchange={handleSearch} class="filter-select date-field-select">
-                <option value="registration_date">Reg. Date</option>
-                <option value="done_date">Done Date</option>
-            </select>
-            <input type="date" bind:value={startDate} onchange={handleSearch} class="date-input" title="Start Date"/>
-            <span class="date-sep">-</span>
-            <input type="date" bind:value={endDate} onchange={handleSearch} class="date-input" title="End Date"/>
-
-            <div class="sort-controls">
-                 <select value={sortBy} onchange={(e) => handleSort(e.target.value)} class="filter-select sort-select">
-                    <option value="registration_date">Date</option>
-                    <option value="name">Name</option>
-                    <option value="author">Author</option>
-                    <option value="status">Status</option>
-                    <option value="done_date">Done</option>
-                </select>
-                 <button class="sort-order-btn" onclick={() => handleSort(sortBy)} title="Toggle Order">
-                    {sortOrder === 'desc' ? '↓' : '↑'}
-                </button>
-            </div>
-
-            <div class="preset-controls">
-                <select onchange={(e) => loadPreset(e.target.value)} class="filter-select preset-select">
-                    <option value="">Load Preset...</option>
-                    {#each presets as p (p.id)}
-                        <option value={p.config}>{p.name}</option>
-                    {/each}
-                </select>
-                <button class="preset-btn save" onclick={savePreset} title="Save Filter">💾</button>
-                <!-- Hacky way to delete presets: usually UI would be better -->
-                <!-- We can add a "Manage" modal, but let's keep it simple:
-                     If user selects a preset, maybe show a delete button next to it?
-                     For now, let's just list them in a separate small list or rely on a "Manage" button.
-                     Let's add a "Manage" button that opens a simple modal list.
-                -->
-            </div>
+            <button class="filter-btn" onclick={openFilterModal} title="Filter & Sort">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                Filters
+                {#if filterType || filterStatus || filterTag || filterAssignee || startDate || endDate}
+                    <span class="filter-badge">●</span>
+                {/if}
+            </button>
         </div>
     </div>
 
@@ -331,7 +318,20 @@
                                         <span class="note-badge {entry.type}">{entry.type}</span>
                                         <span class="note-author">{entry.author || 'Unknown'}</span>
                                         <span class="note-date">{entry.created_at}</span>
-                                        <span class="note-status">{entry.status}</span>
+                                        <button 
+                                            class="note-edit-btn"
+                                            onclick={() => openEditEntry(doc, entry)}
+                                            title="Edit note"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button 
+                                            class="note-status-btn {entry.status}"
+                                            onclick={() => toggleNoteStatus(entry.id, entry.status)}
+                                            title={entry.status === 'pending' ? 'Click to mark as done' : 'Click to mark as pending'}
+                                        >
+                                            {entry.status}
+                                        </button>
                                     </div>
                                     <p class="note-text">{entry.text}</p>
                                 </div>
@@ -376,12 +376,30 @@
         close={closeJournalEntry}
         documentId={journalDoc?.id}
         documentName={journalDoc?.name}
+        entry={editingEntry}
     />
 
     <ImagePreviewModal
         isOpen={!!previewAttachments}
         close={closeImagePreview}
         attachments={previewAttachments || []}
+    />
+
+    <FilterModal
+        isOpen={isFilterModalOpen}
+        close={closeFilterModal}
+        filters={{
+            filterType,
+            filterStatus,
+            filterTag,
+            filterAssignee,
+            startDate,
+            endDate,
+            dateField,
+            sortBy,
+            sortOrder
+        }}
+        onApply={applyFilters}
     />
 </div>
 
@@ -406,17 +424,17 @@
         flex-wrap: wrap;
         align-items: center;
     }
+    .main-filters {
+        justify-content: space-between;
+    }
 
     @media (max-width: 768px) {
         .main-filters, .advanced-filters {
             flex-direction: column;
             align-items: stretch;
         }
-        .search-box, .filter-select, .filter-input, .date-input {
+        .search-box, .filter-btn {
             width: 100%;
-        }
-        .date-sep {
-            display: none;
         }
     }
 
@@ -440,55 +458,29 @@
         font-size: 0.95rem;
     }
 
-    .filter-select, .filter-input, .date-input {
-        padding: 0.6rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        font-size: 0.9rem;
-        background: white;
-        color: #475569;
-    }
-    .tag-filter {
-        min-width: 100px;
-    }
-    .assignee-filter {
-        min-width: 120px;
-    }
-    .date-input {
-        max-width: 140px;
-    }
-    .date-sep {
-        color: #94a3b8;
-    }
-
-    .sort-controls, .preset-controls {
+    .filter-btn {
         display: flex;
+        align-items: center;
         gap: 0.5rem;
-        align-items: center;
-        margin-left: auto;
-    }
-    @media (max-width: 768px) {
-        .sort-controls, .preset-controls {
-            margin-left: 0;
-            width: 100%;
-        }
-        .preset-select {
-            flex-grow: 1;
-        }
-    }
-
-    .sort-order-btn, .preset-btn {
+        padding: 0.6rem 1rem;
         background: white;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
-        padding: 0.6rem;
-        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 500;
         color: #475569;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
     }
-    .preset-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .filter-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+    .filter-badge {
+        color: #3b82f6;
+        font-size: 1.2rem;
+        line-height: 1;
     }
 
     .cards-wrapper {
@@ -729,9 +721,139 @@
         color: #64748b;
         font-size: 0.8rem;
     }
+    .note-edit-btn {
+        padding: 0.15rem 0.4rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    .note-edit-btn:hover {
+        background: #f1f5f9;
+    }
+    .note-edit-btn:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+    .note-status-btn {
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: capitalize;
+        cursor: pointer;
+        border: 1px solid;
+        margin-left: auto;
+        transition: all 0.2s;
+    }
+    .note-status-btn:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+    .note-status-btn.pending {
+        background: #fff7ed;
+        color: #c2410c;
+        border-color: #fed7aa;
+    }
+    .note-status-btn.pending:hover {
+        background: #ffedd5;
+        transform: scale(1.05);
+    }
+    .note-status-btn.done {
+        background: #f0fdf4;
+        color: #15803d;
+        border-color: #bbf7d0;
+    }
+    .note-status-btn.done:hover {
+        background: #dcfce7;
+        transform: scale(1.05);
+    }
     .note-text {
         margin: 0;
         color: #334155;
         white-space: pre-wrap;
+    }
+
+    /* Mobile optimization - reduce spacing and font sizes */
+    @media (max-width: 640px) {
+        .card {
+            border-radius: 8px;
+            padding: 0.75rem;
+            gap: 0.5rem;
+        }
+        .card-header {
+            gap: 0.5rem;
+        }
+        .title-group h3 {
+            font-size: 0.95rem;
+        }
+        .card-desc {
+            font-size: 0.85rem;
+        }
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+        .tags-row {
+            gap: 0.25rem;
+        }
+        .tag-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+        }
+        .badges-row {
+            gap: 0.25rem;
+        }
+        .icon-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+        .card-meta {
+            gap: 0.75rem;
+            font-size: 0.8rem;
+        }
+        .card-actions {
+            gap: 0.25rem;
+        }
+        .action-btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+        }
+        .embedded-notes {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+        }
+        .embedded-notes h4 {
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+        .notes-list {
+            gap: 0.5rem;
+        }
+        .note-item {
+            padding: 0.5rem;
+            border-radius: 6px;
+            border-left-width: 2px;
+            font-size: 0.8rem;
+        }
+        .note-header {
+            gap: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .note-badge {
+            font-size: 0.65rem;
+        }
+        .note-author {
+            font-size: 0.8rem;
+        }
+        .note-date {
+            font-size: 0.75rem;
+        }
+        .note-status-btn {
+            font-size: 0.7rem;
+            padding: 0.125rem 0.4rem;
+        }
     }
 </style>
