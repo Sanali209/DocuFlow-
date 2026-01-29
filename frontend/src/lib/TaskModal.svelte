@@ -70,11 +70,6 @@
             </div>
 
             <div class="form-group">
-                <label for="assignee">Assignee</label>
-                <input id="assignee" type="text" bind:value={assignee} placeholder="Enter assignee name..." />
-            </div>
-
-            <div class="form-group">
                 <label for="material">Material</label>
                 <div class="material-row">
                     <select id="material" bind:value={materialId} class="material-select">
@@ -87,6 +82,11 @@
                         📚
                     </button>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="assignee">Assignee</label>
+                <input id="assignee" type="text" bind:value={assignee} placeholder="Enter assignee name..." />
             </div>
 
             <div class="actions">

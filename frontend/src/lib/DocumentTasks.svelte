@@ -165,6 +165,11 @@
                             <option value="pending">Pending</option>
                             <option value="done">Done</option>
                         </select>
+                        {#if task.material}
+                            <span class="material-badge" title="Material: {task.material.name}">
+                                📦 {task.material.name}
+                            </span>
+                        {/if}
                         <input
                             type="text"
                             class="assignee-input"
@@ -172,11 +177,6 @@
                             bind:value={task.assignee}
                             onchange={() => handleAssigneeChange(task, task.assignee)}
                         />
-                        {#if task.material}
-                            <span class="material-badge" title="Material: {task.material.name}">
-                                📦 {task.material.name}
-                            </span>
-                        {/if}
                     </div>
                 </div>
             {/each}
