@@ -95,8 +95,8 @@
         try {
             await updateJournalEntry(entryId, { status: newStatus });
             refresh();
-            // Also dispatch event to refresh journal view
-            window.dispatchEvent(new CustomEvent('journal-entry-created'));
+            // Dispatch event to refresh journal view
+            window.dispatchEvent(new CustomEvent('journal-entries-updated'));
         } catch (e) {
             console.error('Failed to update note status', e);
         }
@@ -347,7 +347,7 @@
                                         <button 
                                             class="note-status-btn {entry.status}"
                                             onclick={() => toggleNoteStatus(entry.id, entry.status)}
-                                            title="Toggle status"
+                                            title={entry.status === 'pending' ? 'Click to mark as done' : 'Click to mark as pending'}
                                         >
                                             {entry.status}
                                         </button>
@@ -758,6 +758,10 @@
         border: 1px solid;
         margin-left: auto;
         transition: all 0.2s;
+    }
+    .note-status-btn:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
     }
     .note-status-btn.pending {
         background: #fff7ed;

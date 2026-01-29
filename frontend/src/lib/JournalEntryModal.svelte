@@ -29,7 +29,7 @@
                 document_id: documentId
             });
             // Dispatch custom event to notify other components
-            window.dispatchEvent(new CustomEvent('journal-entry-created'));
+            window.dispatchEvent(new CustomEvent('journal-entries-updated'));
             close();
         } catch (err) {
             console.error(err);

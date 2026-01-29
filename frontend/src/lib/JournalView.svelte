@@ -37,14 +37,14 @@
         newEntryAuthor = localStorage.getItem("journal_author") || "";
         loadEntries();
         
-        // Listen for journal entries created from other components
-        const handleJournalCreated = () => {
+        // Listen for journal entries created/updated from other components
+        const handleJournalUpdated = () => {
             loadEntries();
         };
-        window.addEventListener('journal-entry-created', handleJournalCreated);
+        window.addEventListener('journal-entries-updated', handleJournalUpdated);
         
         return () => {
-            window.removeEventListener('journal-entry-created', handleJournalCreated);
+            window.removeEventListener('journal-entries-updated', handleJournalUpdated);
         };
     });
 
