@@ -46,6 +46,35 @@
             </div>
         </div>
     {/if}
+
+    {#if document?.journal_entries?.length > 0}
+        <div class="notes-section">
+            <h3>Notes</h3>
+            <div class="notes-list">
+                {#each document.journal_entries as entry}
+                    <div class="note-card">
+                        <div class="note-header">
+                            <span class="note-badge {entry.type}">{entry.type}</span>
+                            <span class="note-author">{entry.author || 'Unknown'}</span>
+                            <span class="note-date">{entry.created_at}</span>
+                            <span class="note-status {entry.status}">{entry.status}</span>
+                        </div>
+                        <p class="note-text">{entry.text}</p>
+                        {#if entry.attachments?.length > 0}
+                            <div class="note-attachments">
+                                <strong>Attachments:</strong>
+                                {#each entry.attachments as att}
+                                    <a href={att.file_path} target="_blank" rel="noreferrer" class="note-attachment-link">
+                                        📎 {att.filename}
+                                    </a>
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+                {/each}
+            </div>
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -154,5 +183,97 @@
         color: #3b82f6;
         text-decoration: none;
         word-break: break-all;
+    }
+
+    .notes-section {
+        margin-top: 2rem;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 1rem;
+    }
+    .notes-section h3 {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+    .notes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .note-card {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 3px solid #cbd5e1;
+    }
+    .note-card.info { border-left-color: #3b82f6; }
+    .note-card.warning { border-left-color: #f59e0b; }
+    .note-card.error { border-left-color: #ef4444; }
+    .note-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+        font-size: 0.85rem;
+    }
+    .note-badge {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: bold;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        color: white;
+    }
+    .note-badge.info { background: #3b82f6; }
+    .note-badge.warning { background: #f59e0b; }
+    .note-badge.error { background: #ef4444; }
+    .note-author {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .note-date {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+    .note-status {
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .note-status.pending {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+    .note-status.done {
+        background: #f0fdf4;
+        color: #15803d;
+    }
+    .note-text {
+        color: #334155;
+        margin: 0;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+    .note-attachments {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e2e8f0;
+        font-size: 0.85rem;
+    }
+    .note-attachments strong {
+        color: #475569;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    .note-attachment-link {
+        display: block;
+        color: #3b82f6;
+        text-decoration: none;
+        margin-bottom: 0.25rem;
+    }
+    .note-attachment-link:hover {
+        text-decoration: underline;
     }
 </style>
