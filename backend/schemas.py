@@ -48,11 +48,25 @@ class Attachment(AttachmentBase):
     class Config:
         from_attributes = True
 
+# --- Material ---
+class MaterialBase(BaseModel):
+    name: str
+
+class MaterialCreate(MaterialBase):
+    pass
+
+class Material(MaterialBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 # --- Task ---
 class TaskBase(BaseModel):
     name: str
     status: TaskStatus = TaskStatus.PLANNED
     assignee: Optional[str] = None
+    material_id: Optional[int] = None
 
 class TaskCreate(TaskBase):
     pass
@@ -61,10 +75,12 @@ class TaskUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[TaskStatus] = None
     assignee: Optional[str] = None
+    material_id: Optional[int] = None
 
 class Task(TaskBase):
     id: int
     document_id: int
+    material: Optional[Material] = None
 
     class Config:
         from_attributes = True

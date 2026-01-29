@@ -36,6 +36,7 @@
     let isFilterModalOpen = $state(false);
     let sortBy = $state('registration_date');
     let sortOrder = $state('desc');
+    let openDropdownId = $state(null);
     let { onEdit } = $props();
 
     export async function refresh() {
@@ -222,6 +223,14 @@
         sortOrder = newFilters.sortOrder;
         refresh();
     }
+
+    function toggleDropdown(docId) {
+        openDropdownId = openDropdownId === docId ? null : docId;
+    }
+
+    function closeDropdown() {
+        openDropdownId = null;
+    }
 </script>
 
 <div class="list-container">
@@ -333,6 +342,15 @@
                                         <span class="note-badge {entry.type}">{entry.type}</span>
                                         <span class="note-author">{entry.author || 'Unknown'}</span>
                                         <span class="note-date">{entry.created_at}</span>
+                                        {#if entry.attachments && entry.attachments.length > 0}
+                                            <button 
+                                                class="note-attachment-btn"
+                                                onclick={() => openImagePreview(entry.attachments)}
+                                                title="View attachments ({entry.attachments.length})"
+                                            >
+                                                📎 {entry.attachments.length}
+                                            </button>
+                                        {/if}
                                         <button 
                                             class="note-edit-btn"
                                             onclick={() => openEditEntry(doc, entry)}
@@ -356,21 +374,36 @@
                 {/if}
 
                 <div class="card-actions">
-                     <button class="action-btn" onclick={() => openJournalEntry(doc)} title="Add Note">
-                        📝 Add Note
-                    </button>
-                    <button class="action-btn view-btn" onclick={() => handleView(doc)} title="View Content">
+                    <!-- Primary action: View -->
+                    <button class="action-btn primary-btn" onclick={() => handleView(doc)} title="View Content">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         View
                     </button>
-                    <button class="action-btn edit-btn" onclick={() => onEdit(doc)} title="Edit">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        Edit
-                    </button>
-                    <button class="action-btn delete-btn" onclick={() => handleDelete(doc.id)} title="Delete">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        Delete
-                    </button>
+                    
+                    <!-- Dropdown menu for other actions -->
+                    <div class="dropdown-container">
+                        <button class="action-btn dropdown-btn" onclick={() => toggleDropdown(doc.id)} title="More actions">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                        </button>
+                        
+                        {#if openDropdownId === doc.id}
+                            <!-- svelte-ignore a11y_click_events_have_key_events -->
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <div class="dropdown-menu">
+                                <button class="dropdown-item" onclick={() => { openJournalEntry(doc); closeDropdown(); }}>
+                                    📝 Add Note
+                                </button>
+                                <button class="dropdown-item" onclick={() => { onEdit(doc); closeDropdown(); }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    Edit
+                                </button>
+                                <button class="dropdown-item delete-item" onclick={() => { handleDelete(doc.id); closeDropdown(); }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    Delete
+                                </button>
+                            </div>
+                        {/if}
+                    </div>
                 </div>
             </div>
         {/each}
@@ -622,6 +655,64 @@
         flex-wrap: wrap;
     }
 
+    .primary-btn {
+        background-color: #3b82f6;
+        color: white;
+        border: 1px solid #3b82f6;
+    }
+    .primary-btn:hover {
+        background-color: #2563eb;
+        border-color: #2563eb;
+    }
+
+    .dropdown-container {
+        position: relative;
+    }
+    
+    .dropdown-btn {
+        padding: 0.4rem 0.6rem;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 4px);
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        min-width: 150px;
+        z-index: 10;
+        overflow: hidden;
+    }
+
+    .dropdown-item {
+        width: 100%;
+        padding: 0.6rem 1rem;
+        border: none;
+        background: white;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: #475569;
+        transition: background 0.2s;
+    }
+
+    .dropdown-item:hover {
+        background: #f8fafc;
+    }
+
+    .dropdown-item.delete-item {
+        color: #ef4444;
+    }
+
+    .dropdown-item.delete-item:hover {
+        background: #fef2f2;
+    }
+
     .badge {
         display: inline-block;
         padding: 0.25rem 0.5rem;
@@ -752,6 +843,21 @@
     .note-edit-btn:focus-visible {
         outline: 2px solid #3b82f6;
         outline-offset: 2px;
+    }
+    .note-attachment-btn {
+        padding: 0.15rem 0.4rem;
+        border: none;
+        background: #f0f9ff;
+        color: #0284c7;
+        cursor: pointer;
+        font-size: 0.75rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+        font-weight: 600;
+    }
+    .note-attachment-btn:hover {
+        background: #e0f2fe;
+        transform: scale(1.05);
     }
     .note-status-btn {
         padding: 0.15rem 0.5rem;

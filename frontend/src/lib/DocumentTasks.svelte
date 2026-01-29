@@ -125,6 +125,11 @@
                         bind:value={task.assignee}
                         onchange={() => handleAssigneeChange(task, task.assignee)}
                     />
+                    {#if task.material}
+                        <span class="material-badge" title="Material: {task.material.name}">
+                            📦 {task.material.name}
+                        </span>
+                    {/if}
                 </div>
             </div>
         {/each}
@@ -270,6 +275,17 @@
     .assignee-input:hover, .assignee-input:focus {
         background: #ffffff;
         border-color: #cbd5e1;
+    }
+
+    .material-badge {
+        padding: 0.125rem 0.35rem;
+        background: #f0fdf4;
+        color: #166534;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .empty-tasks {

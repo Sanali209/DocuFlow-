@@ -48,16 +48,26 @@ class Attachment(Base):
     document = relationship("Document", back_populates="attachments")
     journal_entry = relationship("JournalEntry", back_populates="attachments")
 
+class Material(Base):
+    __tablename__ = "materials"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+
+    tasks = relationship("Task", back_populates="material")
+
 class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
     document_id = Column(Integer, ForeignKey("documents.id"))
+    material_id = Column(Integer, ForeignKey("materials.id"), nullable=True)
     name = Column(String)
     status = Column(Enum(TaskStatus), default=TaskStatus.PLANNED)
     assignee = Column(String, nullable=True)
 
     document = relationship("Document", back_populates="tasks")
+    material = relationship("Material", back_populates="tasks")
 
 class Document(Base):
     __tablename__ = "documents"

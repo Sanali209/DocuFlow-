@@ -45,6 +45,13 @@ with engine.connect() as conn:
     except Exception:
         pass
 
+    # Add material_id column to tasks
+    try:
+        conn.execute(text("ALTER TABLE tasks ADD COLUMN material_id INTEGER REFERENCES materials(id)"))
+        conn.commit()
+    except Exception:
+        pass
+
 # Ensure upload directory
 os.makedirs("static/uploads", exist_ok=True)
 
@@ -291,6 +298,29 @@ def delete_filter_preset(preset_id: int, db: Session = Depends(get_db)):
     success = crud.delete_filter_preset(db, preset_id)
     if not success:
         raise HTTPException(status_code=404, detail="Preset not found")
+    return {"ok": True}
+
+# --- Material Endpoints ---
+@app.get("/materials", response_model=List[schemas.Material])
+def read_materials(db: Session = Depends(get_db)):
+    return crud.get_materials(db)
+
+@app.post("/materials", response_model=schemas.Material)
+def create_material(material: schemas.MaterialCreate, db: Session = Depends(get_db)):
+    return crud.create_material(db, material)
+
+@app.put("/materials/{material_id}", response_model=schemas.Material)
+def update_material(material_id: int, name: str, db: Session = Depends(get_db)):
+    db_material = crud.update_material(db, material_id, name)
+    if not db_material:
+        raise HTTPException(status_code=404, detail="Material not found")
+    return db_material
+
+@app.delete("/materials/{material_id}")
+def delete_material(material_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_material(db, material_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Material not found")
     return {"ok": True}
 
 # Serve Static Files (Svelte)

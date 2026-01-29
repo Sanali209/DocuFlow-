@@ -204,3 +204,33 @@ export async function deleteFilterPreset(id) {
     });
     return await response.json();
 }
+
+// Materials
+export async function fetchMaterials() {
+    const response = await fetch(`${API_URL}/materials`);
+    return await response.json();
+}
+
+export async function createMaterial(material) {
+    const response = await fetch(`${API_URL}/materials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(material),
+    });
+    return await response.json();
+}
+
+export async function updateMaterial(materialId, name) {
+    const response = await fetch(`${API_URL}/materials/${materialId}?name=${encodeURIComponent(name)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+    });
+    return await response.json();
+}
+
+export async function deleteMaterial(materialId) {
+    const response = await fetch(`${API_URL}/materials/${materialId}`, {
+        method: 'DELETE',
+    });
+    return await response.json();
+}

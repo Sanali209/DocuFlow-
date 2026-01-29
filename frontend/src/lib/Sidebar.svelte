@@ -24,6 +24,12 @@
             <span class="icon">📓</span>
             <span class="label">Journal</span>
         </button>
+        <button 
+            class:active={activeView === 'job'} 
+            onclick={() => select('job')}>
+            <span class="icon">💼</span>
+            <span class="label">Job Tracking</span>
+        </button>
     </nav>
 </aside>
 
