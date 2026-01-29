@@ -128,15 +128,15 @@
                                     <div class="task-row {task.status}">
                                         <div class="task-info">
                                             <span class="task-status-badge {task.status}">{task.status}</span>
+                                            <button 
+                                                class="btn-done"
+                                                onclick={() => markTaskDone(task.id)}
+                                                title="Mark as done"
+                                            >
+                                                ✓
+                                            </button>
                                             <span class="task-name">{task.name}</span>
                                         </div>
-                                        <button 
-                                            class="btn-done"
-                                            onclick={() => markTaskDone(task.id)}
-                                            title="Mark as done"
-                                        >
-                                            ✓
-                                        </button>
                                     </div>
                                 {/each}
                             </div>
@@ -319,6 +319,7 @@
         align-items: center;
         gap: 0.75rem;
         flex: 1;
+        flex-wrap: wrap;
     }
 
     .task-status-badge {
@@ -345,16 +346,17 @@
         font-size: 0.9rem;
         line-height: 1.4;
         word-break: break-word;
+        flex: 1;
     }
 
     .btn-done {
         background: #10b981;
         color: white;
         border: none;
-        padding: 0.4rem 0.75rem;
+        padding: 0.3rem 0.6rem;
         border-radius: 4px;
         cursor: pointer;
-        font-size: 1rem;
+        font-size: 0.85rem;
         font-weight: bold;
         flex-shrink: 0;
         transition: all 0.2s;
@@ -362,7 +364,7 @@
 
     .btn-done:hover {
         background: #059669;
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
 
     /* Mobile optimization */
@@ -424,27 +426,19 @@
         }
 
         .btn-done {
-            padding: 0.3rem 0.6rem;
-            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
         }
     }
 
-    /* Extra small screens - stack task info */
+    /* Extra small screens */
     @media (max-width: 480px) {
-        .task-row {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.5rem;
-        }
-
         .task-info {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.25rem;
+            gap: 0.4rem;
         }
 
-        .btn-done {
-            width: 100%;
+        .task-name {
+            flex-basis: 100%;
         }
     }
 </style>

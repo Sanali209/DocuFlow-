@@ -77,7 +77,8 @@
             const newTask = await createTask(document.id, {
                 name: taskData.name,
                 assignee: taskData.assignee,
-                status: 'planned'
+                status: 'planned',
+                material_id: taskData.material_id
             });
             tasks = [...tasks, newTask];
             refresh();
