@@ -21,8 +21,10 @@
 
     let isScanning = $state(false);
     let isUploading = $state(false);
+    let isSaving = $state(false);
     let scanError = $state('');
     let scanStatus = $state('');
+    let saveError = $state('');
 
     let previewAttachments = $state(null);
 
@@ -126,42 +128,52 @@
 
     async function handleSubmit(e) {
         e.preventDefault();
+        
+        isSaving = true;
+        saveError = '';
 
-        if (author) localStorage.setItem('doc_author', author);
+        try {
+            if (author) localStorage.setItem('doc_author', author);
 
-        const docData = {
-            name,
-            description,
-            type,
-            status,
-            registration_date: registration_date || undefined,
-            content,
-            author,
-            done_date: done_date || undefined,
-            attachments: newAttachments,
-            tags
-        };
+            const docData = {
+                name,
+                description,
+                type,
+                status,
+                registration_date: registration_date || undefined,
+                content,
+                author,
+                done_date: done_date || undefined,
+                attachments: newAttachments,
+                tags
+            };
 
-        if (document) {
-            await updateDocument(document.id, docData);
-        } else {
-            await createDocument(docData);
+            if (document) {
+                await updateDocument(document.id, docData);
+            } else {
+                await createDocument(docData);
+            }
+
+            if (!document) {
+                name = '';
+                description = '';
+                type = 'plan';
+                status = 'in_progress';
+                registration_date = '';
+                content = '';
+                author = localStorage.getItem('doc_author') || '';
+                done_date = '';
+                newAttachments = [];
+                tags = [];
+            }
+
+            onDocumentCreated();
+        } catch (err) {
+            console.error('Failed to save document:', err);
+            saveError = 'Failed to save document. Please try again.';
+        } finally {
+            isSaving = false;
         }
-
-        if (!document) {
-            name = '';
-            description = '';
-            type = 'plan';
-            status = 'in_progress';
-            registration_date = '';
-            content = '';
-            author = localStorage.getItem('doc_author') || '';
-            done_date = '';
-            newAttachments = [];
-            tags = [];
-        }
-
-        onDocumentCreated();
     }
 </script>
 
@@ -192,6 +204,9 @@
             {/if}
             {#if scanError}
                 <p class="error-text">{scanError}</p>
+            {/if}
+            {#if saveError}
+                <p class="error-text">{saveError}</p>
             {/if}
 
             {#if attachments.length > 0 || newAttachments.length > 0}
@@ -269,7 +284,9 @@
 
         <div class="actions">
             <button type="button" class="btn-secondary" onclick={onCancel}>Cancel</button>
-            <button type="submit" class="btn-primary">{document ? 'Save Changes' : 'Register Document'}</button>
+            <button type="submit" class="btn-primary" disabled={isSaving}>
+                {isSaving ? 'Saving...' : (document ? 'Save Changes' : 'Register Document')}
+            </button>
         </div>
     </form>
 

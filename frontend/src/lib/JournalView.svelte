@@ -1,5 +1,6 @@
 <script>
     import { onMount } from "svelte";
+    import JournalEntryModal from "./JournalEntryModal.svelte";
     import {
         fetchJournalEntries,
         createJournalEntry,
@@ -10,6 +11,7 @@
 
     let entries = $state([]);
     let loading = $state(false);
+    let editingEntry = $state(null);
 
     // Filters
     let filterType = $state("");
@@ -109,6 +111,15 @@
         }
     }
 
+    function openEditModal(entry) {
+        editingEntry = entry;
+    }
+
+    function closeEditModal() {
+        editingEntry = null;
+        loadEntries();
+    }
+
     // React to filter changes
     $effect(() => {
         loadEntries();
@@ -185,6 +196,12 @@
 
                         <div class="actions">
                             <button
+                                class="edit-btn"
+                                onclick={() => openEditModal(entry)}
+                            >
+                                ✏️ Edit
+                            </button>
+                            <button
                                 class="status-btn"
                                 onclick={() => toggleStatus(entry)}
                             >
@@ -219,6 +236,14 @@
             {/each}
         {/if}
     </div>
+    
+    <JournalEntryModal
+        isOpen={!!editingEntry}
+        close={closeEditModal}
+        documentId={editingEntry?.document_id}
+        documentName="Journal Entry"
+        entry={editingEntry}
+    />
 </div>
 
 <style>
@@ -358,6 +383,7 @@
         gap: 0.5rem;
     }
 
+    .edit-btn,
     .status-btn,
     .delete-btn {
         background: none;
@@ -366,6 +392,10 @@
         border-radius: 4px;
         cursor: pointer;
         font-size: 0.8rem;
+    }
+    .edit-btn:hover {
+        background: #eff6ff;
+        border-color: #bfdbfe;
     }
     .status-btn:hover {
         background: #f1f5f9;

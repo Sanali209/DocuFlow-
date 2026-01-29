@@ -1,19 +1,58 @@
 <script>
-    import { createJournalEntry } from './api.js';
+    import { createJournalEntry, updateJournalEntry, uploadFile } from './api.js';
 
-    let { isOpen, close, documentId, documentName } = $props();
+    let { isOpen, close, documentId, documentName, entry = null } = $props();
     let text = $state('');
     let type = $state('info');
     let author = $state('');
     let loading = $state(false);
+    let attachments = $state([]);
+    let isUploading = $state(false);
 
     $effect(() => {
         if (isOpen) {
-            author = localStorage.getItem('journal_author') || '';
-            text = '';
-            type = 'info';
+            if (entry) {
+                // Edit mode
+                text = entry.text || '';
+                type = entry.type || 'info';
+                author = entry.author || '';
+                attachments = entry.attachments || [];
+            } else {
+                // Create mode
+                author = localStorage.getItem('journal_author') || '';
+                text = '';
+                type = 'info';
+                attachments = [];
+            }
         }
     });
+
+    async function handleFileSelect(e) {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        isUploading = true;
+        try {
+            for (const file of files) {
+                const result = await uploadFile(file);
+                attachments.push({
+                    file_path: result.file_path,
+                    filename: result.filename,
+                    media_type: result.media_type
+                });
+            }
+        } catch (err) {
+            console.error('Upload failed', err);
+            alert('Failed to upload attachment');
+        } finally {
+            isUploading = false;
+            e.target.value = '';
+        }
+    }
+
+    function removeAttachment(index) {
+        attachments.splice(index, 1);
+    }
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -21,19 +60,29 @@
         if (author) localStorage.setItem('journal_author', author);
 
         try {
-            await createJournalEntry({
+            const journalData = {
                 text,
                 type,
-                status: 'pending',
+                status: entry?.status || 'pending',
                 author,
-                document_id: documentId
-            });
+                document_id: documentId,
+                attachments
+            };
+
+            if (entry) {
+                // Update existing entry
+                await updateJournalEntry(entry.id, journalData);
+            } else {
+                // Create new entry
+                await createJournalEntry(journalData);
+            }
+            
             // Dispatch custom event to notify other components
             window.dispatchEvent(new CustomEvent('journal-entries-updated'));
             close();
         } catch (err) {
             console.error(err);
-            alert('Failed to create note');
+            alert(entry ? 'Failed to update note' : 'Failed to create note');
         } finally {
             loading = false;
         }
@@ -46,7 +95,7 @@
 <div class="modal-overlay" onclick={close}>
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
         <div class="modal-header">
-            <h3>Add Note to {documentName}</h3>
+            <h3>{entry ? 'Edit Note' : `Add Note to ${documentName}`}</h3>
             <button class="close-btn" onclick={close}>&times;</button>
         </div>
 
@@ -70,10 +119,30 @@
                 <textarea id="text" bind:value={text} required rows="4"></textarea>
             </div>
 
+            <div class="form-group">
+                <label for="attachments">Attachments</label>
+                <div class="file-upload-wrapper">
+                    <input id="attachments" type="file" multiple onchange={handleFileSelect} disabled={isUploading} />
+                    {#if isUploading}
+                        <p class="upload-status">Uploading...</p>
+                    {/if}
+                </div>
+                {#if attachments.length > 0}
+                    <div class="attachments-list">
+                        {#each attachments as att, i}
+                            <div class="attachment-item">
+                                <span class="attachment-name">{att.filename}</span>
+                                <button type="button" class="remove-btn" onclick={() => removeAttachment(i)}>×</button>
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+            </div>
+
             <div class="actions">
                 <button type="button" class="btn-secondary" onclick={close}>Cancel</button>
                 <button type="submit" class="btn-primary" disabled={loading}>
-                    {loading ? 'Saving...' : 'Add Note'}
+                    {loading ? 'Saving...' : (entry ? 'Update Note' : 'Add Note')}
                 </button>
             </div>
         </form>
@@ -145,6 +214,55 @@
         border-radius: 6px;
         font-family: inherit;
         font-size: 1rem;
+    }
+    .file-upload-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .upload-status {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0;
+    }
+    .attachments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    .attachment-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem;
+        background: #f8fafc;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+    .attachment-name {
+        font-size: 0.9rem;
+        color: #475569;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .remove-btn {
+        background: none;
+        border: none;
+        color: #ef4444;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+    }
+    .remove-btn:hover {
+        background: #fee2e2;
     }
     .actions {
         display: flex;

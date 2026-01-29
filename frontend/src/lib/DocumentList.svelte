@@ -29,6 +29,7 @@
 
     let viewingDoc = $state(null);
     let journalDoc = $state(null);
+    let editingEntry = $state(null);
     let previewAttachments = $state(null);
     let sortBy = $state('registration_date');
     let sortOrder = $state('desc');
@@ -83,10 +84,17 @@
 
     function openJournalEntry(doc) {
         journalDoc = doc;
+        editingEntry = null;
+    }
+
+    function openEditEntry(doc, entry) {
+        journalDoc = doc;
+        editingEntry = entry;
     }
 
     function closeJournalEntry() {
         journalDoc = null;
+        editingEntry = null;
         refresh();
     }
 
@@ -345,6 +353,13 @@
                                         <span class="note-author">{entry.author || 'Unknown'}</span>
                                         <span class="note-date">{entry.created_at}</span>
                                         <button 
+                                            class="note-edit-btn"
+                                            onclick={() => openEditEntry(doc, entry)}
+                                            title="Edit note"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button 
                                             class="note-status-btn {entry.status}"
                                             onclick={() => toggleNoteStatus(entry.id, entry.status)}
                                             title={entry.status === 'pending' ? 'Click to mark as done' : 'Click to mark as pending'}
@@ -395,6 +410,7 @@
         close={closeJournalEntry}
         documentId={journalDoc?.id}
         documentName={journalDoc?.name}
+        entry={editingEntry}
     />
 
     <ImagePreviewModal
@@ -747,6 +763,22 @@
     .note-date, .note-status {
         color: #64748b;
         font-size: 0.8rem;
+    }
+    .note-edit-btn {
+        padding: 0.15rem 0.4rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    .note-edit-btn:hover {
+        background: #f1f5f9;
+    }
+    .note-edit-btn:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
     }
     .note-status-btn {
         padding: 0.15rem 0.5rem;
