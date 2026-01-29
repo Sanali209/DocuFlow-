@@ -284,7 +284,7 @@
 
         <div class="actions">
             <button type="button" class="btn-secondary" onclick={onCancel}>Cancel</button>
-            <button type="submit" class="btn-primary" disabled={isSaving}>
+            <button type="submit" class="btn-primary" disabled={isSaving || isUploading || isScanning}>
                 {isSaving ? 'Saving...' : (document ? 'Save Changes' : 'Register Document')}
             </button>
         </div>

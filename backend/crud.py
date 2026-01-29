@@ -145,16 +145,19 @@ def update_document(db: Session, document_id: int, document: schemas.DocumentUpd
     if tags_data is not None:
         _sync_tags(db, db_document, tags_data)
 
+    # Note: attachments_data is a dict after model_dump(), while document.attachments are Pydantic objects
+    # In create_document, we access Pydantic object attributes (att.file_path)
+    # In update_document, we access dict keys (att['file_path'])
     if attachments_data:
         for att in attachments_data:
-             db_att = models.Attachment(
+            db_att = models.Attachment(
                 document_id=db_document.id,
-                file_path=att.file_path,
-                filename=att.filename,
-                media_type=att.media_type,
+                file_path=att['file_path'],
+                filename=att['filename'],
+                media_type=att['media_type'],
                 created_at=date.today()
             )
-             db.add(db_att)
+            db.add(db_att)
 
     db.commit()
     db.refresh(db_document)
@@ -254,13 +257,14 @@ def update_journal_entry(db: Session, entry_id: int, entry: schemas.JournalEntry
     for key, value in update_data.items():
         setattr(db_entry, key, value)
 
+    # Note: attachments_data is a dict after model_dump(), while entry.attachments are Pydantic objects
     if attachments_data:
         for att in attachments_data:
             db_att = models.Attachment(
                 journal_entry_id=db_entry.id,
-                file_path=att.file_path,
-                filename=att.filename,
-                media_type=att.media_type,
+                file_path=att['file_path'],
+                filename=att['filename'],
+                media_type=att['media_type'],
                 created_at=date.today()
             )
             db.add(db_att)

@@ -59,6 +59,10 @@ export async function createDocument(doc) {
         },
         body: JSON.stringify(doc),
     });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `Failed to create document (${response.status})`);
+    }
     return await response.json();
 }
 
@@ -81,6 +85,10 @@ export async function updateDocument(id, data) {
         },
         body: JSON.stringify(data),
     });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `Failed to update document (${response.status})`);
+    }
     return await response.json();
 }
 
