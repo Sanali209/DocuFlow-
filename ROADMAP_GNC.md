@@ -77,6 +77,17 @@ The following infrastructure is already in place and will be leveraged:
 - [ ] **Field Testing:** Validate generated GNC files on the actual machine controller.
 - [ ] **Performance:** Optimize Canvas rendering for files with large numbers of contours (>1000).
 
+### 2.4 Part & Drawings Library Integration
+- [ ] **Part Registry (Drawings Library):**
+    - Create `Part` entity to store individual component definitions.
+    - Attributes:
+        - **Factory Registration Number:** Unique serial identifier.
+        - **Type/Version:** Single English letter (e.g., 'A', 'B') denoting revision.
+- [ ] **Task Linkage:**
+    - Update `Task` model to support One-to-Many or Many-to-Many relationships with `Parts`.
+    - Interface: Allow adding/linking specific Parts (by Reg Number) to a Task.
+    - Status Tracking: Monitor production status of individual linked parts within a task.
+
 ## Stage 3: Advanced Access Control & Management
 **Objective:** Implement comprehensive user management, security, and enhanced search capabilities.
 
