@@ -40,7 +40,7 @@ The application follows a **Self-Contained Monolithic** architecture:
 *   **ORM:** SQLAlchemy 2.0+
 *   **Schema Validation:** Pydantic v2
 *   **Server:** Uvicorn (ASGI server)
-*   **Database:** SQLite (Embedded)
+*   **Database:** SQLite (Embedded) with WAL Mode enabled for concurrency.
 *   **Distribution:** PyInstaller (One-Folder mode)
 
 ### 2.3 System Architecture Diagram
@@ -189,7 +189,7 @@ class Tag:
 
 **Common Settings:**
 - `doc_name_regex`: Regex pattern for auto-extraction
-- `sync_folder_path`: Path to "Mihtav" root folder
+- `sync_folder_path`: Path to Shared Network Drive (Z:) root.
 
 #### 3.2.3 Entity Relationship Diagram
 
@@ -550,10 +550,10 @@ MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 ### 3.6 Performance Optimization
 
 #### 3.6.1 Database Optimization
+- **WAL Mode**: Enable Write-Ahead Logging (`PRAGMA journal_mode=WAL;`) to allow concurrent readers/writers on the local SQLite file.
 - **Indexes**: On frequently queried columns (name, type, status)
 - **Eager Loading**: Relationships loaded efficiently
 - **Connection Pooling**: SQLAlchemy pool configuration
-- **Query Optimization**: Use of select_related/join strategies
 
 ### 3.7 File System Integration (Planned)
 The system will integrate with local network storage to synchronize GNC programs.
@@ -569,9 +569,12 @@ The system will integrate with local network storage to synchronize GNC programs
     - **Material**: Raw material specifications.
     - **Parts**: List of parts produced by the program.
     - **Dates**: File creation and modification timestamps.
-4.  **Synchronization**:
-    - Imported programs are linked as Attachments or specific `GNCProgram` entities to the parent Document.
-    - Updates to physical files (detected via date change) trigger system updates.
+4.  **Synchronization (Shared Folder as Database)**:
+    - **Protocol**: JSON Exchange.
+    - **Admin**: Writes serialized `Order_{ID}.json` to the shared drive.
+    - **Operator**: Reads JSONs to update local SQLite cache.
+    - **Logs**: Operator writes `Log_{Machine}_{Date}.json` to shared drive.
+    - **Locking**: No file locking; relies on atomic file writes/reads.
 
 #### 3.6.2 API Performance
 - **Async Operations**: FastAPI's async capabilities for I/O operations

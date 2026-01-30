@@ -77,19 +77,23 @@ Browsers cannot access local network shares (SMB) directly due to security sandb
     -   `{ timestamp, actor, action_type, entity_id, previous_value, new_value }`.
 -   **Analytics:** Use this table to generate "Shift Reports" (e.g., "Operator X edited 5 programs").
 
-### 3.5 Distributed Synchronization Strategy
-**Concept:** Use a shared network folder as the "Transfer Hub".
-1.  **Admin Mode:**
-    -   Has Full Write Access to the Master DB.
-    -   Periodically dumps a "Sync Package" (JSON/SQLite Delta) to the shared folder.
-2.  **Operator Mode:**
-    -   Read-Only access to core tables (Documents, Parts).
-    -   Write access only to "Logs" and "Status Updates".
-    -   Periodically polls the shared folder to update its local DB.
-    -   Writes "Shift Logs" to the shared folder as JSON files.
-3.  **Recommended Tools:**
-    -   **Syncthing:** Open-source, P2P file sync tool. Can run as a sidecar process. Excellent for syncing the `data/` folder across machines without a central server.
-    -   **Custom Python Sync:** A background thread in FastAPI that uses `shutil` to copy SQLite DB files or Apply JSON Deltas from a mounted `Z:` drive.
+### 3.5 Distributed Synchronization Strategy ("Shared Folder as Database")
+**Concept:** Instead of a single monolithic database file on the network (which causes locking issues), use a **File-Based JSON Store** structure on the shared drive.
+**Optimization:** "Shared Folder as Database" Pattern.
+
+#### Data Structure (Z:\DocuFlow_DB\)
+*   `/Orders/Order_{ID}.json` (Admin writes, Operators read)
+*   `/Logs/{Date}/{MachineID}_Log.json` (Operators write, Admin reads)
+*   `/Inventory/Stock.json` (Admin updates, Operators read)
+
+#### Mechanism
+1.  **No Locking:** Since every Order and Log entry is a separate file (or append-only log), there is no contention for a single `.db` file.
+2.  **Local Caching (SQLite):**
+    -   Each machine runs a local SQLite DB for high-performance UI rendering.
+    -   **WAL Mode (Write-Ahead Logging):** Enable `PRAGMA journal_mode=WAL;` on the local SQLite to ensure the UI never freezes during background sync writes.
+3.  **Sync Agent (Background Thread):**
+    -   **Reader:** Scans `Z:\Orders\` for modified JSONs -> Upserts to Local SQLite.
+    -   **Writer:** Dumps local "New Actions" to `Z:\Logs\` as immutable JSON files.
 
 ## 4. Strategic Roadmap Adjustments
 1.  **Immediate:** Implement the "Reverse Engineering" logic to stop data loss on machine edits.

@@ -18,9 +18,9 @@ The current system acts as a centralized Document Tracker with embedded Task man
 
 ### 1.2 Data Flow
 1.  User creates/updates Document -> Frontend calls API -> Backend updates DB.
-2.  User uploads file -> Backend saves to disk -> Creates Attachment record.
-3.  **Local Sync**: Backend scans configured folders -> Updates DB -> Links GNC files.
-4.  **Distributed Sync**: Background thread syncs local DB with Shared Network Drive (Z:) every 10 mins.
+2.  **Network Broadcast**: Background Agent serializes Document to `Z:\Orders\Order_{ID}.json`.
+3.  **Operator Sync**: Operator Machine scans `Z:\Orders\` -> Updates Local DB cache.
+4.  **Log Upload**: Operator Machine writes actions to `Z:\Logs\{Date}\{Machine}.json`.
 
 ---
 
@@ -62,9 +62,11 @@ graph TD
         BE -->|Store/Read| FS[Local Storage /uploads]
     end
 
-    subgraph "Distributed Sync (New)"
-        BE -->|Sync Thread| SharedDrive[Shared Network Drive (Z:)]
-        SharedDrive -->|Replicate| DB
+    subgraph "Distributed Sync (Shared Folder as DB)"
+        BE -->|Write JSON| SharedOrders[Z:\Orders\*.json]
+        BE -->|Read JSON| SharedOrders
+        BE -->|Write Logs| SharedLogs[Z:\Logs\*.json]
+        SharedOrders -.->|Import| DB
     end
 
     subgraph "GNC & Network Module (New)"
