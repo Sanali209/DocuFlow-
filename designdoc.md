@@ -569,12 +569,10 @@ The system will integrate with local network storage to synchronize GNC programs
     - **Material**: Raw material specifications.
     - **Parts**: List of parts produced by the program.
     - **Dates**: File creation and modification timestamps.
-4.  **Synchronization (Shared Folder as Database)**:
-    - **Protocol**: JSON Exchange.
-    - **Admin**: Writes serialized `Order_{ID}.json` to the shared drive.
-    - **Operator**: Reads JSONs to update local SQLite cache.
-    - **Logs**: Operator writes `Log_{Machine}_{Date}.json` to shared drive.
-    - **Locking**: No file locking; relies on atomic file writes/reads.
+4.  **Synchronization (Centralized)**:
+    - **Database**: All clients connect to `Z:\DocuFlow\data.db`.
+    - **Files**: All clients save attachments to `Z:\DocuFlow\uploads\`.
+    - **Locking**: Managed via SQLite WAL mode to allow concurrent readers.
 
 #### 3.6.2 API Performance
 - **Async Operations**: FastAPI's async capabilities for I/O operations

@@ -77,23 +77,22 @@ Browsers cannot access local network shares (SMB) directly due to security sandb
     -   `{ timestamp, actor, action_type, entity_id, previous_value, new_value }`.
 -   **Analytics:** Use this table to generate "Shift Reports" (e.g., "Operator X edited 5 programs").
 
-### 3.5 Distributed Synchronization Strategy ("Shared Folder as Database")
-**Concept:** Instead of a single monolithic database file on the network (which causes locking issues), use a **File-Based JSON Store** structure on the shared drive.
-**Optimization:** "Shared Folder as Database" Pattern.
+### 3.5 Centralized Network Database Strategy
+**Concept:** Utilize the Shared Network Drive (`Z:`) as the central repository for both the Database and File Attachments.
+**Constraint:** "Each server must use a shared folder with the database."
 
-#### Data Structure (Z:\DocuFlow_DB\)
-*   `/Orders/Order_{ID}.json` (Admin writes, Operators read)
-*   `/Logs/{Date}/{MachineID}_Log.json` (Operators write, Admin reads)
-*   `/Inventory/Stock.json` (Admin updates, Operators read)
+#### Data Structure (Z:\DocuFlow\)
+*   `/data.db` (Shared SQLite Database)
+*   `/uploads/` (Shared Attachment Storage)
 
-#### Mechanism
-1.  **No Locking:** Since every Order and Log entry is a separate file (or append-only log), there is no contention for a single `.db` file.
-2.  **Local Caching (SQLite):**
-    -   Each machine runs a local SQLite DB for high-performance UI rendering.
-    -   **WAL Mode (Write-Ahead Logging):** Enable `PRAGMA journal_mode=WAL;` on the local SQLite to ensure the UI never freezes during background sync writes.
-3.  **Sync Agent (Background Thread):**
-    -   **Reader:** Scans `Z:\Orders\` for modified JSONs -> Upserts to Local SQLite.
-    -   **Writer:** Dumps local "New Actions" to `Z:\Logs\` as immutable JSON files.
+#### Concurrency & Performance
+1.  **Direct Connection:** All clients connect directly to `sqlite:///Z:/DocuFlow/data.db`.
+2.  **WAL Mode (Critical):** SQLite's Write-Ahead Logging (`PRAGMA journal_mode=WAL;`) is **mandatory**.
+    -   Allows simultaneous readers and one writer.
+    -   Significantly reduces "Database Locked" errors over networks compared to the default rollback journal.
+3.  **Risk Mitigation:**
+    -   Ensure the network is stable (Latencies < 10ms).
+    -   If concurrency > 5 users, consider migrating the backend to a true PostgreSQL server (even if hosted on the Admin PC).
 
 ## 4. Strategic Roadmap Adjustments
 1.  **Immediate:** Implement the "Reverse Engineering" logic to stop data loss on machine edits.

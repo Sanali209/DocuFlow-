@@ -63,12 +63,11 @@ This SRS document provides the specific technical requirements for the DocuFlow 
 
 ### 3.3 Reliability
 *   **NFR-05:** Application must be portable (One-Folder) and not require pre-installed Python.
-*   **NFR-06:** Offline Capable: Must function fully if network is down, and sync later.
-*   **NFR-07:** Non-Blocking I/O: Background sync threads must not freeze the UI (requires Local SQLite WAL mode).
+*   **NFR-06:** Database Persistence: System must connect to a central SQLite file on a Network Share (`Z:\`).
+*   **NFR-07:** Concurrency: WAL Mode must be enabled to support multiple readers.
 
 ## 4. Interfaces
-*   **External:** Local File System (Read/Write access to Network Shares).
-*   **External:** Shared Network Drive (SMB/Z:) acting as a "JSON Document Store" for synchronization.
+*   **External:** Shared Network Drive (SMB/Z:) hosting the `data.db` and `uploads/`.
 
 ## 5. Technology Stack Constraints
 *   **Backend:** Python 3.10+ (FastAPI).

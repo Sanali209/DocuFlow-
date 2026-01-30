@@ -14,13 +14,12 @@ The current system acts as a centralized Document Tracker with embedded Task man
     *   **Database**: SQLite (via SQLAlchemy) for persistence.
     *   **File Storage**: Local filesystem (`static/uploads`) for attachments.
     *   **Distribution**: Bundled as a single executable via PyInstaller.
-    *   **Role Modes**: Configurable as "Admin" (Master) or "Operator" (Slave).
+    *   **Role Modes**: Configurable as "Admin" (Full Access) or "Operator" (Restricted).
 
 ### 1.2 Data Flow
-1.  User creates/updates Document -> Frontend calls API -> Backend updates DB.
-2.  **Network Broadcast**: Background Agent serializes Document to `Z:\Orders\Order_{ID}.json`.
-3.  **Operator Sync**: Operator Machine scans `Z:\Orders\` -> Updates Local DB cache.
-4.  **Log Upload**: Operator Machine writes actions to `Z:\Logs\{Date}\{Machine}.json`.
+1.  User creates/updates Document -> Frontend calls API -> Backend updates **Shared Database** (`Z:\data.db`).
+2.  **Attachments**: Files are saved directly to **Shared Uploads** (`Z:\uploads\`).
+3.  **Real-time View**: All clients read from the same `Z:\data.db`, ensuring immediate consistency.
 
 ---
 
@@ -57,16 +56,9 @@ graph TD
     User[User / Operator] -->|Browser| FE[Frontend Svelte 5]
     FE -->|REST API| BE[Backend FastAPI]
 
-    subgraph "Core System"
-        BE -->|CRUD| DB[(SQLite DB)]
-        BE -->|Store/Read| FS[Local Storage /uploads]
-    end
-
-    subgraph "Distributed Sync (Shared Folder as DB)"
-        BE -->|Write JSON| SharedOrders[Z:\Orders\*.json]
-        BE -->|Read JSON| SharedOrders
-        BE -->|Write Logs| SharedLogs[Z:\Logs\*.json]
-        SharedOrders -.->|Import| DB
+    subgraph "Centralized Network Storage"
+        BE -->|Read/Write| SharedDB[(Z:\data.db)]
+        BE -->|Save File| SharedFS[Z:\uploads\]
     end
 
     subgraph "GNC & Network Module (New)"
