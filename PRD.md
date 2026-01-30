@@ -36,7 +36,7 @@ DocuFlow is a web-based platform that combines an Intelligent Document Managemen
 ### 3.5 Material & Nesting
 *   **Warehouse:** Track sheets (Material, Thickness, Size) and Reservations.
 *   **Nesting:** Auto-pack parts onto sheets to calculate required material.
-*   **Reverse Engineering:** Fingerprint files to match machine-edited (`_801`) versions back to original orders.
+*   **Reverse Engineering:** Custom parser to decode `_801` files and recover metadata/geometry modifications made on the machine.
 
 ## 4. User Experience (UX)
 *   **Mobile-First:** The UI must be usable on tablets used by machine operators.

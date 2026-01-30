@@ -104,9 +104,10 @@ The following infrastructure is already in place and will be leveraged:
 - [ ] **Sync Logic:**
     - Link imported programs to the corresponding "Order Document" in the system.
     - Detect file changes (dates) and update the system records accordingly.
-- [ ] **Reverse Engineering Pipeline:**
-    - Handle machine-edited files (e.g., `_801` suffix).
-    - Recover lost metadata by geometric fingerprinting (matching original contours).
+- [ ] **Reverse Engineering Pipeline (801 Format):**
+    - Collect samples of machine-edited files (`_801` suffix) to decode the proprietary structure.
+    - Implement a custom Parser to extract the preserved metadata (Material, Customer, Parts).
+    - Sync edits (P-code changes) back to the system record.
 
 ## Stage 3: Advanced Manufacturing Control
 **Objective:** Implement comprehensive production management, including warehouse, shift logs, and nesting.

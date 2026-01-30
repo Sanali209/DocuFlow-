@@ -44,15 +44,16 @@ The application is pivoting to serve a **Bus Factory Metalworking Shop** (Laser 
     -   **Recommendation:** Custom **Regex/State-Machine Parsers**.
     -   Avoid generic libraries; machine formats (Rexroth/Hans) are proprietary and specific.
 
-### 3.2 Reverse Engineering Pipeline (Metadata Loss)
-**Problem:** Machine saves as `filename_801.gnc`, stripping original header data.
+### 3.2 Reverse Engineering Pipeline (801 Format)
+**Problem:** Machine saves edited files with the `_801` suffix in a proprietary format, but **metadata is preserved** within this structure. The challenge is parsing this non-standard text/binary format to extract the data.
 **Solution:**
-1.  **Fingerprinting:** Calculate a geometric hash (centroid + area of contours) of the *original* file. Store this in the DB.
-2.  **Matching:** When `_801` file is detected:
-    -   Parse geometry.
-    -   Calculate geometric hash.
-    -   Match against DB to find the "Parent" document.
-3.  **Resync:** Update the Parent Document with the new file path (`_801`) as the "As-Built" version.
+1.  **Format Analysis:** Collect samples of `_801` files to reverse-engineer the structure (Header locations, P-code encoding).
+2.  **Custom Parser:** Develop a specialized `Gnc801Parser` class:
+    -   Identify Metadata blocks (Material, Thickness, Customer).
+    -   Extract Geometry (G-codes may be wrapped or encoded).
+3.  **Synchronization:**
+    -   When `_801` file is detected, parse it using the custom parser.
+    -   Update the existing System Record with the *actual* parameters used on the machine (e.g., if the operator changed P-codes).
 
 ### 3.3 Warehouse & Reservation Architecture
 **New Entities:**
