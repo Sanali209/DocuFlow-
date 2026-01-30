@@ -604,6 +604,24 @@ MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 - **Connection Pooling**: SQLAlchemy pool configuration
 - **Query Optimization**: Use of select_related/join strategies
 
+### 3.7 File System Integration (Planned)
+The system will integrate with local network storage to synchronize GNC programs.
+
+#### 3.7.1 Folder Structure Assumptions
+- **Mihtav (Letter/Order)**: Subfolders representing specific Work Orders. Contains GNC programs specific to that order.
+- **Sidra (Series)**: Separate directory structure for standard/series parts.
+
+#### 3.7.2 Import Logic
+1.  **Scanning**: The system scans configured network paths.
+2.  **Mapping**: Users map detected folders to specific Document Types (e.g., "Mihtav" folder -> Order Document).
+3.  **Metadata Extraction**: GNC files are parsed to extract:
+    - **Material**: Raw material specifications.
+    - **Parts**: List of parts produced by the program.
+    - **Dates**: File creation and modification timestamps.
+4.  **Synchronization**:
+    - Imported programs are linked as Attachments or specific `GNCProgram` entities to the parent Document.
+    - Updates to physical files (detected via date change) trigger system updates.
+
 #### 3.6.2 API Performance
 - **Async Operations**: FastAPI's async capabilities for I/O operations
 - **Response Compression**: Gzip middleware

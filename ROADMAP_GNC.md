@@ -88,6 +88,21 @@ The following infrastructure is already in place and will be leveraged:
     - Interface: Allow adding/linking specific Parts (by Reg Number) to a Task.
     - Status Tracking: Monitor production status of individual linked parts within a task.
 
+### 2.5 Local Network Sync & Import
+- [ ] **FileSystem Watcher:**
+    - Monitor local network folders for "mihtav" (Order) and "sidra" (Series) structures.
+    - "Mihtav" folders: Correspond to a specific Document/Work Order.
+    - "Sidra" folders: Separate storage for series programs.
+- [ ] **Automatic Import:**
+    - Mapping: Allow user to map a Folder to a Document Type during import.
+    - GNC Parsing: Extract metadata from files during scan:
+        - Material.
+        - Set of Parts (Details).
+        - Creation/Modification Dates.
+- [ ] **Sync Logic:**
+    - Link imported programs to the corresponding "Order Document" in the system.
+    - Detect file changes (dates) and update the system records accordingly.
+
 ## Stage 3: Advanced Access Control & Management
 **Objective:** Implement comprehensive user management, security, and enhanced search capabilities.
 
