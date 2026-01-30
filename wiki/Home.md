@@ -1,98 +1,32 @@
-# Welcome to DocuFlow Wiki
+# Welcome to the DocuFlow Wiki
 
-Welcome to the official documentation for **DocuFlow** - a modern, AI-powered document management system.
+DocuFlow is a specialized Document Management and Manufacturing Verification system. It is designed to help manufacturing teams organize Work Orders, visualize GNC (CNC) programs, and track production tasks efficiently.
 
-## 🚀 Quick Start
+## Core Modules
 
-New to DocuFlow? Start here:
-1. [Getting Started Guide](Getting-Started.md) - Installation and first steps
-2. [User Guide](User-Guide.md) - Learn how to use DocuFlow
-3. [API Documentation](API-Documentation.md) - REST API reference
+### 1. Document Management
+- **Centralized Tracking:** Manage all your technical documents and Work Orders in one place.
+- **Tagging & Filtering:** Quickly find what you need using smart tags and status filters.
+- **Journaling:** Keep a history of notes and decisions for every document.
 
-## 📚 Documentation Sections
+### 2. GNC Visualization (New!)
+- **Browser-Based Viewer:** Check geometry of `.GNC` files without needing CAD software.
+- **Parameter Inspection:** Verify P-codes and cut layers instantly.
+- **Parts Library:** Manage standard parts with version control.
 
-### For Users
-- **[Getting Started](Getting-Started.md)** - Set up and run DocuFlow
-- **[User Guide](User-Guide.md)** - Complete feature walkthrough
-- **[FAQ & Troubleshooting](FAQ-and-Troubleshooting.md)** - Common issues and solutions
+### 3. Local Network Integration
+- **Auto-Sync:** The system watches your local network folders ("Mihtav" and "Sidra").
+- **Seamless Import:** New files added to the network are automatically registered in DocuFlow.
 
-### For Developers
-- **[Developer Guide](Developer-Guide.md)** - Development setup and workflow
-- **[API Documentation](API-Documentation.md)** - REST API endpoints and examples
-- **[Architecture Overview](Architecture.md)** - System design and components
-- **[Contributing Guidelines](Contributing.md)** - How to contribute
+## Getting Started
 
-### For DevOps
-- **[Deployment Guide](Deployment-Guide.md)** - Production deployment instructions
-- **[Configuration Guide](Configuration.md)** - Environment variables and settings
-- **[Monitoring Guide](Monitoring.md)** - Health checks and observability
+- **[Installation Guide](Deployment-Guide)** - How to install and run DocuFlow.
+- **[User Guide](User-Guide)** - How to use the features.
+- **[Developer Guide](Developer-Guide)** - Contributing to the codebase.
+- **[FAQ & Troubleshooting](FAQ-and-Troubleshooting)** - Common solutions.
 
-## 🎯 What is DocuFlow?
+## Architecture
 
-DocuFlow is a comprehensive document management system that combines:
-- **Smart Document Tracking** - Organize and track documents with rich metadata
-- **AI-Powered OCR** - Extract text and tables from images/PDFs using IBM Docling
-- **Task Management** - Embedded task lists with assignee tracking
-- **Advanced Search** - Multi-criteria filtering with saved presets
-- **Mobile-First Design** - Fully responsive interface optimized for all devices
+DocuFlow is a **Self-Contained Monolithic Application**. It bundles a high-performance **FastAPI** backend with a reactive **Svelte 5** frontend into a single portable executable.
 
-## 🏗️ Architecture at a Glance
-
-```
-┌─────────────────────────────────────────┐
-│     Frontend (Svelte 5 + Vite)         │
-│          Modern Reactive UI             │
-└────────────────┬────────────────────────┘
-                 │ REST API
-┌────────────────▼────────────────────────┐
-│      Backend (FastAPI + SQLite)        │
-│        Business Logic & Storage         │
-└────────────────┬────────────────────────┘
-                 │ HTTP Requests
-┌────────────────▼────────────────────────┐
-│   OCR Service (Docling + FastAPI)     │
-│      Document Understanding AI          │
-└─────────────────────────────────────────┘
-```
-
-## 🔗 Quick Links
-
-- **[Main README](../README.md)** - Project overview
-- **[Design Document](../designdoc.md)** - Detailed architecture and design
-- **[GitHub Repository](https://github.com/Sanali209/DocuFlow-)** - Source code
-- **[Issue Tracker](https://github.com/Sanali209/DocuFlow-/issues)** - Report bugs or request features
-
-## 📖 Documentation Sections
-
-| Section | Description |
-|---------|-------------|
-| [Getting Started](Getting-Started.md) | Installation, setup, and first run |
-| [User Guide](User-Guide.md) | Feature walkthrough and usage examples |
-| [Developer Guide](Developer-Guide.md) | Development environment and workflow |
-| [API Documentation](API-Documentation.md) | REST API reference with examples |
-| [Deployment Guide](Deployment-Guide.md) | Production deployment strategies |
-| [Configuration](Configuration.md) | Environment variables and settings |
-| [Architecture](Architecture.md) | System design and technical details |
-| [FAQ](FAQ-and-Troubleshooting.md) | Common questions and solutions |
-| [Contributing](Contributing.md) | How to contribute to the project |
-
-## 🤝 Community & Support
-
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/Sanali209/DocuFlow-/issues)
-- 💡 **Feature Requests**: [GitHub Issues](https://github.com/Sanali209/DocuFlow-/issues)
-- 📧 **Email Support**: [Your Email]
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/Sanali209/DocuFlow-/discussions)
-
-## 📝 Recent Updates
-
-Check the [CHANGELOG](../CHANGELOG.md) for the latest updates and releases.
-
-## 📄 License
-
-DocuFlow is open-source software licensed under the [MIT License](../LICENSE).
-
----
-
-**Last Updated**: 2026-01-29  
-**Wiki Version**: 1.0  
-**DocuFlow Version**: 1.0.0
+[Read more about the Architecture...](https://github.com/Sanali209/DocuFlow-/blob/main/ARCHITECTURE.md)
