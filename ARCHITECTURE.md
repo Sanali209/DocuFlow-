@@ -14,11 +14,13 @@ The current system acts as a centralized Document Tracker with embedded Task man
     *   **Database**: SQLite (via SQLAlchemy) for persistence.
     *   **File Storage**: Local filesystem (`static/uploads`) for attachments.
     *   **Distribution**: Bundled as a single executable via PyInstaller.
+    *   **Role Modes**: Configurable as "Admin" (Master) or "Operator" (Slave).
 
 ### 1.2 Data Flow
 1.  User creates/updates Document -> Frontend calls API -> Backend updates DB.
 2.  User uploads file -> Backend saves to disk -> Creates Attachment record.
 3.  **Local Sync**: Backend scans configured folders -> Updates DB -> Links GNC files.
+4.  **Distributed Sync**: Background thread syncs local DB with Shared Network Drive (Z:) every 10 mins.
 
 ---
 
@@ -58,6 +60,11 @@ graph TD
     subgraph "Core System"
         BE -->|CRUD| DB[(SQLite DB)]
         BE -->|Store/Read| FS[Local Storage /uploads]
+    end
+
+    subgraph "Distributed Sync (New)"
+        BE -->|Sync Thread| SharedDrive[Shared Network Drive (Z:)]
+        SharedDrive -->|Replicate| DB
     end
 
     subgraph "GNC & Network Module (New)"

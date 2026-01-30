@@ -135,6 +135,20 @@ The following infrastructure is already in place and will be leveraged:
     - structured Audit Log for all manual edits vs automatic events.
     - Productivity reports per shift/operator.
 
+## Stage 4: Distributed Sync & Roles
+**Objective:** Enable multi-machine synchronization without a central web server.
+
+### 4.1 Role-Based Modes
+- [ ] **Admin Mode (Master):** Full write access to Documents/Parts.
+- [ ] **Operator Mode (Slave):** Read-Only core data, Write-access only for Logs/Status.
+- [ ] **Startup Config:** Flag/INI setting to select mode on launch.
+
+### 4.2 Synchronization Engine
+- [ ] **Sync Protocol:**
+    - Background thread to copy/merge SQLite changes via Shared Network Drive.
+    - Frequency: Configurable (e.g., every 10 mins).
+- [ ] **Conflict Resolution:** "Admin Wins" policy for master data.
+
 ### 3.4 User & Workspace Management
 **Objective:** Implement comprehensive user management, security, and enhanced search capabilities.
 

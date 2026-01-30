@@ -63,9 +63,11 @@ This SRS document provides the specific technical requirements for the DocuFlow 
 
 ### 3.3 Reliability
 *   **NFR-05:** Application must be portable (One-Folder) and not require pre-installed Python.
+*   **NFR-06:** Offline Capable: Must function fully if network is down, and sync later.
 
 ## 4. Interfaces
 *   **External:** Local File System (Read/Write access to Network Shares).
+*   **External:** Shared Network Drive (SMB/Z:) for Distributed Sync.
 
 ## 5. Technology Stack Constraints
 *   **Backend:** Python 3.10+ (FastAPI).

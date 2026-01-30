@@ -12,8 +12,11 @@ The application is pivoting to serve a **Bus Factory Metalworking Shop** (Laser 
 
 ### Current State
 - **Stack:** FastAPI (Backend) + Svelte 5 (Frontend).
-- **Deployment:** One-Folder Executable (PyInstaller).
+- **Deployment:** One-Folder Executable (PyInstaller) running on each machine.
 - **Data:** SQLite (Local).
+
+### Challenge: Distributed Synchronization
+Browsers cannot access local network shares (SMB) directly due to security sandboxing. Since the app runs locally on each machine ("One-Folder"), we need a mechanism to sync data between the **Admin** (Technologist) and **Operators**.
 
 ### Gap Analysis
 | Feature | Current State | Missing / Risk |
@@ -73,6 +76,20 @@ The application is pivoting to serve a **Bus Factory Metalworking Shop** (Laser 
 -   **Structured Log:** Store as JSON in a separate `AuditLog` table:
     -   `{ timestamp, actor, action_type, entity_id, previous_value, new_value }`.
 -   **Analytics:** Use this table to generate "Shift Reports" (e.g., "Operator X edited 5 programs").
+
+### 3.5 Distributed Synchronization Strategy
+**Concept:** Use a shared network folder as the "Transfer Hub".
+1.  **Admin Mode:**
+    -   Has Full Write Access to the Master DB.
+    -   Periodically dumps a "Sync Package" (JSON/SQLite Delta) to the shared folder.
+2.  **Operator Mode:**
+    -   Read-Only access to core tables (Documents, Parts).
+    -   Write access only to "Logs" and "Status Updates".
+    -   Periodically polls the shared folder to update its local DB.
+    -   Writes "Shift Logs" to the shared folder as JSON files.
+3.  **Recommended Tools:**
+    -   **Syncthing:** Open-source, P2P file sync tool. Can run as a sidecar process. Excellent for syncing the `data/` folder across machines without a central server.
+    -   **Custom Python Sync:** A background thread in FastAPI that uses `shutil` to copy SQLite DB files or Apply JSON Deltas from a mounted `Z:` drive.
 
 ## 4. Strategic Roadmap Adjustments
 1.  **Immediate:** Implement the "Reverse Engineering" logic to stop data loss on machine edits.
