@@ -151,6 +151,19 @@ The **Document** is the central entity in the system.
 | `entry_text` | Text | NOT NULL | Note content |
 | `created_at` | DateTime | NOT NULL, Default=now | Creation timestamp |
 
+**Part Entity (Library)**
+- Represents a standard manufacturing part ("Sidra")
+
+| Field | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | Integer | Primary Key | Unique part identifier |
+| `reg_number` | String(50) | NOT NULL, Indexed | Factory Registration Number |
+| `version` | Char(1) | NOT NULL | Revision (A, B, C...) |
+| `material` | String(50) | NOT NULL | Material type (e.g., SS 1.4003) |
+| `dimensions` | JSON | NOT NULL | `{width, height}` |
+| `stats` | JSON | NOT NULL | `{holes, corners, radii}` |
+| `gnc_path` | String | Nullable | Path to source GNC file |
+
 **Tag Entity & Association**
 - Many-to-Many relationship for categorization
 

@@ -21,9 +21,15 @@ DocuFlow is a web-based platform that combines an Intelligent Document Managemen
 *   **Canvas Rendering:** Visualize `.GNC` geometry (Lines, Arcs G02/G03) on an HTML5 canvas.
 *   **Layer/Parameter Editing:** Click a contour to edit its P-codes (P660, P150) directly in a side panel.
 *   **Machine Coordinate Transform:** Automatically flip coordinates (Y-Up to Y-Down) for correct screen display.
+*   **Geometric Analysis:** Auto-calculate # of holes, corners, and radii during GNC import.
 *   **Validation:** Warn if contours exceed the defined Sheet dimensions.
 
-### 3.3 File System Integration
+### 3.3 Parts Library ("Sidra")
+*   **Advanced Search:** Find parts by physical properties (Dimensions, Material, Complexity/Hole Count).
+*   **Preview:** Show GNC geometry thumbnail in search results.
+*   **Nesting Ready:** All library parts must have a valid linked GNC file for the Nesting Engine.
+
+### 3.4 File System Integration
 *   **Auto-Import:** Watch "Mihtav" (Order) and "Sidra" (Series) folders on the local network.
 *   **Metadata Extraction:** Parse GNC headers to find Material type, Part names, and timestamps.
 *   **Sync:** Update system records when physical files are modified.

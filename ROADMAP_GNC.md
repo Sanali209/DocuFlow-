@@ -86,6 +86,8 @@ The following infrastructure is already in place and will be leveraged:
     - Attributes:
         - **Factory Registration Number:** Unique serial identifier.
         - **Type/Version:** Single English letter (e.g., 'A', 'B') denoting revision.
+        - **Geometry Stats:** Dimensions, Material, Hole Count, Corner Count, Radius Count.
+    - **Indexing:** Implement logic to calculate these stats from GNC files during import.
 - [ ] **Task Linkage:**
     - Update `Task` model to support One-to-Many or Many-to-Many relationships with `Parts`.
     - Interface: Allow adding/linking specific Parts (by Reg Number) to a Task.

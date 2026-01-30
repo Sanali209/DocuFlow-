@@ -45,9 +45,20 @@ This SRS document provides the specific technical requirements for the DocuFlow 
 ### 2.3 Data & Storage
 *   **FR-07: Database Schema**
     *   `Documents` table: Stores core metadata.
-    *   `Parts` table: `registration_number` (String), `version` (Char).
+    *   `Parts` table:
+        *   `registration_number` (String)
+        *   `version` (Char)
+        *   `dimensions` (JSON: {width, height})
+        *   `material` (String)
+        *   `hole_count` (Int)
+        *   `corner_count` (Int)
+        *   `radius_count` (Int)
+        *   `gnc_file_path` (String) - Link to GNC file for preview/nesting.
     *   `Workspaces` table: `name`, `machine_id`.
-*   **FR-08: File Storage**
+*   **FR-08: Advanced Part Search**
+    *   API Endpoint: `GET /parts/search`.
+    *   Filters: `min_holes`, `max_holes`, `material`, `dimensions_max`, `corners`.
+*   **FR-09: File Storage**
     *   Physical files stored in `static/uploads/{uuid}_{filename}`.
     *   GNC files tracked via `Attachments` table or dedicated `GNCPrograms` table.
 
