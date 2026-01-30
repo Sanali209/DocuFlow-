@@ -14,8 +14,7 @@ DocuFlow is a web-based platform that combines an Intelligent Document Managemen
 
 ### 3.1 Document Core
 *   **Card-Based Interface:** Visual representation of documents with status badges.
-*   **Intelligent Search:** Full-text search across extracted content, tags, and metadata.
-*   **OCR Scanning:** Upload multiple images/PDFs, extract text/tables, and auto-populate the "Content" field.
+*   **Intelligent Search:** Full-text search across tags and metadata.
 *   **Filter Presets:** Save complex filter combinations (e.g., "My Pending Urgent Tasks") for quick access.
 
 ### 3.2 GNC Visualizer & Editor

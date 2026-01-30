@@ -7,7 +7,6 @@
 The goal of the DocuFlow project is to digitize and streamline the document management and manufacturing verification processes within the organization. Currently, workflows rely on physical paper documents and manual file handling, leading to inefficiencies, tracking errors, and lack of visibility. This system will serve as a centralized digital hub for document tracking, intelligent OCR extraction, and direct visualization/editing of manufacturing programs (GNC).
 
 ## 2. Business Objectives
-*   **Digitization:** Eliminate manual data entry by using AI-powered OCR to extract data from scanned paper documents.
 *   **Efficiency:** Reduce the time spent searching for files and verifying manufacturing program geometry by 40%.
 *   **Accuracy:** Minimize human error in checking CNC program parameters (P-codes) and geometry.
 *   **Traceability:** Provide full visibility into the status of every Work Order ("Mihtav") and manufacturing Part.
@@ -16,7 +15,6 @@ The goal of the DocuFlow project is to digitize and streamline the document mana
 ## 3. Scope
 ### In Scope
 *   **Document Management System (DMS):** Storage, tagging, filtering, and searching of digital documents.
-*   **OCR Integration:** Automatic text and table extraction from PDFs/Images.
 *   **Task Tracking:** Assigning and monitoring tasks linked to specific documents.
 *   **GNC Module:** Visualization and parameter editing of Rexroth/Hans Laser 801 G-code files.
 *   **Network Sync:** Automatic importing of files from local network folders.

@@ -13,16 +13,12 @@ The current system acts as a centralized Document Tracker with embedded Task man
     *   **Monolithic API**: Handles all business logic for Documents, Tasks, Tags, and Settings.
     *   **Database**: SQLite (via SQLAlchemy) for persistence.
     *   **File Storage**: Local filesystem (`static/uploads`) for attachments.
-    *   **OCR Proxy**: Forwards scan requests to the OCR Microservice.
-*   **OCR Service (Microservice):**
-    *   Dedicated Python/FastAPI service.
-    *   Wraps IBM Docling for PDF/Image processing.
-    *   Exposes `/process` endpoint.
+    *   **Distribution**: Bundled as a single executable via PyInstaller.
 
 ### 1.2 Data Flow
 1.  User creates/updates Document -> Frontend calls API -> Backend updates DB.
 2.  User uploads file -> Backend saves to disk -> Creates Attachment record.
-3.  User scans document -> Backend proxies to OCR Service -> OCR returns Markdown -> Backend saves content.
+3.  **Local Sync**: Backend scans configured folders -> Updates DB -> Links GNC files.
 
 ---
 
@@ -62,10 +58,6 @@ graph TD
     subgraph "Core System"
         BE -->|CRUD| DB[(SQLite DB)]
         BE -->|Store/Read| FS[Local Storage /uploads]
-    end
-
-    subgraph "OCR Module"
-        BE -->|Proxy| OCR[OCR Service]
     end
 
     subgraph "GNC & Network Module (New)"

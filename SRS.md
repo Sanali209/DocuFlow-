@@ -12,10 +12,9 @@ This SRS document provides the specific technical requirements for the DocuFlow 
     *   `POST /documents/`: Create document with metadata.
     *   `GET /documents/`: Support filtering by `type`, `status`, `tags`, `date_range`.
     *   `PUT /documents/{id}`: Update metadata.
-*   **FR-02: File Upload & OCR**
-    *   `POST /documents/scan`: Accept multipart file upload.
-    *   Integrate with `OCR Service` via HTTP POST.
-    *   Parse `markdown` response to extract Document Name using regex (`doc_name_regex` setting).
+*   **FR-02: File Upload**
+    *   `POST /upload`: Accept multipart file upload.
+    *   Save files to `static/uploads/`.
 *   **FR-03: GNC Parsing**
     *   Implement `GNCProcessor` class.
     *   **Input:** `.gnc` text file.
@@ -56,10 +55,9 @@ This SRS document provides the specific technical requirements for the DocuFlow 
 *   **NFR-04:** JWT Authentication for all write operations (Planned for Stage 3).
 
 ### 3.3 Reliability
-*   **NFR-05:** OCR Service failure must not crash the main backend; should return a "Processing Failed" error gracefully.
+*   **NFR-05:** Application must be portable (One-Folder) and not require pre-installed Python.
 
 ## 4. Interfaces
-*   **External:** OCR Microservice (REST/HTTP).
 *   **External:** Local File System (Read/Write access to Network Shares).
 
 ## 5. Technology Stack Constraints

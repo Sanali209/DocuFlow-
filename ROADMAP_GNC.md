@@ -9,6 +9,7 @@ This roadmap outlines the development plan for the GNC (Rexroth/Hans Laser 801) 
 **Stack:**
 - **Backend:** FastAPI (Python 3.10+)
 - **Frontend:** Svelte 5 + Canvas API
+- **Deployment:** One-Folder Distributable (PyInstaller)
 - **Data Format:** JSON (Intermediate representation)
 
 ---
@@ -21,6 +22,7 @@ The following infrastructure is already in place and will be leveraged:
 - [x] **Database:** SQLite + SQLAlchemy models (`backend/models.py`).
 - [x] **File Handling:** Basic file upload mechanisms (`/upload` endpoint).
 - [x] **Routing:** Client-side view switching in `App.svelte` and `Sidebar.svelte`.
+- [ ] **OCR Module:** *REMOVED* (Paradigm shift to local file handling without OCR).
 
 ---
 
