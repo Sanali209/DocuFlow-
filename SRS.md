@@ -25,6 +25,13 @@ This SRS document provides the specific technical requirements for the DocuFlow 
     *   Background task running every X minutes.
     *   Scan configured paths for folders matching `Mihtav_*` or `Sidra_*` patterns.
     *   Sync file metadata (timestamps) to Database.
+*   **FR-05: Reverse Engineering**
+    *   Detect files with `_801` suffix.
+    *   Compute "Geometric Hash" of contours.
+    *   Match against original GNC files to link metadata.
+*   **FR-06: Warehouse & Nesting**
+    *   `StockItems` table: Material, Thickness, Qty, Reserved.
+    *   `NestingEngine`: Python module (using `rectpack` or similar) to pack parts on sheets.
 
 ### 2.2 Frontend (Svelte 5)
 *   **FR-05: GNC Canvas**

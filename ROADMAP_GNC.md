@@ -104,8 +104,37 @@ The following infrastructure is already in place and will be leveraged:
 - [ ] **Sync Logic:**
     - Link imported programs to the corresponding "Order Document" in the system.
     - Detect file changes (dates) and update the system records accordingly.
+- [ ] **Reverse Engineering Pipeline:**
+    - Handle machine-edited files (e.g., `_801` suffix).
+    - Recover lost metadata by geometric fingerprinting (matching original contours).
 
-## Stage 3: Advanced Access Control & Management
+## Stage 3: Advanced Manufacturing Control
+**Objective:** Implement comprehensive production management, including warehouse, shift logs, and nesting.
+
+### 3.1 Warehouse & Material Reservation
+- [ ] **Stock Management:**
+    - Track Sheets: Material, Thickness, Dimensions, Quantity, Location.
+    - Track Remnants: Usable offcuts returned to stock.
+- [ ] **Reservation System:**
+    - Reserve material for specific Orders/Tasks.
+    - Auto-deduct stock upon Task completion.
+
+### 3.2 Nesting & Packing Module
+- [ ] **Packing Algorithm:**
+    - Automatic 2D packing of parts onto selected sheet sizes.
+    - Optimization for material yield.
+- [ ] **Output Generation:**
+    - Create new GNC files combining multiple parts.
+
+### 3.3 Shift Management & Action Log
+- [ ] **Shift Logs:**
+    - Handover notes between shifts.
+    - Operator session tracking.
+- [ ] **Action Analytics:**
+    - structured Audit Log for all manual edits vs automatic events.
+    - Productivity reports per shift/operator.
+
+### 3.4 User & Workspace Management
 **Objective:** Implement comprehensive user management, security, and enhanced search capabilities.
 
 ### 3.1 User & Workspace Management

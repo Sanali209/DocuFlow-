@@ -67,19 +67,25 @@ graph TD
         NetFS -.->|Read Content| GP
     end
 
+    subgraph "Advanced Manufacturing (Stage 3)"
+        BE -->|Calculate| NE[Nesting Engine]
+        BE -->|Fingerprint| RE[Reverse Eng. Pipeline]
+        BE -->|Inventory| WM[Warehouse Module]
+    end
+
     classDef new fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    class GP,FW,NetFS new;
+    class GP,FW,NetFS,NE,RE,WM new;
 ```
 
 ### 2.3 Data Model Extensions
 *   **Part Entity**: Links specific GNC geometry to a Task.
     *   Fields: `registration_number`, `version_type` (A/B/C).
 *   **Workspace Entity**: Represents a physical machine.
-    *   Links: `User` <-> `Workspace`.
-*   **Document**:
-    *   New relationships to `GNCProgram` (or specialized Attachment metadata).
+*   **StockItem**: Material inventory (Size, Qty, Reserved).
+*   **ShiftLog**: Handover notes, operator sessions, action tracking.
 
 ## 3. Migration Plan
 1.  **Phase 1**: Implement GNC Parser and Canvas Visualizer (Standalone).
 2.  **Phase 2**: Integrate GNC files into Document Attachments and Tasks.
-3.  **Phase 3**: Implement File System Watcher to auto-populate Documents from Network Folders.
+3.  **Phase 3**: Implement File System Watcher & Reverse Engineering Pipeline (Sync).
+4.  **Phase 4**: Implement Warehouse & Nesting Modules.
