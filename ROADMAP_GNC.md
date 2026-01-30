@@ -77,6 +77,24 @@ The following infrastructure is already in place and will be leveraged:
 - [ ] **Field Testing:** Validate generated GNC files on the actual machine controller.
 - [ ] **Performance:** Optimize Canvas rendering for files with large numbers of contours (>1000).
 
+## Stage 3: Advanced Access Control & Management
+**Objective:** Implement comprehensive user management, security, and enhanced search capabilities.
+
+### 3.1 User & Workspace Management
+- [ ] **Authentication:** Implement User Login/Logout (JWT based).
+- [ ] **Role-Based Access Control (RBAC):**
+    - Define Roles: Operator, Technologist, Admin.
+    - Permissions: Limit editing/approving GNC files based on role.
+- [ ] **Workspaces (Machines):**
+    - Create `Workspace` entity representing physical machines/stations.
+    - Assignment: Link Users to specific Workspaces (User <-> Workspace).
+    - Limit visibility/tasks based on the assigned workspace.
+
+### 3.2 Enhanced Search & Filtering
+- [ ] **Full-Text Search:** Enable searching documents by content text.
+- [ ] **Tag Search:** Filter document tables by multiple tags.
+- [ ] **Advanced Filtering:** Combine Text + Tags + Workspace filters in the main document list.
+
 ---
 
 ## Next Steps
