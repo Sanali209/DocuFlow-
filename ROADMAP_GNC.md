@@ -32,10 +32,11 @@ The following infrastructure is already in place and will be leveraged:
 ### 1.1 Backend: GNC Parsing & Modeling (Sprint 1)
 - [ ] **Data Models:** Define Pydantic models for `Sheet`, `Contour`, `Command` (Line, Arc, Move).
 - [ ] **GNC Parser:** Implement `GNCProcessor` class to:
-    - Parse `.GNC` text files.
+    - **Dual-Mode Parsing:** Detect "Office" vs "Machine" (`_801`) formats.
+    - Parse `.GNC` text files using `(===== CONTOUR X =====)` delimiters.
     - Extract Header info (Sheet dimensions).
     - Parse motion commands (`G00`, `G01`, `G02`, `G03`) and coordinates.
-    - Extract P-codes (`P660`, `P150`, etc.) associated with contours.
+    - Extract P-codes (`P660`, `P150`, etc.) associated with contours from `*N` lines.
 - [ ] **API Endpoints:**
     - `POST /gnc/parse`: Accepts `.GNC` file, returns JSON structure.
     - `POST /gnc/build`: Accepts JSON structure, returns generated `.GNC` file.
@@ -104,9 +105,9 @@ The following infrastructure is already in place and will be leveraged:
 - [ ] **Sync Logic:**
     - Link imported programs to the corresponding "Order Document" in the system.
     - Detect file changes (dates) and update the system records accordingly.
-- [ ] **Reverse Engineering Pipeline (801 Format):**
-    - Collect samples of machine-edited files (`_801` suffix) to decode the proprietary structure.
-    - Implement a custom Parser to extract the preserved metadata (Material, Customer, Parts).
+- [ ] **Format Harmonization (801 Format):**
+    - Implement "Format Detection" based on file header (`%` vs Date).
+    - Implement P-code extraction from `*N` lines in Machine files.
     - Sync edits (P-code changes) back to the system record.
 
 ## Stage 3: Advanced Manufacturing Control

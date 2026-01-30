@@ -47,16 +47,24 @@ Browsers cannot access local network shares (SMB) directly due to security sandb
     -   **Recommendation:** Custom **Regex/State-Machine Parsers**.
     -   Avoid generic libraries; machine formats (Rexroth/Hans) are proprietary and specific.
 
-### 3.2 Reverse Engineering Pipeline (801 Format)
-**Problem:** Machine saves edited files with the `_801` suffix in a proprietary format, but **metadata is preserved** within this structure. The challenge is parsing this non-standard text/binary format to extract the data.
-**Solution:**
-1.  **Format Analysis:** Collect samples of `_801` files to reverse-engineer the structure (Header locations, P-code encoding).
-2.  **Custom Parser:** Develop a specialized `Gnc801Parser` class:
-    -   Identify Metadata blocks (Material, Thickness, Customer).
-    -   Extract Geometry (G-codes may be wrapped or encoded).
-3.  **Synchronization:**
-    -   When `_801` file is detected, parse it using the custom parser.
-    -   Update the existing System Record with the *actual* parameters used on the machine (e.g., if the operator changed P-codes).
+### 3.2 GNC File Analysis & Parsing Strategy
+**Finding:** There are two distinct file formats: "Office" (Source) and "Machine" (Suffix `_801`). The geometry is identical, but headers and macros differ.
+
+| Feature | Office File | Machine File (`_801`) |
+|---|---|---|
+| **Header** | Starts with Date/Version | Starts with `%` and Program No (`P123456`) |
+| **Tech Params** | `SSD[...]` macros | `*N... P660=190` (P660 is Tech ID) |
+| **Commands** | `CALL P99...` | `Q99...` |
+| **Separators** | `(===== CONTOUR X =====)` | Same |
+
+**Parsing Strategy:**
+1.  **Format Detection:** Check first byte. `%` = Machine Mode, else Office Mode.
+2.  **Geometry:** Parse `G00`/`G01`/`G02`/`G03` (identical in both). Ignore `CALL`/`Q` for rendering.
+3.  **Parameter Extraction:**
+    -   **Office:** Read `SSD` tags (if needed).
+    -   **Machine:** Search for `*N... P660=...` lines inside contour blocks to get the Technology ID.
+4.  **Editing Logic:**
+    -   User selects a Contour -> System finds corresponding `*N` line -> Updates `P660` value -> Saves file.
 
 ### 3.3 Warehouse & Reservation Architecture
 **New Entities:**

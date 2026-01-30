@@ -16,19 +16,19 @@ This SRS document provides the specific technical requirements for the DocuFlow 
     *   `POST /upload`: Accept multipart file upload.
     *   Save files to `static/uploads/`.
 *   **FR-03: GNC Parsing**
-    *   Implement `GNCProcessor` class.
-    *   **Input:** `.gnc` text file.
-    *   **Output:** JSON object containing:
-        *   `header`: `{ width, height, thickness, material }`
-        *   `contours`: Array of `{ id, type, commands: [{G00, x, y}, {G02, x, y, i, j}] }`
+    *   Implement `GNCProcessor` class with **Dual-Mode** parsing.
+    *   **Detection:** If file starts with `%` -> Machine Mode (`_801`), else Office Mode.
+    *   **Contours:** Split by delimiter `(===== CONTOUR X =====)`.
+    *   **P-Codes:** Extract `P660={Value}` from lines starting with `*N`.
+    *   **Output:** JSON object containing contours and their P-code technology IDs.
 *   **FR-04: File System Watcher**
     *   Background task running every X minutes.
     *   Scan configured paths for folders matching `Mihtav_*` or `Sidra_*` patterns.
     *   Sync file metadata (timestamps) to Database.
-*   **FR-05: 801 Format Parsing (Reverse Engineering)**
-    *   Implement `Gnc801Parser` to handle machine-edited files.
-    *   Decode proprietary metadata blocks (Material, Customer, Parts List) within the `_801` text structure.
-    *   Sync parsed values (e.g., modified P-codes) back to the Database.
+*   **FR-05: 801 Format Decoding**
+    *   Parse lines starting with `*N`.
+    *   Extract Technology ID (`P660`) and Speed Factors (`P150`, `P151`).
+    *   Ignore `Q` command differences.
 *   **FR-06: Warehouse & Nesting**
     *   `StockItems` table: Material, Thickness, Qty, Reserved.
     *   `NestingEngine`: Python module (using `rectpack` or similar) to pack parts on sheets.

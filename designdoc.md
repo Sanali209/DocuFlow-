@@ -565,10 +565,12 @@ The system will integrate with local network storage to synchronize GNC programs
 #### 3.7.2 Import Logic
 1.  **Scanning**: The system scans configured network paths.
 2.  **Mapping**: Users map detected folders to specific Document Types (e.g., "Mihtav" folder -> Order Document).
-3.  **Metadata Extraction**: GNC files are parsed to extract:
-    - **Material**: Raw material specifications.
-    - **Parts**: List of parts produced by the program.
-    - **Dates**: File creation and modification timestamps.
+3.  **Metadata Extraction**: GNC files are parsed using **Dual-Mode Logic**:
+    - **Format Check**: If header starts with `%`, treat as Machine File (`_801`).
+    - **Extraction**:
+        - **Office**: Standard header parsing.
+        - **Machine**: Extract `P660` (Tech ID) from `*N` lines.
+    - **Common Data**: Material, Parts List (from `CONTOUR` markers), Dates.
 4.  **Synchronization (Centralized)**:
     - **Database**: All clients connect to `Z:\DocuFlow\data.db`.
     - **Files**: All clients save attachments to `Z:\DocuFlow\uploads\`.
