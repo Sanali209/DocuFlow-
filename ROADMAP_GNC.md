@@ -54,9 +54,10 @@ The following infrastructure is already in place and will be leveraged:
 
 ### 2.2 Local Network Integration
 - [ ] **File Watcher:** Background thread scanning `Z:\Mihtav` and `Z:\Sidra`.
-- [ ] **Auto-Import:**
-    - Create `Document` for new "Mihtav" folders.
-    - Create `Part` for "Sidra" files.
+- [ ] **Auto-Import Strategy:**
+    - **Parts Library:** Scan "Sidra" to auto-create `Part` entities. Extract GNC code and parse Registration Numbers.
+    - **Orders:** Scan "Mihtav" folders to auto-create `Document` entities (Type: Order).
+    - **Status Workflow:** Set initial status to `Unregistered`. Operator must manually change to `Registered` upon receiving physical paper.
     - Extract Metadata (Material, Dates).
 
 ---

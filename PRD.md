@@ -29,9 +29,11 @@ DocuFlow is a web-based platform that combines an Intelligent Document Managemen
 *   **Preview:** Show GNC geometry thumbnail in search results.
 *   **Nesting Ready:** All library parts must have a valid linked GNC file for the Nesting Engine.
 
-### 3.4 File System Integration
+### 3.4 File System Integration & Workflow
 *   **Auto-Import:** Watch "Mihtav" (Order) and "Sidra" (Series) folders on the local network.
-*   **Metadata Extraction:** Parse GNC headers to find Material type, Part names, and timestamps.
+*   **Library Population:** Automatically extract geometry/metadata from "Sidra" files to populate the Parts Library.
+*   **Order Creation:** Automatically generate Documents for new "Mihtav" folders with status `Unregistered`.
+*   **Manual Verification:** Operators must explicitly change status to `Registered` when the physical paper order arrives.
 *   **Sync:** Update system records when physical files are modified.
 
 ### 3.4 User Management
