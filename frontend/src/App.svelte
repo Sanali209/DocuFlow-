@@ -7,12 +7,16 @@
     import JournalView from "./lib/JournalView.svelte";
     import JobView from "./lib/JobView.svelte";
     import DashboardView from "./lib/DashboardView.svelte";
+    import PartsView from "./lib/PartsView.svelte";
+    import StockView from "./lib/StockView.svelte";
+    import ShiftLogView from "./lib/ShiftLogView.svelte";
+    import GncView from "./lib/GncView.svelte";
 
     let listComponent;
     let isModalOpen = $state(false);
     let isSettingsOpen = $state(false);
     let editingDoc = $state(null);
-    let currentView = $state("dashboard"); // 'dashboard' | 'documents' | 'journal' | 'job'
+    let currentView = $state("dashboard");
 
     function refreshList() {
         if (listComponent) {
@@ -48,6 +52,20 @@
     function handleViewChange(view) {
         currentView = view;
     }
+
+    function getViewTitle(view) {
+        const titles = {
+            dashboard: 'Dashboard',
+            documents: 'DocuFlow',
+            journal: 'Journal',
+            job: 'Job Tracking',
+            parts: 'Parts Library',
+            gnc: 'GNC Editor',
+            stock: 'Stock Management',
+            logs: 'Shift Logs'
+        };
+        return titles[view] || 'DocuFlow';
+    }
 </script>
 
 <div class="app-container">
@@ -56,17 +74,7 @@
     <div class="main-content-wrapper">
         <header>
             <div class="header-content">
-                <h1>
-                    {#if currentView === "dashboard"}
-                        Dashboard
-                    {:else if currentView === "documents"}
-                        DocuFlow
-                    {:else if currentView === "journal"}
-                        Journal
-                    {:else if currentView === "job"}
-                        Job Tracking
-                    {/if}
-                </h1>
+                <h1>{getViewTitle(currentView)}</h1>
                 <div class="header-actions">
                     <button
                         class="icon-btn"
@@ -123,6 +131,14 @@
                 <JournalView />
             {:else if currentView === "job"}
                 <JobView />
+            {:else if currentView === "parts"}
+                <PartsView />
+            {:else if currentView === "gnc"}
+                <GncView />
+            {:else if currentView === "stock"}
+                <StockView />
+            {:else if currentView === "logs"}
+                <ShiftLogView />
             {/if}
         </main>
     </div>
@@ -145,43 +161,41 @@
         box-sizing: border-box;
     }
     :global(html) {
-        /* Ensure background covers the entire canvas, even on overscroll */
         background-color: #f1f5f9;
-        /* Prevent horizontal scroll if possible, though overflow-x hidden on body is safer */
     }
     :global(body) {
         margin: 0;
         padding: 0;
-        min-height: 100dvh; /* Dynamic viewport height to handle address bars */
+        min-height: 100dvh;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #1e293b;
         background-color: #f1f5f9;
-        /* Ensure body takes full width */
         width: 100%;
     }
     .app-container {
-        min-height: 100dvh; /* Ensure container fills the dynamic viewport */
+        min-height: 100dvh;
         display: flex;
-        flex-direction: row; /* Changed to row for sidebar */
+        flex-direction: row;
         width: 100%;
     }
     .main-content-wrapper {
         flex: 1;
         display: flex;
         flex-direction: column;
-        min-width: 0; /* Prevent flex child overflow */
+        min-width: 0;
+        max-height: 100vh; /* Contain within viewport for scrollable areas */
+        overflow: hidden; /* Main scroll is handled by inner containers */
     }
     header {
         background-color: white;
         border-bottom: 1px solid #e2e8f0;
         padding: 1rem 0;
-        position: sticky;
-        top: 0;
         z-index: 100;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        flex-shrink: 0; /* Don't shrink header */
     }
     .header-content {
-        max-width: 1200px; /* Or unset to fill space */
+        max-width: 1400px;
         margin: 0 auto;
         padding: 0 1.5rem;
         display: flex;
@@ -201,7 +215,7 @@
             font-size: 0.875rem;
         }
         main {
-            padding: 1.5rem 1rem;
+            padding: 1rem;
         }
     }
     h1 {
@@ -212,11 +226,12 @@
         letter-spacing: -0.025em;
     }
     main {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
         padding: 2rem 1.5rem;
         width: 100%;
-        flex: 1; /* Pushes footer down if we had one */
+        flex: 1;
+        overflow-y: auto; /* Enable scrolling for content */
     }
     .header-actions {
         display: flex;

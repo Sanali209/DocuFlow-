@@ -291,3 +291,91 @@ export async function uploadRestore(file) {
     
     return await response.json();
 }
+
+// Parts
+export async function fetchParts(skip = 0, limit = 100) {
+    const response = await fetch(`${API_URL}/parts?skip=${skip}&limit=${limit}`);
+    return await response.json();
+}
+
+export async function createPart(part) {
+    const response = await fetch(`${API_URL}/parts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(part),
+    });
+    return await response.json();
+}
+
+export async function deletePart(id) {
+    const response = await fetch(`${API_URL}/parts/${id}`, {
+        method: 'DELETE',
+    });
+    return await response.json();
+}
+
+// Stock
+export async function fetchStock() {
+    const response = await fetch(`${API_URL}/stock`);
+    return await response.json();
+}
+
+export async function createStockItem(item) {
+    const response = await fetch(`${API_URL}/stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+    });
+    return await response.json();
+}
+
+export async function deleteStockItem(id) {
+    const response = await fetch(`${API_URL}/stock/${id}`, {
+        method: 'DELETE',
+    });
+    return await response.json();
+}
+
+// Shift Logs
+export async function fetchShiftLogs(skip = 0, limit = 100) {
+    const response = await fetch(`${API_URL}/shift-logs?skip=${skip}&limit=${limit}`);
+    return await response.json();
+}
+
+export async function createShiftLog(log) {
+    const response = await fetch(`${API_URL}/shift-logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(log),
+    });
+    return await response.json();
+}
+
+// GNC
+export async function parseGnc(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${API_URL}/api/parse-gnc`, {
+        method: 'POST',
+        body: formData,
+    });
+    if (!response.ok) throw new Error('Parse failed');
+    return await response.json();
+}
+
+export async function saveGnc(sheet, filename, overwrite = false) {
+    const response = await fetch(`${API_URL}/api/save-gnc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            sheet,
+            filename,
+            overwrite
+        }),
+    });
+    if (!response.ok) {
+         const error = await response.json().catch(() => ({}));
+         throw new Error(error.detail || 'Save failed');
+    }
+    return await response.json();
+}
