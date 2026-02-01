@@ -382,3 +382,81 @@ def delete_filter_preset(db: Session, preset_id: int):
         db.commit()
         return True
     return False
+
+# --- Part CRUD ---
+def get_parts(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Part).options(subqueryload(models.Part.material)).offset(skip).limit(limit).all()
+
+def create_part(db: Session, part: schemas.PartCreate):
+    db_part = models.Part(**part.model_dump())
+    db.add(db_part)
+    db.commit()
+    db.refresh(db_part)
+    return db_part
+
+def update_part(db: Session, part_id: int, part_data: dict):
+    db_part = db.query(models.Part).filter(models.Part.id == part_id).first()
+    if not db_part:
+        return None
+    for key, value in part_data.items():
+        setattr(db_part, key, value)
+    db.commit()
+    db.refresh(db_part)
+    return db_part
+
+def delete_part(db: Session, part_id: int):
+    db_part = db.query(models.Part).filter(models.Part.id == part_id).first()
+    if db_part:
+        db.delete(db_part)
+        db.commit()
+        return True
+    return False
+
+# --- StockItem CRUD ---
+def get_stock_items(db: Session):
+    return db.query(models.StockItem).options(subqueryload(models.StockItem.material)).all()
+
+def create_stock_item(db: Session, item: schemas.StockItemCreate):
+    db_item = models.StockItem(**item.model_dump())
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
+def delete_stock_item(db: Session, item_id: int):
+    db_item = db.query(models.StockItem).filter(models.StockItem.id == item_id).first()
+    if db_item:
+        db.delete(db_item)
+        db.commit()
+        return True
+    return False
+
+# --- Workspace CRUD ---
+def get_workspaces(db: Session):
+    return db.query(models.Workspace).all()
+
+def create_workspace(db: Session, ws: schemas.WorkspaceCreate):
+    db_ws = models.Workspace(**ws.model_dump())
+    db.add(db_ws)
+    db.commit()
+    db.refresh(db_ws)
+    return db_ws
+
+def delete_workspace(db: Session, ws_id: int):
+    db_ws = db.query(models.Workspace).filter(models.Workspace.id == ws_id).first()
+    if db_ws:
+        db.delete(db_ws)
+        db.commit()
+        return True
+    return False
+
+# --- ShiftLog CRUD ---
+def get_shift_logs(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.ShiftLog).order_by(models.ShiftLog.timestamp.desc()).offset(skip).limit(limit).all()
+
+def create_shift_log(db: Session, log: schemas.ShiftLogCreate):
+    db_log = models.ShiftLog(**log.model_dump())
+    db.add(db_log)
+    db.commit()
+    db.refresh(db_log)
+    return db_log

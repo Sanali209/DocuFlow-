@@ -5,6 +5,8 @@ venv/
 .venv/
 backend/sql_app.db
 sql_app.db
+*.db-shm
+*.db-wal
 node_modules/
 dist/
 .DS_Store
