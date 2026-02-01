@@ -1,5 +1,7 @@
 export interface GNCCommand {
-    type: string; // G00, G01, G02, G03
+    type: string; // G00, G01, M30, etc.
+    command?: string; // G, M, T
+    value?: number; // 0, 1, 30
     x?: number;
     y?: number;
     i?: number;

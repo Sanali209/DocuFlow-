@@ -3,7 +3,9 @@ from typing import List, Optional, Dict, Any
 import re
 
 class GNCCommand(BaseModel):
-    type: str  # G00, G01, G02, G03
+    type: str  # G00, G01, M30, T1, etc.
+    command: Optional[str] = None # G, M, T
+    value: Optional[float] = None # 0, 1, 30, etc.
     x: Optional[float] = None
     y: Optional[float] = None
     i: Optional[float] = None
@@ -62,14 +64,17 @@ class GNCParser:
         sheet = GNCSheet()
 
         # Regex patterns
-        # Updated G-code pattern to avoid false positives like G3015 matching G3
-        g_code_pattern = re.compile(r'G(00|01|02|03|0|1|2|3)(?!\d)', re.IGNORECASE)
+        # Updated to capture G, M, T commands.
+        # Captures G01, M30, T1 as (Prefix, Value)
+        # Matches Start of line or space followed by Letter+Number
+        # Be careful not to match coordinates like X10 as commands, though X is usually coordinate.
+        # Standard commands: G, M, T, S, F.
+        # We focus on G and M for now as structural/control commands.
+        command_pattern = re.compile(r'\b([GMT])(\d+(?:\.\d+)?)\b', re.IGNORECASE)
+
         coord_pattern = re.compile(r'([XYIJ])([+-]?\d*\.?\d+)', re.IGNORECASE)
-        # Handle 4 or more equals signs
         contour_start_pattern = re.compile(r'\(={4,}\s*CONTOUR\s+(\d+)\s+={4,}\)', re.IGNORECASE)
         part_info_pattern = re.compile(r'\(PART NAME:(.*?)\)', re.IGNORECASE)
-        # P-code extraction pattern: *N... P660=123
-        # Assuming format like *N1005 P660=1005 or just P code in line
         p_code_pattern = re.compile(r'P(\d+)=([^\s]+)', re.IGNORECASE)
 
         current_part = None
@@ -99,31 +104,31 @@ class GNCParser:
             if contour_match:
                 cid = int(contour_match.group(1))
 
-                # If no part exists yet, create a default one
                 if current_part is None:
                     current_part = GNCPart(id=part_counter, name="Main Part")
                     part_counter += 1
                     sheet.parts.append(current_part)
 
-                # Add contour to current part
                 current_contour = GNCContour(id=cid)
                 current_part.contours.append(current_contour)
                 continue
 
-            # Check for P-Codes (Metadata) - lines starting with *N often contain tech info
+            # Check for P-Codes
             if line.startswith('*N'):
-                # Extract P-codes
                 matches = p_code_pattern.findall(line)
                 if matches and current_contour:
                     for key, val in matches:
                         current_contour.metadata[f"P{key}"] = val
                 continue
 
-            # Parse G-Code
-            g_match = g_code_pattern.search(line)
-            if g_match:
+            # Parse Commands
+            # Find all commands in the line (e.g. N10 G01 X10 Y10 M03)
+            # We treat N numbers as line numbers/labels, not commands usually.
 
-                # If G-code is found but no part/contour exists, we need defaults.
+            # Search for G/M/T codes
+            commands_found = command_pattern.findall(line)
+
+            if commands_found:
                 if current_part is None:
                     current_part = GNCPart(id=part_counter, name="Main Part")
                     part_counter += 1
@@ -133,29 +138,65 @@ class GNCParser:
                     current_contour = GNCContour(id=1)
                     current_part.contours.append(current_contour)
 
-                cmd_type = g_match.group(1).upper()
-                # Normalize G0, G1 etc to G00, G01
-                if len(cmd_type) == 1:
-                    cmd_type = '0' + cmd_type
-                if not cmd_type.startswith('G'):
-                    cmd_type = 'G' + cmd_type
-
-                cmd = GNCCommand(type=cmd_type, line_number=i+1, original_text=line)
-
-                # Extract coordinates
+                # Extract coordinates once for the line (assuming single motion per line)
                 coords = coord_pattern.findall(line)
+                line_coords = {}
                 for axis, value in coords:
-                    val = float(value)
-                    if axis.upper() == 'X':
-                        cmd.x = val
-                    elif axis.upper() == 'Y':
-                        cmd.y = val
-                    elif axis.upper() == 'I':
-                        cmd.i = val
-                    elif axis.upper() == 'J':
-                        cmd.j = val
+                    line_coords[axis.lower()] = float(value)
 
-                current_contour.commands.append(cmd)
+                # Create GNCCommand objects for each command found
+                for prefix, val_str in commands_found:
+                    prefix = prefix.upper()
+                    value = float(val_str)
+
+                    # Normalize Type string (e.g. G1 -> G01)
+                    type_str = f"{prefix}{int(value):02d}" if prefix in ['G', 'M'] else f"{prefix}{value}"
+
+                    cmd = GNCCommand(
+                        type=type_str,
+                        command=prefix,
+                        value=value,
+                        line_number=i+1,
+                        original_text=line
+                    )
+
+                    # Attach coordinates only if it's a G-code (motion)
+                    # Or attach to all? Usually coordinates belong to the motion G-code.
+                    if prefix == 'G':
+                        if 'x' in line_coords: cmd.x = line_coords['x']
+                        if 'y' in line_coords: cmd.y = line_coords['y']
+                        if 'i' in line_coords: cmd.i = line_coords['i']
+                        if 'j' in line_coords: cmd.j = line_coords['j']
+
+                    current_contour.commands.append(cmd)
+
+            elif coord_pattern.search(line) and not commands_found:
+                # Coordinate only line (modal G-code)?
+                # E.g. "X10 Y10" implies previous G code (usually G01/G00)
+                # For now, we can create a "Implicit" command or assume G01 if uncertain,
+                # OR just treat it as a continuation.
+                # To be safe and simple, we might skip creating a formal Command if no G/M code is present,
+                # BUT this loses geometry.
+                # Let's assume it's a G01 if valid coordinates exist but no G code.
+                # NOTE: Complex parsers track state (Modal G code).
+                # For this MVP, we might miss "X10" lines if we require "G1 X10".
+                # Let's add a fallback: if coords exist but no command, create a "Modal" command.
+
+                if current_contour:
+                    coords = coord_pattern.findall(line)
+                    cmd = GNCCommand(
+                        type="MODAL",
+                        line_number=i+1,
+                        original_text=line
+                    )
+                    for axis, value in coords:
+                        val = float(value)
+                        if axis.upper() == 'X': cmd.x = val
+                        elif axis.upper() == 'Y': cmd.y = val
+                        elif axis.upper() == 'I': cmd.i = val
+                        elif axis.upper() == 'J': cmd.j = val
+
+                    current_contour.commands.append(cmd)
 
         self._post_process(sheet)
         return sheet
@@ -170,8 +211,9 @@ class GNCParser:
         for part in sheet.parts:
             part_corner_count = 0
             for contour in part.contours:
-                # Basic stats
-                contour.corner_count = len(contour.commands)
+                # Basic stats: Count motion commands (G00, G01, G02, G03)
+                motion_cmds = [c for c in contour.commands if c.command == 'G' and c.value in [0, 1, 2, 3]]
+                contour.corner_count = len(motion_cmds)
                 part_corner_count += contour.corner_count
                 sheet.total_contours += 1
             part.corner_count = part_corner_count
