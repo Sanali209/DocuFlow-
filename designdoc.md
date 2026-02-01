@@ -22,9 +22,9 @@ The application serves as a centralized platform for:
 ## 2. Architecture
 
 ### 2.1 Architectural Pattern
-The application follows a **Hybrid Monolithic-Microservices** architecture:
-- **Monolithic Core**: Frontend and Backend are tightly integrated for simplicity
-- **Microservice Extension**: OCR service is decoupled for scalability and resource isolation
+The application follows a **Self-Contained Monolithic** architecture:
+- **Single Executable**: Frontend assets are bundled with the Backend logic into a one-folder distribution.
+- **Local Focus**: Designed to run on a local machine or local server without external cloud dependencies.
 
 ### 2.2 Technology Stack
 
@@ -40,64 +40,37 @@ The application follows a **Hybrid Monolithic-Microservices** architecture:
 *   **ORM:** SQLAlchemy 2.0+
 *   **Schema Validation:** Pydantic v2
 *   **Server:** Uvicorn (ASGI server)
-*   **Database:** SQLite (default), PostgreSQL-ready
-*   **HTTP Client:** httpx for async requests
-
-#### OCR Microservice
-*   **Base Image:** `python:3.12-slim`
-*   **OCR Engine:** IBM Docling
-*   **Supporting Libraries:** EasyOCR, RapidOCR, Tesseract, TableFormer
-*   **Model Management:** Pre-downloaded during build
-*   **Deployment:** Dockerized, Hugging Face Spaces compatible
+*   **Database:** SQLite (Embedded) with WAL Mode enabled for concurrency.
+*   **Distribution:** PyInstaller (One-Folder mode)
 
 ### 2.3 System Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────┐
-│              Client Browser                      │
+│              User Workstation                   │
 │         (Desktop / Mobile / Tablet)             │
 └────────────────┬────────────────────────────────┘
-                 │ HTTPS
+                 │ HTTP (Localhost / LAN)
 ┌────────────────▼────────────────────────────────┐
-│           Reverse Proxy (Nginx)                 │
-│         SSL Termination / Load Balancing        │
-└────────────────┬────────────────────────────────┘
-                 │
-┌────────────────▼────────────────────────────────┐
-│         Frontend (Svelte 5 + Vite)             │
-│  ┌──────────────────────────────────────────┐  │
-│  │  Components: DocumentList, Form, Tasks   │  │
-│  │  State Management: Svelte Stores         │  │
-│  │  Router: Client-side navigation          │  │
-│  └──────────────────────────────────────────┘  │
-└────────────────┬────────────────────────────────┘
-                 │ REST API (JSON)
-┌────────────────▼────────────────────────────────┐
-│          Backend (FastAPI)                      │
-│  ┌──────────────────────────────────────────┐  │
-│  │  API Endpoints: /documents, /tasks, etc │  │
-│  │  Business Logic: CRUD operations         │  │
-│  │  Authentication: (Future) JWT tokens     │  │
-│  └──────────────┬───────────────────────────┘  │
-│                 │                               │
-│  ┌──────────────▼───────────────────────────┐  │
-│  │       SQLAlchemy ORM                     │  │
-│  │  Models: Document, Task, Tag, etc       │  │
-│  └──────────────┬───────────────────────────┘  │
-└─────────────────┼───────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────┐
-│       SQLite Database (or PostgreSQL)          │
-│  Tables: documents, tasks, tags, journal,      │
-│          attachments, filter_presets           │
+│         Distributable App (One-Folder)          │
+│                                                 │
+│  ┌──────────────────────────────────────────┐   │
+│  │         Frontend Assets (Static)         │   │
+│  │     (Served by FastAPI StaticFiles)      │   │
+│  └───────────────────┬──────────────────────┘   │
+│                      │                          │
+│  ┌───────────────────▼──────────────────────┐   │
+│  │          Backend (FastAPI)               │   │
+│  │                                          │   │
+│  │   [ API Endpoints ]   [ GNC Processor ]  │   │
+│  │   [ File Watcher  ]   [ DB Manager    ]  │   │
+│  └───────────────────┬──────────────────────┘   │
+│                      │                          │
+│  ┌───────────────────▼──────────────────────┐   │
+│  │           SQLite Database                │   │
+│  │         (local .db file)                 │   │
+│  └──────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────┘
-
-     Backend also connects to OCR Service:
-     
-┌────────────────┐  HTTP POST    ┌────────────────┐
-│ Backend FastAPI├──────────────►│  OCR Service   │
-│ /documents/scan│  /convert     │  (Docling)     │
-└────────────────┘  multipart    └────────────────┘
 ```
 
 ### 2.4 Design Principles
@@ -178,6 +151,19 @@ The **Document** is the central entity in the system.
 | `entry_text` | Text | NOT NULL | Note content |
 | `created_at` | DateTime | NOT NULL, Default=now | Creation timestamp |
 
+**Part Entity (Library)**
+- Represents a standard manufacturing part ("Sidra")
+
+| Field | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | Integer | Primary Key | Unique part identifier |
+| `reg_number` | String(50) | NOT NULL, Indexed | Factory Registration Number |
+| `version` | Char(1) | NOT NULL | Revision (A, B, C...) |
+| `material` | String(50) | NOT NULL | Material type (e.g., SS 1.4003) |
+| `dimensions` | JSON | NOT NULL | `{width, height}` |
+| `stats` | JSON | NOT NULL | `{holes, corners, radii}` |
+| `gnc_path` | String | Nullable | Path to source GNC file |
+
 **Tag Entity & Association**
 - Many-to-Many relationship for categorization
 
@@ -215,8 +201,8 @@ class Tag:
 | `value` | Text | NOT NULL | Setting value |
 
 **Common Settings:**
-- `ocr_url`: OCR service endpoint URL
 - `doc_name_regex`: Regex pattern for auto-extraction
+- `sync_folder_path`: Path to Shared Network Drive (Z:) root.
 
 #### 3.2.3 Entity Relationship Diagram
 
@@ -358,28 +344,6 @@ DELETE /documents/{id}
 Response: 204 No Content
 ```
 
-**Scan Document (OCR)**
-```
-POST /documents/scan
-Content-Type: multipart/form-data
-Form Data:
-  - files: File[] (multiple files supported)
-  - document_id: integer (optional, for appending to existing doc)
-
-Process:
-  1. Uploads files to OCR service
-  2. Extracts text/tables via Docling
-  3. Auto-extracts document name via regex
-  4. Saves files as attachments
-  5. Returns extracted content
-
-Response: 200 OK
-  {
-    "extracted_text": "markdown content",
-    "extracted_name": "auto-detected name",
-    "attachments": [...]
-  }
-```
 
 #### 3.3.2 Task Management
 
@@ -599,10 +563,31 @@ MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 ### 3.6 Performance Optimization
 
 #### 3.6.1 Database Optimization
+- **WAL Mode**: Enable Write-Ahead Logging (`PRAGMA journal_mode=WAL;`) to allow concurrent readers/writers on the local SQLite file.
 - **Indexes**: On frequently queried columns (name, type, status)
 - **Eager Loading**: Relationships loaded efficiently
 - **Connection Pooling**: SQLAlchemy pool configuration
-- **Query Optimization**: Use of select_related/join strategies
+
+### 3.7 File System Integration (Planned)
+The system will integrate with local network storage to synchronize GNC programs.
+
+#### 3.7.1 Folder Structure Assumptions
+- **Mihtav (Letter/Order)**: Subfolders representing specific Work Orders. Contains GNC programs specific to that order.
+- **Sidra (Series)**: Separate directory structure for standard/series parts.
+
+#### 3.7.2 Import Logic
+1.  **Scanning**: The system scans configured network paths.
+2.  **Mapping**: Users map detected folders to specific Document Types (e.g., "Mihtav" folder -> Order Document).
+3.  **Metadata Extraction**: GNC files are parsed using **Dual-Mode Logic**:
+    - **Format Check**: If header starts with `%`, treat as Machine File (`_801`).
+    - **Extraction**:
+        - **Office**: Standard header parsing.
+        - **Machine**: Extract `P660` (Tech ID) from `*N` lines.
+    - **Common Data**: Material, Parts List (from `CONTOUR` markers), Dates.
+4.  **Synchronization (Centralized)**:
+    - **Database**: All clients connect to `Z:\DocuFlow\data.db`.
+    - **Files**: All clients save attachments to `Z:\DocuFlow\uploads\`.
+    - **Locking**: Managed via SQLite WAL mode to allow concurrent readers.
 
 #### 3.6.2 API Performance
 - **Async Operations**: FastAPI's async capabilities for I/O operations
@@ -732,10 +717,9 @@ MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 - Download button
 
 **`SettingsModal.svelte`** - Configuration Dialog
-- OCR service URL input
 - Document name regex configuration
+- Local folder path selection
 - Form validation
-- Test connection button (future)
 
 **`FilterModal.svelte`** - Advanced Filters Dialog
 - Multi-criteria filter form
@@ -864,461 +848,53 @@ export default defineConfig({
 - Focus management in modals
 - Color contrast compliance (WCAG AA)
 
-## 5. OCR Service (`/ocr_service`)
+## 5. Deployment Strategy (One-Folder Distributable)
 
-### 5.1 Overview
-A dedicated microservice wrapping the IBM Docling library. It exposes a REST API to convert documents (images and PDFs) to structured Markdown with table recognition.
+### 5.1 One-Folder Concept
+The application is packaged as a single directory (using PyInstaller) that contains:
+1.  **Executable**: The compiled Python backend + uvicorn server.
+2.  **Static Assets**: The built Svelte frontend (HTML/JS/CSS).
+3.  **Dependencies**: All Python libraries required.
+4.  **Config**: Default settings.
 
-**Key Responsibilities:**
-- Document format detection (PDF vs Image)
-- Text extraction using multiple OCR engines
-- Table structure recognition and preservation
-- Markdown formatting with semantic structure
-- Model caching for performance
+**Goal**: The user unzips the folder, runs `DocuFlow.exe` (or binary), and the app starts on `http://localhost:8000`.
 
-### 5.2 Technology Stack
+### 5.2 Build Process
 
-**Core Libraries:**
-*   **Docling**: IBM's document understanding framework
-*   **EasyOCR**: Neural network-based OCR engine
-*   **RapidOCR**: Fast OCR for quick text extraction
-*   **Tesseract**: Traditional OCR engine (fallback)
-*   **TableFormer**: Deep learning model for table structure recognition
-*   **PyTorch**: ML framework for neural models
-*   **FastAPI**: REST API server
-*   **Pillow**: Image processing
-
-**Docker Configuration:**
-*   **Base Image:** `python:3.12-slim` (Debian-based)
-*   **Non-root User:** Runs as user ID 1000 for security
-*   **Model Pre-download**: Models cached during build phase
-*   **Port**: 7860 (Hugging Face Spaces standard)
-
-### 5.3 API Endpoints
-
-#### Convert Document to Markdown
-```
-POST /convert
-Content-Type: multipart/form-data
-
-Form Data:
-  - file: File (PDF or Image: PNG, JPEG, JPG)
-
-Response: 200 OK
-{
-  "markdown": "# Extracted Content\n\n| Header 1 | Header 2 |\n|----------|----------|\n| Cell 1   | Cell 2   |",
-  "metadata": {
-    "page_count": 3,
-    "has_tables": true,
-    "processing_time_ms": 2450
-  }
-}
-
-Error Response: 400/500
-{
-  "detail": "Error message"
-}
-```
-
-#### Health Check
-```
-GET /health
-Response: 200 OK
-{
-  "status": "healthy",
-  "models_loaded": true,
-  "version": "1.0.0"
-}
-```
-
-### 5.4 Document Processing Pipeline
-
-```
-┌─────────────────┐
-│  Upload File    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Format Detection│
-│  (PDF/Image)    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Load Document  │
-│  (Docling Core) │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  OCR Processing │
-│  (Multi-engine) │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│Table Recognition│
-│  (TableFormer)  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│Layout Analysis  │
-│ (Headers/Paras) │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│Markdown Export  │
-│  (Formatted)    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Return Result   │
-└─────────────────┘
-```
-
-### 5.5 Configuration
-
-**Docling Configuration:**
-```python
-from docling.document_converter import DocumentConverter
-from docling.datamodel.pipeline_options import PdfPipelineOptions
-
-pipeline_options = PdfPipelineOptions()
-pipeline_options.do_ocr = True
-pipeline_options.do_table_structure = True
-
-converter = DocumentConverter(
-    pipeline_options=pipeline_options
-)
-```
-
-**OCR Engine Selection:**
-- **Primary**: EasyOCR (best accuracy for tables)
-- **Fallback**: RapidOCR (faster, lower resource)
-- **Last Resort**: Tesseract (traditional OCR)
-
-### 5.6 Deployment
-
-#### 5.6.1 Hugging Face Spaces (Recommended)
-
-**Advantages:**
-- Free GPU/CPU hosting
-- Automatic HTTPS
-- CDN distribution
-- Easy scaling
-
-**Deployment Steps:**
-1. Create new Space (Docker SDK)
-2. Upload `Dockerfile`, `main.py`, `requirements.txt`
-3. Add `README.md` with Space configuration:
-```yaml
----
-title: DocuFlow OCR Service
-emoji: 📄
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_port: 7860
----
-```
-
-#### 5.6.2 Local Docker Deployment
-
+#### 5.2.1 Frontend Build
 ```bash
-# Build
-docker build -t docling-ocr ./ocr_service
-
-# Run
-docker run -d \
-  --name docuflow-ocr \
-  -p 7860:7860 \
-  --restart unless-stopped \
-  docling-ocr
+cd frontend
+npm run build
+# Outputs to /frontend/dist
 ```
 
-#### 5.6.3 Cloud Deployment Options
-
-**AWS Fargate:**
-- Serverless container deployment
-- Auto-scaling based on load
-- Integrate with Application Load Balancer
-
-**Google Cloud Run:**
-- Pay-per-use pricing
-- Automatic HTTPS
-- Built-in load balancing
-
-**Azure Container Instances:**
-- Quick deployment
-- Integration with Azure services
-
-### 5.7 Performance Optimization
-
-#### 5.7.1 Model Caching
-```python
-# Models downloaded during Docker build
-RUN python -c "from docling.models import load_models; load_models()"
+#### 5.2.2 Backend Packaging
+```bash
+# Using PyInstaller
+pyinstaller --name DocuFlow \
+            --onedir \
+            --add-data "frontend/dist:static" \
+            --add-data "backend/templates:templates" \
+            backend/main.py
 ```
 
-#### 5.7.2 Resource Management
-- **CPU Mode**: 1-2 cores, 4GB RAM minimum
-- **GPU Mode**: CUDA-enabled GPU, 8GB VRAM recommended
-- **Processing Time**: 2-5 seconds per page (CPU), <1 second (GPU)
-
-#### 5.7.3 Optimization Strategies
-- Batch processing for multiple pages
-- Async processing with job queue (future)
-- Result caching for duplicate documents
-- Image preprocessing for quality enhancement
-
-### 5.8 Error Handling
-
-**Common Errors:**
-```python
-# File format not supported
-400 Bad Request: "Unsupported file format"
-
-# File too large
-413 Payload Too Large: "File exceeds maximum size"
-
-# OCR processing failed
-500 Internal Server Error: "OCR processing failed: [details]"
-
-# Model loading failed
-503 Service Unavailable: "OCR models not loaded"
+### 5.3 Distribution Structure
+```
+DocuFlow/
+├── DocuFlow.exe      # Entry point
+├── _internal/        # Python libs and dependencies
+├── static/           # Frontend assets
+└── data/             # SQLite DB created here on first run
 ```
 
-### 5.9 Monitoring and Logging
+### 5.4 Production Checklist
 
-**Logging Strategy:**
-```python
-import logging
+#### 5.4.1 Pre-Deployment
+- [ ] Ensure `static/` folder is correctly bundled.
+- [ ] Verify `DOC_NAME_REGEX` default values.
+- [ ] Test on clean VM (Windows/Linux) without Python installed.
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-# Log processing metrics
-logger.info(f"Processing completed in {elapsed_time}ms")
-logger.info(f"Extracted {page_count} pages, {table_count} tables")
-```
-
-**Future Enhancements:**
-- Prometheus metrics endpoint
-- Request tracing with correlation IDs
-- Performance monitoring dashboard
-
-## 6. Deployment Strategy
-
-### 6.1 Main Application Deployment
-
-#### 6.1.1 Multi-Stage Docker Build
-
-The application uses an optimized multi-stage Dockerfile:
-
-**Stage 1: Frontend Build**
-```dockerfile
-FROM node:22-alpine AS frontend-builder
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
-# Output: /app/frontend/dist/
-```
-
-**Stage 2: Python Application**
-```dockerfile
-FROM python:3.12-slim
-WORKDIR /app
-COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
-COPY backend/ ./backend/
-COPY --from=frontend-builder /app/frontend/dist ./static
-EXPOSE 8000
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-**Benefits:**
-- Smaller final image (no Node.js in production)
-- Faster deployment
-- Single container for main app
-
-#### 6.1.2 Docker Compose Setup
-
-**Development Configuration:**
-```yaml
-version: '3.8'
-
-services:
-  app:
-    build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/app/backend  # Hot reload
-      - ./uploads:/app/uploads  # Persist uploads
-    environment:
-      - OCR_SERVICE_URL=http://ocr:7860
-    depends_on:
-      - ocr
-
-  ocr:
-    build: ./ocr_service
-    ports:
-      - "7860:7860"
-    volumes:
-      - ./models:/root/.cache  # Cache models
-```
-
-**Production Configuration:**
-```yaml
-version: '3.8'
-
-services:
-  app:
-    image: docuflow:latest
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./data:/app/data
-      - ./uploads:/app/uploads
-    environment:
-      - OCR_SERVICE_URL=${OCR_SERVICE_URL}
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/ssl
-    depends_on:
-      - app
-```
-
-### 6.2 OCR Service Deployment
-
-#### 6.2.1 Separate Deployment Rationale
-- **Resource Isolation**: OCR requires significant CPU/GPU
-- **Independent Scaling**: Scale OCR separately from main app
-- **Cost Optimization**: Use specialized OCR hosting (HF Spaces with GPU)
-- **Technology Flexibility**: Can swap OCR implementations
-
-#### 6.2.2 Deployment Options Comparison
-
-| Platform | Pros | Cons | Best For |
-|----------|------|------|----------|
-| **Hugging Face Spaces** | Free GPU, Easy setup, CDN | Public by default | MVP, Testing |
-| **AWS Fargate** | Managed, Auto-scaling | Higher cost | Enterprise |
-| **Google Cloud Run** | Pay-per-use, Fast | Cold starts | Variable load |
-| **Self-hosted Docker** | Full control, No external deps | Maintenance overhead | On-premise |
-
-### 6.3 Platform-Specific Deployment
-
-#### 6.3.1 Railway Deployment
-See [RAILWAY.md](RAILWAY.md) for detailed instructions.
-
-**Quick Steps:**
-1. Connect GitHub repository
-2. Add environment variables
-3. Deploy from `main` branch
-4. Railway auto-detects Dockerfile
-
-**Configuration:**
-```json
-{
-  "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile"
-  },
-  "deploy": {
-    "startCommand": "uvicorn backend.main:app --host 0.0.0.0 --port $PORT",
-    "restartPolicyType": "ON_FAILURE"
-  }
-}
-```
-
-#### 6.3.2 Koyeb Deployment
-See [DOCKER_KOYEB.md](DOCKER_KOYEB.md) for detailed instructions.
-
-#### 6.3.3 Heroku Deployment
-
-**Procfile:**
-```
-web: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
-```
-
-**heroku.yml:**
-```yaml
-build:
-  docker:
-    web: Dockerfile
-run:
-  web: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
-```
-
-#### 6.3.4 DigitalOcean App Platform
-
-**app.yaml:**
-```yaml
-name: docuflow
-services:
-  - name: web
-    github:
-      repo: Sanali209/DocuFlow-
-      branch: main
-    dockerfile_path: Dockerfile
-    http_port: 8000
-    routes:
-      - path: /
-    envs:
-      - key: OCR_SERVICE_URL
-        value: ${OCR_SERVICE_URL}
-```
-
-### 6.4 Production Checklist
-
-#### 6.4.1 Pre-Deployment
-- [ ] Set environment variables (OCR_SERVICE_URL, etc.)
-- [ ] Configure database backup strategy
-- [ ] Set up SSL/TLS certificates
-- [ ] Configure CORS for production domain
-- [ ] Set appropriate file upload limits
-- [ ] Configure log rotation
-- [ ] Set up monitoring and alerts
-
-#### 6.4.2 Security Hardening
-- [ ] Use HTTPS only
-- [ ] Implement rate limiting
-- [ ] Add CSRF protection
-- [ ] Configure secure headers
-- [ ] Set up firewall rules
-- [ ] Regular security updates
-- [ ] Database access restrictions
-
-#### 6.4.3 Performance Tuning
-- [ ] Enable response compression
-- [ ] Configure CDN for static assets
-- [ ] Optimize database queries
-- [ ] Implement caching strategy
-- [ ] Set up load balancing
-- [ ] Configure auto-scaling
-
-### 6.5 Backup and Recovery
+### 5.5 Backup and Recovery
 
 #### 6.5.1 Database Backup
 ```bash
