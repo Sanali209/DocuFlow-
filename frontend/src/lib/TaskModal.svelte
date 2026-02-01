@@ -7,6 +7,7 @@
     let name = $state('');
     let assignee = $state('');
     let materialId = $state(null);
+    let gncFilePath = $state('');
     let loading = $state(false);
     let materials = $state([]);
     let isLibraryOpen = $state(false);
@@ -20,6 +21,7 @@
             assignee = localStorage.getItem('task_assignee') || '';
             name = '';
             materialId = null;
+            gncFilePath = '';
             loadMaterials();
         }
     });
@@ -33,7 +35,7 @@
             if (assignee) {
                 localStorage.setItem('task_assignee', assignee);
             }
-            await onSubmit({ name, assignee, material_id: materialId });
+            await onSubmit({ name, assignee, material_id: materialId, gnc_file_path: gncFilePath });
             close();
         } catch (err) {
             console.error(err);
@@ -82,6 +84,11 @@
                         📚
                     </button>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="gnc_path">GNC File Path</label>
+                <input id="gnc_path" type="text" bind:value={gncFilePath} placeholder="e.g. Z:\Sidra\Part1.gnc" />
             </div>
 
             <div class="form-group">
