@@ -25,13 +25,16 @@ DocuFlow is a web-based platform that combines an Intelligent Document Managemen
 *   **Validation:** Warn if contours exceed the defined Sheet dimensions.
 
 ### 3.3 Parts Library ("Sidra")
-*   **Advanced Search:** Find parts by physical properties (Dimensions, Material, Complexity/Hole Count).
-*   **Preview:** Show GNC geometry thumbnail in search results.
-*   **Nesting Ready:** All library parts must have a valid linked GNC file for the Nesting Engine.
+*   **Dedicated View:** A separate "Library" tab in the application.
+*   **Advanced Search:** Find parts by Number, Version, or physical properties.
+*   **Version Control:** UI must allow switching between versions (e.g., A -> B) for the same Registration Number.
+*   **Preview:** Show GNC geometry thumbnail.
+*   **Nesting Ready:** All library parts must have a valid linked GNC file.
 
 ### 3.4 File System Integration & Workflow
 *   **Auto-Import:** Watch "Mihtav" (Order) and "Sidra" (Series) folders on the local network.
-*   **Library Population:** Automatically extract geometry/metadata from "Sidra" files to populate the Parts Library.
+*   **Library Population:** Automatically populate Parts Library from "Sidra" folders.
+    -   **De-duplication:** Strict check on `(RegistrationNumber, Version)` pair. Do not create duplicates if the exact version exists.
 *   **Order Creation:** Automatically generate Documents for new "Mihtav" folders with status `Unregistered`.
 *   **Manual Verification:** Operators must explicitly change status to `Registered` when the physical paper order arrives.
 *   **Sync:** Update system records when physical files are modified.

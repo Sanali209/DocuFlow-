@@ -50,12 +50,18 @@ The following infrastructure is already in place and will be leveraged:
 ### 2.1 Visualization & Editing
 - [ ] **Canvas:** `GncCanvas.svelte` with Zoom/Pan and Y-Axis inversion.
 - [ ] **Interaction:** Click-to-select contours, P-Code property editor.
+- [ ] **Parts Library UI:**
+    - Separate "Library" Tab.
+    - Search by Registration Number.
+    - Version Selector (A, B, C...) for the selected part.
 - [ ] **Save:** Regenerate GNC text file with modified parameters (preserving format).
 
 ### 2.2 Local Network Integration
 - [ ] **File Watcher:** Background thread scanning `Z:\Mihtav` and `Z:\Sidra`.
 - [ ] **Auto-Import Strategy:**
-    - **Parts Library:** Scan "Sidra" to auto-create `Part` entities. Extract GNC code and parse Registration Numbers.
+    - **Parts Library:** Scan "Sidra" to auto-create `Part` entities.
+        - **De-duplication:** Check composite key `(Registration Number, Version)` before creation to prevent duplicates.
+        - Extract GNC code and parse Registration Numbers.
     - **Orders:** Scan "Mihtav" folders to auto-create `Document` entities (Type: Order).
     - **Status Workflow:** Set initial status to `Unregistered`. Operator must manually change to `Registered` upon receiving physical paper.
     - Extract Metadata (Material, Dates).
