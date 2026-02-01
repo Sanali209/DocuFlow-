@@ -6,11 +6,11 @@ import uuid
 import json
 import zipfile
 import io
-from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File, Body
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from typing import List
 from datetime import date, datetime
 
@@ -18,6 +18,7 @@ from . import crud, models, schemas
 from .database import SessionLocal, engine
 from sqlalchemy import text
 from .gnc_parser import GNCParser, GNCSheet
+from .gnc_generator import GNCGenerator
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -342,11 +343,9 @@ async def parse_gnc(file: UploadFile = File(...)):
     """
     try:
         content_bytes = await file.read()
-        # Decode expecting text content, handle errors gracefully
         try:
             content = content_bytes.decode('utf-8')
         except UnicodeDecodeError:
-            # Fallback to latin-1 or similar if needed, but UTF-8 is standard
             content = content_bytes.decode('latin-1')
 
         parser = GNCParser()
@@ -354,6 +353,18 @@ async def parse_gnc(file: UploadFile = File(...)):
         return sheet
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse GNC file: {str(e)}")
+
+@app.post("/api/generate-gnc")
+async def generate_gnc(sheet: GNCSheet):
+    """
+    Generates GNC text content from a GNCSheet object.
+    """
+    try:
+        generator = GNCGenerator()
+        content = generator.generate(sheet)
+        return Response(content=content, media_type="text/plain")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to generate GNC file: {str(e)}")
 
 # --- Backup and Restore Endpoints ---
 def serialize_date(obj):
@@ -405,8 +416,7 @@ def backup_data(db: Session = Depends(get_db)):
                 "material_id": task.material_id,
                 "name": task.name,
                 "status": task.status.value if task.status else None,
-                "assignee": task.assignee,
-                "gnc_file_path": task.gnc_file_path
+                "assignee": task.assignee
             })
 
         # Export materials
@@ -582,8 +592,7 @@ async def restore_data(file: UploadFile = File(...), db: Session = Depends(get_d
                 material_id=task_data.get("material_id"),
                 name=task_data["name"],
                 status=models.TaskStatus(task_data["status"]) if task_data.get("status") else None,
-                assignee=task_data.get("assignee"),
-                gnc_file_path=task_data.get("gnc_file_path")
+                assignee=task_data.get("assignee")
             )
             db.add(task)
         db.commit()
