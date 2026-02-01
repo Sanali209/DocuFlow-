@@ -4,7 +4,7 @@
 The application is pivoting to serve a **Bus Factory Metalworking Shop** (Laser Cutting).
 **Key Challenges:**
 - **Shift Work:** 24/7 operation requiring robust handover logs.
-- **File Integrity:** Machine editing (suffix `_801`) destroys metadata.
+- **File Integrity:** Machine editing (suffix `_801`) changes the file format, requiring specialized parsing to preserve metadata.
 - **Material Management:** Tracking sheets, remnants, and reservations.
 - **Nesting:** Automatic packing of parts onto sheets.
 
