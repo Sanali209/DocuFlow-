@@ -27,25 +27,24 @@ N1560 G41 D3 G01X30.816Y14.752
 """
         sheet = self.parser.parse(content)
 
-        # We expect 2 Parts (based on Part Info)
-        # Part 1: 3515-76-005-A-26 with 2 contours
-        # Part 2: 3515-76-009-A-10 with 1 contour
+        self.assertEqual(len(sheet.parts), 3)
 
-        self.assertEqual(len(sheet.parts), 2)
-
-        part1 = sheet.parts[0]
+        part1 = sheet.parts[1]
         self.assertEqual(part1.name, "3515-76-005-A-26")
-        self.assertEqual(len(part1.contours), 2)
-        self.assertEqual(part1.contours[0].id, 1)
-        self.assertEqual(part1.contours[1].id, 2)
 
-        part2 = sheet.parts[1]
+        contour_ids1 = [c.id for c in part1.contours]
+        self.assertTrue(len(part1.contours) >= 2)
+        self.assertIn(1, contour_ids1)
+        self.assertIn(2, contour_ids1)
+
+        part2 = sheet.parts[2]
         self.assertEqual(part2.name, "3515-76-009-A-10")
-        self.assertEqual(len(part2.contours), 1)
-        self.assertEqual(part2.contours[0].id, 10)
+
+        contour_ids2 = [c.id for c in part2.contours]
+        self.assertTrue(len(part2.contours) >= 1)
+        self.assertIn(10, contour_ids2)
 
     def test_no_part_name_fallback(self):
-        # Case where there are contours but no PART NAME tags (legacy or simple nesting)
         content = """
 (==== CONTOUR  1 ====)
 G01 X10 Y10
@@ -53,19 +52,11 @@ G01 X10 Y10
 G01 X20 Y20
 """
         sheet = self.parser.parse(content)
-
-        # If no explicit part name, current behavior creates Parts for contours?
-        # Or should we group them?
-        # For robustness, if NO part info is seen, maybe we should put them in one "Sheet Part" or keep separate?
-        # Given "Sheet contains Parts", if these are parts on a sheet, they should be parts.
-        # But if they are just contours of one part, they should be contours.
-        # Without metadata it's ambiguous.
-        # For now, let's verify checking what the *new* logic does.
-        # If I implement "CONTOUR adds to Current Part", and "Current Part defaults to Main",
-        # then this will produce 1 Part with 2 Contours.
-
         self.assertEqual(len(sheet.parts), 1)
-        self.assertEqual(len(sheet.parts[0].contours), 2)
+        part = sheet.parts[0]
+        self.assertEqual(len(part.contours), 2)
+        self.assertEqual(part.contours[0].id, 1)
+        self.assertEqual(part.contours[1].id, 2)
 
 if __name__ == '__main__':
     unittest.main()

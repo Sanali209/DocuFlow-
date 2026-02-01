@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 import re
 
 class GNCCommand(BaseModel):
-    type: str  # G00, G01, M30, T1, etc.
+    type: str  # G00, G01, M30, METADATA, etc.
     command: Optional[str] = None # G, M, T
     value: Optional[float] = None # 0, 1, 30, etc.
     x: Optional[float] = None
@@ -64,14 +64,8 @@ class GNCParser:
         sheet = GNCSheet()
 
         # Regex patterns
-        # Updated to capture G, M, T commands.
-        # Captures G01, M30, T1 as (Prefix, Value)
-        # Matches Start of line or space followed by Letter+Number
-        # Be careful not to match coordinates like X10 as commands, though X is usually coordinate.
-        # Standard commands: G, M, T, S, F.
-        # We focus on G and M for now as structural/control commands.
+        g_code_pattern = re.compile(r'G(00|01|02|03|0|1|2|3)(?!\d)', re.IGNORECASE)
         command_pattern = re.compile(r'\b([GMT])(\d+(?:\.\d+)?)\b', re.IGNORECASE)
-
         coord_pattern = re.compile(r'([XYIJ])([+-]?\d*\.?\d+)', re.IGNORECASE)
         contour_start_pattern = re.compile(r'\(={4,}\s*CONTOUR\s+(\d+)\s+={4,}\)', re.IGNORECASE)
         part_info_pattern = re.compile(r'\(PART NAME:(.*?)\)', re.IGNORECASE)
@@ -88,6 +82,12 @@ class GNCParser:
             if not line:
                 continue
 
+            # Ensure we have defaults if we encounter content
+            if current_part is None:
+                # If we hit a PART NAME tag later, we might switch, but for now use default
+                # Logic: If line is PART NAME, we handle it below.
+                pass
+
             # Check for Part Name (Implicit New Part)
             part_match = part_info_pattern.search(line)
             if part_match:
@@ -95,8 +95,23 @@ class GNCParser:
                 current_part = GNCPart(id=part_counter, name=p_name)
                 part_counter += 1
                 sheet.parts.append(current_part)
-                # Reset contour when new part starts
                 current_contour = None
+
+                # Store this line as METADATA command in the new part's first contour?
+                # Or maybe Parts should have a list of 'Header Commands'?
+                # For now, let's put it in a "Header" contour or the first contour.
+                # Actually, strictly hierarchical: Part -> Contours -> Commands.
+                # If we just started a part, we might need a dummy contour or "Part Header" contour.
+                # Let's create a contour 0 or similar for header info?
+                # Or just append to the next contour?
+                # User wants "Code command end contain in contur".
+                # Let's create a default contour if needed.
+                if current_contour is None:
+                    current_contour = GNCContour(id=0) # 0 for header/metadata
+                    current_part.contours.append(current_contour)
+
+                cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
+                current_contour.commands.append(cmd)
                 continue
 
             # Check for Contour Separator
@@ -111,21 +126,34 @@ class GNCParser:
 
                 current_contour = GNCContour(id=cid)
                 current_part.contours.append(current_contour)
+
+                # Store the separator line itself
+                cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
+                current_contour.commands.append(cmd)
                 continue
 
-            # Check for P-Codes
+            # Check for P-Codes (Metadata)
             if line.startswith('*N'):
+                # Extract P-codes to metadata
                 matches = p_code_pattern.findall(line)
                 if matches and current_contour:
                     for key, val in matches:
                         current_contour.metadata[f"P{key}"] = val
+
+                # Store line as METADATA command
+                if current_part is None:
+                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    part_counter += 1
+                    sheet.parts.append(current_part)
+                if current_contour is None:
+                    current_contour = GNCContour(id=1)
+                    current_part.contours.append(current_contour)
+
+                cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
+                current_contour.commands.append(cmd)
                 continue
 
-            # Parse Commands
-            # Find all commands in the line (e.g. N10 G01 X10 Y10 M03)
-            # We treat N numbers as line numbers/labels, not commands usually.
-
-            # Search for G/M/T codes
+            # Parse Commands (G/M/T)
             commands_found = command_pattern.findall(line)
 
             if commands_found:
@@ -138,18 +166,14 @@ class GNCParser:
                     current_contour = GNCContour(id=1)
                     current_part.contours.append(current_contour)
 
-                # Extract coordinates once for the line (assuming single motion per line)
                 coords = coord_pattern.findall(line)
                 line_coords = {}
                 for axis, value in coords:
                     line_coords[axis.lower()] = float(value)
 
-                # Create GNCCommand objects for each command found
                 for prefix, val_str in commands_found:
                     prefix = prefix.upper()
                     value = float(val_str)
-
-                    # Normalize Type string (e.g. G1 -> G01)
                     type_str = f"{prefix}{int(value):02d}" if prefix in ['G', 'M'] else f"{prefix}{value}"
 
                     cmd = GNCCommand(
@@ -157,11 +181,9 @@ class GNCParser:
                         command=prefix,
                         value=value,
                         line_number=i+1,
-                        original_text=line
+                        original_text=line # Note: this duplicates text for every cmd in line
                     )
 
-                    # Attach coordinates only if it's a G-code (motion)
-                    # Or attach to all? Usually coordinates belong to the motion G-code.
                     if prefix == 'G':
                         if 'x' in line_coords: cmd.x = line_coords['x']
                         if 'y' in line_coords: cmd.y = line_coords['y']
@@ -170,33 +192,39 @@ class GNCParser:
 
                     current_contour.commands.append(cmd)
 
-            elif coord_pattern.search(line) and not commands_found:
-                # Coordinate only line (modal G-code)?
-                # E.g. "X10 Y10" implies previous G code (usually G01/G00)
-                # For now, we can create a "Implicit" command or assume G01 if uncertain,
-                # OR just treat it as a continuation.
-                # To be safe and simple, we might skip creating a formal Command if no G/M code is present,
-                # BUT this loses geometry.
-                # Let's assume it's a G01 if valid coordinates exist but no G code.
-                # NOTE: Complex parsers track state (Modal G code).
-                # For this MVP, we might miss "X10" lines if we require "G1 X10".
-                # Let's add a fallback: if coords exist but no command, create a "Modal" command.
+            elif coord_pattern.search(line):
+                # Modal Line
+                if current_part is None:
+                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    part_counter += 1
+                    sheet.parts.append(current_part)
+                if current_contour is None:
+                    current_contour = GNCContour(id=1)
+                    current_part.contours.append(current_contour)
 
-                if current_contour:
-                    coords = coord_pattern.findall(line)
-                    cmd = GNCCommand(
-                        type="MODAL",
-                        line_number=i+1,
-                        original_text=line
-                    )
-                    for axis, value in coords:
-                        val = float(value)
-                        if axis.upper() == 'X': cmd.x = val
-                        elif axis.upper() == 'Y': cmd.y = val
-                        elif axis.upper() == 'I': cmd.i = val
-                        elif axis.upper() == 'J': cmd.j = val
+                coords = coord_pattern.findall(line)
+                cmd = GNCCommand(type="MODAL", line_number=i+1, original_text=line)
+                for axis, value in coords:
+                    val = float(value)
+                    if axis.upper() == 'X': cmd.x = val
+                    elif axis.upper() == 'Y': cmd.y = val
+                    elif axis.upper() == 'I': cmd.i = val
+                    elif axis.upper() == 'J': cmd.j = val
+                current_contour.commands.append(cmd)
 
-                    current_contour.commands.append(cmd)
+            else:
+                # Other lines (comments, empty, etc.) not caught above
+                # Store as METADATA/COMMENT to preserve file structure
+                if current_part is None:
+                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    part_counter += 1
+                    sheet.parts.append(current_part)
+                if current_contour is None:
+                    current_contour = GNCContour(id=0) # Header/Misc contour
+                    current_part.contours.append(current_contour)
+
+                cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
+                current_contour.commands.append(cmd)
 
         self._post_process(sheet)
         return sheet
