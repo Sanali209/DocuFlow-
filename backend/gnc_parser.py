@@ -71,6 +71,12 @@ class GNCParser:
         part_info_pattern = re.compile(r'\(PART NAME:(.*?)\)', re.IGNORECASE)
         p_code_pattern = re.compile(r'P(\d+)=([^\s]+)', re.IGNORECASE)
 
+        # Sheet metadata patterns
+        sheet_tag_pattern = re.compile(r'\(\*SHEET\s+(.*)\)', re.IGNORECASE)
+        model_tag_pattern = re.compile(r'\(\*MODEL\s+(.*)\)', re.IGNORECASE)
+        material_tag_pattern = re.compile(r'\(Material[:=](.*?)\)', re.IGNORECASE)
+        thickness_tag_pattern = re.compile(r'\(THICKNESS=(.*?)\)', re.IGNORECASE)
+
         current_part = None
         current_contour = None
 
@@ -82,11 +88,29 @@ class GNCParser:
             if not line:
                 continue
 
-            # Ensure we have defaults if we encounter content
-            if current_part is None:
-                # If we hit a PART NAME tag later, we might switch, but for now use default
-                # Logic: If line is PART NAME, we handle it below.
-                pass
+            # Parse Sheet Metadata (Global)
+            sheet_match = sheet_tag_pattern.search(line)
+            if sheet_match:
+                sheet.metadata['sheet_params'] = sheet_match.group(1).strip()
+
+            model_match = model_tag_pattern.search(line)
+            if model_match:
+                sheet.metadata['model'] = model_match.group(1).strip()
+
+            material_match = material_tag_pattern.search(line)
+            if material_match:
+                mat = material_match.group(1).strip()
+                sheet.material = mat
+                sheet.metadata['material'] = mat
+
+            thickness_match = thickness_tag_pattern.search(line)
+            if thickness_match:
+                try:
+                    thk = float(thickness_match.group(1).strip())
+                    sheet.thickness = thk
+                    sheet.metadata['thickness'] = thk
+                except ValueError:
+                    pass
 
             # Check for Part Name (Implicit New Part)
             part_match = part_info_pattern.search(line)
@@ -97,15 +121,6 @@ class GNCParser:
                 sheet.parts.append(current_part)
                 current_contour = None
 
-                # Store this line as METADATA command in the new part's first contour?
-                # Or maybe Parts should have a list of 'Header Commands'?
-                # For now, let's put it in a "Header" contour or the first contour.
-                # Actually, strictly hierarchical: Part -> Contours -> Commands.
-                # If we just started a part, we might need a dummy contour or "Part Header" contour.
-                # Let's create a contour 0 or similar for header info?
-                # Or just append to the next contour?
-                # User wants "Code command end contain in contur".
-                # Let's create a default contour if needed.
                 if current_contour is None:
                     current_contour = GNCContour(id=0) # 0 for header/metadata
                     current_part.contours.append(current_contour)
@@ -127,20 +142,17 @@ class GNCParser:
                 current_contour = GNCContour(id=cid)
                 current_part.contours.append(current_contour)
 
-                # Store the separator line itself
                 cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
                 current_contour.commands.append(cmd)
                 continue
 
             # Check for P-Codes (Metadata)
             if line.startswith('*N'):
-                # Extract P-codes to metadata
                 matches = p_code_pattern.findall(line)
                 if matches and current_contour:
                     for key, val in matches:
                         current_contour.metadata[f"P{key}"] = val
 
-                # Store line as METADATA command
                 if current_part is None:
                     current_part = GNCPart(id=part_counter, name="Main Part")
                     part_counter += 1
@@ -181,7 +193,7 @@ class GNCParser:
                         command=prefix,
                         value=value,
                         line_number=i+1,
-                        original_text=line # Note: this duplicates text for every cmd in line
+                        original_text=line # Note: duplicates text
                     )
 
                     if prefix == 'G':
@@ -213,14 +225,17 @@ class GNCParser:
                 current_contour.commands.append(cmd)
 
             else:
-                # Other lines (comments, empty, etc.) not caught above
-                # Store as METADATA/COMMENT to preserve file structure
+                # Other lines (comments, metadata)
+                # Check metadata tags again here? Already done at start of loop.
+                # If it was a metadata tag, we likely want to store it as a command too to preserve it?
+                # Yes, unless we want to strip it. To support "faithful regeneration", we should keep it.
+
                 if current_part is None:
                     current_part = GNCPart(id=part_counter, name="Main Part")
                     part_counter += 1
                     sheet.parts.append(current_part)
                 if current_contour is None:
-                    current_contour = GNCContour(id=0) # Header/Misc contour
+                    current_contour = GNCContour(id=0)
                     current_part.contours.append(current_contour)
 
                 cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)

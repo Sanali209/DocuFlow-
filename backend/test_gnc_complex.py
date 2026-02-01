@@ -11,6 +11,8 @@ class TestGNCParserComplex(unittest.TestCase):
 (31  PARTS)
 (DATE DEC 30 2024)
 (*SHEET 3000.0 1500.0 1.5 6 1 0.0 0.0 )
+(Material:SS 1.4003)
+(THICKNESS=1.5)
 (*****Part info*****)
 (PART NAME:3515-76-005-A-26 )
 (==== CONTOUR  1 ====)
@@ -26,6 +28,12 @@ N1535 G00X29Y15 SSD[SD.Cr_Nb1=1535]
 N1560 G41 D3 G01X30.816Y14.752
 """
         sheet = self.parser.parse(content)
+
+        # Check Metadata
+        self.assertEqual(sheet.metadata.get('model'), "HANS_G3015-REXROTH")
+        self.assertEqual(sheet.metadata.get('sheet_params'), "3000.0 1500.0 1.5 6 1 0.0 0.0")
+        self.assertEqual(sheet.material, "SS 1.4003")
+        self.assertEqual(sheet.thickness, 1.5)
 
         self.assertEqual(len(sheet.parts), 3)
 
