@@ -6,17 +6,19 @@ import uuid
 import json
 import zipfile
 import io
-from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File, Body
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from typing import List
 from datetime import date, datetime
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 from sqlalchemy import text
+from .gnc_parser import GNCParser, GNCSheet
+from .gnc_generator import GNCGenerator
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -51,6 +53,13 @@ with engine.connect() as conn:
     # Add material_id column to tasks
     try:
         conn.execute(text("ALTER TABLE tasks ADD COLUMN material_id INTEGER REFERENCES materials(id)"))
+        conn.commit()
+    except Exception:
+        pass
+
+    # Add gnc_file_path column to tasks
+    try:
+        conn.execute(text("ALTER TABLE tasks ADD COLUMN gnc_file_path TEXT"))
         conn.commit()
     except Exception:
         pass
@@ -325,6 +334,37 @@ def delete_material(material_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Material not found")
     return {"ok": True}
+
+# --- GNC Endpoints ---
+@app.post("/api/parse-gnc", response_model=GNCSheet)
+async def parse_gnc(file: UploadFile = File(...)):
+    """
+    Parses an uploaded GNC file and returns its structured content.
+    """
+    try:
+        content_bytes = await file.read()
+        try:
+            content = content_bytes.decode('utf-8')
+        except UnicodeDecodeError:
+            content = content_bytes.decode('latin-1')
+
+        parser = GNCParser()
+        sheet = parser.parse(content, filename=file.filename)
+        return sheet
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse GNC file: {str(e)}")
+
+@app.post("/api/generate-gnc")
+async def generate_gnc(sheet: GNCSheet):
+    """
+    Generates GNC text content from a GNCSheet object.
+    """
+    try:
+        generator = GNCGenerator()
+        content = generator.generate(sheet)
+        return Response(content=content, media_type="text/plain")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to generate GNC file: {str(e)}")
 
 # --- Backup and Restore Endpoints ---
 def serialize_date(obj):

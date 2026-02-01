@@ -67,6 +67,7 @@ class TaskBase(BaseModel):
     status: TaskStatus = TaskStatus.PLANNED
     assignee: Optional[str] = None
     material_id: Optional[int] = None
+    gnc_file_path: Optional[str] = None
 
 class TaskCreate(TaskBase):
     pass
@@ -76,6 +77,7 @@ class TaskUpdate(BaseModel):
     status: Optional[TaskStatus] = None
     assignee: Optional[str] = None
     material_id: Optional[int] = None
+    gnc_file_path: Optional[str] = None
 
 class Task(TaskBase):
     id: int
