@@ -17,6 +17,7 @@ from datetime import date, datetime
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 from sqlalchemy import text
+from .gnc_parser import GNCParser, GNCSheet
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -325,6 +326,27 @@ def delete_material(material_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Material not found")
     return {"ok": True}
+
+# --- GNC Endpoints ---
+@app.post("/api/parse-gnc", response_model=GNCSheet)
+async def parse_gnc(file: UploadFile = File(...)):
+    """
+    Parses an uploaded GNC file and returns its structured content.
+    """
+    try:
+        content_bytes = await file.read()
+        # Decode expecting text content, handle errors gracefully
+        try:
+            content = content_bytes.decode('utf-8')
+        except UnicodeDecodeError:
+            # Fallback to latin-1 or similar if needed, but UTF-8 is standard
+            content = content_bytes.decode('latin-1')
+
+        parser = GNCParser()
+        sheet = parser.parse(content, filename=file.filename)
+        return sheet
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse GNC file: {str(e)}")
 
 # --- Backup and Restore Endpoints ---
 def serialize_date(obj):
