@@ -22,7 +22,7 @@ The following infrastructure is already in place and will be leveraged:
 - [x] **Database:** SQLite + SQLAlchemy models (`backend/models.py`).
 - [x] **File Handling:** Basic file upload mechanisms (`/upload` endpoint).
 - [x] **Routing:** Client-side view switching in `App.svelte` and `Sidebar.svelte`.
-- [ ] **OCR Module:** *REMOVED* (Paradigm shift to local file handling without OCR).
+- [x] **OCR Module:** *REMOVED* (Paradigm shift to local file handling without OCR).
 
 ---
 
@@ -35,12 +35,12 @@ The following infrastructure is already in place and will be leveraged:
 - [ ] **Shared DB:** Configure SQLAlchemy to use WAL mode for `Z:\DocuFlow\data.db`.
 
 ### 1.2 GNC Parsing Engine
-- [ ] **Data Models:** Pydantic schemas for `Sheet`, `Contour`, `Command`.
-- [ ] **Dual-Mode Parser:**
+- [x] **Data Models:** Pydantic schemas for `Sheet`, `Contour`, `Command`.
+- [x] **Dual-Mode Parser:**
     - Detect Office vs. Machine (`_801`) formats.
     - Parse Geometry (`G00`-`G03`).
     - Extract P-Codes (`*N... P660=`).
-- [ ] **Indexing:** Calculate geometric stats (Holes, Corners) during parsing.
+- [x] **Indexing:** Calculate geometric stats (Holes, Corners) during parsing.
 
 ---
 
@@ -48,7 +48,7 @@ The following infrastructure is already in place and will be leveraged:
 **Objective:** Deliver a usable tool for Technologists to view/edit files and sync with the network.
 
 ### 2.1 Visualization & Editing
-- [ ] **Canvas:** `GncCanvas.svelte` with Zoom/Pan and Y-Axis inversion.
+- [x] **Canvas:** `GncCanvas.svelte` with Zoom/Pan and Y-Axis inversion.
 - [ ] **Interaction:** Click-to-select contours, P-Code property editor.
 - [ ] **Save:** Regenerate GNC text file with modified parameters (preserving format).
 
@@ -59,6 +59,7 @@ The following infrastructure is already in place and will be leveraged:
     - **Orders:** Scan "Mihtav" folders to auto-create `Document` entities (Type: Order).
     - **Status Workflow:** Set initial status to `Unregistered`. Operator must manually change to `Registered` upon receiving physical paper.
     - Extract Metadata (Material, Dates).
+- [x] **Task Integration:** Add `gnc_file_path` reference to Tasks for linking documents to physical programs.
 
 ---
 
@@ -80,5 +81,5 @@ The following infrastructure is already in place and will be leveraged:
 ---
 
 ## Next Steps
-1.  **Approve Roadmap:** Confirm this plan fits the immediate needs.
-2.  **Begin Stage 1.1:** Start implementation of `backend/gnc_parser.py`.
+1.  **Interaction:** Implement click-to-select and property editing in the GNC Canvas.
+2.  **Startup Logic:** Implement the database connection check/config.

@@ -65,6 +65,7 @@ class Task(Base):
     name = Column(String)
     status = Column(Enum(TaskStatus), default=TaskStatus.PLANNED)
     assignee = Column(String, nullable=True)
+    gnc_file_path = Column(String, nullable=True)
 
     document = relationship("Document", back_populates="tasks")
     material = relationship("Material", back_populates="tasks")

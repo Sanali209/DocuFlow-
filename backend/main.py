@@ -56,6 +56,13 @@ with engine.connect() as conn:
     except Exception:
         pass
 
+    # Add gnc_file_path column to tasks
+    try:
+        conn.execute(text("ALTER TABLE tasks ADD COLUMN gnc_file_path TEXT"))
+        conn.commit()
+    except Exception:
+        pass
+
 # Ensure upload directory
 os.makedirs("static/uploads", exist_ok=True)
 
@@ -398,7 +405,8 @@ def backup_data(db: Session = Depends(get_db)):
                 "material_id": task.material_id,
                 "name": task.name,
                 "status": task.status.value if task.status else None,
-                "assignee": task.assignee
+                "assignee": task.assignee,
+                "gnc_file_path": task.gnc_file_path
             })
 
         # Export materials
@@ -574,7 +582,8 @@ async def restore_data(file: UploadFile = File(...), db: Session = Depends(get_d
                 material_id=task_data.get("material_id"),
                 name=task_data["name"],
                 status=models.TaskStatus(task_data["status"]) if task_data.get("status") else None,
-                assignee=task_data.get("assignee")
+                assignee=task_data.get("assignee"),
+                gnc_file_path=task_data.get("gnc_file_path")
             )
             db.add(task)
         db.commit()
