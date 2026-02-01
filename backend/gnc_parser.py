@@ -16,6 +16,7 @@ class GNCContour(BaseModel):
     commands: List[GNCCommand] = []
     is_closed: bool = False
     is_hole: bool = False
+    metadata: Dict[str, Any] = {}
 
     # Stats
     corner_count: int = 0
@@ -25,6 +26,7 @@ class GNCPart(BaseModel):
     id: int
     contours: List[GNCContour] = []
     name: Optional[str] = None
+    metadata: Dict[str, Any] = {}
 
     # Stats
     corner_count: int = 0
@@ -66,6 +68,9 @@ class GNCParser:
         # Handle 4 or more equals signs
         contour_start_pattern = re.compile(r'\(={4,}\s*CONTOUR\s+(\d+)\s+={4,}\)', re.IGNORECASE)
         part_info_pattern = re.compile(r'\(PART NAME:(.*?)\)', re.IGNORECASE)
+        # P-code extraction pattern: *N... P660=123
+        # Assuming format like *N1005 P660=1005 or just P code in line
+        p_code_pattern = re.compile(r'P(\d+)=([^\s]+)', re.IGNORECASE)
 
         current_part = None
         current_contour = None
@@ -105,8 +110,13 @@ class GNCParser:
                 current_part.contours.append(current_contour)
                 continue
 
-            # Check for P-Codes (Metadata)
+            # Check for P-Codes (Metadata) - lines starting with *N often contain tech info
             if line.startswith('*N'):
+                # Extract P-codes
+                matches = p_code_pattern.findall(line)
+                if matches and current_contour:
+                    for key, val in matches:
+                        current_contour.metadata[f"P{key}"] = val
                 continue
 
             # Parse G-Code
@@ -120,9 +130,6 @@ class GNCParser:
                     sheet.parts.append(current_part)
 
                 if current_contour is None:
-                    # Create a default contour if none active (e.g. commands outside CONTOUR block)
-                    # For Office Mode, this effectively puts everything in one contour if no blocks used
-                    # Use a generic ID or counter
                     current_contour = GNCContour(id=1)
                     current_part.contours.append(current_contour)
 

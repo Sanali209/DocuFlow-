@@ -13,6 +13,7 @@ export interface GNCContour {
     commands: GNCCommand[];
     is_closed: boolean;
     is_hole: boolean;
+    metadata: Record<string, any>;
     corner_count: number;
     length: number;
 }
@@ -21,6 +22,7 @@ export interface GNCPart {
     id: number;
     contours: GNCContour[];
     name?: string;
+    metadata: Record<string, any>;
     corner_count: number;
 }
 

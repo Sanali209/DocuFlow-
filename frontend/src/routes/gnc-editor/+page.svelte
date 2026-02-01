@@ -1,11 +1,12 @@
 <script lang="ts">
     import GncCanvas from '$lib/components/GncCanvas.svelte';
-    import type { GNCSheet } from '$lib/types/gnc';
+    import type { GNCSheet, GNCContour } from '$lib/types/gnc';
 
     let fileInput: HTMLInputElement;
     let sheet: GNCSheet | null = null;
     let isLoading = false;
     let error: string | null = null;
+    let selectedContour: GNCContour | null = null;
 
     async function handleFileUpload() {
         if (!fileInput.files || fileInput.files.length === 0) return;
@@ -17,9 +18,9 @@
         isLoading = true;
         error = null;
         sheet = null;
+        selectedContour = null;
 
         try {
-            // Determine API URL (assuming relative path for same-origin or configured proxy)
             const response = await fetch('http://localhost:8000/api/parse-gnc', {
                 method: 'POST',
                 body: formData
@@ -37,6 +38,10 @@
             isLoading = false;
         }
     }
+
+    function handleSelection(event: CustomEvent) {
+        selectedContour = event.detail;
+    }
 </script>
 
 <div class="gnc-editor-container">
@@ -47,7 +52,7 @@
                 type="file"
                 accept=".gnc,.txt,.cnc"
                 bind:this={fileInput}
-                on:change={handleFileUpload}
+                onchange={handleFileUpload}
                 class="file-input"
             />
             {#if isLoading}
@@ -62,7 +67,12 @@
     <div class="workspace">
         <div class="canvas-area">
             {#if sheet}
-                <GncCanvas {sheet} width={1000} height={700} />
+                <GncCanvas
+                    {sheet}
+                    width={1000}
+                    height={700}
+                    on:select={handleSelection}
+                />
             {:else}
                 <div class="placeholder">
                     <p>Upload a GNC file to visualize</p>
@@ -71,7 +81,37 @@
         </div>
 
         <div class="info-panel">
-            {#if sheet}
+            {#if selectedContour}
+                <div class="property-editor">
+                    <h2>Contour Properties</h2>
+                    <div class="prop-group">
+                        <label>ID</label>
+                        <span>{selectedContour.id}</span>
+                    </div>
+                    <div class="prop-group">
+                        <label>Status</label>
+                        <span>{selectedContour.is_closed ? 'Closed' : 'Open'}</span>
+                    </div>
+                    <div class="prop-group">
+                        <label>Type</label>
+                        <span>{selectedContour.is_hole ? 'Hole' : 'Outer'}</span>
+                    </div>
+
+                    <h3>Technological Parameters (P-Codes)</h3>
+                    {#if Object.keys(selectedContour.metadata).length > 0}
+                        <div class="metadata-grid">
+                            {#each Object.entries(selectedContour.metadata) as [key, value]}
+                                <div class="meta-item">
+                                    <span class="meta-key">{key}:</span>
+                                    <span class="meta-value">{value}</span>
+                                </div>
+                            {/each}
+                        </div>
+                    {:else}
+                        <p class="empty-state">No P-Codes detected for this contour.</p>
+                    {/if}
+                </div>
+            {:else if sheet}
                 <h2>File Stats</h2>
                 <div class="stat-group">
                     <div class="stat">
@@ -93,6 +133,7 @@
                         </li>
                     {/each}
                 </ul>
+                <p class="hint">Click a contour to view details.</p>
             {/if}
         </div>
     </div>
@@ -176,12 +217,20 @@
         border-radius: 8px;
         overflow-y: auto;
         min-width: 250px;
+        border: 1px solid #333;
     }
 
     h2, h3 {
         margin-top: 0;
         border-bottom: 1px solid #333;
         padding-bottom: 0.5rem;
+        color: #64ffda;
+    }
+
+    h3 {
+        font-size: 1rem;
+        margin-top: 1rem;
+        color: #a7a7a7;
     }
 
     .stat-group {
@@ -220,5 +269,52 @@
 
     .part-list li small {
         color: #888;
+    }
+
+    .hint {
+        color: #666;
+        font-style: italic;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .prop-group {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #333;
+    }
+
+    .prop-group label {
+        color: #888;
+    }
+
+    .metadata-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .meta-item {
+        background: #2a2a2a;
+        padding: 0.5rem;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .meta-key {
+        color: #ff9800;
+        font-family: monospace;
+    }
+
+    .meta-value {
+        font-family: monospace;
+    }
+
+    .empty-state {
+        color: #666;
+        font-style: italic;
     }
 </style>
