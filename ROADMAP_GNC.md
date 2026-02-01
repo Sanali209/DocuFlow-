@@ -41,6 +41,7 @@ The following infrastructure is already in place and will be leveraged:
     - Parse Geometry (`G00`-`G03`).
     - Extract P-Codes (`*N... P660=`).
 - [x] **Indexing:** Calculate geometric stats (Holes, Corners) during parsing.
+- [x] **Metadata Preservation:** Capture headers, comments, and non-geometry commands to support faithful regeneration.
 
 ---
 
@@ -49,8 +50,9 @@ The following infrastructure is already in place and will be leveraged:
 
 ### 2.1 Visualization & Editing
 - [x] **Canvas:** `GncCanvas.svelte` with Zoom/Pan and Y-Axis inversion.
-- [ ] **Interaction:** Click-to-select contours, P-Code property editor.
-- [ ] **Save:** Regenerate GNC text file with modified parameters (preserving format).
+- [x] **Interaction:** Click-to-select contours, P-Code property editor (View Mode).
+- [ ] **Editing:** UI to modify P-Code values.
+- [ ] **Save:** Regenerate GNC text file from data model (preserving format).
 
 ### 2.2 Local Network Integration
 - [ ] **File Watcher:** Background thread scanning `Z:\Mihtav` and `Z:\Sidra`.
@@ -81,5 +83,6 @@ The following infrastructure is already in place and will be leveraged:
 ---
 
 ## Next Steps
-1.  **Interaction:** Implement click-to-select and property editing in the GNC Canvas.
-2.  **Startup Logic:** Implement the database connection check/config.
+1.  **P-Code Editing:** Enable editing of selected contour metadata in the frontend.
+2.  **File Generation:** Implement the backend logic to reconstruct GNC files from the JSON model.
+3.  **Save Endpoint:** Create API to save modified files back to disk (or download).
