@@ -60,41 +60,48 @@ class GNCParser:
         sheet = GNCSheet()
 
         # Regex patterns
-        g_code_pattern = re.compile(r'(G00|G01|G02|G03|G0|G1|G2|G3)', re.IGNORECASE)
+        # Updated G-code pattern to avoid false positives like G3015 matching G3
+        g_code_pattern = re.compile(r'G(00|01|02|03|0|1|2|3)(?!\d)', re.IGNORECASE)
         coord_pattern = re.compile(r'([XYIJ])([+-]?\d*\.?\d+)', re.IGNORECASE)
-        contour_start_pattern = re.compile(r'\(===== CONTOUR (\d+) =====\)')
+        # Handle 4 or more equals signs
+        contour_start_pattern = re.compile(r'\(={4,}\s*CONTOUR\s+(\d+)\s+={4,}\)', re.IGNORECASE)
+        part_info_pattern = re.compile(r'\(PART NAME:(.*?)\)', re.IGNORECASE)
 
         current_part = None
         current_contour = None
 
-        if self.office_mode:
-            # Office Mode: Treat entire file as one Part
-            current_part = GNCPart(id=1, name="Main Part")
-            sheet.parts.append(current_part)
-
-            # Start first contour
-            current_contour = GNCContour(id=1)
-            current_part.contours.append(current_contour)
-
         lines = content.splitlines()
+        part_counter = 1
 
         for i, line in enumerate(lines):
             line = line.strip()
             if not line:
                 continue
 
-            # Check for Contour Separator (Machine Mode)
+            # Check for Part Name (Implicit New Part)
+            part_match = part_info_pattern.search(line)
+            if part_match:
+                p_name = part_match.group(1).strip()
+                current_part = GNCPart(id=part_counter, name=p_name)
+                part_counter += 1
+                sheet.parts.append(current_part)
+                # Reset contour when new part starts
+                current_contour = None
+                continue
+
+            # Check for Contour Separator
             contour_match = contour_start_pattern.search(line)
             if contour_match:
-                # In Machine Mode, we treat each CONTOUR block as a separate Part for now
                 cid = int(contour_match.group(1))
 
-                # Create a new Part for this block
-                current_part = GNCPart(id=cid, name=f"Part {cid}")
-                sheet.parts.append(current_part)
+                # If no part exists yet, create a default one
+                if current_part is None:
+                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    part_counter += 1
+                    sheet.parts.append(current_part)
 
-                # Create a contour for this part
-                current_contour = GNCContour(id=1) # First contour of this part
+                # Add contour to current part
+                current_contour = GNCContour(id=cid)
                 current_part.contours.append(current_contour)
                 continue
 
@@ -105,9 +112,26 @@ class GNCParser:
             # Parse G-Code
             g_match = g_code_pattern.search(line)
             if g_match:
+
+                # If G-code is found but no part/contour exists, we need defaults.
+                if current_part is None:
+                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    part_counter += 1
+                    sheet.parts.append(current_part)
+
+                if current_contour is None:
+                    # Create a default contour if none active (e.g. commands outside CONTOUR block)
+                    # For Office Mode, this effectively puts everything in one contour if no blocks used
+                    # Use a generic ID or counter
+                    current_contour = GNCContour(id=1)
+                    current_part.contours.append(current_contour)
+
                 cmd_type = g_match.group(1).upper()
-                if len(cmd_type) == 2:
-                    cmd_type = cmd_type[0] + '0' + cmd_type[1]
+                # Normalize G0, G1 etc to G00, G01
+                if len(cmd_type) == 1:
+                    cmd_type = '0' + cmd_type
+                if not cmd_type.startswith('G'):
+                    cmd_type = 'G' + cmd_type
 
                 cmd = GNCCommand(type=cmd_type, line_number=i+1, original_text=line)
 
@@ -124,11 +148,7 @@ class GNCParser:
                     elif axis.upper() == 'J':
                         cmd.j = val
 
-                if current_contour:
-                    current_contour.commands.append(cmd)
-                elif not self.office_mode:
-                    # G-code found outside a contour block in machine mode
-                    pass
+                current_contour.commands.append(cmd)
 
         self._post_process(sheet)
         return sheet
