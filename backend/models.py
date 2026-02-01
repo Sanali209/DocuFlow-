@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, Date, Enum, Text, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Date, Enum, Text, ForeignKey, Table, Float, DateTime
 from sqlalchemy.orm import relationship
 import enum
-from datetime import date
+from datetime import date, datetime
 from .database import Base
 
 class DocumentType(str, enum.Enum):
@@ -55,6 +55,8 @@ class Material(Base):
     name = Column(String, unique=True, index=True)
 
     tasks = relationship("Task", back_populates="material")
+    parts = relationship("Part", back_populates="material")
+    stock_items = relationship("StockItem", back_populates="material")
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -124,3 +126,53 @@ class JournalEntry(Base):
 
     document = relationship("Document", back_populates="journal_entries")
     attachments = relationship("Attachment", back_populates="journal_entry", cascade="all, delete-orphan")
+
+class Part(Base):
+    __tablename__ = "parts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    registration_number = Column(String, index=True)
+    version = Column(String) # A, B, C
+    material_id = Column(Integer, ForeignKey("materials.id"), nullable=True)
+    gnc_file_path = Column(String, nullable=True)
+
+    # Dimensions
+    width = Column(Float, default=0.0)
+    height = Column(Float, default=0.0)
+
+    # Stats (JSON stored as text)
+    stats = Column(Text, nullable=True)
+
+    material = relationship("Material", back_populates="parts")
+
+class StockItem(Base):
+    __tablename__ = "stock_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    material_id = Column(Integer, ForeignKey("materials.id"))
+    width = Column(Float)
+    height = Column(Float)
+    quantity = Column(Integer, default=0)
+    reserved = Column(Integer, default=0)
+    location = Column(String, nullable=True)
+
+    material = relationship("Material", back_populates="stock_items")
+
+class Workspace(Base):
+    __tablename__ = "workspaces"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    type = Column(String)
+    capabilities = Column(Text, nullable=True) # JSON
+    status = Column(String, default="active")
+
+class ShiftLog(Base):
+    __tablename__ = "shift_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime, default=datetime.now)
+    author = Column(String)
+    content = Column(Text)
+    type = Column(String, default="info")

@@ -1,28 +1,5 @@
-INFO:     Started server process [7389]
+INFO:     Started server process [10582]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     127.0.0.1:52976 - "POST /upload HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52986 - "POST /documents/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52992 - "POST /documents/1/tasks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53004 - "GET /documents/1/tasks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53016 - "POST /journal/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35718 - "GET /documents/?sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35718 - "OPTIONS /documents/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35720 - "POST /documents/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35720 - "GET /documents/?sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54606 - "GET /documents/?sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54606 - "OPTIONS /documents/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54612 - "POST /documents/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54612 - "GET /documents/?sort_by=registration_date&sort_order=desc HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54612 - "GET /documents/2/tasks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54612 - "OPTIONS /documents/2/tasks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54606 - "POST /documents/2/tasks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54606 - "GET /documents/2/tasks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54606 - "GET /journal/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54612 - "GET /journal/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51202 - "POST /documents/ HTTP/1.1" 200 OK
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [7389]
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:59980 - "GET /api/config-check HTTP/1.1" 200 OK

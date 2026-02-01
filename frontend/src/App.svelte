@@ -1,72 +1,40 @@
 <script>
-    import DocumentForm from "./lib/DocumentForm.svelte";
-    import DocumentList from "./lib/DocumentList.svelte";
-    import Modal from "./lib/Modal.svelte";
-    import SettingsModal from "./lib/SettingsModal.svelte";
-    import Sidebar from "./lib/Sidebar.svelte";
-    import JournalView from "./lib/JournalView.svelte";
-    import JobView from "./lib/JobView.svelte";
-    import DashboardView from "./lib/DashboardView.svelte";
+    import { onMount } from 'svelte';
+    import { checkConfig } from './api';
+    import Modal from './lib/Modal.svelte';
+    import SettingsModal from './lib/SettingsModal.svelte';
 
-    let listComponent;
-    let isModalOpen = $state(false);
-    let isSettingsOpen = $state(false);
-    let editingDoc = $state(null);
-    let currentView = $state("dashboard"); // 'dashboard' | 'documents' | 'journal' | 'job'
+    // ... existing props ...
 
-    function refreshList() {
-        if (listComponent) {
-            listComponent.refresh();
+    // ... existing logic ...
+
+    let isConfigOpen = $state(false);
+
+    onMount(async () => {
+        try {
+            const config = await checkConfig();
+            if (config.status !== 'configured') {
+                isConfigOpen = true;
+            }
+        } catch (e) {
+            console.error('Config check failed', e);
+            // Don't block app on network error, but maybe show toast
         }
-        isModalOpen = false;
-        editingDoc = null;
-    }
+    });
 
-    function openCreateModal() {
-        editingDoc = null;
-        isModalOpen = true;
-    }
-
-    function openEditModal(doc) {
-        editingDoc = doc;
-        isModalOpen = true;
-    }
-
-    function closeModal() {
-        isModalOpen = false;
-        editingDoc = null;
-    }
-
-    function openSettings() {
-        isSettingsOpen = true;
-    }
-
-    function closeSettings() {
-        isSettingsOpen = false;
-    }
-
-    function handleViewChange(view) {
-        currentView = view;
+    function closeConfig() {
+        isConfigOpen = false;
     }
 </script>
 
 <div class="app-container">
+    <!-- ... existing markup ... -->
     <Sidebar activeView={currentView} onSelect={handleViewChange} />
 
     <div class="main-content-wrapper">
         <header>
             <div class="header-content">
-                <h1>
-                    {#if currentView === "dashboard"}
-                        Dashboard
-                    {:else if currentView === "documents"}
-                        DocuFlow
-                    {:else if currentView === "journal"}
-                        Journal
-                    {:else if currentView === "job"}
-                        Job Tracking
-                    {/if}
-                </h1>
+                <h1>{getViewTitle(currentView)}</h1>
                 <div class="header-actions">
                     <button
                         class="icon-btn"
@@ -123,6 +91,14 @@
                 <JournalView />
             {:else if currentView === "job"}
                 <JobView />
+            {:else if currentView === "parts"}
+                <PartsView />
+            {:else if currentView === "gnc"}
+                <GncView />
+            {:else if currentView === "stock"}
+                <StockView />
+            {:else if currentView === "logs"}
+                <ShiftLogView />
             {/if}
         </main>
     </div>
@@ -138,50 +114,62 @@
     <Modal isOpen={isSettingsOpen} close={closeSettings}>
         <SettingsModal isOpen={isSettingsOpen} close={closeSettings} />
     </Modal>
+
+    <!-- Startup Configuration Modal (reuses SettingsModal logic but forces open) -->
+    {#if isConfigOpen}
+        <div class="startup-overlay">
+            <div class="startup-modal">
+                <div class="startup-header">
+                    <h2>Welcome to DocuFlow</h2>
+                    <p>Please configure the database connection to continue.</p>
+                </div>
+                <SettingsModal isOpen={true} close={closeConfig} />
+            </div>
+        </div>
+    {/if}
 </div>
 
 <style>
+    /* ... existing styles ... */
     :global(*), :global(*::before), :global(*::after) {
         box-sizing: border-box;
     }
     :global(html) {
-        /* Ensure background covers the entire canvas, even on overscroll */
         background-color: #f1f5f9;
-        /* Prevent horizontal scroll if possible, though overflow-x hidden on body is safer */
     }
     :global(body) {
         margin: 0;
         padding: 0;
-        min-height: 100dvh; /* Dynamic viewport height to handle address bars */
+        min-height: 100dvh;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #1e293b;
         background-color: #f1f5f9;
-        /* Ensure body takes full width */
         width: 100%;
     }
     .app-container {
-        min-height: 100dvh; /* Ensure container fills the dynamic viewport */
+        min-height: 100dvh;
         display: flex;
-        flex-direction: row; /* Changed to row for sidebar */
+        flex-direction: row;
         width: 100%;
     }
     .main-content-wrapper {
         flex: 1;
         display: flex;
         flex-direction: column;
-        min-width: 0; /* Prevent flex child overflow */
+        min-width: 0;
+        max-height: 100vh; /* Contain within viewport for scrollable areas */
+        overflow: hidden; /* Main scroll is handled by inner containers */
     }
     header {
         background-color: white;
         border-bottom: 1px solid #e2e8f0;
         padding: 1rem 0;
-        position: sticky;
-        top: 0;
         z-index: 100;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        flex-shrink: 0; /* Don't shrink header */
     }
     .header-content {
-        max-width: 1200px; /* Or unset to fill space */
+        max-width: 1400px;
         margin: 0 auto;
         padding: 0 1.5rem;
         display: flex;
@@ -201,7 +189,7 @@
             font-size: 0.875rem;
         }
         main {
-            padding: 1.5rem 1rem;
+            padding: 1rem;
         }
     }
     h1 {
@@ -212,11 +200,12 @@
         letter-spacing: -0.025em;
     }
     main {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
         padding: 2rem 1.5rem;
         width: 100%;
-        flex: 1; /* Pushes footer down if we had one */
+        flex: 1;
+        overflow-y: auto; /* Enable scrolling for content */
     }
     .header-actions {
         display: flex;
@@ -254,5 +243,39 @@
     }
     .add-btn:hover {
         background-color: #334155;
+    }
+
+    /* Startup Modal Styles */
+    .startup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7); /* Darker background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .startup-modal {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .startup-header {
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    .startup-header h2 {
+        margin: 0 0 0.5rem 0;
+        color: #0f172a;
+    }
+    .startup-header p {
+        margin: 0;
+        color: #64748b;
     }
 </style>

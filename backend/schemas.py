@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 from .models import DocumentType, DocumentStatus, TaskStatus, JournalEntryType, JournalEntryStatus
 
@@ -163,3 +163,75 @@ class Setting(BaseModel):
 # Update JournalEntry to have document info if needed (using DocumentBase to avoid recursion loop with Document.journal_entries)
 class JournalEntryWithDoc(JournalEntry):
     document: Optional[DocumentBase] = None
+
+# --- Part ---
+class PartBase(BaseModel):
+    name: str
+    registration_number: str
+    version: Optional[str] = "A"
+    material_id: Optional[int] = None
+    gnc_file_path: Optional[str] = None
+    width: Optional[float] = 0.0
+    height: Optional[float] = 0.0
+    stats: Optional[str] = None
+
+class PartCreate(PartBase):
+    pass
+
+class Part(PartBase):
+    id: int
+    material: Optional[Material] = None
+
+    class Config:
+        from_attributes = True
+
+# --- StockItem ---
+class StockItemBase(BaseModel):
+    material_id: int
+    width: float
+    height: float
+    quantity: int = 0
+    reserved: int = 0
+    location: Optional[str] = None
+
+class StockItemCreate(StockItemBase):
+    pass
+
+class StockItem(StockItemBase):
+    id: int
+    material: Optional[Material] = None
+
+    class Config:
+        from_attributes = True
+
+# --- Workspace ---
+class WorkspaceBase(BaseModel):
+    name: str
+    type: str
+    capabilities: Optional[str] = None
+    status: str = "active"
+
+class WorkspaceCreate(WorkspaceBase):
+    pass
+
+class Workspace(WorkspaceBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+# --- ShiftLog ---
+class ShiftLogBase(BaseModel):
+    author: str
+    content: str
+    type: str = "info"
+
+class ShiftLogCreate(ShiftLogBase):
+    pass
+
+class ShiftLog(ShiftLogBase):
+    id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True

@@ -19,6 +19,10 @@ from .database import SessionLocal, engine
 from sqlalchemy import text
 from .gnc_parser import GNCParser, GNCSheet
 from .gnc_generator import GNCGenerator
+from contextlib import asynccontextmanager
+from .sync_service import SyncService
+from .auth import verify_admin
+from .startup import router as startup_router
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -67,7 +71,18 @@ with engine.connect() as conn:
 # Ensure upload directory
 os.makedirs("static/uploads", exist_ok=True)
 
-app = FastAPI()
+sync_service = SyncService()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    sync_service.start()
+    yield
+    # Shutdown
+    sync_service.stop()
+
+app = FastAPI(lifespan=lifespan)
+app.include_router(startup_router)
 
 DOC_NAME_REGEX = os.getenv("DOC_NAME_REGEX", r"(?si)Order:\s*(.*?)\s*Date:")
 OCR_SERVICE_URL = os.getenv("OCR_SERVICE_URL", "http://localhost:7860")
@@ -110,7 +125,11 @@ def read_setting(key: str, db: Session = Depends(get_db)):
     return setting
 
 @app.put("/settings/", response_model=schemas.Setting)
-def update_setting(setting: schemas.Setting, db: Session = Depends(get_db)):
+def update_setting(
+    setting: schemas.Setting,
+    db: Session = Depends(get_db),
+    role: str = Depends(verify_admin)
+):
     return crud.set_setting(db, setting.key, setting.value)
 
 @app.post("/upload")
@@ -365,6 +384,99 @@ async def generate_gnc(sheet: GNCSheet):
         return Response(content=content, media_type="text/plain")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to generate GNC file: {str(e)}")
+
+# --- New Feature Endpoints ---
+
+# --- Part Endpoints ---
+@app.get("/parts", response_model=List[schemas.Part])
+def read_parts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_parts(db, skip=skip, limit=limit)
+
+@app.post("/parts", response_model=schemas.Part)
+def create_part(part: schemas.PartCreate, db: Session = Depends(get_db)):
+    return crud.create_part(db, part)
+
+@app.delete("/parts/{part_id}")
+def delete_part(part_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_part(db, part_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Part not found")
+    return {"ok": True}
+
+# --- Stock Endpoints ---
+@app.get("/stock", response_model=List[schemas.StockItem])
+def read_stock(db: Session = Depends(get_db)):
+    return crud.get_stock_items(db)
+
+@app.post("/stock", response_model=schemas.StockItem)
+def create_stock(item: schemas.StockItemCreate, db: Session = Depends(get_db)):
+    return crud.create_stock_item(db, item)
+
+@app.delete("/stock/{item_id}")
+def delete_stock(item_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_stock_item(db, item_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"ok": True}
+
+# --- Workspace Endpoints ---
+@app.get("/workspaces", response_model=List[schemas.Workspace])
+def read_workspaces(db: Session = Depends(get_db)):
+    return crud.get_workspaces(db)
+
+@app.post("/workspaces", response_model=schemas.Workspace)
+def create_workspace(ws: schemas.WorkspaceCreate, db: Session = Depends(get_db)):
+    return crud.create_workspace(db, ws)
+
+@app.delete("/workspaces/{ws_id}")
+def delete_workspace(ws_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_workspace(db, ws_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return {"ok": True}
+
+# --- ShiftLog Endpoints ---
+@app.get("/shift-logs", response_model=List[schemas.ShiftLog])
+def read_shift_logs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_shift_logs(db, skip=skip, limit=limit)
+
+@app.post("/shift-logs", response_model=schemas.ShiftLog)
+def create_shift_log(log: schemas.ShiftLogCreate, db: Session = Depends(get_db)):
+    return crud.create_shift_log(db, log)
+
+@app.post("/api/save-gnc")
+async def save_gnc(
+    sheet: GNCSheet,
+    filename: str = Body(..., embed=True),
+    overwrite: bool = Body(False, embed=True)
+):
+    """
+    Generates GNC content and saves it to static/uploads.
+    """
+    try:
+        generator = GNCGenerator()
+        content = generator.generate(sheet)
+
+        if not filename:
+             raise HTTPException(status_code=400, detail="Filename is required")
+
+        # Sanitize filename (basename only) to prevent path traversal
+        safe_filename = os.path.basename(filename)
+        if not safe_filename.lower().endswith('.gnc'):
+            safe_filename += ".gnc"
+
+        file_path = os.path.join("static/uploads", safe_filename)
+
+        if os.path.exists(file_path) and not overwrite:
+             raise HTTPException(status_code=409, detail="File already exists")
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        return {"success": True, "path": f"/uploads/{safe_filename}"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save GNC file: {str(e)}")
 
 # --- Backup and Restore Endpoints ---
 def serialize_date(obj):

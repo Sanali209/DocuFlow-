@@ -25,16 +25,28 @@
             <span class="label">Documents</span>
         </button>
         <button 
-            class:active={activeView === 'journal'} 
-            onclick={() => select('journal')}>
-            <span class="icon">📓</span>
-            <span class="label">Journal</span>
+            class:active={activeView === 'parts'}
+            onclick={() => select('parts')}>
+            <span class="icon">⚙️</span>
+            <span class="label">Parts Library</span>
         </button>
         <button 
-            class:active={activeView === 'job'} 
-            onclick={() => select('job')}>
-            <span class="icon">💼</span>
-            <span class="label">Job Tracking</span>
+            class:active={activeView === 'gnc'}
+            onclick={() => select('gnc')}>
+            <span class="icon">📐</span>
+            <span class="label">GNC Editor</span>
+        </button>
+        <button
+            class:active={activeView === 'stock'}
+            onclick={() => select('stock')}>
+            <span class="icon">📦</span>
+            <span class="label">Stock</span>
+        </button>
+        <button
+            class:active={activeView === 'logs'}
+            onclick={() => select('logs')}>
+            <span class="icon">📝</span>
+            <span class="label">Shift Logs</span>
         </button>
     </nav>
 </aside>
@@ -50,12 +62,15 @@
         padding-top: 1rem;
         transition: width 0.2s;
         z-index: 200;
+        height: 100vh;
+        position: sticky;
+        top: 0;
     }
     
     /* Only enable hover expansion on desktop */
     @media (min-width: 768px) {
         .sidebar:hover {
-            width: 200px;
+            width: 220px;
         }
         
         .sidebar:hover .label {
@@ -89,6 +104,7 @@
         gap: 0.5rem;
         width: 100%;
         padding: 0 0.5rem;
+        overflow-y: auto; /* Allow scrolling if too many items */
     }
 
     button {
@@ -104,7 +120,7 @@
         gap: 1rem;
         width: 100%;
         transition: all 0.2s;
-        font-size: 1rem;
+        font-size: 0.95rem;
         overflow: hidden;
         white-space: nowrap;
     }
