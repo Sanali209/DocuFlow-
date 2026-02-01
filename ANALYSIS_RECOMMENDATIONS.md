@@ -40,8 +40,8 @@ Browsers cannot access local network shares (SMB) directly due to security sandb
 
 #### Backend (Python)
 1.  **Nesting Engine:**
-    -   **Recommendation:** **SVGnest** (port to Python) or **Deepnest** (Node.js wrapper).
-    -   **Native Python:** `rectpack` (simple rectangles) or custom heuristic algorithm for irregular shapes (complex).
+    -   **Recommendation:** **SVGNest** (port to Python). It handles irregular shapes effectively and fits the "One-Folder" constraint better than Node.js wrappers.
+    -   **Alternative:** `rectpack` only if irregular nesting proves too complex for the MVP.
     -   *Constraint:* Must run locally without heavy dependencies.
 2.  **File Parsing:**
     -   **Recommendation:** Custom **Regex/State-Machine Parsers**.
@@ -101,6 +101,15 @@ Browsers cannot access local network shares (SMB) directly due to security sandb
 3.  **Risk Mitigation:**
     -   Ensure the network is stable (Latencies < 10ms).
     -   If concurrency > 5 users, consider migrating the backend to a true PostgreSQL server (even if hosted on the Admin PC).
+
+### 3.6 Startup & Configuration Resilience
+**Requirement:** The application relies on a shared `Z:` drive. If disconnected, it must not crash.
+**Implementation:**
+-   **Startup Check:** On launch, verify `Z:\DocuFlow\data.db` accessibility.
+-   **Configuration Dialog:** If the DB is missing or unreachable, show a native GUI dialog (Tkinter/webview) asking the user to:
+    1.  Select the correct Network Folder path.
+    2.  Retry connection.
+-   **Persistence:** Save the valid path to a local `config.ini` so it remembers the mapping.
 
 ## 4. Strategic Roadmap Adjustments
 1.  **Immediate:** Implement the "Reverse Engineering" logic to stop data loss on machine edits.

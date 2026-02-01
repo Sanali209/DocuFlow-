@@ -61,6 +61,10 @@ This SRS document provides the specific technical requirements for the DocuFlow 
 *   **FR-09: File Storage**
     *   Physical files stored in `static/uploads/{uuid}_{filename}`.
     *   GNC files tracked via `Attachments` table or dedicated `GNCPrograms` table.
+*   **FR-10: Startup Configuration**
+    *   On launch, check connection to `Shared Network Database`.
+    *   If failed, display a **Settings Dialog** (before loading main UI) to allow user to select the correct `Sync Folder` path.
+    *   Persist path to `config.ini` and restart application upon success.
 
 ## 3. Non-Functional Requirements
 
