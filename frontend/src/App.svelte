@@ -1,74 +1,34 @@
 <script>
-    import DocumentForm from "./lib/DocumentForm.svelte";
-    import DocumentList from "./lib/DocumentList.svelte";
-    import Modal from "./lib/Modal.svelte";
-    import SettingsModal from "./lib/SettingsModal.svelte";
-    import Sidebar from "./lib/Sidebar.svelte";
-    import JournalView from "./lib/JournalView.svelte";
-    import JobView from "./lib/JobView.svelte";
-    import DashboardView from "./lib/DashboardView.svelte";
-    import PartsView from "./lib/PartsView.svelte";
-    import StockView from "./lib/StockView.svelte";
-    import ShiftLogView from "./lib/ShiftLogView.svelte";
-    import GncView from "./lib/GncView.svelte";
+    import { onMount } from 'svelte';
+    import { checkConfig } from './api';
+    import Modal from './lib/Modal.svelte';
+    import SettingsModal from './lib/SettingsModal.svelte';
 
-    let listComponent;
-    let isModalOpen = $state(false);
-    let isSettingsOpen = $state(false);
-    let editingDoc = $state(null);
-    let currentView = $state("dashboard");
+    // ... existing props ...
 
-    function refreshList() {
-        if (listComponent) {
-            listComponent.refresh();
+    // ... existing logic ...
+
+    let isConfigOpen = $state(false);
+
+    onMount(async () => {
+        try {
+            const config = await checkConfig();
+            if (config.status !== 'configured') {
+                isConfigOpen = true;
+            }
+        } catch (e) {
+            console.error('Config check failed', e);
+            // Don't block app on network error, but maybe show toast
         }
-        isModalOpen = false;
-        editingDoc = null;
-    }
+    });
 
-    function openCreateModal() {
-        editingDoc = null;
-        isModalOpen = true;
-    }
-
-    function openEditModal(doc) {
-        editingDoc = doc;
-        isModalOpen = true;
-    }
-
-    function closeModal() {
-        isModalOpen = false;
-        editingDoc = null;
-    }
-
-    function openSettings() {
-        isSettingsOpen = true;
-    }
-
-    function closeSettings() {
-        isSettingsOpen = false;
-    }
-
-    function handleViewChange(view) {
-        currentView = view;
-    }
-
-    function getViewTitle(view) {
-        const titles = {
-            dashboard: 'Dashboard',
-            documents: 'DocuFlow',
-            journal: 'Journal',
-            job: 'Job Tracking',
-            parts: 'Parts Library',
-            gnc: 'GNC Editor',
-            stock: 'Stock Management',
-            logs: 'Shift Logs'
-        };
-        return titles[view] || 'DocuFlow';
+    function closeConfig() {
+        isConfigOpen = false;
     }
 </script>
 
 <div class="app-container">
+    <!-- ... existing markup ... -->
     <Sidebar activeView={currentView} onSelect={handleViewChange} />
 
     <div class="main-content-wrapper">
@@ -154,9 +114,23 @@
     <Modal isOpen={isSettingsOpen} close={closeSettings}>
         <SettingsModal isOpen={isSettingsOpen} close={closeSettings} />
     </Modal>
+
+    <!-- Startup Configuration Modal (reuses SettingsModal logic but forces open) -->
+    {#if isConfigOpen}
+        <div class="startup-overlay">
+            <div class="startup-modal">
+                <div class="startup-header">
+                    <h2>Welcome to DocuFlow</h2>
+                    <p>Please configure the database connection to continue.</p>
+                </div>
+                <SettingsModal isOpen={true} close={closeConfig} />
+            </div>
+        </div>
+    {/if}
 </div>
 
 <style>
+    /* ... existing styles ... */
     :global(*), :global(*::before), :global(*::after) {
         box-sizing: border-box;
     }
@@ -269,5 +243,39 @@
     }
     .add-btn:hover {
         background-color: #334155;
+    }
+
+    /* Startup Modal Styles */
+    .startup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7); /* Darker background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .startup-modal {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .startup-header {
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    .startup-header h2 {
+        margin: 0 0 0.5rem 0;
+        color: #0f172a;
+    }
+    .startup-header p {
+        margin: 0;
+        color: #64748b;
     }
 </style>

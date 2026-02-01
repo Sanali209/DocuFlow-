@@ -21,6 +21,8 @@ from .gnc_parser import GNCParser, GNCSheet
 from .gnc_generator import GNCGenerator
 from contextlib import asynccontextmanager
 from .sync_service import SyncService
+from .auth import verify_admin
+from .startup import router as startup_router
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -80,6 +82,7 @@ async def lifespan(app: FastAPI):
     sync_service.stop()
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(startup_router)
 
 DOC_NAME_REGEX = os.getenv("DOC_NAME_REGEX", r"(?si)Order:\s*(.*?)\s*Date:")
 OCR_SERVICE_URL = os.getenv("OCR_SERVICE_URL", "http://localhost:7860")
@@ -122,7 +125,11 @@ def read_setting(key: str, db: Session = Depends(get_db)):
     return setting
 
 @app.put("/settings/", response_model=schemas.Setting)
-def update_setting(setting: schemas.Setting, db: Session = Depends(get_db)):
+def update_setting(
+    setting: schemas.Setting,
+    db: Session = Depends(get_db),
+    role: str = Depends(verify_admin)
+):
     return crud.set_setting(db, setting.key, setting.value)
 
 @app.post("/upload")

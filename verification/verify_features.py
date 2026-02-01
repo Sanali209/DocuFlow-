@@ -3,8 +3,10 @@ import time
 
 def verify_new_features():
     with sync_playwright() as p:
+        # Launch with a specific viewport to ensure Desktop layout (Sidebar expanded)
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(viewport={"width": 1280, "height": 720})
+        page = context.new_page()
 
         # 1. Go to Dashboard
         print("Navigating to Dashboard...")
@@ -13,8 +15,8 @@ def verify_new_features():
 
         # 2. Verify Parts Library
         print("Checking Parts Library...")
+        # Use more robust locator if text is hidden, or rely on viewport fix
         page.get_by_role("button", name="Parts Library").click()
-        # Expect H2 specific to the view
         expect(page.locator("h2").filter(has_text="Parts Library")).to_be_visible()
         time.sleep(0.5)
         page.screenshot(path="verification/parts_view.png")
