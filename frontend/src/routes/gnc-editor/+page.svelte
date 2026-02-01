@@ -7,11 +7,13 @@
     let isLoading = false;
     let error: string | null = null;
     let selectedContour: GNCContour | null = null;
+    let filename = "modified.gnc";
 
     async function handleFileUpload() {
         if (!fileInput.files || fileInput.files.length === 0) return;
 
         const file = fileInput.files[0];
+        filename = file.name; // Store original filename
         const formData = new FormData();
         formData.append('file', file);
 
@@ -42,11 +44,52 @@
     function handleSelection(event: CustomEvent) {
         selectedContour = event.detail;
     }
+
+    async function handleSave() {
+        if (!sheet) return;
+
+        isLoading = true;
+        try {
+            const response = await fetch('http://localhost:8000/api/generate-gnc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(sheet)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to generate file: ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `edited_${filename}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (e: any) {
+            error = e.message;
+            console.error(e);
+        } finally {
+            isLoading = false;
+        }
+    }
 </script>
 
 <div class="gnc-editor-container">
     <header>
-        <h1>GNC Editor & Visualizer</h1>
+        <div class="header-top">
+            <h1>GNC Editor & Visualizer</h1>
+            {#if sheet}
+                <button class="btn-save" onclick={handleSave} disabled={isLoading}>
+                    {isLoading ? 'Saving...' : '💾 Save / Download'}
+                </button>
+            {/if}
+        </div>
         <div class="controls">
             <input
                 type="file"
@@ -55,7 +98,7 @@
                 onchange={handleFileUpload}
                 class="file-input"
             />
-            {#if isLoading}
+            {#if isLoading && !sheet}
                 <span class="loading">Processing...</span>
             {/if}
         </div>
@@ -103,7 +146,12 @@
                             {#each Object.entries(selectedContour.metadata) as [key, value]}
                                 <div class="meta-item">
                                     <span class="meta-key">{key}:</span>
-                                    <span class="meta-value">{value}</span>
+                                    <!-- Editable Input -->
+                                    <input
+                                        type="text"
+                                        bind:value={selectedContour.metadata[key]}
+                                        class="meta-input"
+                                    />
                                 </div>
                             {/each}
                         </div>
@@ -124,6 +172,15 @@
                     </div>
                 </div>
 
+                {#if sheet.metadata && Object.keys(sheet.metadata).length > 0}
+                    <h3>Sheet Metadata</h3>
+                    <ul class="meta-list">
+                        {#each Object.entries(sheet.metadata) as [k, v]}
+                            <li><strong>{k}:</strong> {v}</li>
+                        {/each}
+                    </ul>
+                {/if}
+
                 <h3>Parts List</h3>
                 <ul class="part-list">
                     {#each sheet.parts as part}
@@ -133,7 +190,7 @@
                         </li>
                     {/each}
                 </ul>
-                <p class="hint">Click a contour to view details.</p>
+                <p class="hint">Click a contour to edit properties.</p>
             {/if}
         </div>
     </div>
@@ -157,6 +214,12 @@
         gap: 0.5rem;
     }
 
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
     h1 {
         font-size: 1.5rem;
         margin: 0;
@@ -174,6 +237,25 @@
         padding: 0.5rem;
         border-radius: 4px;
         color: white;
+    }
+
+    .btn-save {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .btn-save:hover {
+        background: #43a047;
+    }
+
+    .btn-save:disabled {
+        background: #666;
+        cursor: not-allowed;
     }
 
     .loading {
@@ -271,6 +353,12 @@
         color: #888;
     }
 
+    .meta-list {
+        list-style: none;
+        padding: 0;
+        font-size: 0.9rem;
+    }
+
     .hint {
         color: #666;
         font-style: italic;
@@ -302,15 +390,24 @@
         border-radius: 4px;
         display: flex;
         justify-content: space-between;
+        align-items: center;
     }
 
     .meta-key {
         color: #ff9800;
         font-family: monospace;
+        margin-right: 0.5rem;
     }
 
-    .meta-value {
+    .meta-input {
         font-family: monospace;
+        background: #333;
+        border: 1px solid #444;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 2px;
+        width: 100px;
+        text-align: right;
     }
 
     .empty-state {
