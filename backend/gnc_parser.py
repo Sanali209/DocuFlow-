@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import re
 
-class Command(BaseModel):
+class GNCCommand(BaseModel):
     type: str  # G00, G01, G02, G03
     x: Optional[float] = None
     y: Optional[float] = None
@@ -11,9 +11,9 @@ class Command(BaseModel):
     line_number: Optional[int] = None
     original_text: Optional[str] = None
 
-class Contour(BaseModel):
+class GNCContour(BaseModel):
     id: int
-    commands: List[Command] = []
+    commands: List[GNCCommand] = []
     is_closed: bool = False
     is_hole: bool = False
 
@@ -21,16 +21,16 @@ class Contour(BaseModel):
     corner_count: int = 0
     length: float = 0.0
 
-class Part(BaseModel):
+class GNCPart(BaseModel):
     id: int
-    contours: List[Contour] = []
+    contours: List[GNCContour] = []
     name: Optional[str] = None
 
     # Stats
     corner_count: int = 0
 
-class Sheet(BaseModel):
-    parts: List[Part] = []
+class GNCSheet(BaseModel):
+    parts: List[GNCPart] = []
     metadata: Dict[str, Any] = {}
 
     # Stats
@@ -47,9 +47,9 @@ class GNCParser:
     def __init__(self):
         self.office_mode = False
 
-    def parse(self, content: str, filename: str = "") -> Sheet:
+    def parse(self, content: str, filename: str = "") -> GNCSheet:
         """
-        Parses GNC content and returns a Sheet object with Parts and Contours.
+        Parses GNC content and returns a GNCSheet object with GNCParts and GNCContours.
         """
         # Detect mode
         if content.startswith("%") or "_801" in filename:
@@ -57,7 +57,7 @@ class GNCParser:
         else:
             self.office_mode = True # Default/Office mode
 
-        sheet = Sheet()
+        sheet = GNCSheet()
 
         # Regex patterns
         g_code_pattern = re.compile(r'(G00|G01|G02|G03|G0|G1|G2|G3)', re.IGNORECASE)
@@ -69,11 +69,11 @@ class GNCParser:
 
         if self.office_mode:
             # Office Mode: Treat entire file as one Part
-            current_part = Part(id=1, name="Main Part")
+            current_part = GNCPart(id=1, name="Main Part")
             sheet.parts.append(current_part)
 
             # Start first contour
-            current_contour = Contour(id=1)
+            current_contour = GNCContour(id=1)
             current_part.contours.append(current_contour)
 
         lines = content.splitlines()
@@ -86,19 +86,15 @@ class GNCParser:
             # Check for Contour Separator (Machine Mode)
             contour_match = contour_start_pattern.search(line)
             if contour_match:
-                # In Machine Mode, we treat each CONTOUR block as a separate Part for now,
-                # or a new Contour in the current Part?
-                # User Requirement: "part sheets contain parts parts contain contours"
-                # Assumption: The GNC file represents a Sheet. The "CONTOUR" blocks are likely Parts.
-
+                # In Machine Mode, we treat each CONTOUR block as a separate Part for now
                 cid = int(contour_match.group(1))
 
                 # Create a new Part for this block
-                current_part = Part(id=cid, name=f"Part {cid}")
+                current_part = GNCPart(id=cid, name=f"Part {cid}")
                 sheet.parts.append(current_part)
 
                 # Create a contour for this part
-                current_contour = Contour(id=1) # First contour of this part
+                current_contour = GNCContour(id=1) # First contour of this part
                 current_part.contours.append(current_contour)
                 continue
 
@@ -113,7 +109,7 @@ class GNCParser:
                 if len(cmd_type) == 2:
                     cmd_type = cmd_type[0] + '0' + cmd_type[1]
 
-                cmd = Command(type=cmd_type, line_number=i+1, original_text=line)
+                cmd = GNCCommand(type=cmd_type, line_number=i+1, original_text=line)
 
                 # Extract coordinates
                 coords = coord_pattern.findall(line)
@@ -132,13 +128,12 @@ class GNCParser:
                     current_contour.commands.append(cmd)
                 elif not self.office_mode:
                     # G-code found outside a contour block in machine mode
-                    # Might be header/footer, ignore for now
                     pass
 
         self._post_process(sheet)
         return sheet
 
-    def _post_process(self, sheet: Sheet):
+    def _post_process(self, sheet: GNCSheet):
         """
         Calculate stats.
         """

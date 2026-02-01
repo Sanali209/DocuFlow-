@@ -1,5 +1,5 @@
 import unittest
-from .gnc_parser import GNCParser, Sheet
+from .gnc_parser import GNCParser, GNCSheet
 
 class TestGNCParser(unittest.TestCase):
     def setUp(self):
