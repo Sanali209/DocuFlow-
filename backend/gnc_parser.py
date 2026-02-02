@@ -46,6 +46,11 @@ class GNCSheet(BaseModel):
     thickness: Optional[float] = None
     width: Optional[float] = None
     height: Optional[float] = None
+    
+    # SHEET metadata (*SHEET line)
+    program_width: Optional[float] = None   # Position 1: program width in mm
+    program_height: Optional[float] = None  # Position 2: program height in mm
+    cut_count: Optional[int] = None         # Position 4: number of times to cut
 
 class GNCParser:
     def __init__(self):
@@ -72,10 +77,13 @@ class GNCParser:
         p_code_pattern = re.compile(r'P(\d+)=([^\s]+)', re.IGNORECASE)
 
         # Sheet metadata patterns
-        sheet_tag_pattern = re.compile(r'\(\*SHEET\s+(.*)\)', re.IGNORECASE)
+        sheet_detail_pattern = re.compile(r'\(\*SHEET\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)', re.IGNORECASE)
         model_tag_pattern = re.compile(r'\(\*MODEL\s+(.*)\)', re.IGNORECASE)
         material_tag_pattern = re.compile(r'\(Material[:=](.*?)\)', re.IGNORECASE)
         thickness_tag_pattern = re.compile(r'\(THICKNESS=(.*?)\)', re.IGNORECASE)
+        
+        # _801 format P-code pattern: *N1145 P660=190,P150=1,P151=1
+        p_code_801_pattern = re.compile(r'\*N\d+\s+P660=(\d+),P150=(\d+),P151=(\d+)', re.IGNORECASE)
 
         current_part = None
         current_contour = None
@@ -88,10 +96,19 @@ class GNCParser:
             if not line:
                 continue
 
-            # Parse Sheet Metadata (Global)
-            sheet_match = sheet_tag_pattern.search(line)
-            if sheet_match:
-                sheet.metadata['sheet_params'] = sheet_match.group(1).strip()
+            # Parse SHEET metadata line (detailed)
+            sheet_detail_match = sheet_detail_pattern.search(line)
+            if sheet_detail_match:
+                try:
+                    sheet.program_width = float(sheet_detail_match.group(1))
+                    sheet.program_height = float(sheet_detail_match.group(2))
+                    sheet.thickness = float(sheet_detail_match.group(3))
+                    sheet.cut_count = int(sheet_detail_match.group(4))
+                    sheet.metadata['sheet_param_5'] = sheet_detail_match.group(5)
+                    sheet.metadata['sheet_param_6'] = sheet_detail_match.group(6)
+                    sheet.metadata['sheet_param_7'] = sheet_detail_match.group(7)
+                except (ValueError, IndexError):
+                    pass
 
             model_match = model_tag_pattern.search(line)
             if model_match:
@@ -107,10 +124,30 @@ class GNCParser:
             if thickness_match:
                 try:
                     thk = float(thickness_match.group(1).strip())
-                    sheet.thickness = thk
+                    if sheet.thickness is None:  # Don't override SHEET line value
+                        sheet.thickness = thk
                     sheet.metadata['thickness'] = thk
                 except ValueError:
                     pass
+            
+            # Check for _801 format P-codes
+            p_code_801_match = p_code_801_pattern.search(line)
+            if p_code_801_match:
+                if current_part is None:
+                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    part_counter += 1
+                    sheet.parts.append(current_part)
+                if current_contour is None:
+                    current_contour = GNCContour(id=1)
+                    current_part.contours.append(current_contour)
+                
+                current_contour.metadata['P660'] = p_code_801_match.group(1)
+                current_contour.metadata['P150'] = p_code_801_match.group(2)
+                current_contour.metadata['P151'] = p_code_801_match.group(3)
+                
+                cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
+                current_contour.commands.append(cmd)
+                continue
 
             # Check for Part Name (Implicit New Part)
             part_match = part_info_pattern.search(line)

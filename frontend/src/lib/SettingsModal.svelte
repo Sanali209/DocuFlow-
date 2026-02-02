@@ -1,29 +1,40 @@
 <script>
-    import { onMount } from 'svelte';
-    import { fetchSetting, updateSetting } from './api';
+    import { onMount } from "svelte";
+    import { fetchSetting, updateSetting, checkConfig, testPath } from "./api";
 
-    export let isOpen = false;
-    export let close;
+    let { isOpen = false, close } = $props();
 
-    let ocrUrl = '';
-    let docNameRegex = '';
-    let userRole = 'operator';
-    let loading = true;
+    let ocrUrl = $state("");
+    let docNameRegex = $state("");
+    let userRole = $state("admin");
+    let syncMihtavPath = $state("");
+    let syncSidraPath = $state("");
+    let loading = $state(true);
+    let testing = $state({ mihtav: false, sidra: false });
+    let testResults = $state({ mihtav: null, sidra: null });
 
     async function loadSettings() {
         loading = true;
         try {
-            const [urlSetting, regexSetting] = await Promise.all([
-                fetchSetting('ocr_url').catch(() => ({ value: '' })),
-                fetchSetting('doc_name_regex').catch(() => ({ value: '' }))
-            ]);
-            ocrUrl = urlSetting.value;
-            docNameRegex = regexSetting.value;
+            const [urlSetting, regexSetting, mihtavSetting, sidraSetting] =
+                await Promise.all([
+                    fetchSetting("ocr_url").catch(() => ({ value: "" })),
+                    fetchSetting("doc_name_regex").catch(() => ({ value: "" })),
+                    fetchSetting("sync_mihtav_path").catch(() => ({
+                        value: "",
+                    })),
+                    fetchSetting("sync_sidra_path").catch(() => ({
+                        value: "",
+                    })),
+                ]);
+            ocrUrl = urlSetting.value || "";
+            docNameRegex = regexSetting.value || "";
+            syncMihtavPath = mihtavSetting.value || "";
+            syncSidraPath = sidraSetting.value || "";
 
             // Load role
-            const storedRole = localStorage.getItem('user_role');
+            const storedRole = localStorage.getItem("user_role");
             if (storedRole) userRole = storedRole;
-
         } catch (e) {
             console.error(e);
         } finally {
@@ -31,34 +42,49 @@
         }
     }
 
+    async function handleTestPath(type) {
+        const path = type === "mihtav" ? syncMihtavPath : syncSidraPath;
+        if (!path) {
+            testResults[type] = { accessible: false, error: "Path is empty" };
+            return;
+        }
+        testing[type] = true;
+        try {
+            const result = await testPath(path);
+            testResults[type] = result;
+        } catch (e) {
+            testResults[type] = { accessible: false, error: e.message };
+        } finally {
+            testing[type] = false;
+        }
+    }
+
     async function saveSettings() {
         try {
             await Promise.all([
-                updateSetting('ocr_url', ocrUrl),
-                updateSetting('doc_name_regex', docNameRegex)
+                updateSetting("ocr_url", ocrUrl),
+                updateSetting("doc_name_regex", docNameRegex),
+                updateSetting("sync_mihtav_path", syncMihtavPath),
+                updateSetting("sync_sidra_path", syncSidraPath),
             ]);
 
             // Save role locally
-            localStorage.setItem('user_role', userRole);
+            localStorage.setItem("user_role", userRole);
 
             // Reload page to apply role changes globally (simplest way for MVP)
             window.location.reload();
-            
+
             close();
         } catch (e) {
-            alert('Failed to save settings. Ensure you have Admin privileges.');
+            alert("Failed to save settings. Ensure you have Admin privileges.");
             console.error(e);
         }
     }
 
-    // Inject role into headers
-    // Note: This logic should ideally be in a central API wrapper,
-    // but for this MVP phase, we rely on api.js.
-    // We need to modify api.js to read from localStorage.
-
     $effect(() => {
         if (isOpen) {
             loadSettings();
+            testResults = { mihtav: null, sidra: null };
         }
     });
 </script>
@@ -72,14 +98,107 @@
         {:else}
             <div class="field">
                 <label for="ocr-url">OCR Service URL</label>
-                <input id="ocr-url" type="text" bind:value={ocrUrl} placeholder="http://localhost:7860" />
+                <input
+                    id="ocr-url"
+                    type="text"
+                    bind:value={ocrUrl}
+                    placeholder="http://localhost:7860"
+                />
             </div>
             <div class="field">
                 <label for="regex">Document Name Regex</label>
-                <input id="regex" type="text" bind:value={docNameRegex} placeholder="Regex Pattern" />
+                <input
+                    id="regex"
+                    type="text"
+                    bind:value={docNameRegex}
+                    placeholder="Regex Pattern"
+                />
             </div>
 
-            <hr class="divider"/>
+            <hr class="divider" />
+
+            <h3 class="section-title">Sync Folder Paths</h3>
+            <p class="section-hint">
+                Configure paths to network folders for automatic file import.
+            </p>
+
+            <div class="field path-field">
+                <label for="mihtav-path">Mihtav (Orders) Path</label>
+                <div class="path-input-group">
+                    <input
+                        id="mihtav-path"
+                        type="text"
+                        bind:value={syncMihtavPath}
+                        placeholder="Z:\Mihtavim or \\server\share\orders"
+                    />
+                    <button
+                        class="test-btn"
+                        onclick={() => handleTestPath("mihtav")}
+                        disabled={testing.mihtav}
+                    >
+                        {testing.mihtav ? "Testing..." : "Test"}
+                    </button>
+                </div>
+                {#if testResults.mihtav}
+                    <span
+                        class="test-result"
+                        class:success={testResults.mihtav.accessible}
+                        class:error={!testResults.mihtav.accessible}
+                    >
+                        {testResults.mihtav.accessible
+                            ? "✓ Path accessible"
+                            : "✗ Path not accessible"}
+                    </span>
+                {/if}
+            </div>
+
+            <div class="field path-field">
+                <label for="sidra-path">Sidra (Parts Library) Path</label>
+                <div class="path-input-group">
+                    <input
+                        id="sidra-path"
+                        type="text"
+                        bind:value={syncSidraPath}
+                        placeholder="Z:\Sidra or \\server\share\parts"
+                    />
+                    <button
+                        class="test-btn"
+                        onclick={() => handleTestPath("sidra")}
+                        disabled={testing.sidra}
+                    >
+                        {testing.sidra ? "Testing..." : "Test"}
+                    </button>
+                </div>
+                {#if testResults.sidra}
+                    <span
+                        class="test-result"
+                        class:success={testResults.sidra.accessible}
+                        class:error={!testResults.sidra.accessible}
+                    >
+                        {testResults.sidra.accessible
+                            ? "✓ Path accessible"
+                            : "✗ Path not accessible"}
+                    </span>
+                {/if}
+            </div>
+
+            <hr class="divider" />
+
+            <h3 class="section-title">Hardware Integration</h3>
+            <p class="section-hint">
+                Configure connection to cutting machines. (Coming Soon)
+            </p>
+            <div class="field">
+                <label for="com-port">COM Port</label>
+                <input
+                    id="com-port"
+                    type="text"
+                    placeholder="e.g. COM3"
+                    disabled
+                />
+            </div>
+
+            <hr class="divider" />
 
             <div class="field">
                 <label for="role">User Mode (Simulated)</label>
@@ -117,7 +236,8 @@
         font-weight: 500;
         color: #475569;
     }
-    input, select {
+    input,
+    select {
         width: 100%;
         padding: 0.75rem;
         border: 1px solid #cbd5e1;
@@ -159,5 +279,49 @@
     }
     .save-btn:hover {
         background: #334155;
+    }
+    .section-title {
+        font-size: 1.1rem;
+        color: #1e293b;
+        margin: 0 0 0.5rem 0;
+    }
+    .section-hint {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0 0 1rem 0;
+    }
+    .path-input-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .path-input-group input {
+        flex: 1;
+    }
+    .test-btn {
+        padding: 0.5rem 1rem;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+    .test-btn:hover:not(:disabled) {
+        background: #e2e8f0;
+    }
+    .test-btn:disabled {
+        cursor: wait;
+        opacity: 0.7;
+    }
+    .test-result {
+        display: block;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+    .test-result.success {
+        color: #16a34a;
+    }
+    .test-result.error {
+        color: #dc2626;
     }
 </style>

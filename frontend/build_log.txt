@@ -1,0 +1,64 @@
+
+> frontend@0.0.0 build
+> vite build
+
+[33mYou are using Node.js 20.14.0. Vite requires Node.js version 20.19+ or 22.12+. Please upgrade your Node.js version.[39m
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[33m00:25:50 [vite-plugin-svelte] src/lib/Modal.svelte:13:8 noninteractive element cannot have nonnegative tabIndex value
+https://svelte.dev/e/a11y_no_noninteractive_tabindex[39m
+11: {#if isOpen}
+12:     <div class="modal-backdrop" onclick={close} onkeydown={handleKeydown} role="button" tabindex="0">
+13:         <div class="modal-content" style="max-width: {maxWidth}" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document" tabindex="0">
+                  ^
+14:             <button class="close-btn" onclick={close}>&times;</button>
+15:             {@render children()}
+[33m00:25:50 [vite-plugin-svelte] src/lib/Modal.svelte:13:8 Non-interactive element `<div>` should not be assigned mouse or keyboard event listeners
+https://svelte.dev/e/a11y_no_noninteractive_element_interactions[39m
+11: {#if isOpen}
+12:     <div class="modal-backdrop" onclick={close} onkeydown={handleKeydown} role="button" tabindex="0">
+13:         <div class="modal-content" style="max-width: {maxWidth}" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document" tabindex="0">
+                  ^
+14:             <button class="close-btn" onclick={close}>&times;</button>
+15:             {@render children()}
+[33m00:25:50 [vite-plugin-svelte] src/lib/SettingsModal.svelte:7:8 `ocrUrl` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update[39m
+ 5:     let { isOpen = false, close } = $props();
+ 6: 
+ 7:     let ocrUrl = '';
+                  ^
+ 8:     let docNameRegex = '';
+ 9:     let userRole = 'operator';
+[33m00:25:50 [vite-plugin-svelte] src/lib/SettingsModal.svelte:8:8 `docNameRegex` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update[39m
+ 6: 
+ 7:     let ocrUrl = '';
+ 8:     let docNameRegex = '';
+                        ^
+ 9:     let userRole = 'operator';
+10:     let loading = true;
+[33m00:25:50 [vite-plugin-svelte] src/lib/SettingsModal.svelte:9:8 `userRole` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update[39m
+ 7:     let ocrUrl = '';
+ 8:     let docNameRegex = '';
+ 9:     let userRole = 'operator';
+                    ^
+10:     let loading = true;
+11: 
+[33m00:25:50 [vite-plugin-svelte] src/lib/SettingsModal.svelte:10:8 `loading` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
+https://svelte.dev/e/non_reactive_update[39m
+ 8:     let docNameRegex = '';
+ 9:     let userRole = 'operator';
+10:     let loading = true;
+                   ^
+11: 
+12:     async function loadSettings() {
+[32m✓[39m 110 modules transformed.
+[31m✗[39m Build failed in 682ms
+[31merror during build:
+[31mCould not resolve "./api" from "src/App.svelte"[31m
+file: [36mD:/github/DocuFlow-/frontend/src/App.svelte[31m
+    at getRollupError (file:///D:/github/DocuFlow-/frontend/node_modules/rollup/dist/es/shared/parseAst.js:400:41)
+    at error (file:///D:/github/DocuFlow-/frontend/node_modules/rollup/dist/es/shared/parseAst.js:396:42)
+    at ModuleLoader.handleInvalidResolvedId (file:///D:/github/DocuFlow-/frontend/node_modules/rollup/dist/es/shared/node-entry.js:21666:24)
+    at file:///D:/github/DocuFlow-/frontend/node_modules/rollup/dist/es/shared/node-entry.js:21626:26[39m

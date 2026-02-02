@@ -384,8 +384,40 @@ def delete_filter_preset(db: Session, preset_id: int):
     return False
 
 # --- Part CRUD ---
-def get_parts(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Part).options(subqueryload(models.Part.material)).offset(skip).limit(limit).all()
+def get_parts(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    search: str | None = None,
+    material_id: int | None = None,
+    min_width: float | None = None,
+    max_width: float | None = None,
+    min_height: float | None = None,
+    max_height: float | None = None
+):
+    query = db.query(models.Part).options(subqueryload(models.Part.material))
+    
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(or_(
+            models.Part.name.like(search_pattern),
+            models.Part.registration_number.like(search_pattern)
+        ))
+    
+    if material_id:
+        query = query.filter(models.Part.material_id == material_id)
+        
+    if min_width is not None:
+        query = query.filter(models.Part.width >= min_width)
+    if max_width is not None:
+        query = query.filter(models.Part.width <= max_width)
+        
+    if min_height is not None:
+        query = query.filter(models.Part.height >= min_height)
+    if max_height is not None:
+        query = query.filter(models.Part.height <= max_height)
+        
+    return query.offset(skip).limit(limit).all()
 
 def create_part(db: Session, part: schemas.PartCreate):
     db_part = models.Part(**part.model_dump())

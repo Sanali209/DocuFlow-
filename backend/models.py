@@ -7,9 +7,12 @@ from .database import Base
 class DocumentType(str, enum.Enum):
     PLAN = "plan"
     MAIL = "mail"
+    ORDER = "order"
+    PART = "part"
     OTHER = "other"
 
 class DocumentStatus(str, enum.Enum):
+    UNREGISTERED = "unregistered"
     IN_PROGRESS = "in_progress"
     DONE = "done"
 

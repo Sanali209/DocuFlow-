@@ -1,24 +1,101 @@
 <script>
-    import { onMount } from 'svelte';
-    import { checkConfig } from './api';
-    import Modal from './lib/Modal.svelte';
-    import SettingsModal from './lib/SettingsModal.svelte';
+    import { onMount } from "svelte";
+    import { checkConfig } from "./lib/api";
+    import Modal from "./lib/Modal.svelte";
+    import SettingsModal from "./lib/SettingsModal.svelte";
+    import Sidebar from "./lib/Sidebar.svelte";
 
-    // ... existing props ...
-
-    // ... existing logic ...
+    // Views
+    import DashboardView from "./lib/DashboardView.svelte";
+    import DocumentList from "./lib/DocumentList.svelte";
+    import JournalView from "./lib/JournalView.svelte";
+    import JobView from "./lib/JobView.svelte";
+    import PartsView from "./lib/PartsView.svelte";
+    import GncView from "./lib/GncView.svelte";
+    import StockView from "./lib/StockView.svelte";
+    import ShiftLogView from "./lib/ShiftLogView.svelte";
+    import DocumentForm from "./lib/DocumentForm.svelte";
 
     let isConfigOpen = $state(false);
+    let currentView = $state("dashboard");
+    let isModalOpen = $state(false);
+    let isSettingsOpen = $state(false);
+    let editingDoc = $state(null);
+    let listComponent = $state(null);
+
+    // View Management
+    function handleViewChange(view) {
+        currentView = view;
+    }
+
+    function getViewTitle(view) {
+        switch (view) {
+            case "dashboard":
+                return "Dashboard";
+            case "documents":
+                return "Documents";
+            case "journal":
+                return "Journal";
+            case "job":
+                return "Job Processing";
+            case "parts":
+                return "Parts Library";
+            case "gnc":
+                return "GNC Editor";
+            case "stock":
+                return "Stock Management";
+            case "logs":
+                return "Shift Logs";
+            default:
+                return "DocuFlow";
+        }
+    }
+
+    // Modal Management
+    function openCreateModal() {
+        editingDoc = null;
+        isModalOpen = true;
+    }
+
+    function openEditModal(doc) {
+        editingDoc = doc;
+        isModalOpen = true;
+    }
+
+    function closeModal() {
+        isModalOpen = false;
+        editingDoc = null;
+    }
+
+    function openSettings() {
+        isSettingsOpen = true;
+    }
+
+    function closeSettings() {
+        isSettingsOpen = false;
+    }
+
+    function refreshList() {
+        closeModal();
+        if (listComponent && listComponent.refresh) {
+            listComponent.refresh();
+        }
+    }
 
     onMount(async () => {
+        // Force reset role to admin if it's operator (from old default)
+        const currentRole = localStorage.getItem("user_role");
+        if (!currentRole || currentRole === "operator") {
+            localStorage.setItem("user_role", "admin");
+        }
+
         try {
             const config = await checkConfig();
-            if (config.status !== 'configured') {
+            if (config.status !== "configured") {
                 isConfigOpen = true;
             }
         } catch (e) {
-            console.error('Config check failed', e);
-            // Don't block app on network error, but maybe show toast
+            console.error("Config check failed", e);
         }
     });
 
@@ -131,7 +208,9 @@
 
 <style>
     /* ... existing styles ... */
-    :global(*), :global(*::before), :global(*::after) {
+    :global(*),
+    :global(*::before),
+    :global(*::after) {
         box-sizing: border-box;
     }
     :global(html) {
@@ -141,7 +220,15 @@
         margin: 0;
         padding: 0;
         min-height: 100dvh;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-family:
+            "Inter",
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            Helvetica,
+            Arial,
+            sans-serif;
         color: #1e293b;
         background-color: #f1f5f9;
         width: 100%;
@@ -221,7 +308,9 @@
         border-radius: 6px;
         display: flex;
         align-items: center;
-        transition: background-color 0.2s, color 0.2s;
+        transition:
+            background-color 0.2s,
+            color 0.2s;
     }
     .icon-btn:hover {
         background-color: #f1f5f9;
@@ -264,7 +353,9 @@
         border-radius: 12px;
         width: 90%;
         max-width: 500px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        box-shadow:
+            0 20px 25px -5px rgba(0, 0, 0, 0.1),
+            0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
     .startup-header {
         margin-bottom: 1.5rem;

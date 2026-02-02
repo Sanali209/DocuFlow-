@@ -1,5 +1,5 @@
 <script>
-    export let activeView = 'documents';
+    export let activeView = "documents";
     export let onSelect; // Function to handle selection
 
     function select(view) {
@@ -12,39 +12,52 @@
         <span class="logo-icon">DF</span>
     </div>
     <nav>
-        <button 
-            class:active={activeView === 'dashboard'} 
-            onclick={() => select('dashboard')}>
+        <button
+            class:active={activeView === "dashboard"}
+            onclick={() => select("dashboard")}
+        >
             <span class="icon">📊</span>
             <span class="label">Dashboard</span>
         </button>
-        <button 
-            class:active={activeView === 'documents'} 
-            onclick={() => select('documents')}>
+        <button
+            class:active={activeView === "documents"}
+            onclick={() => select("documents")}
+        >
             <span class="icon">📄</span>
             <span class="label">Documents</span>
         </button>
-        <button 
-            class:active={activeView === 'parts'}
-            onclick={() => select('parts')}>
+        <button
+            class:active={activeView === "parts"}
+            onclick={() => select("parts")}
+        >
             <span class="icon">⚙️</span>
             <span class="label">Parts Library</span>
         </button>
-        <button 
-            class:active={activeView === 'gnc'}
-            onclick={() => select('gnc')}>
+        <button
+            class:active={activeView === "gnc"}
+            onclick={() => select("gnc")}
+        >
             <span class="icon">📐</span>
             <span class="label">GNC Editor</span>
         </button>
         <button
-            class:active={activeView === 'stock'}
-            onclick={() => select('stock')}>
+            class:active={activeView === "stock"}
+            onclick={() => select("stock")}
+        >
             <span class="icon">📦</span>
             <span class="label">Stock</span>
         </button>
         <button
-            class:active={activeView === 'logs'}
-            onclick={() => select('logs')}>
+            class:active={activeView === "journal"}
+            onclick={() => select("journal")}
+        >
+            <span class="icon">📓</span>
+            <span class="label">Journal</span>
+        </button>
+        <button
+            class:active={activeView === "logs"}
+            onclick={() => select("logs")}
+        >
             <span class="icon">📝</span>
             <span class="label">Shift Logs</span>
         </button>
@@ -66,17 +79,17 @@
         position: sticky;
         top: 0;
     }
-    
+
     /* Only enable hover expansion on desktop */
     @media (min-width: 768px) {
         .sidebar:hover {
             width: 220px;
         }
-        
+
         .sidebar:hover .label {
             opacity: 1;
         }
-        
+
         /* Align content left when expanded */
         .sidebar:hover button {
             justify-content: flex-start;
@@ -153,29 +166,29 @@
             width: 56px; /* Slightly narrower on mobile */
             padding-top: 0.75rem;
         }
-        
+
         .sidebar-header {
             margin-bottom: 1.5rem;
         }
-        
+
         .logo-icon {
             font-size: 1rem;
             padding: 0.4rem;
         }
-        
+
         nav {
             padding: 0 0.25rem;
             gap: 0.25rem;
         }
-        
+
         button {
             padding: 0.6rem;
         }
-        
+
         .icon {
             font-size: 1.1rem;
         }
-        
+
         .label {
             display: none; /* Completely hide labels on mobile */
         }

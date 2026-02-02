@@ -1,7 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 function getHeaders(extraHeaders = {}) {
-    const role = localStorage.getItem('user_role') || 'operator';
+    const role = localStorage.getItem('user_role') || 'admin';
     return {
         'X-User-Role': role,
         ...extraHeaders
@@ -64,10 +64,26 @@ export async function updateSetting(key, value) {
         body: JSON.stringify({ key, value }),
     });
     if (!response.ok) {
-         // Pass through error
-         const error = await response.json().catch(() => ({}));
-         throw new Error(error.detail || `Failed to update setting (${response.status})`);
+        // Pass through error
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `Failed to update setting (${response.status})`);
     }
+    return await response.json();
+}
+
+export async function checkConfig() {
+    const response = await fetch(`${API_URL}/api/config-check`, {
+        headers: getHeaders()
+    });
+    return await response.json();
+}
+
+export async function testPath(path) {
+    const response = await fetch(`${API_URL}/settings/test-path`, {
+        method: 'POST',
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ path }),
+    });
     return await response.json();
 }
 
@@ -286,15 +302,15 @@ export async function downloadBackup() {
     if (!response.ok) {
         throw new Error('Backup download failed');
     }
-    
+
     // Get the blob
     const blob = await response.blob();
-    
+
     // Create a download link
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    
+
     // Extract filename from Content-Disposition header if available
     const contentDisposition = response.headers.get('Content-Disposition');
     let filename = 'docuflow_backup.zip';
@@ -304,7 +320,7 @@ export async function downloadBackup() {
             filename = match[1];
         }
     }
-    
+
     a.download = filename;
     document.body.appendChild(a);
     a.click();
@@ -315,24 +331,36 @@ export async function downloadBackup() {
 export async function uploadRestore(file) {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await fetch(`${API_URL}/restore`, {
         method: 'POST',
         headers: getHeaders(),
         body: formData,
     });
-    
+
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.detail || 'Restore failed');
     }
-    
+
     return await response.json();
 }
 
 // Parts
-export async function fetchParts(skip = 0, limit = 100) {
-    const response = await fetch(`${API_URL}/parts?skip=${skip}&limit=${limit}`, {
+export async function fetchParts(skip = 0, limit = 100, filters = {}) {
+    const params = new URLSearchParams({
+        skip: String(skip),
+        limit: String(limit)
+    });
+
+    if (filters.search) params.append('search', filters.search);
+    if (filters.material_id) params.append('material_id', filters.material_id);
+    if (filters.min_width) params.append('min_width', filters.min_width);
+    if (filters.max_width) params.append('max_width', filters.max_width);
+    if (filters.min_height) params.append('min_height', filters.min_height);
+    if (filters.max_height) params.append('max_height', filters.max_height);
+
+    const response = await fetch(`${API_URL}/parts?${params.toString()}`, {
         headers: getHeaders(),
     });
     return await response.json();
@@ -401,18 +429,21 @@ export async function createShiftLog(log) {
 export async function parseGnc(file) {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await fetch(`${API_URL}/api/parse-gnc`, {
+    const response = await fetch(`${API_URL}/gnc/parse`, {
         method: 'POST',
         headers: getHeaders(),
         body: formData,
     });
-    if (!response.ok) throw new Error('Parse failed');
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Failed to parse GNC file');
+    }
     return await response.json();
 }
 
-export async function saveGnc(sheet, filename, overwrite = false) {
-    const response = await fetch(`${API_URL}/api/save-gnc`, {
-        method: 'POST',
+export async function saveGnc(sheet, filename, overwrite = true) {
+    const response = await fetch(`${API_URL}/gnc/save`, {
+        method: 'PUT',
         headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
             sheet,
@@ -421,13 +452,10 @@ export async function saveGnc(sheet, filename, overwrite = false) {
         }),
     });
     if (!response.ok) {
-         const error = await response.json().catch(() => ({}));
-         throw new Error(error.detail || 'Save failed');
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Failed to save GNC file');
     }
     return await response.json();
 }
 
-export async function checkConfig() {
-    const response = await fetch(`${API_URL}/api/config-check`);
-    return await response.json();
-}
+

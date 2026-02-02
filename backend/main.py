@@ -23,6 +23,7 @@ from contextlib import asynccontextmanager
 from .sync_service import SyncService
 from .auth import verify_admin
 from .startup import router as startup_router
+from .gnc_endpoints import router as gnc_router
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -83,6 +84,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(startup_router)
+app.include_router(gnc_router)
 
 DOC_NAME_REGEX = os.getenv("DOC_NAME_REGEX", r"(?si)Order:\s*(.*?)\s*Date:")
 OCR_SERVICE_URL = os.getenv("OCR_SERVICE_URL", "http://localhost:7860")
@@ -244,7 +246,7 @@ def update_document(document_id: int, document: schemas.DocumentUpdate, db: Sess
     return db_document
 
 @app.delete("/documents/{document_id}")
-def delete_document(document_id: int, db: Session = Depends(get_db)):
+def delete_document(document_id: int, db: Session = Depends(get_db), role: str = Depends(verify_admin)):
     success = crud.delete_document(db, document_id=document_id)
     if not success:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -296,7 +298,7 @@ def update_task(task_id: int, task: schemas.TaskUpdate, db: Session = Depends(ge
     return db_task
 
 @app.delete("/tasks/{task_id}")
-def delete_task(task_id: int, db: Session = Depends(get_db)):
+def delete_task(task_id: int, db: Session = Depends(get_db), role: str = Depends(verify_admin)):
     success = crud.delete_task(db, task_id)
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -304,7 +306,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
 
 # --- Attachment Endpoints ---
 @app.delete("/attachments/{attachment_id}")
-def delete_attachment(attachment_id: int, db: Session = Depends(get_db)):
+def delete_attachment(attachment_id: int, db: Session = Depends(get_db), role: str = Depends(verify_admin)):
     success = crud.delete_attachment(db, attachment_id)
     if not success:
         raise HTTPException(status_code=404, detail="Attachment not found")
@@ -389,15 +391,35 @@ async def generate_gnc(sheet: GNCSheet):
 
 # --- Part Endpoints ---
 @app.get("/parts", response_model=List[schemas.Part])
-def read_parts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_parts(db, skip=skip, limit=limit)
+def read_parts(
+    skip: int = 0,
+    limit: int = 100,
+    search: str | None = Query(None, description="Search by name or reg number"),
+    material_id: int | None = Query(None, description="Filter by material ID"),
+    min_width: float | None = Query(None, description="Min width"),
+    max_width: float | None = Query(None, description="Max width"),
+    min_height: float | None = Query(None, description="Min height"),
+    max_height: float | None = Query(None, description="Max height"),
+    db: Session = Depends(get_db)
+):
+    return crud.get_parts(
+        db,
+        skip=skip,
+        limit=limit,
+        search=search,
+        material_id=material_id,
+        min_width=min_width,
+        max_width=max_width,
+        min_height=min_height,
+        max_height=max_height
+    )
 
 @app.post("/parts", response_model=schemas.Part)
 def create_part(part: schemas.PartCreate, db: Session = Depends(get_db)):
     return crud.create_part(db, part)
 
 @app.delete("/parts/{part_id}")
-def delete_part(part_id: int, db: Session = Depends(get_db)):
+def delete_part(part_id: int, db: Session = Depends(get_db), role: str = Depends(verify_admin)):
     success = crud.delete_part(db, part_id)
     if not success:
         raise HTTPException(status_code=404, detail="Part not found")
@@ -413,7 +435,7 @@ def create_stock(item: schemas.StockItemCreate, db: Session = Depends(get_db)):
     return crud.create_stock_item(db, item)
 
 @app.delete("/stock/{item_id}")
-def delete_stock(item_id: int, db: Session = Depends(get_db)):
+def delete_stock(item_id: int, db: Session = Depends(get_db), role: str = Depends(verify_admin)):
     success = crud.delete_stock_item(db, item_id)
     if not success:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -429,11 +451,35 @@ def create_workspace(ws: schemas.WorkspaceCreate, db: Session = Depends(get_db))
     return crud.create_workspace(db, ws)
 
 @app.delete("/workspaces/{ws_id}")
-def delete_workspace(ws_id: int, db: Session = Depends(get_db)):
+def delete_workspace(ws_id: int, db: Session = Depends(get_db), role: str = Depends(verify_admin)):
     success = crud.delete_workspace(db, ws_id)
     if not success:
         raise HTTPException(status_code=404, detail="Workspace not found")
     return {"ok": True}
+
+@app.post("/settings/test-path")
+def test_path(path_data: schemas.PathCheck, role: str = Depends(verify_admin)):
+    path = path_data.path
+    if not os.path.exists(path):
+         return {"ok": False, "error": "Path does not exist"}
+    if not os.path.isdir(path):
+         return {"ok": False, "error": "Path is not a directory"}
+    if not os.access(path, os.R_OK):
+         return {"ok": False, "error": "Path is not readable"} # Check read permission
+    return {"ok": True}
+
+@app.get("/settings/{key}", response_model=schemas.Setting)
+def read_setting(key: str, db: Session = Depends(get_db)):
+    setting = crud.get_setting(db, key)
+    if not setting:
+        return schemas.Setting(key=key, value="") # Default empty
+    return setting
+
+@app.put("/settings/{key}", response_model=schemas.Setting)
+def update_setting(key: str, setting: schemas.Setting, db: Session = Depends(get_db), role: str = Depends(verify_admin)):
+    # Note: schemas.Setting expects key and value. We should probably use a Create schema or just value.
+    # But for simplicity, we update based on key path param.
+    return crud.set_setting(db, key, setting.value)
 
 # --- ShiftLog Endpoints ---
 @app.get("/shift-logs", response_model=List[schemas.ShiftLog])

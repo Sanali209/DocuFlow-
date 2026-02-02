@@ -4,6 +4,9 @@ from typing import List, Optional
 from .models import DocumentType, DocumentStatus, TaskStatus, JournalEntryType, JournalEntryStatus
 
 # --- Filter Preset ---
+class PathCheck(BaseModel):
+    path: str
+
 class FilterPresetBase(BaseModel):
     name: str
     config: str

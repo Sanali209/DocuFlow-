@@ -1,43 +1,52 @@
 <script>
-    import { onMount } from 'svelte';
-    import { createDocument, scanDocument, updateDocument, deleteAttachment, uploadFile } from './api.js';
-    import TagInput from './TagInput.svelte';
-    import ImagePreviewModal from './ImagePreviewModal.svelte';
+    import { onMount } from "svelte";
+    import {
+        createDocument,
+        scanDocument,
+        updateDocument,
+        deleteAttachment,
+        uploadFile,
+    } from "./api.js";
+    import TagInput from "./TagInput.svelte";
+    import ImagePreviewModal from "./ImagePreviewModal.svelte";
 
     let { onDocumentCreated, onCancel, document = null } = $props();
 
-    let name = $state(document?.name || '');
-    let description = $state(document?.description || '');
-    let type = $state(document?.type || 'plan');
-    let status = $state(document?.status || 'in_progress');
-    let registration_date = $state(document?.registration_date || '');
-    let content = $state(document?.content || '');
-    let author = $state(document?.author || '');
-    let done_date = $state(document?.done_date || '');
+    let name = $state(document?.name || "");
+    let description = $state(document?.description || "");
+    let type = $state(document?.type || "plan");
+    let status = $state(document?.status || "in_progress");
+    let registration_date = $state(document?.registration_date || "");
+    let content = $state(document?.content || "");
+    let author = $state(document?.author || "");
+    let done_date = $state(document?.done_date || "");
 
     let attachments = $state(document?.attachments || []);
     let newAttachments = $state([]);
-    let tags = $state(document?.tags?.map(t => t.name) || []);
+    let tags = $state(document?.tags?.map((t) => t.name) || []);
 
     let isScanning = $state(false);
     let isUploading = $state(false);
     let isSaving = $state(false);
-    let scanError = $state('');
-    let scanStatus = $state('');
-    let saveError = $state('');
+    let scanError = $state("");
+    let scanStatus = $state("");
+    let saveError = $state("");
 
     let previewAttachments = $state(null);
 
     onMount(() => {
+        if (status === "unregistered") {
+            status = "in_progress";
+        }
         if (!document) {
-            const savedAuthor = localStorage.getItem('doc_author');
+            const savedAuthor = localStorage.getItem("doc_author");
             if (savedAuthor) author = savedAuthor;
         }
     });
 
     $effect(() => {
-        if (status === 'done' && !done_date) {
-            done_date = new Date().toISOString().split('T')[0];
+        if (status === "done" && !done_date) {
+            done_date = new Date().toISOString().split("T")[0];
         }
     });
 
@@ -46,7 +55,7 @@
         if (files.length === 0) return;
 
         isScanning = true;
-        scanError = '';
+        scanError = "";
 
         try {
             for (let i = 0; i < files.length; i++) {
@@ -59,9 +68,9 @@
                     name = result.name;
                 }
 
-                const newContent = result.content || '';
+                const newContent = result.content || "";
                 if (content && newContent) {
-                    content += '\n\n---\n\n' + newContent;
+                    content += "\n\n---\n\n" + newContent;
                 } else if (newContent) {
                     content = newContent;
                 }
@@ -71,12 +80,13 @@
                 }
             }
         } catch (err) {
-            scanError = 'Failed to scan one or more documents. Please try again or enter details manually.';
+            scanError =
+                "Failed to scan one or more documents. Please try again or enter details manually.";
             console.error(err);
         } finally {
             isScanning = false;
-            scanStatus = '';
-            e.target.value = '';
+            scanStatus = "";
+            e.target.value = "";
         }
     }
 
@@ -86,22 +96,22 @@
 
         isUploading = true;
         try {
-             for (const file of files) {
+            for (const file of files) {
                 const result = await uploadFile(file);
                 // result format: { file_path: "/uploads/...", filename: "...", media_type: "..." }
                 // Need to match Attachment structure
                 newAttachments.push({
                     file_path: result.file_path,
                     filename: result.filename,
-                    media_type: result.media_type
+                    media_type: result.media_type,
                 });
             }
-        } catch(e) {
+        } catch (e) {
             console.error("Upload failed", e);
             alert("Failed to upload attachment");
         } finally {
             isUploading = false;
-            e.target.value = '';
+            e.target.value = "";
         }
     }
 
@@ -114,7 +124,7 @@
         if (isNew) {
             newAttachments.splice(index, 1);
         } else {
-            if (!confirm('Permanently delete this attachment?')) return;
+            if (!confirm("Permanently delete this attachment?")) return;
             const att = attachments[index];
             try {
                 await deleteAttachment(att.id);
@@ -128,12 +138,12 @@
 
     async function handleSubmit(e) {
         e.preventDefault();
-        
+
         isSaving = true;
-        saveError = '';
+        saveError = "";
 
         try {
-            if (author) localStorage.setItem('doc_author', author);
+            if (author) localStorage.setItem("doc_author", author);
 
             const docData = {
                 name,
@@ -145,7 +155,7 @@
                 author,
                 done_date: done_date || undefined,
                 attachments: newAttachments,
-                tags
+                tags,
             };
 
             if (document) {
@@ -155,22 +165,22 @@
             }
 
             if (!document) {
-                name = '';
-                description = '';
-                type = 'plan';
-                status = 'in_progress';
-                registration_date = '';
-                content = '';
-                author = localStorage.getItem('doc_author') || '';
-                done_date = '';
+                name = "";
+                description = "";
+                type = "plan";
+                status = "in_progress";
+                registration_date = "";
+                content = "";
+                author = localStorage.getItem("doc_author") || "";
+                done_date = "";
                 newAttachments = [];
                 tags = [];
             }
 
             onDocumentCreated();
         } catch (err) {
-            console.error('Failed to save document:', err);
-            saveError = 'Failed to save document. Please try again.';
+            console.error("Failed to save document:", err);
+            saveError = "Failed to save document. Please try again.";
         } finally {
             isSaving = false;
         }
@@ -178,26 +188,47 @@
 </script>
 
 <div class="form-container">
-    <h3>{document ? 'Edit Document' : 'New Document'}</h3>
+    <h3>{document ? "Edit Document" : "New Document"}</h3>
     <form onsubmit={handleSubmit}>
         <div class="form-section upload-section">
             <h4>Files & Scanning</h4>
             <div class="upload-buttons">
                 <div class="upload-btn-wrapper">
-                    <button type="button" class="btn-outline">📄 Add Attachments</button>
-                    <input type="file" multiple onchange={handleAttachmentSelect} title="Add Attachments (No Scan)" />
+                    <button type="button" class="btn-outline"
+                        >📄 Add Attachments</button
+                    >
+                    <input
+                        type="file"
+                        multiple
+                        onchange={handleAttachmentSelect}
+                        title="Add Attachments (No Scan)"
+                    />
                 </div>
-                 <div class="upload-btn-wrapper">
-                    <button type="button" class="btn-outline">🔍 Scan Documents (OCR)</button>
-                    <input type="file" multiple accept="image/*,application/pdf" onchange={handleScanSelect} title="Scan (OCR)" />
+                <div class="upload-btn-wrapper">
+                    <button type="button" class="btn-outline"
+                        >🔍 Scan Documents (OCR)</button
+                    >
+                    <input
+                        type="file"
+                        multiple
+                        accept="image/*,application/pdf"
+                        onchange={handleScanSelect}
+                        title="Scan (OCR)"
+                    />
                 </div>
-                 {#if attachments.length > 0 || newAttachments.length > 0}
-                    <button type="button" class="btn-outline" onclick={openGallery}>📷 View Gallery</button>
-                 {/if}
+                {#if attachments.length > 0 || newAttachments.length > 0}
+                    <button
+                        type="button"
+                        class="btn-outline"
+                        onclick={openGallery}>📷 View Gallery</button
+                    >
+                {/if}
             </div>
 
-             {#if isScanning}
-                <p class="info-text">{scanStatus || 'Scanning... Please wait.'}</p>
+            {#if isScanning}
+                <p class="info-text">
+                    {scanStatus || "Scanning... Please wait."}
+                </p>
             {/if}
             {#if isUploading}
                 <p class="info-text">Uploading...</p>
@@ -213,14 +244,28 @@
                 <div class="attachments-list">
                     {#each attachments as att, i}
                         <div class="attachment-item">
-                            <span class="file-name" title={att.filename}>{att.filename}</span>
-                            <button type="button" class="remove-btn" onclick={() => handleRemoveAttachment(i, false)}>❌</button>
+                            <span class="file-name" title={att.filename}
+                                >{att.filename}</span
+                            >
+                            <button
+                                type="button"
+                                class="remove-btn"
+                                onclick={() => handleRemoveAttachment(i, false)}
+                                >❌</button
+                            >
                         </div>
                     {/each}
                     {#each newAttachments as att, i}
                         <div class="attachment-item new">
-                            <span class="file-name" title={att.filename}>(New) {att.filename}</span>
-                            <button type="button" class="remove-btn" onclick={() => handleRemoveAttachment(i, true)}>❌</button>
+                            <span class="file-name" title={att.filename}
+                                >(New) {att.filename}</span
+                            >
+                            <button
+                                type="button"
+                                class="remove-btn"
+                                onclick={() => handleRemoveAttachment(i, true)}
+                                >❌</button
+                            >
                         </div>
                     {/each}
                 </div>
@@ -229,12 +274,23 @@
 
         <div class="form-group">
             <label for="name">Name</label>
-            <input id="name" type="text" bind:value={name} required placeholder="e.g. Project Alpha Specs" />
+            <input
+                id="name"
+                type="text"
+                bind:value={name}
+                required
+                placeholder="e.g. Project Alpha Specs"
+            />
         </div>
 
         <div class="form-group">
             <label for="description">Description</label>
-            <textarea id="description" bind:value={description} rows="3" placeholder="Brief description of the document..."></textarea>
+            <textarea
+                id="description"
+                bind:value={description}
+                rows="3"
+                placeholder="Brief description of the document..."
+            ></textarea>
         </div>
 
         <div class="form-group">
@@ -244,7 +300,12 @@
 
         <div class="form-group">
             <label for="content">Recognized Content (Markdown)</label>
-            <textarea id="content" bind:value={content} rows="10" placeholder="Recognized document content will appear here..."></textarea>
+            <textarea
+                id="content"
+                bind:value={content}
+                rows="10"
+                placeholder="Recognized document content will appear here..."
+            ></textarea>
         </div>
 
         <div class="row">
@@ -266,33 +327,53 @@
             </div>
         </div>
 
-         <div class="row">
-             <div class="form-group half">
+        <div class="row">
+            <div class="form-group half">
                 <label for="date">Registration Date</label>
                 <input id="date" type="date" bind:value={registration_date} />
             </div>
             <div class="form-group half">
                 <label for="done_date">Done Date</label>
-                <input id="done_date" type="date" bind:value={done_date} disabled={status !== 'done'} />
+                <input
+                    id="done_date"
+                    type="date"
+                    bind:value={done_date}
+                    disabled={status !== "done"}
+                />
             </div>
         </div>
 
         <div class="form-group">
             <label for="author">Author</label>
-            <input id="author" type="text" bind:value={author} placeholder="Your Name" />
+            <input
+                id="author"
+                type="text"
+                bind:value={author}
+                placeholder="Your Name"
+            />
         </div>
 
         <div class="actions">
-            <button type="button" class="btn-secondary" onclick={onCancel}>Cancel</button>
-            <button type="submit" class="btn-primary" disabled={isSaving || isUploading || isScanning}>
-                {isSaving ? 'Saving...' : (document ? 'Save Changes' : 'Register Document')}
+            <button type="button" class="btn-secondary" onclick={onCancel}
+                >Cancel</button
+            >
+            <button
+                type="submit"
+                class="btn-primary"
+                disabled={isSaving || isUploading || isScanning}
+            >
+                {isSaving
+                    ? "Saving..."
+                    : document
+                      ? "Save Changes"
+                      : "Register Document"}
             </button>
         </div>
     </form>
 
     <ImagePreviewModal
         isOpen={!!previewAttachments}
-        close={() => previewAttachments = null}
+        close={() => (previewAttachments = null)}
         attachments={previewAttachments || []}
     />
 </div>
@@ -320,7 +401,9 @@
         color: #555;
         font-size: 0.9rem;
     }
-    input, select, textarea {
+    input,
+    select,
+    textarea {
         width: 100%;
         padding: 0.75rem;
         border: 1px solid #e2e8f0;
@@ -330,7 +413,9 @@
         transition: border-color 0.2s;
         font-family: inherit;
     }
-    input:focus, select:focus, textarea:focus {
+    input:focus,
+    select:focus,
+    textarea:focus {
         border-color: #3b82f6;
         outline: none;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -402,7 +487,7 @@
         overflow: hidden;
         display: inline-block;
     }
-    .upload-btn-wrapper input[type=file] {
+    .upload-btn-wrapper input[type="file"] {
         position: absolute;
         left: 0;
         top: 0;
