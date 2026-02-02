@@ -23,17 +23,6 @@ def check_sync_paths():
         mihtav_setting = crud.get_setting(db, "sync_mihtav_path")
         sidra_setting = crud.get_setting(db, "sync_sidra_path")
         
-        # Set defaults if not configured
-        if not mihtav_setting or not mihtav_setting.value:
-            default_mihtav = r"D:\github\DocuFlow-\testing\mails"
-            crud.set_setting(db, "sync_mihtav_path", default_mihtav)
-            mihtav_setting = crud.get_setting(db, "sync_mihtav_path")
-        
-        if not sidra_setting or not sidra_setting.value:
-            default_sidra = r"D:\github\DocuFlow-\testing\plan"
-            crud.set_setting(db, "sync_sidra_path", default_sidra)
-            sidra_setting = crud.get_setting(db, "sync_sidra_path")
-        
         db.close()
         
         paths_configured = {

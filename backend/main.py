@@ -1,5 +1,4 @@
 import os
-import httpx
 import re
 import shutil
 import uuid
@@ -24,6 +23,9 @@ from .sync_service import SyncService
 from .auth import verify_admin
 from .startup import router as startup_router
 from .gnc_endpoints import router as gnc_router
+from .warehouse import router as warehouse_router
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -85,9 +87,47 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(startup_router)
 app.include_router(gnc_router)
+app.include_router(warehouse_router)
+
+class AuditMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+
+        # Only log state-changing methods
+        if request.method in ["POST", "PUT", "DELETE", "PATCH"] and response.status_code < 400:
+            try:
+                # We use a separate session for logging to not interfere with request scope
+                db = SessionLocal()
+
+                # Determine Entity Type and ID from URL
+                # URL is like /documents/123 or /documents/
+                path_parts = request.url.path.strip("/").split("/")
+                entity_type = path_parts[0] if path_parts else "unknown"
+                entity_id = None
+                # Check if second part is ID
+                if len(path_parts) > 1 and path_parts[1].isdigit():
+                    entity_id = int(path_parts[1])
+
+                # Capture Query Params as extra info if no ID
+                extra_info = str(request.query_params) if request.query_params else ""
+
+                log = schemas.AuditLogCreate(
+                    actor="system", # TODO: Extract from auth header if available
+                    action_type=request.method,
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    new_value=f"Success. {extra_info}"
+                )
+                crud.create_audit_log(db, log)
+                db.close()
+            except Exception as e:
+                print(f"Audit Log Error: {e}")
+
+        return response
+
+app.add_middleware(AuditMiddleware)
 
 DOC_NAME_REGEX = os.getenv("DOC_NAME_REGEX", r"(?si)Order:\s*(.*?)\s*Date:")
-OCR_SERVICE_URL = os.getenv("OCR_SERVICE_URL", "http://localhost:7860")
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "")
 origins = [origin.strip() for origin in allowed_origins.split(",")] if allowed_origins else []
@@ -119,8 +159,6 @@ def read_setting(key: str, db: Session = Depends(get_db)):
     setting = crud.get_setting(db, key)
     if not setting:
         # Return default if not found
-        if key == "ocr_url":
-            return schemas.Setting(key="ocr_url", value=OCR_SERVICE_URL)
         if key == "doc_name_regex":
             return schemas.Setting(key="doc_name_regex", value=DOC_NAME_REGEX)
         raise HTTPException(status_code=404, detail="Setting not found")
@@ -146,52 +184,6 @@ async def upload_file(file: UploadFile = File(...)):
         "file_path": f"/uploads/{filename}",
         "filename": file.filename,
         "media_type": file.content_type
-    }
-
-@app.post("/documents/scan")
-async def scan_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    content = await file.read()
-
-    # Save file locally for attachment
-    filename = f"{uuid.uuid4()}_{file.filename}"
-    file_path_disk = f"static/uploads/{filename}"
-    with open(file_path_disk, "wb") as f:
-        f.write(content)
-
-    file_path_url = f"/uploads/{filename}"
-
-    # Get OCR URL from DB or use default
-    db_setting = crud.get_setting(db, "ocr_url")
-    ocr_url = db_setting.value if db_setting else OCR_SERVICE_URL
-    ocr_url = ocr_url.rstrip("/")
-
-    async with httpx.AsyncClient() as client:
-        try:
-            files = {'file': (file.filename, content, file.content_type)}
-            # Use timeout because OCR can be slow
-            response = await client.post(f"{ocr_url}/process", files=files, timeout=60.0)
-            response.raise_for_status()
-            result = response.json()
-            markdown = result.get("markdown", "")
-        except Exception as e:
-            print(f"OCR Service Error: {e}")
-            raise HTTPException(status_code=502, detail="OCR Service Unavailable")
-
-    # Get Regex from DB
-    db_setting_regex = crud.get_setting(db, "doc_name_regex")
-    regex_pattern = db_setting_regex.value if db_setting_regex else DOC_NAME_REGEX
-
-    match = re.search(regex_pattern, markdown)
-    extracted_name = match.group(1).strip() if match else ""
-
-    return {
-        "name": extracted_name,
-        "content": markdown,
-        "attachment": {
-            "file_path": file_path_url,
-            "filename": file.filename,
-            "media_type": file.content_type
-        }
     }
 
 @app.post("/documents/", response_model=schemas.Document)

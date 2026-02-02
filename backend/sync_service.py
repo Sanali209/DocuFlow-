@@ -181,14 +181,30 @@ class SyncService:
             width = sheet.program_width or sheet.width or 0.0
             height = sheet.program_height or sheet.height or 0.0
             
-            # Stats
-            holes = 0
-            # Approximate holes by contours that are NOT the outer boundary?
-            # Or use parser stats if available.
-            # Parser 'total_contours' includes outer + inner.
-            # Let's assume inner contours are holes for now.
+            # Stats Collection for Research/Reverse Eng.
+            stats = {
+                "total_contours": sheet.total_contours,
+                "total_parts": sheet.total_parts,
+            }
+
+            # Extract P-Codes from contours for "Harmonization"
+            p_codes = {}
+            for p in sheet.parts:
+                for c in p.contours:
+                    for k, v in c.metadata.items():
+                        if k.startswith("P"):
+                            if k not in p_codes:
+                                p_codes[k] = []
+                            if v not in p_codes[k]:
+                                p_codes[k].append(v)
+
+            stats["p_codes"] = p_codes
+
+            # Approximate holes
             if sheet.total_contours > 1:
-                holes = sheet.total_contours - 1 
+                stats["approx_holes"] = sheet.total_contours - 1
+
+            stats_json = json.dumps(stats)
             
             if not part:
                 part = models.Part(
@@ -199,7 +215,7 @@ class SyncService:
                     gnc_file_path=file_path,
                     width=width,
                     height=height,
-                    hole_count=holes
+                    stats=stats_json
                 )
                 db.add(part)
                 db.commit()
@@ -209,14 +225,17 @@ class SyncService:
                 # For now, just ensure file path is linked if missing
                 if not part.gnc_file_path:
                     part.gnc_file_path = file_path
-                    db.commit()
-                # Update stats if zero
+
+                # Update dimensions if zero
                 if part.width == 0 and width > 0:
                     part.width = width
                     part.height = height
                     part.material_id = material.id if material else part.material_id
-                    part.hole_count = holes
-                    db.commit()
+
+                # Update stats (always update to capture latest metadata)
+                part.stats = stats_json
+
+                db.commit()
                     
         except Exception as e:
             logger.error(f"Failed to update part library for {filename}: {e}")

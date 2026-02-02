@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Enum, Text, ForeignKey, Table, Float, DateTime
+from sqlalchemy import Column, Integer, String, Date, Enum, Text, ForeignKey, Table, Float, DateTime, Boolean
 from sqlalchemy.orm import relationship
 import enum
 from datetime import date, datetime
@@ -74,6 +74,8 @@ class Task(Base):
 
     document = relationship("Document", back_populates="tasks")
     material = relationship("Material", back_populates="tasks")
+    reservations = relationship("Reservation", back_populates="task", cascade="all, delete-orphan")
+    consumptions = relationship("Consumption", back_populates="task", cascade="all, delete-orphan")
 
 class Document(Base):
     __tablename__ = "documents"
@@ -161,6 +163,45 @@ class StockItem(Base):
     location = Column(String, nullable=True)
 
     material = relationship("Material", back_populates="stock_items")
+    reservations = relationship("Reservation", back_populates="stock_item")
+    consumptions = relationship("Consumption", back_populates="stock_item")
+
+class Reservation(Base):
+    __tablename__ = "reservations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"))
+    stock_item_id = Column(Integer, ForeignKey("stock_items.id"))
+    quantity_reserved = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.now)
+
+    task = relationship("Task", back_populates="reservations")
+    stock_item = relationship("StockItem", back_populates="reservations")
+
+class Consumption(Base):
+    __tablename__ = "consumptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"))
+    stock_item_id = Column(Integer, ForeignKey("stock_items.id"))
+    quantity_used = Column(Integer, default=0)
+    remnants_created = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.now)
+
+    task = relationship("Task", back_populates="consumptions")
+    stock_item = relationship("StockItem", back_populates="consumptions")
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime, default=datetime.now)
+    actor = Column(String, nullable=True)
+    action_type = Column(String) # CREATE, UPDATE, DELETE
+    entity_type = Column(String)
+    entity_id = Column(Integer, nullable=True)
+    previous_value = Column(Text, nullable=True) # JSON
+    new_value = Column(Text, nullable=True) # JSON
 
 class Workspace(Base):
     __tablename__ = "workspaces"
