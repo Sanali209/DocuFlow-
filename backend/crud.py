@@ -492,3 +492,58 @@ def create_shift_log(db: Session, log: schemas.ShiftLogCreate):
     db.commit()
     db.refresh(db_log)
     return db_log
+
+# --- Reservation CRUD ---
+def get_reservations(db: Session, task_id: int | None = None):
+    query = db.query(models.Reservation)
+    if task_id:
+        query = query.filter(models.Reservation.task_id == task_id)
+    return query.all()
+
+def create_reservation(db: Session, reservation: schemas.ReservationCreate):
+    db_res = models.Reservation(**reservation.model_dump())
+    db.add(db_res)
+    db.commit()
+    db.refresh(db_res)
+    return db_res
+
+def delete_reservation(db: Session, reservation_id: int):
+    db_res = db.query(models.Reservation).filter(models.Reservation.id == reservation_id).first()
+    if db_res:
+        db.delete(db_res)
+        db.commit()
+        return True
+    return False
+
+# --- Consumption CRUD ---
+def get_consumptions(db: Session, task_id: int | None = None):
+    query = db.query(models.Consumption)
+    if task_id:
+        query = query.filter(models.Consumption.task_id == task_id)
+    return query.all()
+
+def create_consumption(db: Session, consumption: schemas.ConsumptionCreate):
+    db_cons = models.Consumption(**consumption.model_dump())
+    db.add(db_cons)
+    db.commit()
+    db.refresh(db_cons)
+    return db_cons
+
+def delete_consumption(db: Session, consumption_id: int):
+    db_cons = db.query(models.Consumption).filter(models.Consumption.id == consumption_id).first()
+    if db_cons:
+        db.delete(db_cons)
+        db.commit()
+        return True
+    return False
+
+# --- AuditLog CRUD ---
+def get_audit_logs(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.AuditLog).order_by(models.AuditLog.timestamp.desc()).offset(skip).limit(limit).all()
+
+def create_audit_log(db: Session, log: schemas.AuditLogCreate):
+    db_log = models.AuditLog(**log.model_dump())
+    db.add(db_log)
+    db.commit()
+    db.refresh(db_log)
+    return db_log

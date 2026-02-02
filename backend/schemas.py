@@ -20,6 +20,58 @@ class FilterPreset(FilterPresetBase):
     class Config:
         from_attributes = True
 
+# --- Reservation ---
+class ReservationBase(BaseModel):
+    task_id: int
+    stock_item_id: int
+    quantity_reserved: int
+
+class ReservationCreate(ReservationBase):
+    pass
+
+class Reservation(ReservationBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# --- Consumption ---
+class ConsumptionBase(BaseModel):
+    task_id: int
+    stock_item_id: int
+    quantity_used: int
+    remnants_created: bool = False
+
+class ConsumptionCreate(ConsumptionBase):
+    pass
+
+class Consumption(ConsumptionBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# --- AuditLog ---
+class AuditLogBase(BaseModel):
+    actor: Optional[str] = None
+    action_type: str
+    entity_type: str
+    entity_id: Optional[int] = None
+    previous_value: Optional[str] = None
+    new_value: Optional[str] = None
+
+class AuditLogCreate(AuditLogBase):
+    pass
+
+class AuditLog(AuditLogBase):
+    id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
 # --- Tag ---
 class TagBase(BaseModel):
     name: str
