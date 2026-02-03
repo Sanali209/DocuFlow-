@@ -51,7 +51,10 @@
         testing[type] = true;
         try {
             const result = await testPath(path);
-            testResults[type] = result;
+            testResults[type] = {
+                accessible: result.ok,
+                error: result.error,
+            };
         } catch (e) {
             testResults[type] = { accessible: false, error: e.message };
         } finally {
@@ -147,7 +150,7 @@
                     >
                         {testResults.mihtav.accessible
                             ? "✓ Path accessible"
-                            : "✗ Path not accessible"}
+                            : `✗ ${testResults.mihtav.error || "Path not accessible"}`}
                     </span>
                 {/if}
             </div>
@@ -177,7 +180,7 @@
                     >
                         {testResults.sidra.accessible
                             ? "✓ Path accessible"
-                            : "✗ Path not accessible"}
+                            : `✗ ${testResults.sidra.error || "Path not accessible"}`}
                     </span>
                 {/if}
             </div>

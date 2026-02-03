@@ -1,58 +1,61 @@
 <script>
-    import { onMount } from 'svelte';
-    import { updateTask, deleteTask, createTask } from './api.js';
-    import TaskModal from './TaskModal.svelte';
+    import { onMount } from "svelte";
+    import { updateTask, deleteTask, createTask } from "./api.js";
+    import TaskModal from "./TaskModal.svelte";
 
-    let { document, refresh, filterAssignee = '' } = $props();
+    let { document, refresh, filterAssignee = "" } = $props();
     let tasks = $state(document.tasks || []);
-    let filter = $state('hide_done'); // 'hide_done' | 'all' | 'pending'
+    let filter = $state("hide_done"); // 'hide_done' | 'all' | 'pending'
     let isAddModalOpen = $state(false);
+    let editingTask = $state(null);
     let groupByMaterial = $state(true); // Toggle for material grouping
 
     // Sort tasks: pending/planned first, then done
     let sortedTasks = $derived(
         [...tasks].sort((a, b) => {
-            if (a.status === 'done' && b.status !== 'done') return 1;
-            if (a.status !== 'done' && b.status === 'done') return -1;
+            if (a.status === "done" && b.status !== "done") return 1;
+            if (a.status !== "done" && b.status === "done") return -1;
             return 0;
-        })
+        }),
     );
 
     let filteredTasks = $derived(
-        sortedTasks.filter(t => {
+        sortedTasks.filter((t) => {
             // Filter by status
-            if (filter === 'hide_done' && t.status === 'done') return false;
-            if (filter === 'pending' && t.status !== 'pending') return false;
-            if (filter === 'all') {
+            if (filter === "hide_done" && t.status === "done") return false;
+            if (filter === "pending" && t.status !== "pending") return false;
+            if (filter === "all") {
                 // For 'all', only apply assignee filter if specified
                 if (filterAssignee && filterAssignee.trim()) {
-                    const assigneeLower = (t.assignee || '').toLowerCase();
+                    const assigneeLower = (t.assignee || "").toLowerCase();
                     const filterLower = filterAssignee.toLowerCase();
                     return assigneeLower.includes(filterLower);
                 }
                 return true;
             }
-            
+
             // Filter by assignee if specified
             if (filterAssignee && filterAssignee.trim()) {
-                const assigneeLower = (t.assignee || '').toLowerCase();
+                const assigneeLower = (t.assignee || "").toLowerCase();
                 const filterLower = filterAssignee.toLowerCase();
                 if (!assigneeLower.includes(filterLower)) return false;
             }
-            
+
             return true;
-        })
+        }),
     );
 
     // Group tasks by material
     let groupedTasks = $derived(() => {
         if (!groupByMaterial) {
-            return { 'All Tasks': filteredTasks };
+            return { "All Tasks": filteredTasks };
         }
 
         const groups = {};
-        filteredTasks.forEach(task => {
-            const materialName = task.material ? task.material.name : '(No Material)';
+        filteredTasks.forEach((task) => {
+            const materialName = task.material
+                ? task.material.name
+                : "(No Material)";
             if (!groups[materialName]) {
                 groups[materialName] = [];
             }
@@ -62,12 +65,12 @@
         // Sort groups: put "(No Material)" last
         const sortedGroups = {};
         const groupNames = Object.keys(groups).sort((a, b) => {
-            if (a === '(No Material)') return 1;
-            if (b === '(No Material)') return -1;
+            if (a === "(No Material)") return 1;
+            if (b === "(No Material)") return -1;
             return a.localeCompare(b);
         });
 
-        groupNames.forEach(name => {
+        groupNames.forEach((name) => {
             sortedGroups[name] = groups[name];
         });
 
@@ -96,27 +99,55 @@
         if (!confirm("Delete task?")) return;
         try {
             await deleteTask(id);
-            tasks = tasks.filter(t => t.id !== id);
+            tasks = tasks.filter((t) => t.id !== id);
             refresh();
         } catch (e) {
             console.error(e);
         }
     }
 
-    async function handleAddTask(taskData) {
+    async function handleTaskSubmit(taskData) {
         try {
-            const newTask = await createTask(document.id, {
-                name: taskData.name,
-                assignee: taskData.assignee,
-                status: 'planned',
-                material_id: taskData.material_id
-            });
-            tasks = [...tasks, newTask];
-            refresh();
+            if (taskData.id) {
+                // Update existing task
+                const updatedTask = await updateTask(taskData.id, {
+                    name: taskData.name,
+                    assignee: taskData.assignee,
+                    material_id: taskData.material_id,
+                    gnc_file_path: taskData.gnc_file_path,
+                });
+
+                // Update local state
+                tasks = tasks.map((t) =>
+                    t.id === taskData.id ? { ...t, ...updatedTask } : t,
+                );
+                refresh();
+            } else {
+                // Create new task
+                const newTask = await createTask(document.id, {
+                    name: taskData.name,
+                    assignee: taskData.assignee,
+                    status: "planned",
+                    material_id: taskData.material_id,
+                    gnc_file_path: taskData.gnc_file_path,
+                });
+                tasks = [...tasks, newTask];
+                refresh();
+            }
         } catch (e) {
             console.error(e);
             throw e;
         }
+    }
+
+    function openAddModal() {
+        editingTask = null;
+        isAddModalOpen = true;
+    }
+
+    function openEditModal(task) {
+        editingTask = task;
+        isAddModalOpen = true;
     }
 </script>
 
@@ -124,19 +155,19 @@
     <div class="tasks-header">
         <h4>Tasks</h4>
         <div class="header-actions">
-            <button 
-                class="group-toggle-btn" 
-                onclick={() => groupByMaterial = !groupByMaterial}
+            <button
+                class="group-toggle-btn"
+                onclick={() => (groupByMaterial = !groupByMaterial)}
                 title={groupByMaterial ? "Show flat list" : "Group by material"}
             >
-                {groupByMaterial ? '📦' : '📋'}
+                {groupByMaterial ? "📦" : "📋"}
             </button>
             <select bind:value={filter} class="filter-select">
                 <option value="hide_done">Hide Done</option>
                 <option value="all">Show All</option>
                 <option value="pending">Pending</option>
             </select>
-            <button class="add-task-btn" onclick={() => isAddModalOpen = true}>+ Add</button>
+            <button class="add-task-btn" onclick={openAddModal}>+ Add</button>
         </div>
     </div>
 
@@ -145,20 +176,38 @@
             {#if groupByMaterial && Object.keys(groupedTasks()).length > 1}
                 <div class="material-group-header">
                     <span class="material-group-name">{materialName}</span>
-                    <span class="material-group-count">({tasksInGroup.length})</span>
+                    <span class="material-group-count"
+                        >({tasksInGroup.length})</span
+                    >
                 </div>
             {/if}
-            
+
             {#each tasksInGroup as task (task.id)}
                 <div class="task-item">
                     <div class="task-line-1">
-                        <span class="task-name {task.status === 'done' ? 'done-text' : ''}">{task.name}</span>
-                        <button class="delete-btn" onclick={() => handleDelete(task.id)} title="Delete">×</button>
+                        <span
+                            class="task-name {task.status === 'done'
+                                ? 'done-text'
+                                : ''}">{task.name}</span
+                        >
+                        <div class="task-actions">
+                            <button
+                                class="edit-btn"
+                                onclick={() => openEditModal(task)}
+                                title="Edit">✎</button
+                            >
+                            <button
+                                class="delete-btn"
+                                onclick={() => handleDelete(task.id)}
+                                title="Delete">×</button
+                            >
+                        </div>
                     </div>
                     <div class="task-line-2">
                         <select
                             value={task.status}
-                            onchange={(e) => handleStatusChange(task, e.target.value)}
+                            onchange={(e) =>
+                                handleStatusChange(task, e.target.value)}
                             class="status-select {task.status}"
                         >
                             <option value="planned">Planned</option>
@@ -166,7 +215,10 @@
                             <option value="done">Done</option>
                         </select>
                         {#if task.material}
-                            <span class="material-badge" title="Material: {task.material.name}">
+                            <span
+                                class="material-badge"
+                                title="Material: {task.material.name}"
+                            >
                                 📦 {task.material.name}
                             </span>
                         {/if}
@@ -175,7 +227,8 @@
                             class="assignee-input"
                             placeholder="Assignee"
                             bind:value={task.assignee}
-                            onchange={() => handleAssigneeChange(task, task.assignee)}
+                            onchange={() =>
+                                handleAssigneeChange(task, task.assignee)}
                         />
                     </div>
                 </div>
@@ -190,10 +243,10 @@
     </div>
 </div>
 
-<TaskModal
-    isOpen={isAddModalOpen}
-    close={() => isAddModalOpen = false}
-    onSubmit={handleAddTask}
+isOpen={isAddModalOpen}
+close={() => (isAddModalOpen = false)}
+onSubmit={handleTaskSubmit}
+task={editingTask}
 />
 
 <style>
@@ -306,14 +359,16 @@
         text-decoration: line-through;
         color: #94a3b8;
     }
+    .task-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .edit-btn,
     .delete-btn {
         background: none;
         border: none;
-        color: #ef4444;
         cursor: pointer;
-        font-size: 1.1rem;
-        line-height: 1;
-        opacity: 0.5;
         padding: 0;
         width: 18px;
         height: 18px;
@@ -321,6 +376,22 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        line-height: 1;
+        opacity: 0.5;
+    }
+    .edit-btn {
+        color: #3b82f6;
+        font-size: 0.9rem;
+    }
+    .delete-btn {
+        color: #ef4444;
+        font-size: 1.1rem;
+    }
+
+    .edit-btn:hover {
+        opacity: 1;
+        background: #dbeafe;
+        border-radius: 2px;
     }
     .delete-btn:hover {
         opacity: 1;
@@ -341,9 +412,18 @@
         cursor: pointer;
         flex-shrink: 0;
     }
-    .status-select.planned { background: #e0e7ff; color: #3730a3; }
-    .status-select.pending { background: #ffedd5; color: #9a3412; }
-    .status-select.done { background: #dcfce7; color: #166534; }
+    .status-select.planned {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+    .status-select.pending {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+    .status-select.done {
+        background: #dcfce7;
+        color: #166534;
+    }
 
     .assignee-input {
         flex-grow: 1;
@@ -354,7 +434,8 @@
         color: #64748b;
         background: transparent;
     }
-    .assignee-input:hover, .assignee-input:focus {
+    .assignee-input:hover,
+    .assignee-input:focus {
         background: #ffffff;
         border-color: #cbd5e1;
     }
@@ -390,7 +471,8 @@
         .tasks-header {
             margin-bottom: 0.25rem;
         }
-        .filter-select, .add-task-btn {
+        .filter-select,
+        .add-task-btn {
             font-size: 0.7rem;
             padding: 0.125rem 0.25rem;
         }
@@ -400,7 +482,8 @@
         .task-name {
             font-size: 0.75rem;
         }
-        .status-select, .assignee-input {
+        .status-select,
+        .assignee-input {
             font-size: 0.65rem;
         }
     }

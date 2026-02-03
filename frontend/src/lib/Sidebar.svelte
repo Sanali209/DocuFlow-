@@ -41,6 +41,13 @@
             <span class="label">GNC Editor</span>
         </button>
         <button
+            class:active={activeView === "job"}
+            onclick={() => select("job")}
+        >
+            <span class="icon">👷</span>
+            <span class="label">Job Processing</span>
+        </button>
+        <button
             class:active={activeView === "stock"}
             onclick={() => select("stock")}
         >

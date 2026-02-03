@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import re
+import os
 
 class GNCCommand(BaseModel):
     type: str  # G00, G01, M30, METADATA, etc.
@@ -134,7 +135,9 @@ class GNCParser:
             p_code_801_match = p_code_801_pattern.search(line)
             if p_code_801_match:
                 if current_part is None:
-                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    # Use filename as default part name if not set
+                    default_name = os.path.basename(filename).replace('.gnc', '').replace('.GNC', '')
+                    current_part = GNCPart(id=part_counter, name=f"{default_name} (Auto)")
                     part_counter += 1
                     sheet.parts.append(current_part)
                 if current_contour is None:
@@ -172,7 +175,9 @@ class GNCParser:
                 cid = int(contour_match.group(1))
 
                 if current_part is None:
-                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    # Use filename as default part name if not set
+                    default_name = os.path.basename(filename).replace('.gnc', '').replace('.GNC', '')
+                    current_part = GNCPart(id=part_counter, name=f"{default_name} (Auto)")
                     part_counter += 1
                     sheet.parts.append(current_part)
 
@@ -183,31 +188,39 @@ class GNCParser:
                 current_contour.commands.append(cmd)
                 continue
 
-            # Check for P-Codes (Metadata)
+            # Check for P-Codes (Metadata) on *N lines, but don't skip yet recursively
+            # because *N lines can also contain G-codes and coordinates!
             if line.startswith('*N'):
                 matches = p_code_pattern.findall(line)
                 if matches and current_contour:
                     for key, val in matches:
                         current_contour.metadata[f"P{key}"] = val
+                
+                # If it's JUST metadata, we can continue. But if it has G, X, Y etc, stay.
+                is_only_metadata = not (re.search(r'[GX-YIJT]', line, re.I))
+                if is_only_metadata and matches:
+                    if current_part is None:
+                        # Use filename as default part name if not set
+                        default_name = os.path.basename(filename).replace('.gnc', '').replace('.GNC', '')
+                        current_part = GNCPart(id=part_counter, name=f"{default_name} (Auto)")
+                        part_counter += 1
+                        sheet.parts.append(current_part)
+                    if current_contour is None:
+                        current_contour = GNCContour(id=1)
+                        current_part.contours.append(current_contour)
 
-                if current_part is None:
-                    current_part = GNCPart(id=part_counter, name="Main Part")
-                    part_counter += 1
-                    sheet.parts.append(current_part)
-                if current_contour is None:
-                    current_contour = GNCContour(id=1)
-                    current_part.contours.append(current_contour)
+                    cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
+                    current_contour.commands.append(cmd)
+                    continue
 
-                cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
-                current_contour.commands.append(cmd)
-                continue
-
-            # Parse Commands (G/M/T)
+            # Parse Commands (G/M/T) - this will now also catch *N lines that have G-codes
             commands_found = command_pattern.findall(line)
 
             if commands_found:
                 if current_part is None:
-                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    # Use filename as default part name if not set
+                    default_name = os.path.basename(filename).replace('.gnc', '').replace('.GNC', '')
+                    current_part = GNCPart(id=part_counter, name=f"{default_name} (Auto)")
                     part_counter += 1
                     sheet.parts.append(current_part)
 
@@ -233,18 +246,21 @@ class GNCParser:
                         original_text=line # Note: duplicates text
                     )
 
-                    if prefix == 'G':
-                        if 'x' in line_coords: cmd.x = line_coords['x']
-                        if 'y' in line_coords: cmd.y = line_coords['y']
-                        if 'i' in line_coords: cmd.i = line_coords['i']
-                        if 'j' in line_coords: cmd.j = line_coords['j']
+                    # Always try to assign coordinates if they exist on the line, 
+                    # as modal commands or line numbers (N) often accompany them.
+                    if 'x' in line_coords: cmd.x = line_coords['x']
+                    if 'y' in line_coords: cmd.y = line_coords['y']
+                    if 'i' in line_coords: cmd.i = line_coords['i']
+                    if 'j' in line_coords: cmd.j = line_coords['j']
 
                     current_contour.commands.append(cmd)
 
             elif coord_pattern.search(line):
                 # Modal Line
                 if current_part is None:
-                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    # Use filename as default part name if not set
+                    default_name = os.path.basename(filename).replace('.gnc', '').replace('.GNC', '')
+                    current_part = GNCPart(id=part_counter, name=f"{default_name} (Auto)")
                     part_counter += 1
                     sheet.parts.append(current_part)
                 if current_contour is None:
@@ -268,7 +284,9 @@ class GNCParser:
                 # Yes, unless we want to strip it. To support "faithful regeneration", we should keep it.
 
                 if current_part is None:
-                    current_part = GNCPart(id=part_counter, name="Main Part")
+                    # Use filename as default part name if not set
+                    default_name = os.path.basename(filename).replace('.gnc', '').replace('.GNC', '')
+                    current_part = GNCPart(id=part_counter, name=f"{default_name} (Auto)")
                     part_counter += 1
                     sheet.parts.append(current_part)
                 if current_contour is None:
@@ -283,8 +301,17 @@ class GNCParser:
 
     def _post_process(self, sheet: GNCSheet):
         """
-        Calculate stats.
+        Calculate stats and clean up redundant parts.
         """
+        # Distinguish between "Auto" parts (created from filename) and "Real" parts (found via metadata)
+        real_parts = [p for p in sheet.parts if not (p.name and p.name.endswith("(Auto)"))]
+        auto_parts = [p for p in sheet.parts if p.name and p.name.endswith("(Auto)")]
+
+        # If it's a sheet (nesting file) OR we found real parts, discard the Auto ones
+        is_sheet = sheet.program_width is not None or sheet.thickness is not None
+        if (real_parts and auto_parts) or (is_sheet and auto_parts):
+            sheet.parts = real_parts
+        
         sheet.total_parts = len(sheet.parts)
         sheet.total_contours = 0
 
@@ -293,6 +320,9 @@ class GNCParser:
             for contour in part.contours:
                 # Basic stats: Count motion commands (G00, G01, G02, G03)
                 motion_cmds = [c for c in contour.commands if c.command == 'G' and c.value in [0, 1, 2, 3]]
+                # Also count MODAL commands that have coordinates (treated as G01 usually)
+                motion_cmds += [c for c in contour.commands if c.type == "MODAL" and (c.x is not None or c.y is not None)]
+                
                 contour.corner_count = len(motion_cmds)
                 part_corner_count += contour.corner_count
                 sheet.total_contours += 1

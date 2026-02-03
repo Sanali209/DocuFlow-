@@ -1,11 +1,21 @@
 <script>
     import { onMount } from "svelte";
-    import { fetchParts, fetchMaterials } from "./api";
+    import {
+        fetchParts,
+        fetchMaterials,
+        scanParts,
+        updatePart,
+        getParts,
+    } from "./api";
     import PartThumbnail from "./components/PartThumbnail.svelte";
+    import ScanProgressModal from "./ScanProgressModal.svelte";
+    import PartEditModal from "./PartEditModal.svelte";
+    import PartPreviewModal from "./PartPreviewModal.svelte";
 
     // State
     let parts = $state([]);
     let materials = $state([]);
+    let error = $state(null);
 
     // Filter State
     let search = $state("");
@@ -16,8 +26,22 @@
     let maxHeight = $state("");
 
     let loading = $state(false);
+    let viewMode = $state("grid"); // "grid" or "list"
     let currentPage = $state(0);
     const limit = 50;
+
+    // Modal states
+    let showScanModal = $state(false);
+    let scanProgress = $state(0);
+    let scanStatus = $state("");
+    let scanMessage = $state("");
+
+    let showEditModal = $state(false);
+    let editingPart = $state(null);
+
+    // Preview state
+    let showPreviewModal = $state(false);
+    let previewPart = $state(null);
 
     async function loadData() {
         loading = true;
@@ -61,6 +85,65 @@
         timeout = setTimeout(() => {
             handleFilterChange();
         }, 500);
+    }
+
+    async function startScan() {
+        showScanModal = true;
+        scanProgress = 0;
+        scanStatus = "starting";
+        scanMessage = "Initializing scan...";
+
+        try {
+            await scanParts((update) => {
+                scanProgress = update.percent || 0;
+                scanStatus = update.status || "";
+                scanMessage = update.message || "";
+            });
+
+            // Reload parts after scan completes
+            if (scanStatus === "complete") {
+                await loadData();
+            }
+        } catch (e) {
+            console.error("Scan error:", e);
+            scanStatus = "error";
+            scanMessage = `Scan failed: ${e.message}`;
+        }
+    }
+
+    function handleEdit(event) {
+        editingPart = event.detail; // Changed to match event detail for custom event or direct arg
+        // PartThumbnail dispatches standard 'onedit' with part as argument in custom logic or event detail?
+        // Let's check PartThumbnail dispatch.
+        // It calls onedit(part). In Svelte 5 props, this is a function call.
+        // So handleEdit(part).
+        // Wait, if it's passed as prop onedit={handleEdit}, it receives 'part'.
+        // Previous code treated it as event? No, updatePart logic suggests editingPart is the object.
+        // Let's standardise: onedit={(p) => handleEdit(p)} in template or matching sig.
+        // In template: `onedit={handleEdit}` implies handleEdit(part).
+    }
+
+    // Correcting handleEdit for prop usage
+    function onEditPart(part) {
+        editingPart = part;
+        showEditModal = true;
+    }
+
+    function handlePreview(part) {
+        previewPart = part;
+        showPreviewModal = true;
+    }
+
+    async function handleSavePart(updatedPart) {
+        try {
+            await updatePart(editingPart.id, updatedPart);
+            await loadData();
+            alert("Part updated successfully");
+            showEditModal = false;
+        } catch (e) {
+            console.error("Update error:", e);
+            alert("Failed to update part");
+        }
     }
 
     onMount(() => {
@@ -151,8 +234,11 @@
 
     <main class="content">
         <header>
-            <h2>Parts Library</h2>
+            <div class="title-row">
+                <h2>Parts Library</h2>
+            </div>
             <div class="actions">
+                <button onclick={startScan}>🔄 Rescan Library</button>
                 <button onclick={() => loadData()}>↻ Refresh</button>
             </div>
         </header>
@@ -162,25 +248,45 @@
         {:else if parts.length === 0}
             <div class="empty">No parts found matching filters.</div>
         {:else}
-            <div class="grid">
+            <div class="grid {viewMode}">
                 {#each parts as part (part.id)}
                     <PartThumbnail
                         {part}
                         onclick={() => console.log("Part clicked", part.id)}
+                        onedit={onEditPart}
+                        onpreview={handlePreview}
                     />
                 {/each}
             </div>
         {/if}
     </main>
+
+    <ScanProgressModal
+        bind:show={showScanModal}
+        status={scanStatus}
+        message={scanMessage}
+        progress={scanProgress}
+    />
+
+    <PartEditModal
+        bind:show={showEditModal}
+        part={editingPart}
+        onsave={handleSavePart}
+    />
+
+    <PartPreviewModal bind:show={showPreviewModal} part={previewPart} />
 </div>
 
 <style>
     .parts-layout {
         display: flex;
-        height: 100%;
+        height: calc(
+            100vh - 40px
+        ); /* Fill screen height minus some space if needed */
         gap: 20px;
         padding: 20px;
         box-sizing: border-box;
+        overflow: hidden; /* Prevent parent scrolling */
     }
 
     .sidebar {
@@ -190,7 +296,8 @@
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        height: fit-content;
+        height: 100%; /* Sidebar takes full height */
+        overflow-y: auto; /* Sidebar has its own scroll if needed */
     }
 
     .sidebar h3 {
@@ -245,14 +352,26 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+        max-height: 100%;
+        min-height: 0;
     }
 
     header {
         display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .title-row {
+        display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
     }
 
     h2 {
@@ -261,10 +380,12 @@
 
     .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 20px;
+        gap: 15px;
         overflow-y: auto;
         padding-bottom: 20px;
+        flex: 1;
+        min-height: 0;
+        grid-template-columns: 1fr;
     }
 
     .loading,

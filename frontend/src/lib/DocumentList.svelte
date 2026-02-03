@@ -7,6 +7,7 @@
         createFilterPreset,
         deleteFilterPreset,
         updateJournalEntry,
+        downloadDocumentZip,
     } from "./api.js";
     import Modal from "./Modal.svelte";
     import DocumentView from "./DocumentView.svelte";
@@ -19,6 +20,7 @@
 
     let documents = $state([]);
     let search = $state("");
+    let partSearch = $state(""); // New part search
     let filterType = $state("");
     let filterStatus = $state("");
     let filterTag = $state("");
@@ -51,7 +53,10 @@
             startDate,
             endDate,
             dateField,
+            endDate,
+            dateField,
             filterAssignee,
+            partSearch,
         );
 
         // Client-side filtering by task types if specified
@@ -271,6 +276,17 @@
 
     function closeDropdown() {
         openDropdownId = null;
+    }
+
+    async function handleDownloadZip(doc) {
+        try {
+            await downloadDocumentZip(doc.id, doc.name);
+        } catch (e) {
+            console.error(e);
+            alert(
+                "Failed to download zip. Ensure the source folder exists on the server.",
+            );
+        }
     }
 </script>
 
@@ -615,6 +631,17 @@
                                     >
                                     Edit
                                 </button>
+                                {#if doc.type === "order"}
+                                    <button
+                                        class="dropdown-item"
+                                        onclick={() => {
+                                            handleDownloadZip(doc);
+                                            closeDropdown();
+                                        }}
+                                    >
+                                        📦 Download Zip
+                                    </button>
+                                {/if}
                                 <button
                                     class="dropdown-item delete-item"
                                     onclick={() => {

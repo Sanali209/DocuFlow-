@@ -1,0 +1,19 @@
+
+Scan Results:
+  scanning: Found 4 GNC files
+  scanning: Processing order: root_order/root_order.gnc
+  scanning: Processing order: folder_order/dedupe.gnc
+  scanning: Processing order: folder_order/dedupe_to801.gnc
+  scanning: Processing order: folder_order/sub_task.gnc
+  complete: Scan complete. Processed 4 files.
+
+Created Documents (Orders): ['root_order', 'folder_order']
+Created Tasks: ['root_order.gnc', 'dedupe.gnc', 'dedupe_to801.gnc', 'sub_task.gnc']
+FAIL: 'dedupe_to801.gnc' task should be deduplicated. Found: ['root_order.gnc', 'dedupe.gnc', 'dedupe_to801.gnc', 'sub_task.gnc']
+Traceback (most recent call last):
+  File "D:\github\DocuFlow-\testing\test_fix_scanner.py", line 107, in <module>
+    test_scanner_logic()
+  File "D:\github\DocuFlow-\testing\test_fix_scanner.py", line 99, in test_scanner_logic
+    assert "dedupe_to801.gnc" not in created_tasks
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

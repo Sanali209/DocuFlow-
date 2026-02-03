@@ -3,7 +3,7 @@
     import { fetchMaterials } from './api.js';
     import MaterialLibraryModal from './MaterialLibraryModal.svelte';
 
-    let { isOpen, close, onSubmit } = $props();
+    let { isOpen, close, onSubmit, task = null } = $props();
     let name = $state('');
     let assignee = $state('');
     let materialId = $state(null);
@@ -18,10 +18,19 @@
 
     $effect(() => {
         if (isOpen) {
-            assignee = localStorage.getItem('task_assignee') || '';
-            name = '';
-            materialId = null;
-            gncFilePath = '';
+            if (task) {
+                // Edit Mode
+                name = task.name;
+                assignee = task.assignee || '';
+                materialId = task.material_id || (task.material ? task.material.id : null);
+                gncFilePath = task.gnc_file_path || '';
+            } else {
+                // Add Mode
+                assignee = localStorage.getItem('task_assignee') || '';
+                name = '';
+                materialId = null;
+                gncFilePath = '';
+            }
             loadMaterials();
         }
     });
@@ -32,10 +41,17 @@
 
         loading = true;
         try {
-            if (assignee) {
+            if (assignee && !task) {
+                 // Only save default assignee on create
                 localStorage.setItem('task_assignee', assignee);
             }
-            await onSubmit({ name, assignee, material_id: materialId, gnc_file_path: gncFilePath });
+            await onSubmit({ 
+                id: task ? task.id : undefined,
+                name, 
+                assignee, 
+                material_id: materialId, 
+                gnc_file_path: gncFilePath 
+            });
             close();
         } catch (err) {
             console.error(err);
@@ -61,7 +77,7 @@
 <div class="modal-overlay" onclick={close}>
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
         <div class="modal-header">
-            <h3>Add Task</h3>
+            <h3>{task ? 'Edit Task' : 'Add Task'}</h3>
             <button class="close-btn" onclick={close}>&times;</button>
         </div>
 
@@ -99,7 +115,7 @@
             <div class="actions">
                 <button type="button" class="btn-secondary" onclick={close}>Cancel</button>
                 <button type="submit" class="btn-primary" disabled={loading}>
-                    {loading ? 'Adding...' : 'Add Task'}
+                    {loading ? (task ? 'Saving...' : 'Adding...') : (task ? 'Save Changes' : 'Add Task')}
                 </button>
             </div>
         </form>

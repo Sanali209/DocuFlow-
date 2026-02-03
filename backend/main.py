@@ -204,6 +204,7 @@ def read_documents(
     sort_by: str = "registration_date",
     sort_order: str = "desc",
     assignee: str | None = Query(None, description="Filter by task assignee"),
+    part_search: str | None = Query(None, description="Filter by part name/number in tasks"), # New param
     db: Session = Depends(get_db)
 ):
     documents = crud.get_documents(
@@ -219,7 +220,8 @@ def read_documents(
         date_field=date_field,
         sort_by=sort_by,
         sort_order=sort_order,
-        assignee=assignee
+        assignee=assignee,
+        part_search=part_search
     )
     return documents
 
@@ -348,36 +350,6 @@ def delete_material(material_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Material not found")
     return {"ok": True}
 
-# --- GNC Endpoints ---
-@app.post("/api/parse-gnc", response_model=GNCSheet)
-async def parse_gnc(file: UploadFile = File(...)):
-    """
-    Parses an uploaded GNC file and returns its structured content.
-    """
-    try:
-        content_bytes = await file.read()
-        try:
-            content = content_bytes.decode('utf-8')
-        except UnicodeDecodeError:
-            content = content_bytes.decode('latin-1')
-
-        parser = GNCParser()
-        sheet = parser.parse(content, filename=file.filename)
-        return sheet
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse GNC file: {str(e)}")
-
-@app.post("/api/generate-gnc")
-async def generate_gnc(sheet: GNCSheet):
-    """
-    Generates GNC text content from a GNCSheet object.
-    """
-    try:
-        generator = GNCGenerator()
-        content = generator.generate(sheet)
-        return Response(content=content, media_type="text/plain")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to generate GNC file: {str(e)}")
 
 # --- New Feature Endpoints ---
 
@@ -409,6 +381,13 @@ def read_parts(
 @app.post("/parts", response_model=schemas.Part)
 def create_part(part: schemas.PartCreate, db: Session = Depends(get_db)):
     return crud.create_part(db, part)
+
+@app.put("/parts/{part_id}", response_model=schemas.Part)
+def update_part(part_id: int, part_data: dict = Body(...), db: Session = Depends(get_db)):
+    db_part = crud.update_part(db, part_id, part_data)
+    if not db_part:
+        raise HTTPException(status_code=404, detail="Part not found")
+    return db_part
 
 @app.delete("/parts/{part_id}")
 def delete_part(part_id: int, db: Session = Depends(get_db), role: str = Depends(verify_admin)):
@@ -482,39 +461,7 @@ def read_shift_logs(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
 def create_shift_log(log: schemas.ShiftLogCreate, db: Session = Depends(get_db)):
     return crud.create_shift_log(db, log)
 
-@app.post("/api/save-gnc")
-async def save_gnc(
-    sheet: GNCSheet,
-    filename: str = Body(..., embed=True),
-    overwrite: bool = Body(False, embed=True)
-):
-    """
-    Generates GNC content and saves it to static/uploads.
-    """
-    try:
-        generator = GNCGenerator()
-        content = generator.generate(sheet)
 
-        if not filename:
-             raise HTTPException(status_code=400, detail="Filename is required")
-
-        # Sanitize filename (basename only) to prevent path traversal
-        safe_filename = os.path.basename(filename)
-        if not safe_filename.lower().endswith('.gnc'):
-            safe_filename += ".gnc"
-
-        file_path = os.path.join("static/uploads", safe_filename)
-
-        if os.path.exists(file_path) and not overwrite:
-             raise HTTPException(status_code=409, detail="File already exists")
-
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(content)
-
-        return {"success": True, "path": f"/uploads/{safe_filename}"}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save GNC file: {str(e)}")
 
 # --- Backup and Restore Endpoints ---
 def serialize_date(obj):
@@ -822,6 +769,7 @@ async def restore_data(file: UploadFile = File(...), db: Session = Depends(get_d
 if os.path.exists("static"):
     app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
     app.mount("/uploads", StaticFiles(directory="static/uploads"), name="uploads")
+    # Also mount thumbnails specifically if needed, but /uploads covers it
 
     # Catch-all for SPA
     @app.get("/{full_path:path}")

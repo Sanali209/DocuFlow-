@@ -2,7 +2,31 @@ import os
 import shutil
 import uvicorn
 import webbrowser
+import subprocess
+import sys
 from threading import Timer
+
+def run_command(command, cwd=None, shell=True):
+    print(f"Running: {command}")
+    try:
+        subprocess.check_call(command, cwd=cwd, shell=shell)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running command: {e}")
+        sys.exit(1)
+
+def build_frontend():
+    print("\n--- Building Frontend ---")
+    frontend_dir = os.path.join(os.getcwd(), "frontend")
+
+    # Check if node_modules exists, if not install
+    if not os.path.exists(os.path.join(frontend_dir, "node_modules")):
+        print("Installing frontend dependencies...")
+        run_command("npm install", cwd=frontend_dir)
+    else:
+        print("Frontend dependencies already installed (skipping npm install).")
+
+    print("Running npm build...")
+    run_command("npm run build", cwd=frontend_dir)
 
 def deploy_frontend():
     """
@@ -51,6 +75,7 @@ def open_browser():
     webbrowser.open("http://localhost:8000")
 
 if __name__ == "__main__":
+    build_frontend()
     if deploy_frontend():
         print("Starting Solid Server (FastAPI + Svelte)...")
         print("Listening on http://localhost:8000")

@@ -59,7 +59,17 @@ class Material(Base):
 
     tasks = relationship("Task", back_populates="material")
     parts = relationship("Part", back_populates="material")
+    tasks = relationship("Task", back_populates="material")
+    parts = relationship("Part", back_populates="material")
     stock_items = relationship("StockItem", back_populates="material")
+
+# Association Table for Task-Parts
+task_parts = Table(
+    "task_parts",
+    Base.metadata,
+    Column("task_id", Integer, ForeignKey("tasks.id"), primary_key=True),
+    Column("part_id", Integer, ForeignKey("parts.id"), primary_key=True),
+)
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -76,6 +86,7 @@ class Task(Base):
     material = relationship("Material", back_populates="tasks")
     reservations = relationship("Reservation", back_populates="task", cascade="all, delete-orphan")
     consumptions = relationship("Consumption", back_populates="task", cascade="all, delete-orphan")
+    parts = relationship("Part", secondary=task_parts, back_populates="tasks")
 
 class Document(Base):
     __tablename__ = "documents"
@@ -132,6 +143,8 @@ class JournalEntry(Base):
     document = relationship("Document", back_populates="journal_entries")
     attachments = relationship("Attachment", back_populates="journal_entry", cascade="all, delete-orphan")
 
+# Association Table for Task-Parts
+
 class Part(Base):
     __tablename__ = "parts"
 
@@ -150,6 +163,7 @@ class Part(Base):
     stats = Column(Text, nullable=True)
 
     material = relationship("Material", back_populates="parts")
+    tasks = relationship("Task", secondary=task_parts, back_populates="parts")
 
 class StockItem(Base):
     __tablename__ = "stock_items"

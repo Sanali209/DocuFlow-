@@ -17,7 +17,8 @@ def get_documents(
     date_field: str = "registration_date",
     sort_by: str = "registration_date",
     sort_order: str = "desc",
-    assignee: str | None = None
+    assignee: str | None = None,
+    part_search: str | None = None # New parameter
 ):
     query = db.query(models.Document).options(
         subqueryload(models.Document.tasks).subqueryload(models.Task.material),
@@ -32,6 +33,14 @@ def get_documents(
             models.Document.name.like(search_pattern),
             models.Document.description.like(search_pattern),
             models.Document.content.like(search_pattern)
+        ))
+        
+    if part_search:
+        # Filter documents that have tasks containing the matching part
+        part_pattern = f"%{part_search}%"
+        query = query.join(models.Document.tasks).join(models.Task.parts).filter(or_(
+             models.Part.name.like(part_pattern),
+             models.Part.registration_number.like(part_pattern)
         ))
 
     if filter_type:
@@ -430,8 +439,11 @@ def update_part(db: Session, part_id: int, part_data: dict):
     db_part = db.query(models.Part).filter(models.Part.id == part_id).first()
     if not db_part:
         return None
+    
     for key, value in part_data.items():
-        setattr(db_part, key, value)
+        if hasattr(db_part, key):
+            setattr(db_part, key, value)
+    
     db.commit()
     db.refresh(db_part)
     return db_part

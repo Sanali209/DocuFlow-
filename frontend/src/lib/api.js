@@ -20,7 +20,7 @@ export async function uploadFile(file) {
     return await response.json();
 }
 
-export async function fetchDocuments(search = '', type = '', status = '', sortBy = 'registration_date', sortOrder = 'desc', tag = '', startDate = '', endDate = '', dateField = 'registration_date') {
+export async function fetchDocuments(search = '', type = '', status = '', sortBy = 'registration_date', sortOrder = 'desc', tag = '', startDate = '', endDate = '', dateField = 'registration_date', partSearch = '') {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (type) params.append('type', type);
@@ -31,6 +31,7 @@ export async function fetchDocuments(search = '', type = '', status = '', sortBy
     if (dateField) params.append('date_field', dateField);
     if (sortBy) params.append('sort_by', sortBy);
     if (sortOrder) params.append('sort_order', sortOrder);
+    if (partSearch) params.append('part_search', partSearch);
 
     const response = await fetch(`${API_URL}/documents/?${params.toString()}`, {
         headers: getHeaders()
@@ -142,6 +143,26 @@ export async function scanDocument(file) {
         throw new Error('Scan failed');
     }
     return await response.json();
+}
+
+
+export async function downloadDocumentZip(id, documentName) {
+    const response = await fetch(`${API_URL}/documents/${id}/download-zip`, {
+        headers: getHeaders(),
+    });
+    if (!response.ok) {
+        throw new Error('Download failed');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${documentName}_source.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
 }
 
 export async function deleteDocument(id) {
@@ -262,6 +283,9 @@ export async function deleteFilterPreset(id) {
 }
 
 // Materials
+// Alias for fetchParts to match import in PartsView
+export const getParts = fetchParts;
+
 export async function fetchMaterials() {
     const response = await fetch(`${API_URL}/materials`, {
         headers: getHeaders(),
@@ -455,6 +479,45 @@ export async function saveGnc(sheet, filename, overwrite = true) {
         const error = await response.json().catch(() => ({}));
         throw new Error(error.detail || 'Failed to save GNC file');
     }
+    return await response.json();
+}
+
+export async function scanParts(onProgress) {
+    const response = await fetch(`${API_URL}/parts/scan`, {
+        method: "POST",
+        headers: getHeaders()
+    });
+
+    if (!response.ok) throw new Error("Failed to start scan");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value);
+        const lines = text.split('\n').filter(line => line.trim());
+
+        for (const line of lines) {
+            try {
+                const update = JSON.parse(line);
+                onProgress(update);
+            } catch (e) {
+                console.error("Failed to parse progress:", line);
+            }
+        }
+    }
+}
+
+export async function updatePart(id, data) {
+    const response = await fetch(`${API_URL}/parts/${id}`, {
+        method: "PUT",
+        headers: getHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error("Failed to update part");
     return await response.json();
 }
 
