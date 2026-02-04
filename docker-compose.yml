@@ -7,35 +7,15 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OCR_SERVICE_URL=http://ocr-service:7860
       - DATABASE_URL=sqlite:///./data/sql_app.db
     volumes:
       - docuflow_data:/app/data
-    depends_on:
-      - ocr-service
-    networks:
-      - docuflow-network
-    restart: unless-stopped
-
-  ocr-service:
-    build:
-      context: ./ocr_service
-      dockerfile: Dockerfile
-    container_name: docuflow-ocr
-    ports:
-      - "7860:7860"
-    environment:
-      - HF_HOME=/home/user/.cache/huggingface
-    volumes:
-      - ocr_models:/home/user/.cache
     networks:
       - docuflow-network
     restart: unless-stopped
 
 volumes:
   docuflow_data:
-  ocr_models:
-
 
 networks:
   docuflow-network:

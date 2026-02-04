@@ -2,11 +2,10 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine
+from . import config
 
-import os
-
-# Default to creating the DB in the current directory, but allow override
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sql_app.db")
+# Get URL from dynamic config
+SQLALCHEMY_DATABASE_URL = config.get_db_url()
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}

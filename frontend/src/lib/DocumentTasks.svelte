@@ -1,14 +1,34 @@
 <script>
     import { onMount } from "svelte";
-    import { updateTask, deleteTask, createTask } from "./api.js";
+    import {
+        updateTask,
+        deleteTask,
+        createTask,
+        fetchAssignees,
+    } from "./api.js";
     import TaskModal from "./TaskModal.svelte";
+    import AssigneeLibraryModal from "./AssigneeLibraryModal.svelte";
 
     let { document, refresh, filterAssignee = "" } = $props();
     let tasks = $state(document.tasks || []);
+
+    $effect(() => {
+        tasks = document.tasks || [];
+    });
     let filter = $state("hide_done"); // 'hide_done' | 'all' | 'pending'
     let isAddModalOpen = $state(false);
     let editingTask = $state(null);
     let groupByMaterial = $state(true); // Toggle for material grouping
+    let assignees = $state([]);
+    let isAssigneeLibraryOpen = $state(false);
+
+    onMount(async () => {
+        assignees = await fetchAssignees();
+    });
+
+    async function refreshAssignees() {
+        assignees = await fetchAssignees();
+    }
 
     // Sort tasks: pending/planned first, then done
     let sortedTasks = $derived(
@@ -140,12 +160,23 @@
         }
     }
 
+    function openAssigneeLibrary() {
+        isAssigneeLibraryOpen = true;
+    }
+
+    function closeAssigneeLibrary() {
+        isAssigneeLibraryOpen = false;
+        refreshAssignees();
+    }
+
     function openAddModal() {
+        console.log("Opening Add Modal");
         editingTask = null;
         isAddModalOpen = true;
     }
 
     function openEditModal(task) {
+        console.log("Opening Edit Modal for:", task);
         editingTask = task;
         isAddModalOpen = true;
     }
@@ -188,32 +219,59 @@
                         <span
                             class="task-name {task.status === 'done'
                                 ? 'done-text'
-                                : ''}">{task.name}</span
+                                : ''}"
+                            title={task.name}>{task.name}</span
                         >
-                        <div class="task-actions">
-                            <button
-                                class="edit-btn"
-                                onclick={() => openEditModal(task)}
-                                title="Edit">✎</button
+                        <div class="task-right-group">
+                            <select
+                                value={task.status}
+                                onchange={(e) =>
+                                    handleStatusChange(
+                                        task,
+                                        e.currentTarget.value,
+                                    )}
+                                class="status-select {task.status}"
                             >
-                            <button
-                                class="delete-btn"
-                                onclick={() => handleDelete(task.id)}
-                                title="Delete">×</button
-                            >
+                                <option value="planned">Planned</option>
+                                <option value="pending">Pending</option>
+                                <option value="done">Done</option>
+                            </select>
+                            <div class="task-actions">
+                                <button
+                                    class="edit-btn"
+                                    onclick={() => openEditModal(task)}
+                                    title="Edit">✎</button
+                                >
+                                <button
+                                    class="delete-btn"
+                                    onclick={() => handleDelete(task.id)}
+                                    title="Delete">×</button
+                                >
+                            </div>
                         </div>
                     </div>
                     <div class="task-line-2">
-                        <select
-                            value={task.status}
-                            onchange={(e) =>
-                                handleStatusChange(task, e.target.value)}
-                            class="status-select {task.status}"
-                        >
-                            <option value="planned">Planned</option>
-                            <option value="pending">Pending</option>
-                            <option value="done">Done</option>
-                        </select>
+                        <div class="assignee-container">
+                            <select
+                                class="assignee-select"
+                                value={task.assignee || ""}
+                                onchange={(e) =>
+                                    handleAssigneeChange(
+                                        task,
+                                        e.currentTarget.value,
+                                    )}
+                            >
+                                <option value="">Assignee</option>
+                                {#each assignees as asg}
+                                    <option value={asg.name}>{asg.name}</option>
+                                {/each}
+                            </select>
+                            <button
+                                class="assignee-add-btn"
+                                onclick={openAssigneeLibrary}
+                                title="Manage Assignees">+</button
+                            >
+                        </div>
                         {#if task.material}
                             <span
                                 class="material-badge"
@@ -222,14 +280,6 @@
                                 📦 {task.material.name}
                             </span>
                         {/if}
-                        <input
-                            type="text"
-                            class="assignee-input"
-                            placeholder="Assignee"
-                            bind:value={task.assignee}
-                            onchange={() =>
-                                handleAssigneeChange(task, task.assignee)}
-                        />
                     </div>
                 </div>
             {/each}
@@ -243,10 +293,15 @@
     </div>
 </div>
 
-isOpen={isAddModalOpen}
-close={() => (isAddModalOpen = false)}
-onSubmit={handleTaskSubmit}
-task={editingTask}
+<TaskModal
+    isOpen={isAddModalOpen}
+    close={() => (isAddModalOpen = false)}
+    onSubmit={handleTaskSubmit}
+    task={editingTask}
+/>
+<AssigneeLibraryModal
+    isOpen={isAssigneeLibraryOpen}
+    close={closeAssigneeLibrary}
 />
 
 <style>
@@ -355,6 +410,12 @@ task={editingTask}
         line-height: 1.3;
         word-break: break-word;
     }
+    .task-right-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
     .task-name.done-text {
         text-decoration: line-through;
         color: #94a3b8;
@@ -411,6 +472,8 @@ task={editingTask}
         font-size: 0.7rem;
         cursor: pointer;
         flex-shrink: 0;
+        width: 80px; /* Fixed width as requested */
+        text-align: left;
     }
     .status-select.planned {
         background: #e0e7ff;
@@ -425,19 +488,39 @@ task={editingTask}
         color: #166534;
     }
 
-    .assignee-input {
+    .assignee-container {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex-grow: 1;
+    }
+    .assignee-select {
         flex-grow: 1;
         padding: 0.125rem 0.25rem;
-        border: 1px solid transparent;
+        border: 1px solid #e2e8f0;
         border-radius: 2px;
         font-size: 0.7rem;
         color: #64748b;
-        background: transparent;
+        background: white;
+        height: 20px;
     }
-    .assignee-input:hover,
-    .assignee-input:focus {
-        background: #ffffff;
-        border-color: #cbd5e1;
+    .assignee-add-btn {
+        background: none;
+        border: 1px solid #e2e8f0;
+        border-radius: 3px;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+    }
+    .assignee-add-btn:hover {
+        background: #f1f5f9;
+        color: #3b82f6;
     }
 
     .material-badge {

@@ -21,6 +21,8 @@ class SyncService:
         self.running = False
         self.thread = None
         self._stop_event = threading.Event()
+        self.parser = GNCParser()
+        self.svg_gen = SVGGenerator()
 
     def start(self):
         if self.running:

@@ -1,37 +1,48 @@
 <script>
-    import { onMount } from 'svelte';
-    import { fetchMaterials } from './api.js';
-    import MaterialLibraryModal from './MaterialLibraryModal.svelte';
+    import { onMount } from "svelte";
+    import { fetchMaterials, fetchAssignees } from "./api.js";
+    import MaterialLibraryModal from "./MaterialLibraryModal.svelte";
+    import AssigneeLibraryModal from "./AssigneeLibraryModal.svelte";
 
     let { isOpen, close, onSubmit, task = null } = $props();
-    let name = $state('');
-    let assignee = $state('');
+    let name = $state("");
+    let assignee = $state("");
     let materialId = $state(null);
-    let gncFilePath = $state('');
+    let gncFilePath = $state("");
     let loading = $state(false);
     let materials = $state([]);
+    let assignees = $state([]);
     let isLibraryOpen = $state(false);
+    let isAssigneeLibraryOpen = $state(false);
 
     async function loadMaterials() {
         materials = await fetchMaterials();
     }
 
+    async function loadAssignees() {
+        assignees = await fetchAssignees();
+    }
+
     $effect(() => {
         if (isOpen) {
+            console.log("TaskModal Opened. Task:", task);
             if (task) {
                 // Edit Mode
                 name = task.name;
-                assignee = task.assignee || '';
-                materialId = task.material_id || (task.material ? task.material.id : null);
-                gncFilePath = task.gnc_file_path || '';
+                assignee = task.assignee || "";
+                materialId =
+                    task.material_id ||
+                    (task.material ? task.material.id : null);
+                gncFilePath = task.gnc_file_path || "";
             } else {
                 // Add Mode
-                assignee = localStorage.getItem('task_assignee') || '';
-                name = '';
+                assignee = localStorage.getItem("task_assignee") || "";
+                name = "";
                 materialId = null;
-                gncFilePath = '';
+                gncFilePath = "";
             }
             loadMaterials();
+            loadAssignees();
         }
     });
 
@@ -42,20 +53,20 @@
         loading = true;
         try {
             if (assignee && !task) {
-                 // Only save default assignee on create
-                localStorage.setItem('task_assignee', assignee);
+                // Only save default assignee on create
+                localStorage.setItem("task_assignee", assignee);
             }
-            await onSubmit({ 
+            await onSubmit({
                 id: task ? task.id : undefined,
-                name, 
-                assignee, 
-                material_id: materialId, 
-                gnc_file_path: gncFilePath 
+                name,
+                assignee,
+                material_id: materialId,
+                gnc_file_path: gncFilePath,
             });
             close();
         } catch (err) {
             console.error(err);
-            alert('Failed to add task');
+            alert("Failed to add task");
         } finally {
             loading = false;
         }
@@ -69,61 +80,128 @@
         isLibraryOpen = false;
         loadMaterials(); // Reload materials after library is closed
     }
+
+    function openAssigneeLibrary() {
+        isAssigneeLibraryOpen = true;
+    }
+
+    function closeAssigneeLibrary() {
+        isAssigneeLibraryOpen = false;
+        loadAssignees();
+    }
 </script>
 
 {#if isOpen}
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="modal-overlay" onclick={close}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
-        <div class="modal-header">
-            <h3>{task ? 'Edit Task' : 'Add Task'}</h3>
-            <button class="close-btn" onclick={close}>&times;</button>
-        </div>
-
-        <form onsubmit={handleSubmit} class="modal-body">
-            <div class="form-group">
-                <label for="name">Task Name</label>
-                <input id="name" type="text" bind:value={name} placeholder="Enter task name..." required autofocus />
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-overlay" onclick={close}>
+        <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+                <h3>{task ? "Edit Task" : "Add Task"}</h3>
+                <button class="close-btn" onclick={close}>&times;</button>
             </div>
 
-            <div class="form-group">
-                <label for="material">Material</label>
-                <div class="material-row">
-                    <select id="material" bind:value={materialId} class="material-select">
-                        <option value={null}>-- No Material --</option>
-                        {#each materials as material}
-                            <option value={material.id}>{material.name}</option>
-                        {/each}
-                    </select>
-                    <button type="button" class="btn-library" onclick={openLibrary} title="Edit Material Library">
-                        📚
+            <form onsubmit={handleSubmit} class="modal-body">
+                <div class="form-group">
+                    <label for="name">Task Name</label>
+                    <input
+                        id="name"
+                        type="text"
+                        bind:value={name}
+                        placeholder="Enter task name..."
+                        required
+                        autofocus
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="material">Material</label>
+                    <div class="material-row">
+                        <select
+                            id="material"
+                            bind:value={materialId}
+                            class="material-select"
+                        >
+                            <option value={null}>-- No Material --</option>
+                            {#each materials as material}
+                                <option value={material.id}
+                                    >{material.name}</option
+                                >
+                            {/each}
+                        </select>
+                        <button
+                            type="button"
+                            class="btn-library"
+                            onclick={openLibrary}
+                            title="Edit Material Library"
+                        >
+                            📚
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="gnc_path">GNC File Path</label>
+                    <input
+                        id="gnc_path"
+                        type="text"
+                        bind:value={gncFilePath}
+                        placeholder="e.g. Z:\Sidra\Part1.gnc"
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="assignee">Assignee</label>
+                    <div class="material-row">
+                        <select
+                            id="assignee"
+                            bind:value={assignee}
+                            class="material-select"
+                        >
+                            <option value="">-- No Assignee --</option>
+                            {#each assignees as asg}
+                                <option value={asg.name}>{asg.name}</option>
+                            {/each}
+                        </select>
+                        <button
+                            type="button"
+                            class="btn-library"
+                            onclick={openAssigneeLibrary}
+                            title="Edit Assignee Library"
+                        >
+                            👥
+                        </button>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button type="button" class="btn-secondary" onclick={close}
+                        >Cancel</button
+                    >
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                        disabled={loading}
+                    >
+                        {loading
+                            ? task
+                                ? "Saving..."
+                                : "Adding..."
+                            : task
+                              ? "Save Changes"
+                              : "Add Task"}
                     </button>
                 </div>
-            </div>
-
-            <div class="form-group">
-                <label for="gnc_path">GNC File Path</label>
-                <input id="gnc_path" type="text" bind:value={gncFilePath} placeholder="e.g. Z:\Sidra\Part1.gnc" />
-            </div>
-
-            <div class="form-group">
-                <label for="assignee">Assignee</label>
-                <input id="assignee" type="text" bind:value={assignee} placeholder="Enter assignee name..." />
-            </div>
-
-            <div class="actions">
-                <button type="button" class="btn-secondary" onclick={close}>Cancel</button>
-                <button type="submit" class="btn-primary" disabled={loading}>
-                    {loading ? (task ? 'Saving...' : 'Adding...') : (task ? 'Save Changes' : 'Add Task')}
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
 {/if}
 
 <MaterialLibraryModal isOpen={isLibraryOpen} close={closeLibrary} />
+<AssigneeLibraryModal
+    isOpen={isAssigneeLibraryOpen}
+    close={closeAssigneeLibrary}
+/>
 
 <style>
     .modal-overlay {
@@ -205,8 +283,14 @@
         border: none;
         font-size: 0.9rem;
     }
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-secondary { background: #f1f5f9; color: #475569; }
+    .btn-primary {
+        background: #3b82f6;
+        color: white;
+    }
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+    }
     .material-row {
         display: flex;
         gap: 0.5rem;

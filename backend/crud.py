@@ -22,6 +22,7 @@ def get_documents(
 ):
     query = db.query(models.Document).options(
         subqueryload(models.Document.tasks).subqueryload(models.Task.material),
+        subqueryload(models.Document.tasks).subqueryload(models.Task.parts),
         subqueryload(models.Document.journal_entries).subqueryload(models.JournalEntry.attachments),
         subqueryload(models.Document.attachments),
         subqueryload(models.Document.tags)
@@ -318,6 +319,34 @@ def delete_material(db: Session, material_id: int):
         return True
     return False
 
+# --- Assignee CRUD ---
+def get_assignees(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Assignee).offset(skip).limit(limit).all()
+
+def create_assignee(db: Session, assignee: schemas.AssigneeCreate):
+    db_assignee = models.Assignee(name=assignee.name)
+    db.add(db_assignee)
+    db.commit()
+    db.refresh(db_assignee)
+    return db_assignee
+
+def update_assignee(db: Session, assignee_id: int, name: str):
+    db_assignee = db.query(models.Assignee).filter(models.Assignee.id == assignee_id).first()
+    if not db_assignee:
+        return None
+    db_assignee.name = name
+    db.commit()
+    db.refresh(db_assignee)
+    return db_assignee
+
+def delete_assignee(db: Session, assignee_id: int):
+    db_assignee = db.query(models.Assignee).filter(models.Assignee.id == assignee_id).first()
+    if db_assignee:
+        db.delete(db_assignee)
+        db.commit()
+        return True
+    return False
+
 # --- Task CRUD ---
 def get_tasks(db: Session, document_id: int):
     return db.query(models.Task).filter(models.Task.document_id == document_id).all()
@@ -494,16 +523,7 @@ def delete_workspace(db: Session, ws_id: int):
         return True
     return False
 
-# --- ShiftLog CRUD ---
-def get_shift_logs(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.ShiftLog).order_by(models.ShiftLog.timestamp.desc()).offset(skip).limit(limit).all()
 
-def create_shift_log(db: Session, log: schemas.ShiftLogCreate):
-    db_log = models.ShiftLog(**log.model_dump())
-    db.add(db_log)
-    db.commit()
-    db.refresh(db_log)
-    return db_log
 
 # --- Reservation CRUD ---
 def get_reservations(db: Session, task_id: int | None = None):

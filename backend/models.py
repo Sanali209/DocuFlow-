@@ -60,8 +60,15 @@ class Material(Base):
     tasks = relationship("Task", back_populates="material")
     parts = relationship("Part", back_populates="material")
     tasks = relationship("Task", back_populates="material")
+    tasks = relationship("Task", back_populates="material")
     parts = relationship("Part", back_populates="material")
     stock_items = relationship("StockItem", back_populates="material")
+
+class Assignee(Base):
+    __tablename__ = "assignees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
 
 # Association Table for Task-Parts
 task_parts = Table(
@@ -226,11 +233,4 @@ class Workspace(Base):
     capabilities = Column(Text, nullable=True) # JSON
     status = Column(String, default="active")
 
-class ShiftLog(Base):
-    __tablename__ = "shift_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime, default=datetime.now)
-    author = Column(String)
-    content = Column(Text)
-    type = Column(String, default="info")

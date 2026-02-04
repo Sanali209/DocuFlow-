@@ -116,6 +116,22 @@ class Material(MaterialBase):
     class Config:
         from_attributes = True
 
+# --- Assignee ---
+class AssigneeBase(BaseModel):
+    name: str
+
+class AssigneeCreate(AssigneeBase):
+    pass
+
+class AssigneeUpdate(AssigneeBase):
+    pass
+
+class Assignee(AssigneeBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 # --- Task ---
 class TaskBase(BaseModel):
     name: str
@@ -138,6 +154,7 @@ class Task(TaskBase):
     id: int
     document_id: int
     material: Optional[Material] = None
+    parts: List['Part'] = [] # Forward reference or import Part if needed. Part is defined later? No, Part is defined AFTER Task in file.
 
     class Config:
         from_attributes = True
@@ -275,18 +292,4 @@ class Workspace(WorkspaceBase):
     class Config:
         from_attributes = True
 
-# --- ShiftLog ---
-class ShiftLogBase(BaseModel):
-    author: str
-    content: str
-    type: str = "info"
 
-class ShiftLogCreate(ShiftLogBase):
-    pass
-
-class ShiftLog(ShiftLogBase):
-    id: int
-    timestamp: datetime
-
-    class Config:
-        from_attributes = True

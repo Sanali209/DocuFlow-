@@ -2,7 +2,6 @@
     import { onMount } from "svelte";
     import {
         createDocument,
-        scanDocument,
         updateDocument,
         deleteAttachment,
         uploadFile,
@@ -12,24 +11,49 @@
 
     let { onDocumentCreated, onCancel, document = null } = $props();
 
-    let name = $state(document?.name || "");
-    let description = $state(document?.description || "");
-    let type = $state(document?.type || "plan");
-    let status = $state(document?.status || "in_progress");
-    let registration_date = $state(document?.registration_date || "");
-    let content = $state(document?.content || "");
-    let author = $state(document?.author || "");
-    let done_date = $state(document?.done_date || "");
-
-    let attachments = $state(document?.attachments || []);
+    let name = $state("");
+    let description = $state("");
+    let type = $state("plan");
+    let status = $state("in_progress");
+    let registration_date = $state("");
+    let content = $state("");
+    let author = $state("");
+    let done_date = $state("");
+    let attachments = $state([]);
     let newAttachments = $state([]);
-    let tags = $state(document?.tags?.map((t) => t.name) || []);
+    let tags = $state([]);
 
-    let isScanning = $state(false);
+    $effect(() => {
+        if (document) {
+            name = document.name || "";
+            description = document.description || "";
+            type = document.type || "plan";
+            status = document.status || "in_progress";
+            registration_date = document.registration_date || "";
+            content = document.content || "";
+            author = document.author || "";
+            done_date = document.done_date || "";
+            attachments = document.attachments || [];
+            if (document.tags) {
+                // handle tags mapping if needed, assuming tags is object list
+                tags = document.tags.map((t) =>
+                    typeof t === "string" ? t : t.name,
+                );
+            } else {
+                tags = [];
+            }
+        } else {
+            // Reset for new doc
+            const savedAuthor =
+                typeof localStorage !== "undefined"
+                    ? localStorage.getItem("doc_author")
+                    : "";
+            if (savedAuthor) author = savedAuthor;
+        }
+    });
+
     let isUploading = $state(false);
     let isSaving = $state(false);
-    let scanError = $state("");
-    let scanStatus = $state("");
     let saveError = $state("");
 
     let previewAttachments = $state(null);
@@ -49,46 +73,6 @@
             done_date = new Date().toISOString().split("T")[0];
         }
     });
-
-    async function handleScanSelect(e) {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
-
-        isScanning = true;
-        scanError = "";
-
-        try {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                scanStatus = `Scanning file ${i + 1} of ${files.length}...`;
-
-                const result = await scanDocument(file);
-
-                if (result.name && !name) {
-                    name = result.name;
-                }
-
-                const newContent = result.content || "";
-                if (content && newContent) {
-                    content += "\n\n---\n\n" + newContent;
-                } else if (newContent) {
-                    content = newContent;
-                }
-
-                if (result.attachment) {
-                    newAttachments.push(result.attachment);
-                }
-            }
-        } catch (err) {
-            scanError =
-                "Failed to scan one or more documents. Please try again or enter details manually.";
-            console.error(err);
-        } finally {
-            isScanning = false;
-            scanStatus = "";
-            e.target.value = "";
-        }
-    }
 
     async function handleAttachmentSelect(e) {
         const files = Array.from(e.target.files);
@@ -204,18 +188,7 @@
                         title="Add Attachments (No Scan)"
                     />
                 </div>
-                <div class="upload-btn-wrapper">
-                    <button type="button" class="btn-outline"
-                        >🔍 Scan Documents (OCR)</button
-                    >
-                    <input
-                        type="file"
-                        multiple
-                        accept="image/*,application/pdf"
-                        onchange={handleScanSelect}
-                        title="Scan (OCR)"
-                    />
-                </div>
+
                 {#if attachments.length > 0 || newAttachments.length > 0}
                     <button
                         type="button"
@@ -225,16 +198,8 @@
                 {/if}
             </div>
 
-            {#if isScanning}
-                <p class="info-text">
-                    {scanStatus || "Scanning... Please wait."}
-                </p>
-            {/if}
             {#if isUploading}
                 <p class="info-text">Uploading...</p>
-            {/if}
-            {#if scanError}
-                <p class="error-text">{scanError}</p>
             {/if}
             {#if saveError}
                 <p class="error-text">{saveError}</p>
@@ -292,6 +257,85 @@
                 placeholder="Brief description of the document..."
             ></textarea>
         </div>
+
+        <!-- Tasks Section -->
+        {#if document?.tasks?.length > 0}
+            <div class="form-section">
+                <h4>Tasks ({document.tasks.length})</h4>
+                <div class="task-list">
+                    {#each document.tasks as task}
+                        <details class="task-item">
+                            <summary>
+                                <span class="task-icon">⚙️</span>
+                                <span class="task-name">{task.name}</span>
+                                <span class="task-status-badge {task.status}"
+                                    >{task.status}</span
+                                >
+                            </summary>
+                            <div class="task-details">
+                                <div class="task-meta">
+                                    <div class="meta-item">
+                                        <span class="label">Assignee:</span>
+                                        <span
+                                            >{task.assignee ||
+                                                "Unassigned"}</span
+                                        >
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="label">Material:</span>
+                                        <span
+                                            >{task.material?.name ||
+                                                "Unknown"}</span
+                                        >
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="label">GNC Path:</span>
+                                        <span
+                                            class="path"
+                                            title={task.gnc_file_path}
+                                            >{task.gnc_file_path || "N/A"}</span
+                                        >
+                                    </div>
+                                </div>
+
+                                <div class="linked-parts-section">
+                                    <h5>
+                                        Linked Parts ({task.parts?.length || 0})
+                                    </h5>
+                                    {#if task.parts?.length > 0}
+                                        <ul class="parts-list">
+                                            {#each task.parts as part}
+                                                <li class="part-item-li">
+                                                    <span class="part-name"
+                                                        >{part.name}</span
+                                                    >
+                                                    <span class="part-reg"
+                                                        >[{part.registration_number}]</span
+                                                    >
+                                                    {#if part.width || part.height}
+                                                        <span class="part-dims"
+                                                            >{Math.round(
+                                                                part.width,
+                                                            )} x {Math.round(
+                                                                part.height,
+                                                            )}</span
+                                                        >
+                                                    {/if}
+                                                </li>
+                                            {/each}
+                                        </ul>
+                                    {:else}
+                                        <p class="no-parts">
+                                            No linked parts found in GNC.
+                                        </p>
+                                    {/if}
+                                </div>
+                            </div>
+                        </details>
+                    {/each}
+                </div>
+            </div>
+        {/if}
 
         <div class="form-group">
             <label for="tags">Tags</label>
@@ -360,7 +404,7 @@
             <button
                 type="submit"
                 class="btn-primary"
-                disabled={isSaving || isUploading || isScanning}
+                disabled={isSaving || isUploading}
             >
                 {isSaving
                     ? "Saving..."
@@ -381,111 +425,104 @@
 <style>
     .form-container h3 {
         margin-top: 0;
-        margin-bottom: 1.5rem;
-        color: #2c3e50;
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-text);
+        font-family: var(--font-heading);
     }
     .form-group {
-        margin-bottom: 1.25rem;
+        margin-bottom: var(--spacing-md);
     }
     .row {
         display: flex;
-        gap: 1rem;
+        gap: var(--spacing-md);
     }
     .half {
         flex: 1;
     }
     label {
         display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: #555;
+        margin-bottom: var(--spacing-xs);
+        font-weight: 600;
+        color: var(--color-text);
         font-size: 0.9rem;
     }
     input,
     select,
     textarea {
         width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
         box-sizing: border-box;
         font-size: 1rem;
-        transition: border-color 0.2s;
+        transition:
+            border-color var(--transition-fast),
+            box-shadow var(--transition-fast);
         font-family: inherit;
+        background-color: var(--color-surface);
+        color: var(--color-text);
     }
     input:focus,
     select:focus,
     textarea:focus {
-        border-color: #3b82f6;
+        border-color: var(--color-primary);
         outline: none;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
     }
     .actions {
         display: flex;
         justify-content: flex-end;
-        gap: 1rem;
-        margin-top: 2rem;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-xl);
     }
     button {
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
+        padding: var(--spacing-sm) var(--spacing-lg);
+        border-radius: var(--radius-md);
         cursor: pointer;
         font-weight: 600;
         font-size: 0.95rem;
         border: none;
-        transition: background-color 0.2s;
+        transition: background-color var(--transition-fast);
     }
     .btn-primary {
-        background-color: #3b82f6;
+        background-color: var(--color-primary);
         color: white;
     }
-    .btn-primary:hover {
-        background-color: #2563eb;
+    .btn-primary:hover:not(:disabled) {
+        background-color: #6d28d9;
+    }
+    .btn-primary:disabled {
+        background-color: #ddd;
+        cursor: not-allowed;
     }
     .btn-secondary {
-        background-color: #f1f5f9;
-        color: #64748b;
+        background-color: white;
+        border: 1px solid var(--color-border);
+        color: var(--color-text);
     }
     .btn-secondary:hover {
-        background-color: #e2e8f0;
+        background-color: var(--color-background);
+        border-color: var(--color-text);
     }
-    .info-text {
-        font-size: 0.85rem;
-        color: #3b82f6;
-        margin-top: 0.25rem;
-    }
-    .error-text {
-        font-size: 0.85rem;
-        color: #ef4444;
-        margin-top: 0.25rem;
-    }
-    textarea {
-        resize: vertical;
-        line-height: 1.5;
-    }
-
-    .form-section {
-        margin-bottom: 1.5rem;
-        border: 1px solid #e2e8f0;
-        padding: 1rem;
-        border-radius: 8px;
-        background: #f8fafc;
-    }
-    .form-section h4 {
-        margin: 0 0 1rem 0;
-        font-size: 0.95rem;
-        color: #475569;
-    }
-    .upload-buttons {
+    .btn-outline {
+        border: 2px dashed var(--color-border);
+        background: transparent;
+        color: var(--color-text);
+        width: 100%;
+        padding: var(--spacing-lg);
         display: flex;
+        align-items: center;
+        justify-content: center;
         gap: 0.5rem;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
+    }
+    .btn-outline:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        background-color: var(--color-background);
     }
     .upload-btn-wrapper {
         position: relative;
-        overflow: hidden;
-        display: inline-block;
+        margin-bottom: var(--spacing-sm);
     }
     .upload-btn-wrapper input[type="file"] {
         position: absolute;
@@ -496,56 +533,198 @@
         height: 100%;
         cursor: pointer;
     }
-    .btn-outline {
-        background: white;
-        border: 1px solid #cbd5e1;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        color: #475569;
-        font-size: 0.9rem;
-        font-weight: 500;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-    }
-    .btn-outline:hover {
-        background: #f1f5f9;
-        border-color: #94a3b8;
-    }
-
     .attachments-list {
         display: flex;
-        flex-direction: column;
+        flex-wrap: wrap;
         gap: 0.5rem;
+        margin-top: 0.5rem;
     }
     .attachment-item {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        background: white;
-        padding: 0.5rem;
+        background: var(--color-background);
+        padding: 0.25rem 0.5rem;
         border-radius: 4px;
-        border: 1px solid #e2e8f0;
-        font-size: 0.9rem;
-    }
-    .file-name {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 250px;
+        font-size: 0.85rem;
+        border: 1px solid var(--color-border);
     }
     .attachment-item.new {
-        border-style: dashed;
-        border-color: #3b82f6;
+        background: #eef2ff;
+        border-color: #c7d2fe;
+    }
+    .attachment-item .file-name {
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-right: 0.5rem;
     }
     .remove-btn {
         background: none;
-        color: #ef4444;
-        padding: 0 0.5rem;
-        font-size: 0.8rem;
+        border: none;
+        padding: 0;
+        color: #999;
+        font-size: 1rem;
+        cursor: pointer;
+        line-height: 1;
     }
     .remove-btn:hover {
-        background: #fee2e2;
+        color: #ef4444;
+    }
+    .info-text {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    .error-text {
+        color: #ef4444;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Task Styles */
+    .form-section {
+        margin-top: 2rem;
+        border-top: 1px solid var(--color-border);
+        padding-top: 1rem;
+    }
+
+    .form-section h4 {
+        margin-bottom: 1rem;
+        color: var(--color-text);
+        font-family: var(--font-heading);
+    }
+
+    .task-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .task-item {
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .task-item summary {
+        padding: 0.75rem;
+        background: var(--color-background);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        list-style: none; /* Hide default triangle in some browsers */
+    }
+
+    .task-item summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .task-name {
+        flex: 1;
+        color: var(--color-text);
+    }
+
+    .task-status-badge {
+        font-size: 0.75rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 99px;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .task-status-badge.planned {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+    .task-status-badge.in_progress {
+        background: #fef3c7;
+        color: #b45309;
+    }
+    .task-status-badge.completed {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .task-details {
+        padding: 1rem;
+        border-top: 1px solid var(--color-border);
+        background: var(--color-surface);
+    }
+
+    .task-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .meta-item .label {
+        font-size: 0.75rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .meta-item .path {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #666;
+        font-family: monospace;
+    }
+
+    .linked-parts-section h5 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.9rem;
+        color: #444;
+    }
+
+    .parts-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .part-item-li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.9rem;
+    }
+
+    .part-name {
+        font-weight: 600;
+        color: var(--color-text);
+    }
+
+    .part-reg {
+        color: #666;
+        font-family: monospace;
+    }
+
+    .part-dims {
+        margin-left: auto;
+        font-size: 0.8rem;
+        background: #eee;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        color: #555;
+    }
+
+    .no-parts {
+        color: #999;
+        font-style: italic;
+        font-size: 0.9rem;
     }
 </style>

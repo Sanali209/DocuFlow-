@@ -129,21 +129,7 @@ export async function updateDocument(id, data) {
     return await response.json();
 }
 
-export async function scanDocument(file) {
-    const formData = new FormData();
-    formData.append('file', file);
 
-    const response = await fetch(`${API_URL}/documents/scan`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: formData,
-    });
-
-    if (!response.ok) {
-        throw new Error('Scan failed');
-    }
-    return await response.json();
-}
 
 
 export async function downloadDocumentZip(id, documentName) {
@@ -432,22 +418,7 @@ export async function deleteStockItem(id) {
     return await response.json();
 }
 
-// Shift Logs
-export async function fetchShiftLogs(skip = 0, limit = 100) {
-    const response = await fetch(`${API_URL}/shift-logs?skip=${skip}&limit=${limit}`, {
-        headers: getHeaders(),
-    });
-    return await response.json();
-}
 
-export async function createShiftLog(log) {
-    const response = await fetch(`${API_URL}/shift-logs`, {
-        method: 'POST',
-        headers: getHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify(log),
-    });
-    return await response.json();
-}
 
 // GNC
 export async function parseGnc(file) {
@@ -518,6 +489,40 @@ export async function updatePart(id, data) {
         body: JSON.stringify(data)
     });
     if (!response.ok) throw new Error("Failed to update part");
+    return await response.json();
+}
+
+// Assignees
+export async function fetchAssignees() {
+    const response = await fetch(`${API_URL}/assignees/`, {
+        headers: getHeaders(),
+    });
+    return await response.json();
+}
+
+export async function createAssignee(assignee) {
+    const response = await fetch(`${API_URL}/assignees/`, {
+        method: 'POST',
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(assignee),
+    });
+    return await response.json();
+}
+
+export async function updateAssignee(id, name) {
+    const response = await fetch(`${API_URL}/assignees/${id}`, {
+        method: 'PUT',
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ name }),
+    });
+    return await response.json();
+}
+
+export async function deleteAssignee(id) {
+    const response = await fetch(`${API_URL}/assignees/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+    });
     return await response.json();
 }
 

@@ -1,10 +1,5 @@
 <script>
-    export let activeView = "documents";
-    export let onSelect; // Function to handle selection
-
-    function select(view) {
-        onSelect(view);
-    }
+    import { push, location } from "./Router.svelte";
 </script>
 
 <aside class="sidebar">
@@ -12,61 +7,51 @@
         <span class="logo-icon">DF</span>
     </div>
     <nav>
-        <button
-            class:active={activeView === "dashboard"}
-            onclick={() => select("dashboard")}
-        >
+        <button class:active={location.path === "/"} onclick={() => push("/")}>
             <span class="icon">📊</span>
             <span class="label">Dashboard</span>
         </button>
         <button
-            class:active={activeView === "documents"}
-            onclick={() => select("documents")}
+            class:active={location.path.includes("/documents")}
+            onclick={() => push("/documents")}
         >
             <span class="icon">📄</span>
             <span class="label">Documents</span>
         </button>
         <button
-            class:active={activeView === "parts"}
-            onclick={() => select("parts")}
+            class:active={location.path.includes("/parts")}
+            onclick={() => push("/parts")}
         >
             <span class="icon">⚙️</span>
             <span class="label">Parts Library</span>
         </button>
         <button
-            class:active={activeView === "gnc"}
-            onclick={() => select("gnc")}
+            class:active={location.path.includes("/gnc")}
+            onclick={() => push("/gnc")}
         >
             <span class="icon">📐</span>
             <span class="label">GNC Editor</span>
         </button>
         <button
-            class:active={activeView === "job"}
-            onclick={() => select("job")}
+            class:active={location.path.includes("/job")}
+            onclick={() => push("/job")}
         >
             <span class="icon">👷</span>
             <span class="label">Job Processing</span>
         </button>
         <button
-            class:active={activeView === "stock"}
-            onclick={() => select("stock")}
+            class:active={location.path.includes("/stock")}
+            onclick={() => push("/stock")}
         >
             <span class="icon">📦</span>
             <span class="label">Stock</span>
         </button>
         <button
-            class:active={activeView === "journal"}
-            onclick={() => select("journal")}
+            class:active={location.path.includes("/journal")}
+            onclick={() => push("/journal")}
         >
             <span class="icon">📓</span>
             <span class="label">Journal</span>
-        </button>
-        <button
-            class:active={activeView === "logs"}
-            onclick={() => select("logs")}
-        >
-            <span class="icon">📝</span>
-            <span class="label">Shift Logs</span>
         </button>
     </nav>
 </aside>
@@ -148,6 +133,7 @@
     button:hover {
         background-color: #1e293b;
         color: white;
+        border: none;
     }
 
     button.active {

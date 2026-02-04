@@ -4,7 +4,6 @@
 
     let { isOpen = false, close } = $props();
 
-    let ocrUrl = $state("");
     let docNameRegex = $state("");
     let userRole = $state("admin");
     let syncMihtavPath = $state("");
@@ -16,9 +15,8 @@
     async function loadSettings() {
         loading = true;
         try {
-            const [urlSetting, regexSetting, mihtavSetting, sidraSetting] =
+            const [regexSetting, mihtavSetting, sidraSetting] =
                 await Promise.all([
-                    fetchSetting("ocr_url").catch(() => ({ value: "" })),
                     fetchSetting("doc_name_regex").catch(() => ({ value: "" })),
                     fetchSetting("sync_mihtav_path").catch(() => ({
                         value: "",
@@ -27,7 +25,6 @@
                         value: "",
                     })),
                 ]);
-            ocrUrl = urlSetting.value || "";
             docNameRegex = regexSetting.value || "";
             syncMihtavPath = mihtavSetting.value || "";
             syncSidraPath = sidraSetting.value || "";
@@ -65,7 +62,6 @@
     async function saveSettings() {
         try {
             await Promise.all([
-                updateSetting("ocr_url", ocrUrl),
                 updateSetting("doc_name_regex", docNameRegex),
                 updateSetting("sync_mihtav_path", syncMihtavPath),
                 updateSetting("sync_sidra_path", syncSidraPath),
@@ -99,15 +95,6 @@
         {#if loading}
             <p>Loading...</p>
         {:else}
-            <div class="field">
-                <label for="ocr-url">OCR Service URL</label>
-                <input
-                    id="ocr-url"
-                    type="text"
-                    bind:value={ocrUrl}
-                    placeholder="http://localhost:7860"
-                />
-            </div>
             <div class="field">
                 <label for="regex">Document Name Regex</label>
                 <input
@@ -184,24 +171,6 @@
                     </span>
                 {/if}
             </div>
-
-            <hr class="divider" />
-
-            <h3 class="section-title">Hardware Integration</h3>
-            <p class="section-hint">
-                Configure connection to cutting machines. (Coming Soon)
-            </p>
-            <div class="field">
-                <label for="com-port">COM Port</label>
-                <input
-                    id="com-port"
-                    type="text"
-                    placeholder="e.g. COM3"
-                    disabled
-                />
-            </div>
-
-            <hr class="divider" />
 
             <div class="field">
                 <label for="role">User Mode (Simulated)</label>
