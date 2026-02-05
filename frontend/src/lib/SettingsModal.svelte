@@ -4,10 +4,16 @@
 
     let { isOpen = false, close } = $props();
 
+    let activeTab = $state("general"); // 'general' | 'nesting'
     let docNameRegex = $state("");
     let userRole = $state("admin");
     let syncMihtavPath = $state("");
     let syncSidraPath = $state("");
+
+    // Nesting Settings
+    let nestingRotations = $state(4);
+    let nestingPopulation = $state(10);
+
     let loading = $state(true);
     let testing = $state({ mihtav: false, sidra: false });
     let testResults = $state({ mihtav: null, sidra: null });
@@ -15,19 +21,26 @@
     async function loadSettings() {
         loading = true;
         try {
-            const [regexSetting, mihtavSetting, sidraSetting] =
-                await Promise.all([
-                    fetchSetting("doc_name_regex").catch(() => ({ value: "" })),
-                    fetchSetting("sync_mihtav_path").catch(() => ({
-                        value: "",
-                    })),
-                    fetchSetting("sync_sidra_path").catch(() => ({
-                        value: "",
-                    })),
-                ]);
+            const [
+                regexSetting,
+                mihtavSetting,
+                sidraSetting,
+                rotSetting,
+                popSetting,
+            ] = await Promise.all([
+                fetchSetting("doc_name_regex").catch(() => ({ value: "" })),
+                fetchSetting("sync_mihtav_path").catch(() => ({ value: "" })),
+                fetchSetting("sync_sidra_path").catch(() => ({ value: "" })),
+                fetchSetting("nesting_rotations").catch(() => ({ value: "4" })),
+                fetchSetting("nesting_population").catch(() => ({
+                    value: "10",
+                })),
+            ]);
             docNameRegex = regexSetting.value || "";
             syncMihtavPath = mihtavSetting.value || "";
             syncSidraPath = sidraSetting.value || "";
+            nestingRotations = parseInt(rotSetting.value) || 4;
+            nestingPopulation = parseInt(popSetting.value) || 10;
 
             // Load role
             const storedRole = localStorage.getItem("user_role");
@@ -65,6 +78,11 @@
                 updateSetting("doc_name_regex", docNameRegex),
                 updateSetting("sync_mihtav_path", syncMihtavPath),
                 updateSetting("sync_sidra_path", syncSidraPath),
+                updateSetting("nesting_rotations", nestingRotations.toString()),
+                updateSetting(
+                    "nesting_population",
+                    nestingPopulation.toString(),
+                ),
             ]);
 
             // Save role locally
@@ -95,90 +113,151 @@
         {#if loading}
             <p>Loading...</p>
         {:else}
-            <div class="field">
-                <label for="regex">Document Name Regex</label>
-                <input
-                    id="regex"
-                    type="text"
-                    bind:value={docNameRegex}
-                    placeholder="Regex Pattern"
-                />
+            <div class="tabs">
+                <button
+                    class:active={activeTab === "general"}
+                    onclick={() => (activeTab = "general")}
+                >
+                    General
+                </button>
+                <button
+                    class:active={activeTab === "nesting"}
+                    onclick={() => (activeTab = "nesting")}
+                >
+                    Nesting
+                </button>
             </div>
 
-            <hr class="divider" />
+            <div class="tab-content">
+                {#if activeTab === "general"}
+                    <div class="field">
+                        <label for="regex">Document Name Regex</label>
+                        <input
+                            id="regex"
+                            type="text"
+                            bind:value={docNameRegex}
+                            placeholder="Regex Pattern"
+                        />
+                    </div>
 
-            <h3 class="section-title">Sync Folder Paths</h3>
-            <p class="section-hint">
-                Configure paths to network folders for automatic file import.
-            </p>
+                    <hr class="divider" />
 
-            <div class="field path-field">
-                <label for="mihtav-path">Mihtav (Orders) Path</label>
-                <div class="path-input-group">
-                    <input
-                        id="mihtav-path"
-                        type="text"
-                        bind:value={syncMihtavPath}
-                        placeholder="Z:\Mihtavim or \\server\share\orders"
-                    />
-                    <button
-                        class="test-btn"
-                        onclick={() => handleTestPath("mihtav")}
-                        disabled={testing.mihtav}
-                    >
-                        {testing.mihtav ? "Testing..." : "Test"}
-                    </button>
-                </div>
-                {#if testResults.mihtav}
-                    <span
-                        class="test-result"
-                        class:success={testResults.mihtav.accessible}
-                        class:error={!testResults.mihtav.accessible}
-                    >
-                        {testResults.mihtav.accessible
-                            ? "✓ Path accessible"
-                            : `✗ ${testResults.mihtav.error || "Path not accessible"}`}
-                    </span>
+                    <h3 class="section-title">Sync Folder Paths</h3>
+                    <p class="section-hint">
+                        Configure paths to network folders for automatic file
+                        import.
+                    </p>
+
+                    <div class="field path-field">
+                        <label for="mihtav-path">Mihtav (Orders) Path</label>
+                        <div class="path-input-group">
+                            <input
+                                id="mihtav-path"
+                                type="text"
+                                bind:value={syncMihtavPath}
+                                placeholder="Z:\Mihtavim or \\server\share\orders"
+                            />
+                            <button
+                                class="test-btn"
+                                onclick={() => handleTestPath("mihtav")}
+                                disabled={testing.mihtav}
+                            >
+                                {testing.mihtav ? "Testing..." : "Test"}
+                            </button>
+                        </div>
+                        {#if testResults.mihtav}
+                            <span
+                                class="test-result"
+                                class:success={testResults.mihtav.accessible}
+                                class:error={!testResults.mihtav.accessible}
+                            >
+                                {testResults.mihtav.accessible
+                                    ? "✓ Path accessible"
+                                    : `✗ ${testResults.mihtav.error || "Path not accessible"}`}
+                            </span>
+                        {/if}
+                    </div>
+
+                    <div class="field path-field">
+                        <label for="sidra-path"
+                            >Sidra (Parts Library) Path</label
+                        >
+                        <div class="path-input-group">
+                            <input
+                                id="sidra-path"
+                                type="text"
+                                bind:value={syncSidraPath}
+                                placeholder="Z:\Sidra or \\server\share\parts"
+                            />
+                            <button
+                                class="test-btn"
+                                onclick={() => handleTestPath("sidra")}
+                                disabled={testing.sidra}
+                            >
+                                {testing.sidra ? "Testing..." : "Test"}
+                            </button>
+                        </div>
+                        {#if testResults.sidra}
+                            <span
+                                class="test-result"
+                                class:success={testResults.sidra.accessible}
+                                class:error={!testResults.sidra.accessible}
+                            >
+                                {testResults.sidra.accessible
+                                    ? "✓ Path accessible"
+                                    : `✗ ${testResults.sidra.error || "Path not accessible"}`}
+                            </span>
+                        {/if}
+                    </div>
+
+                    <div class="field">
+                        <label for="role">User Mode (Simulated)</label>
+                        <select id="role" bind:value={userRole}>
+                            <option value="operator"
+                                >Operator (Read-Only)</option
+                            >
+                            <option value="admin">Admin (Full Access)</option>
+                        </select>
+                        <p class="hint">
+                            Switching mode will reload the application.
+                        </p>
+                    </div>
+                {:else if activeTab === "nesting"}
+                    <h3 class="section-title">Auto-Nesting Configuration</h3>
+                    <p class="section-hint">
+                        Adjust parameters for the nesting algorithm (SVGnest).
+                    </p>
+
+                    <div class="field">
+                        <label for="rotations">Rotations</label>
+                        <input
+                            id="rotations"
+                            type="number"
+                            bind:value={nestingRotations}
+                            min="1"
+                            max="360"
+                        />
+                        <p class="hint">
+                            Number of rotation steps (e.g., 4 = 0, 90, 180,
+                            270).
+                        </p>
+                    </div>
+
+                    <div class="field">
+                        <label for="population">Population Size</label>
+                        <input
+                            id="population"
+                            type="number"
+                            bind:value={nestingPopulation}
+                            min="5"
+                            max="100"
+                        />
+                        <p class="hint">
+                            Higher values check more combinations but run
+                            slower.
+                        </p>
+                    </div>
                 {/if}
-            </div>
-
-            <div class="field path-field">
-                <label for="sidra-path">Sidra (Parts Library) Path</label>
-                <div class="path-input-group">
-                    <input
-                        id="sidra-path"
-                        type="text"
-                        bind:value={syncSidraPath}
-                        placeholder="Z:\Sidra or \\server\share\parts"
-                    />
-                    <button
-                        class="test-btn"
-                        onclick={() => handleTestPath("sidra")}
-                        disabled={testing.sidra}
-                    >
-                        {testing.sidra ? "Testing..." : "Test"}
-                    </button>
-                </div>
-                {#if testResults.sidra}
-                    <span
-                        class="test-result"
-                        class:success={testResults.sidra.accessible}
-                        class:error={!testResults.sidra.accessible}
-                    >
-                        {testResults.sidra.accessible
-                            ? "✓ Path accessible"
-                            : `✗ ${testResults.sidra.error || "Path not accessible"}`}
-                    </span>
-                {/if}
-            </div>
-
-            <div class="field">
-                <label for="role">User Mode (Simulated)</label>
-                <select id="role" bind:value={userRole}>
-                    <option value="operator">Operator (Read-Only)</option>
-                    <option value="admin">Admin (Full Access)</option>
-                </select>
-                <p class="hint">Switching mode will reload the application.</p>
             </div>
         {/if}
 
@@ -295,5 +374,32 @@
     }
     .test-result.error {
         color: #dc2626;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+    .tabs button {
+        background: transparent;
+        color: #64748b;
+        border: none;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border-radius: 6px 6px 0 0;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        font-weight: 600;
+    }
+    .tabs button.active {
+        color: #0f172a;
+        border-bottom-color: #0f172a;
+        background: #f8fafc;
+    }
+    .tabs button:hover:not(.active) {
+        color: #334155;
+        background: #f1f5f9;
     }
 </style>

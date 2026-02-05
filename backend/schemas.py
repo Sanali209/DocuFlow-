@@ -154,7 +154,9 @@ class Task(TaskBase):
     id: int
     document_id: int
     material: Optional[Material] = None
-    parts: List['Part'] = [] # Forward reference or import Part if needed. Part is defined later? No, Part is defined AFTER Task in file.
+    material: Optional[Material] = None
+    parts: List['Part'] = [] # Backward compatibility: returns List[Part] objects
+    part_associations: List['TaskPartLink'] = [] # Returns association objects with quantity
 
     class Config:
         from_attributes = True
@@ -257,6 +259,15 @@ class Part(PartBase):
     class Config:
         from_attributes = True
 
+# --- TaskPart Link ---
+class TaskPartLink(BaseModel):
+    part_id: int
+    quantity: int
+    part: Part # Nested part details
+
+    class Config:
+        from_attributes = True
+
 # --- StockItem ---
 class StockItemBase(BaseModel):
     material_id: int
@@ -293,3 +304,11 @@ class Workspace(WorkspaceBase):
         from_attributes = True
 
 
+# --- Orders ---
+class OrderItem(BaseModel):
+    id: int # Part ID
+    qty: int
+
+class OrderCreate(BaseModel):
+    name: str # Order Name
+    parts: List[OrderItem]

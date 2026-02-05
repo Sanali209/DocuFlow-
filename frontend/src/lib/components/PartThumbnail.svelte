@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
 
     // Props: part
-    let { part, onclick, onedit, onpreview } = $props();
+    let { part, onclick, onedit, onpreview, onfilter } = $props();
 
     let materialName = $derived(
         part.material ? part.material.name : "Unknown Material",
@@ -57,6 +57,22 @@
             >
             <button class="action-btn" onclick={handlePreview} title="Preview"
                 >👁️</button
+            >
+            <button
+                class="action-btn"
+                onclick={(e) => {
+                    e.stopPropagation();
+                    if (onclick) onclick(); // Trigger add to tray
+                }}
+                title="Add to Order">+</button
+            >
+            <button
+                class="action-btn"
+                onclick={(e) => {
+                    e.stopPropagation();
+                    if (onfilter) onfilter(part);
+                }}
+                title="Filter in Docs">🔍</button
             >
         </div>
     </div>

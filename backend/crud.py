@@ -22,7 +22,8 @@ def get_documents(
 ):
     query = db.query(models.Document).options(
         subqueryload(models.Document.tasks).subqueryload(models.Task.material),
-        subqueryload(models.Document.tasks).subqueryload(models.Task.parts),
+        # Updated to load part_associations -> part
+        subqueryload(models.Document.tasks).subqueryload(models.Task.part_associations).subqueryload(models.TaskPart.part),
         subqueryload(models.Document.journal_entries).subqueryload(models.JournalEntry.attachments),
         subqueryload(models.Document.attachments),
         subqueryload(models.Document.tags)
@@ -39,7 +40,8 @@ def get_documents(
     if part_search:
         # Filter documents that have tasks containing the matching part
         part_pattern = f"%{part_search}%"
-        query = query.join(models.Document.tasks).join(models.Task.parts).filter(or_(
+        # Join Task -> TaskPart -> Part
+        query = query.join(models.Document.tasks).join(models.Task.part_associations).join(models.TaskPart.part).filter(or_(
              models.Part.name.like(part_pattern),
              models.Part.registration_number.like(part_pattern)
         ))

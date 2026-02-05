@@ -11,7 +11,7 @@ from starlette.requests import Request
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 from .sync_service import SyncService
-from .routers import documents, tasks, settings, assignees
+from .routers import documents, tasks, settings, assignees, orders, parts_gnc
 from .startup import router as startup_router
 from .gnc_endpoints import router as gnc_router
 from .warehouse import router as warehouse_router
@@ -63,6 +63,19 @@ with engine.connect() as conn:
     except Exception:
         pass
 
+    # Migration for TaskPart quantity
+    try:
+        # Check if quantity column exists in task_parts
+        # SQLite specific check
+        result = conn.execute(text("PRAGMA table_info(task_parts)"))
+        columns = [row[1] for row in result.fetchall()]
+        if 'quantity' not in columns:
+            conn.execute(text("ALTER TABLE task_parts ADD COLUMN quantity INTEGER DEFAULT 1"))
+            conn.commit()
+            print("Migrated task_parts: Added quantity column")
+    except Exception as e:
+        print(f"Migration Warning: Could not migrate task_parts: {e}")
+
 # Ensure upload directory
 os.makedirs("static/uploads", exist_ok=True)
 
@@ -86,6 +99,8 @@ app.include_router(documents.router)
 app.include_router(tasks.router)
 app.include_router(settings.router)
 app.include_router(assignees.router)
+app.include_router(orders.router)
+app.include_router(parts_gnc.router)
 
 class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

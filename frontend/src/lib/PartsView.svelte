@@ -7,10 +7,13 @@
         updatePart,
         getParts,
     } from "./api";
+    import { appState, addToTray } from "./appState.svelte.js";
     import PartThumbnail from "./components/PartThumbnail.svelte";
+    import Tray from "./components/Tray.svelte";
     import ScanProgressModal from "./ScanProgressModal.svelte";
     import PartEditModal from "./PartEditModal.svelte";
     import PartPreviewModal from "./PartPreviewModal.svelte";
+    import { push } from "./Router.svelte"; // Import router push
 
     // State
     let parts = $state([]);
@@ -134,6 +137,15 @@
         showPreviewModal = true;
     }
 
+    function handleFilterInDocs(part) {
+        // Navigate to documents with part search
+        push(`/documents?part_search=${encodeURIComponent(part.name)}`);
+        // Note: Router.push might not trigger full reload if it just changes state,
+        // but DocumentList needs to react to it.
+        // If DocumentList is already mounted, it might need to watch for route changes or query params.
+        // But commonly in SPA, this unmounts PartsView and mounts DocumentList.
+    }
+
     async function handleSavePart(updatedPart) {
         try {
             await updatePart(editingPart.id, updatedPart);
@@ -181,7 +193,7 @@
         </div>
 
         <div class="filter-group">
-            <label>Width (mm)</label>
+            <span class="filter-label">Width (mm)</span>
             <div class="range">
                 <input
                     type="number"
@@ -200,7 +212,7 @@
         </div>
 
         <div class="filter-group">
-            <label>Height (mm)</label>
+            <span class="filter-label">Height (mm)</span>
             <div class="range">
                 <input
                     type="number"
@@ -252,9 +264,10 @@
                 {#each parts as part (part.id)}
                     <PartThumbnail
                         {part}
-                        onclick={() => console.log("Part clicked", part.id)}
+                        onclick={() => addToTray(part)}
                         onedit={onEditPart}
                         onpreview={handlePreview}
+                        onfilter={handleFilterInDocs}
                     />
                 {/each}
             </div>
@@ -275,6 +288,8 @@
     />
 
     <PartPreviewModal bind:show={showPreviewModal} part={previewPart} />
+
+    <Tray />
 </div>
 
 <style>
@@ -333,6 +348,15 @@
 
     .range input {
         width: calc(50% - 10px);
+    }
+
+    label,
+    .filter-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #475569;
+        font-size: 0.9rem;
     }
 
     .reset-btn {

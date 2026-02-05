@@ -70,13 +70,17 @@ class Assignee(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
 
-# Association Table for Task-Parts
-task_parts = Table(
-    "task_parts",
-    Base.metadata,
-    Column("task_id", Integer, ForeignKey("tasks.id"), primary_key=True),
-    Column("part_id", Integer, ForeignKey("parts.id"), primary_key=True),
-)
+# Association Object for Task-Parts
+class TaskPart(Base):
+    __tablename__ = "task_parts"
+
+    task_id = Column(Integer, ForeignKey("tasks.id"), primary_key=True)
+    part_id = Column(Integer, ForeignKey("parts.id"), primary_key=True)
+    quantity = Column(Integer, default=1)
+
+    # Relationships
+    task = relationship("Task", back_populates="part_associations")
+    part = relationship("Part", back_populates="task_associations")
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -93,7 +97,12 @@ class Task(Base):
     material = relationship("Material", back_populates="tasks")
     reservations = relationship("Reservation", back_populates="task", cascade="all, delete-orphan")
     consumptions = relationship("Consumption", back_populates="task", cascade="all, delete-orphan")
-    parts = relationship("Part", secondary=task_parts, back_populates="tasks")
+    part_associations = relationship("TaskPart", back_populates="task", cascade="all, delete-orphan")
+    
+    # Proxy for backward compatibility if needed, using association proxy is cleaner but simple property works for read
+    @property
+    def parts(self):
+        return [tp.part for tp in self.part_associations]
 
 class Document(Base):
     __tablename__ = "documents"
@@ -170,7 +179,7 @@ class Part(Base):
     stats = Column(Text, nullable=True)
 
     material = relationship("Material", back_populates="parts")
-    tasks = relationship("Task", secondary=task_parts, back_populates="parts")
+    task_associations = relationship("TaskPart", back_populates="part")
 
 class StockItem(Base):
     __tablename__ = "stock_items"

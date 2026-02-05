@@ -9,7 +9,7 @@
     import TaskModal from "./TaskModal.svelte";
     import AssigneeLibraryModal from "./AssigneeLibraryModal.svelte";
 
-    let { document, refresh, filterAssignee = "" } = $props();
+    let { document, refresh, filterAssignee = "", partSearch = "" } = $props();
     let tasks = $state(document.tasks || []);
 
     $effect(() => {
@@ -59,6 +59,26 @@
                 const assigneeLower = (t.assignee || "").toLowerCase();
                 const filterLower = filterAssignee.toLowerCase();
                 if (!assigneeLower.includes(filterLower)) return false;
+            }
+
+            // Filter by part search if specified
+            if (partSearch && partSearch.trim()) {
+                if (!t.part_associations || t.part_associations.length === 0)
+                    return false;
+                const searchLower = partSearch.toLowerCase();
+                const hasPart = t.part_associations.some((assoc) => {
+                    const p = assoc.part;
+                    if (!p) return false;
+                    return (
+                        (p.name &&
+                            p.name.toLowerCase().includes(searchLower)) ||
+                        (p.registration_number &&
+                            p.registration_number
+                                .toLowerCase()
+                                .includes(searchLower))
+                    );
+                });
+                if (!hasPart) return false;
             }
 
             return true;

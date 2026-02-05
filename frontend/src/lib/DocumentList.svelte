@@ -53,8 +53,6 @@
             startDate,
             endDate,
             dateField,
-            endDate,
-            dateField,
             filterAssignee,
             partSearch,
         );
@@ -93,6 +91,12 @@
     }
 
     onMount(() => {
+        // Parse Query Params
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("part_search")) {
+            partSearch = params.get("part_search");
+        }
+
         refresh();
         loadPresets();
     });
@@ -260,6 +264,7 @@
         filterStatus = newFilters.filterStatus;
         filterTag = newFilters.filterTag;
         filterAssignee = newFilters.filterAssignee;
+        partSearch = newFilters.partSearch || "";
         filterMaterial = newFilters.filterMaterial || "";
         filterTaskTypes = newFilters.filterTaskTypes || [];
         startDate = newFilters.startDate;
@@ -456,7 +461,12 @@
                     {/if}
                 </div>
 
-                <DocumentTasks document={doc} {refresh} {filterAssignee} />
+                <DocumentTasks
+                    document={doc}
+                    {refresh}
+                    {filterAssignee}
+                    {partSearch}
+                />
 
                 {#if doc.journal_entries && doc.journal_entries.length > 0}
                     <div class="embedded-notes">

@@ -54,6 +54,15 @@
             maxY = -Infinity;
         let hasPoints = false;
 
+        // Include Sheet Dimensions in bounds if available
+        if (sheet.program_width && sheet.program_height) {
+            minX = 0;
+            minY = 0;
+            maxX = sheet.program_width;
+            maxY = sheet.program_height;
+            hasPoints = true;
+        }
+
         let currentX = 0;
         let currentY = 0;
 
@@ -175,6 +184,20 @@
 
         const tx = (x) => startX + (x - bounds.minX) * scale;
         const ty = (y) => height - (startY + (y - bounds.minY) * scale); // Flip Y
+
+        // Draw Sheet Border
+        if (sheet.program_width && sheet.program_height) {
+            ctx.strokeStyle = "#444";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(
+                tx(0),
+                ty(sheet.program_height), // Y logic might need checking: ty(height) is top? ty(0) is bottom.
+                sheet.program_width * scale,
+                sheet.program_height * scale,
+            );
+            ctx.setLineDash([]);
+        }
 
         sheet.parts.forEach((part, pIndex) => {
             const hue = (pIndex * 137) % 360;

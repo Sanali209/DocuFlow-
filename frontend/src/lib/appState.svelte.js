@@ -7,7 +7,10 @@ export const appState = $state({
         docNameRegex: "",
         syncMihtavPath: "",
         syncSidraPath: ""
-    }
+    },
+    // Tray Management
+    partTray: [], // { part, quantity }
+    trayVisible: false
 });
 
 export function setUserRole(role) {
@@ -19,4 +22,38 @@ export function setUserRole(role) {
 
 export function setConfigStatus(status) {
     appState.configStatus = status;
+}
+
+// Tray helper functions exported below
+
+export function addToTray(part) {
+    const existing = appState.partTray.find(p => p.part.id === part.id);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        appState.partTray.push({ part, quantity: 1 });
+    }
+    appState.trayVisible = true;
+}
+
+export function removeFromTray(partId) {
+    appState.partTray = appState.partTray.filter(p => p.part.id !== partId);
+}
+
+export function updateTrayQuantity(partId, delta) {
+    const item = appState.partTray.find(p => p.part.id === partId);
+    if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+            removeFromTray(partId);
+        }
+    }
+}
+
+export function clearTray() {
+    appState.partTray = [];
+}
+
+export function toggleTray() {
+    appState.trayVisible = !appState.trayVisible;
 }

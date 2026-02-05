@@ -20,7 +20,7 @@ export async function uploadFile(file) {
     return await response.json();
 }
 
-export async function fetchDocuments(search = '', type = '', status = '', sortBy = 'registration_date', sortOrder = 'desc', tag = '', startDate = '', endDate = '', dateField = 'registration_date', partSearch = '') {
+export async function fetchDocuments(search = '', type = '', status = '', sortBy = 'registration_date', sortOrder = 'desc', tag = '', startDate = '', endDate = '', dateField = 'registration_date', assignee = '', partSearch = '') {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (type) params.append('type', type);
@@ -31,6 +31,7 @@ export async function fetchDocuments(search = '', type = '', status = '', sortBy
     if (dateField) params.append('date_field', dateField);
     if (sortBy) params.append('sort_by', sortBy);
     if (sortOrder) params.append('sort_order', sortOrder);
+    if (assignee) params.append('assignee', assignee);
     if (partSearch) params.append('part_search', partSearch);
 
     const response = await fetch(`${API_URL}/documents/?${params.toString()}`, {
@@ -218,6 +219,19 @@ export async function createTask(documentId, task) {
     return await response.json();
 }
 
+export async function saveAsNewOrder(name, sheet, originalDocumentId) {
+    const response = await fetch(`${API_URL}/documents/save-as-new-order`, {
+        method: 'POST',
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ name, sheet, original_document_id: originalDocumentId }),
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `Failed to create order (${response.status})`);
+    }
+    return await response.json();
+}
+
 export async function updateTask(taskId, task) {
     const response = await fetch(`${API_URL}/tasks/${taskId}`, {
         method: 'PUT',
@@ -285,6 +299,19 @@ export async function createMaterial(material) {
         headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(material),
     });
+    return await response.json();
+}
+
+export async function createOrder(items, name) {
+    const response = await fetch(`${API_URL}/documents/order`, {
+        method: 'POST',
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ name, parts: items }),
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `Failed to create order (${response.status})`);
+    }
     return await response.json();
 }
 
@@ -489,6 +516,14 @@ export async function updatePart(id, data) {
         body: JSON.stringify(data)
     });
     if (!response.ok) throw new Error("Failed to update part");
+    return await response.json();
+}
+
+export async function fetchPartGnc(id) {
+    const response = await fetch(`${API_URL}/parts/${id}/gnc`, {
+        headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error("Failed to fetch part GNC");
     return await response.json();
 }
 

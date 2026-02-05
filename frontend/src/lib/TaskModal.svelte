@@ -150,6 +150,26 @@
                     />
                 </div>
 
+                {#if task && task.part_associations && task.part_associations.length > 0}
+                    <div class="form-group">
+                        <label>Associated Parts</label>
+                        <div class="parts-list">
+                            {#each task.part_associations as link}
+                                <div class="part-item">
+                                    <span
+                                        class="part-name"
+                                        title={link.part.name}
+                                        >{link.part.name}</span
+                                    >
+                                    <span class="part-qty"
+                                        >x{link.quantity}</span
+                                    >
+                                </div>
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
+
                 <div class="form-group">
                     <label for="assignee">Assignee</label>
                     <div class="material-row">
@@ -313,5 +333,43 @@
     }
     .btn-library:hover {
         background: #e2e8f0;
+    }
+
+    .parts-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        background: #f8fafc;
+        padding: 0.5rem;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    .part-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid #f1f5f9;
+        border-radius: 3px;
+        font-size: 0.85rem;
+    }
+    .part-name {
+        font-weight: 500;
+        color: #334155;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+    .part-qty {
+        font-weight: 600;
+        color: #166534;
+        background: #dcfce7;
+        padding: 0.1rem 0.4rem;
+        border-radius: 10px;
+        font-size: 0.75rem;
     }
 </style>

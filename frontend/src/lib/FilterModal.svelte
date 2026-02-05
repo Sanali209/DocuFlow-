@@ -9,6 +9,7 @@
         filterStatus: "",
         filterTag: "",
         filterAssignee: "",
+        partSearch: "", // New: filter by part
         filterMaterial: "", // New: filter by material
         filterTaskTypes: [], // Array of task types: planned, pending, done
         startDate: "",
@@ -68,6 +69,7 @@
             filterStatus: "",
             filterTag: "",
             filterAssignee: "",
+            partSearch: "",
             filterMaterial: "",
             filterTaskTypes: [],
             startDate: "",
@@ -134,6 +136,16 @@
                         type="text"
                         placeholder="Filter by tag..."
                         bind:value={localFilters.filterTag}
+                        class="filter-input"
+                    />
+                </div>
+
+                <div class="filter-section">
+                    <h4>Part Number / Name</h4>
+                    <input
+                        type="text"
+                        placeholder="Search for parts..."
+                        bind:value={localFilters.partSearch}
                         class="filter-input"
                     />
                 </div>

@@ -225,18 +225,39 @@ def _process_task(db: Session, doc: models.Document, file_path: str, filename: s
             db.refresh(task)
             
         # Parts Linking & Thumbnail generation
+        
+        # 1. Count parts in the sheet first
+        part_counts = {}
         for p in sheet.parts:
-             # Parse Name: Strip last group if it's a number
+            # Parse Name: Strip last group if it's a number
             raw_name = p.name or "Unknown"
             parts_split = raw_name.rsplit('-', 1)
             clean_name = raw_name
             if len(parts_split) > 1 and parts_split[1].isdigit():
                 clean_name = parts_split[0]
-                
-            reg_number = p.metadata.get('registration_number', clean_name)
+            
+            # Normalize part count key
+            # We use the clean_name to identify the "Part", but we need to track specific GNC part objects for thumbnail generation?
+            # Actually, all instances of the same "Part" (same name) should share the same definition in DB.
+            # But they might be different geometries if the name is reused? 
+            # Assuming name uniqueness for Part identity as per existing logic.
+            
+            if clean_name not in part_counts:
+                part_counts[clean_name] = {
+                    'count': 0,
+                    'example_part': p, # Keep one for thumbnail gen
+                    'reg_number': p.metadata.get('registration_number', clean_name)
+                }
+            part_counts[clean_name]['count'] += 1
+
+        # 2. Update DB and Links
+        for name, info in part_counts.items():
+            count = info['count']
+            p = info['example_part']
+            reg_number = info['reg_number']
             
             # Find/Create Part
-            db_part = db.query(models.Part).filter(models.Part.name == clean_name).first()
+            db_part = db.query(models.Part).filter(models.Part.name == name).first()
             
             # Thumbnails
             os.makedirs(THUMBNAIL_DIR, exist_ok=True)
@@ -252,7 +273,7 @@ def _process_task(db: Session, doc: models.Document, file_path: str, filename: s
                 db.commit()
             else:
                 db_part = models.Part(
-                    name=clean_name,
+                    name=name,
                     registration_number=reg_number,
                     version="A",
                     material_id=material.id,
@@ -264,9 +285,24 @@ def _process_task(db: Session, doc: models.Document, file_path: str, filename: s
                 db.commit()
                 db.refresh(db_part)
             
-            if db_part not in task.parts:
-                task.parts.append(db_part)
-                db.commit()
+            # Manage Link (TaskPart)
+            # Check if link exists
+            task_part = db.query(models.TaskPart).filter(
+                models.TaskPart.task_id == task.id,
+                models.TaskPart.part_id == db_part.id
+            ).first()
+
+            if task_part:
+                task_part.quantity = count
+            else:
+                task_part = models.TaskPart(
+                    task_id=task.id,
+                    part_id=db_part.id,
+                    quantity=count
+                )
+                db.add(task_part)
+            
+            db.commit()
                 
     except Exception as e:
         print(f"Error processing task {filename}: {e}")
