@@ -358,6 +358,7 @@
                 <select id="type" bind:value={type}>
                     <option value="plan">Plan</option>
                     <option value="mail">Mail</option>
+                    <option value="order">Order</option>
                     <option value="other">Other</option>
                 </select>
             </div>
@@ -370,6 +371,19 @@
                 </select>
             </div>
         </div>
+
+        {#if document && type === "order"}
+            <div class="form-group">
+                <button
+                    type="button"
+                    class="btn-gnc"
+                    onclick={() =>
+                        (window.location.hash = `#/gnc?orderId=${document.id}`)}
+                >
+                    ✂️ Edit in GNC
+                </button>
+            </div>
+        {/if}
 
         <div class="row">
             <div class="form-group half">
@@ -726,5 +740,15 @@
         color: #999;
         font-style: italic;
         font-size: 0.9rem;
+    }
+    .btn-gnc {
+        background-color: #059669;
+        color: white;
+        width: 100%;
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+    }
+    .btn-gnc:hover {
+        background-color: #047857;
     }
 </style>

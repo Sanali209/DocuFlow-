@@ -8,24 +8,48 @@
         fetchStock,
         fetchMaterials,
         fetchSetting,
-    } from "./api"; // Ensure fetchDocumentTasks is available or use fetchTasks
+        fetchStockTemplates,
+        fetchLibraryParts,
+        fetchOrderTasks,
+        saveOrderNesting,
+        saveAsNewOrder,
+    } from "./api";
     import GncCanvas from "./components/GncCanvas.svelte";
 
     // Props
-    let { documentId = null } = $props();
+    let { documentId = null, orderId = null } = $props();
 
-    let sheet = $state(null);
+    let sheets = $state([]); // Supports multiple sheets
+    let activeSheetIndex = $state(0);
+    let sheet = $derived(sheets[activeSheetIndex] || null);
+
     let selectedContour = $state(null);
     let filename = $state("");
     let loading = $state(false);
-    let documentTasks = $state([]); // Tasks from the DB
-    let unplacedParts = $state([]); // Tasks not in sheet
-    let stockItems = $state([]);
-    let availableMaterials = $state([]);
+    let documentTasks = $state([]); // Tasks from the DB/Order
+    let inventory = $state([]); // Refined inventory: includes placed/total counts
+    let gncLocalStock = $state([]); // Local stock for this session
+    let libraryParts = $state([]); // Parts from library
+    let stockTemplates = $state([]); // Common sheet sizes
 
     // Property panel modes
-    let propertyMode = $state("sheet"); // 'sheet' | 'part' | 'contour' | 'unplaced'
+    let propertyMode = $state("sheet"); // 'sheet' | 'part' | 'contour' | 'inventory' | 'stock'
     let selectedPartId = $state(null);
+
+    let inventorySearch = $state("");
+    let nestingMode = $state("hull"); // 'bbox' | 'hull'
+
+    const filteredInventory = $derived(
+        inventory.filter((item) =>
+            item.name.toLowerCase().includes(inventorySearch.toLowerCase()),
+        ),
+    );
+
+    const filteredLibrary = $derived(
+        libraryParts.filter((part) =>
+            part.name.toLowerCase().includes(inventorySearch.toLowerCase()),
+        ),
+    );
 
     // Derived: Tasks that have not been placed
     // We match by... name? Or if we have metadata.
@@ -33,12 +57,15 @@
     // If a GNC file is loaded, we try to match existing parts.
 
     async function loadDocumentData() {
-        if (!documentId) return;
+        const id = orderId || documentId;
+        if (!id) return;
         try {
-            documentTasks = await fetchTasks(documentId);
-            // Initial unplaced calculation: filtered by "placed" status if we track it
-            // Or just list them all for now
-            updateUnplacedParts();
+            if (orderId) {
+                documentTasks = await fetchOrderTasks(orderId);
+            } else {
+                documentTasks = await fetchTasks(documentId);
+            }
+            updateInventory();
         } catch (e) {
             console.error("Failed to load tasks", e);
         }
@@ -46,12 +73,15 @@
 
     async function loadStockData() {
         try {
-            const [stocks, mats] = await Promise.all([
+            const [stocks, templates, library] = await Promise.all([
                 fetchStock(),
-                fetchMaterials(),
+                fetchStockTemplates(),
+                fetchLibraryParts(),
             ]);
-            stockItems = stocks;
-            availableMaterials = mats;
+            stockTemplates = templates;
+            libraryParts = library;
+            // Initialize local stock with templates or existing stock
+            gncLocalStock = [...templates];
         } catch (e) {
             console.error("Failed to load stock data", e);
         }
@@ -65,41 +95,105 @@
         }
 
         const itemId = parseInt(e.target.value);
-        if (!itemId) return; // "Select Stock" option
+        if (!itemId) return;
 
-        const item = stockItems.find((i) => i.id === itemId);
+        const item = gncLocalStock.find((i) => i.id === itemId);
         if (!item) return;
 
-        const confirmMsg = `Update sheet dimensions to ${item.width}x${item.height} (${item.material?.name})?`;
+        const confirmMsg = `Update sheet dimensions to ${item.width}x${item.height} (${item.material || "N/A"})?`;
         if (confirm(confirmMsg)) {
-            pushState(); // Save state before resize
+            pushState();
             sheet.program_width = item.width;
             sheet.program_height = item.height;
-            sheet.thickness = 0; // Stock doesn't strictly have thickness in GNC usually, but we can set it if available
-            // Material name
-            if (item.material) {
-                sheet.material = item.material.name;
-            }
+            sheet.material = item.material;
         } else {
-            e.target.value = ""; // Revert selection
+            e.target.value = "";
         }
     }
 
-    function updateUnplacedParts() {
-        if (!documentTasks || documentTasks.length === 0) return;
+    async function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-        if (!sheet) {
-            unplacedParts = [...documentTasks];
+        filename = file.name;
+        loading = true;
+        sheets = [];
+        activeSheetIndex = 0;
+        selectedContour = null;
+
+        try {
+            const parsedSheet = await parseGnc(file);
+            sheets = [parsedSheet];
+            updateInventory();
+
+            if (parsedSheet?.parts?.length > 0) {
+                selectedPartId = parsedSheet.parts[0].id;
+            }
+        } catch (err) {
+            alert("Error parsing GNC file");
+            console.error(err);
+        } finally {
+            loading = false;
+        }
+    }
+
+    function updateInventory() {
+        if (!documentTasks || documentTasks.length === 0) {
+            inventory = [];
             return;
         }
 
-        // Get list of task IDs currently on the sheet
-        const placedTaskIds = new Set(
-            sheet.parts.filter((p) => p.taskId).map((p) => p.taskId),
-        );
+        // Calculate placed counts across ALL sheets
+        const placedCounts = {};
+        sheets.forEach((sh) => {
+            sh.parts.forEach((p) => {
+                const taskId = p.taskId;
+                if (taskId) {
+                    placedCounts[taskId] = (placedCounts[taskId] || 0) + 1;
+                }
+            });
+        });
 
-        // Filter out placed tasks
-        unplacedParts = documentTasks.filter((t) => !placedTaskIds.has(t.id));
+        inventory = documentTasks.map((t) => {
+            // Determine total needed from task name/content or metadata if available
+            // For now, assume 1 per task or check if task has quantity
+            const total = t.quantity || 1;
+            const placed = placedCounts[t.id] || 0;
+            return {
+                ...t,
+                placed,
+                total,
+                remaining: Math.max(0, total - placed),
+            };
+        });
+    }
+
+    // Sheet Management
+    function addSheet(template = null) {
+        const newSheet = {
+            parts: [],
+            metadata: {},
+            total_parts: 0,
+            total_contours: 0,
+            program_width: template?.width || 3000,
+            program_height: template?.height || 1500,
+            thickness: 0,
+            cut_count: 1,
+            material: template?.material || "Steel",
+        };
+        sheets = [...sheets, newSheet];
+        activeSheetIndex = sheets.length - 1;
+        pushState();
+    }
+
+    function removeSheet(index) {
+        if (sheets.length <= 1) return;
+        sheets = sheets.filter((_, i) => i !== index);
+        if (activeSheetIndex >= sheets.length) {
+            activeSheetIndex = sheets.length - 1;
+        }
+        pushState();
+        updateInventory();
     }
 
     function handleDragStart(e, task) {
@@ -112,11 +206,9 @@
     let historyIndex = $state(-1);
 
     function pushState() {
-        if (!sheet) return;
-        // Deep clone sheet to store in history
-        const state = JSON.parse(JSON.stringify(sheet));
+        if (sheets.length === 0) return;
+        const state = JSON.parse(JSON.stringify(sheets));
 
-        // If we are in the middle of history, truncate future
         if (historyIndex < history.length - 1) {
             history = history.slice(0, historyIndex + 1);
         }
@@ -124,7 +216,6 @@
         history.push(state);
         historyIndex++;
 
-        // Limit history size?
         if (history.length > 50) {
             history.shift();
             historyIndex--;
@@ -134,39 +225,46 @@
     function undo() {
         if (historyIndex > 0) {
             historyIndex--;
-            sheet = JSON.parse(JSON.stringify(history[historyIndex]));
-            updateUnplacedParts(); // Re-calc unplaced based on restored sheet
+            sheets = JSON.parse(JSON.stringify(history[historyIndex]));
+            updateInventory();
         }
     }
 
     function redo() {
         if (historyIndex < history.length - 1) {
             historyIndex++;
-            sheet = JSON.parse(JSON.stringify(history[historyIndex]));
-            updateUnplacedParts();
+            sheets = JSON.parse(JSON.stringify(history[historyIndex]));
+            updateInventory();
         }
     }
 
-    async function handlePlacePart(task) {
+    async function handlePlacePart(item) {
         if (!sheet) {
             alert("Please create or load a sheet first.");
             return;
         }
 
-        try {
-            pushState(); // Save state before placing
+        if (item.remaining <= 0 && !inventory.find((i) => i.id === item.id)) {
+            // If it's a library part not in inventory, we can still place it
+        } else if (item.remaining <= 0) {
+            alert("All instances of this task are already placed.");
+            return;
+        }
 
-            // 1. Get Part ID.
+        try {
+            pushState();
+
             let partId = null;
-            if (task.part_associations && task.part_associations.length > 0) {
-                partId = task.part_associations[0].part_id;
+            if (item.part_associations && item.part_associations.length > 0) {
+                partId = item.part_associations[0].part_id;
+            } else if (item.id && !item.document_id) {
+                // Library part
+                partId = item.id;
             } else {
-                console.warn("No part association found for task", task);
                 alert("This task is not linked to a part geometry.");
                 return;
             }
 
-            // 2. Fetch GNC
             const partSheet = await fetchPartGnc(partId);
             if (
                 !partSheet ||
@@ -177,28 +275,60 @@
                 return;
             }
 
-            // 3. Add to Sheet
-            const partDef = partSheet.parts[0]; // The part definition
+            console.log("Placed Part GNC Data:", {
+                partId,
+                totalPartsInGnc: partSheet.parts.length,
+                firstPartContours: partSheet.parts[0].contours.length,
+                allParts: partSheet.parts.map((p) => ({
+                    name: p.name,
+                    contours: p.contours.length,
+                })),
+            });
 
-            const newPartId = Math.max(...sheet.parts.map((p) => p.id), 0) + 1;
+            // Find the correct part by name or registration number within the GNC file
+            let partDef = partSheet.parts.find(
+                (p) =>
+                    p.name &&
+                    (p.name.includes(item.name) || item.name.includes(p.name)),
+            );
+
+            if (!partDef) {
+                console.warn(
+                    `Could not find geometry matching name "${item.name}", defaulting to first part.`,
+                );
+                partDef = partSheet.parts[0];
+            }
+            const newPartId =
+                Math.max(
+                    ...sheets.flatMap((s) => s.parts).map((p) => p.id),
+                    0,
+                ) + 1;
+
+            const margin = 50;
+            const sheetW = sheet.program_width || 2000;
+            const sheetH = sheet.program_height || 1000;
+
+            const randX =
+                margin + Math.random() * Math.max(0, sheetW - margin * 2 - 200);
+            const randY =
+                margin + Math.random() * Math.max(0, sheetH - margin * 2 - 200);
+
             const newPart = {
                 ...partDef,
                 id: newPartId,
-                name: task.name,
-                taskId: task.id, // Link back to task for "Unplace" logic
+                name: item.name,
+                taskId: item.id,
                 metadata: {
                     ...(partDef.metadata || {}),
                     source_part_id: partId,
                 },
-                x: 10,
-                y: 10,
+                x: randX,
+                y: randY,
             };
 
             sheet.parts = [...sheet.parts, newPart];
             sheet.total_parts = sheet.parts.length;
-
-            // 4. Update Unplaced
-            updateUnplacedParts();
+            updateInventory();
         } catch (e) {
             console.error(e);
             alert("Failed to place part.");
@@ -207,23 +337,17 @@
 
     function handleRemovePart(partId) {
         if (!sheet) return;
-        const part = sheet.parts.find((p) => p.id === partId);
-        if (!part) return;
 
-        pushState(); // Save state before removing
-
-        // Remove from sheet
+        pushState();
         sheet.parts = sheet.parts.filter((p) => p.id !== partId);
         sheet.total_parts = sheet.parts.length;
 
-        // Deselect if removed
         if (selectedPartId === partId) {
             selectedPartId = null;
             propertyMode = "sheet";
         }
 
-        // Update unplaced list
-        updateUnplacedParts();
+        updateInventory();
     }
 
     let nestingWorker = null;
@@ -246,10 +370,11 @@
                     nestingProgress = payload;
                 } else if (type === "COMPLETE") {
                     isNesting = false;
-                    const { parts } = payload;
-                    // Update sheet parts with new positions
-                    // We need to match by ID or index. Worker returns full parts list with X/Y updated.
-                    updateSheetPartsFromNest(parts);
+                    console.log("COMPLETE payload", payload);
+                    const { sheets: newSheets } = payload;
+                    sheets = newSheets;
+                    updateInventory();
+                    pushState();
                     alert("Nesting complete!");
                 } else if (type === "STOPPED") {
                     isNesting = false;
@@ -258,31 +383,107 @@
         }
     });
 
-    function updateSheetPartsFromNest(nestedParts) {
+    function unplaceAll() {
         if (!sheet) return;
-
-        // Map nested parts back to sheet parts
-        // Ensure we preserve other metadata
-        sheet.parts = sheet.parts.map((p) => {
-            const nested = nestedParts.find((np) => np.id === p.id);
-            if (nested) {
-                return {
-                    ...p,
-                    x: nested.x,
-                    y: nested.y,
-                    rotation: nested.rotation || 0,
-                };
-            }
-            return p;
-        });
-        pushState(); // Save state
+        pushState();
+        sheet.parts = [];
+        updateInventory();
     }
 
-    async function startAutoNest() {
-        if (!nestingWorker || !sheet) return;
+    async function startAutoNest(isReNest = false) {
+        if (!nestingWorker || sheets.length === 0) return;
         if (isNesting) {
             nestingWorker.postMessage({ type: "STOP_NESTING" });
             return;
+        }
+
+        let tasksToNest = [];
+        if (isReNest) {
+            // 1. Start with full quantities of all document tasks
+            tasksToNest = JSON.parse(JSON.stringify(inventory)).map((item) => {
+                item.remaining = item.total;
+                return item;
+            });
+
+            // 2. Add library parts that are currently placed on sheets
+            sheets.forEach((sh) => {
+                sh.parts.forEach((p) => {
+                    const isInInventory = inventory.some(
+                        (inv) => inv.id === p.taskId,
+                    );
+                    if (!isInInventory) {
+                        // Check if we already added this library part to the pool
+                        let existing = tasksToNest.find(
+                            (t) => t.id === (p.taskId || p.id),
+                        );
+                        if (existing) {
+                            existing.remaining++;
+                            existing.total++;
+                        } else {
+                            tasksToNest.push({
+                                ...p,
+                                id: p.taskId || p.id,
+                                total: 1,
+                                remaining: 1,
+                                isLibraryPart: true,
+                            });
+                        }
+                    }
+                });
+            });
+
+            // 3. Clear all sheets for a fresh start
+            pushState();
+            sheets.forEach((sh) => {
+                sh.parts = [];
+            });
+            updateInventory();
+        } else {
+            tasksToNest = JSON.parse(
+                JSON.stringify(inventory.filter((i) => i.remaining > 0)),
+            );
+        }
+
+        isNesting = true;
+        nestingProgress = 0;
+
+        console.log(
+            `GncView: Preparing geometries for ${tasksToNest.length} items (isReNest: ${isReNest})`,
+        );
+
+        for (let item of tasksToNest) {
+            if (item.contours && item.contours.length > 0) continue;
+
+            let partId = null;
+            if (item.part_associations && item.part_associations.length > 0) {
+                partId = item.part_associations[0].part_id;
+            } else if (item.id && !item.document_id) {
+                partId = item.id;
+            }
+
+            if (partId) {
+                try {
+                    const partSheet = await fetchPartGnc(partId);
+                    if (partSheet?.parts?.length > 0) {
+                        let partDef =
+                            partSheet.parts.find(
+                                (p) =>
+                                    p.name &&
+                                    (p.name.includes(item.name) ||
+                                        item.name.includes(p.name)),
+                            ) || partSheet.parts[0];
+
+                        item.contours = partDef.contours;
+                        // Map taskId for identification
+                        item.taskId = item.id;
+                    }
+                } catch (e) {
+                    console.error(
+                        `GncView: Failed to fetch geometry for ${item.name}`,
+                        e,
+                    );
+                }
+            }
         }
 
         let rotations = 4;
@@ -301,107 +502,80 @@
             console.warn("Using default nesting settings", e);
         }
 
-        const config = {
-            rotations,
-            population,
-        };
+        const config = { rotations, population, multiSheet: true, nestingMode };
 
-        // Prepare data for worker
         nestingWorker.postMessage({
             type: "START_NESTING",
             payload: {
-                sheet: {
-                    width: sheet.program_width,
-                    height: sheet.program_height,
-                },
-                parts: JSON.parse(JSON.stringify(sheet.parts)),
+                sheets: JSON.parse(JSON.stringify(sheets)),
+                inventory: JSON.parse(JSON.stringify(tasksToNest)),
+                stock: JSON.parse(JSON.stringify(gncLocalStock)),
                 config,
             },
         });
-        isNesting = true;
-        nestingProgress = 0;
     }
 
-    async function handleFileSelect(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    function handleContourSelect(hit) {
+        if (!hit) {
+            selectedContour = null;
+            return;
+        }
 
-        filename = file.name;
-        loading = true;
-        sheet = null;
-        selectedContour = null;
+        if (hit.contour) {
+            selectedContour = hit.contour;
 
-        try {
-            sheet = await parseGnc(file);
-            console.log("Parsed GNC sheet:", sheet);
-            console.log("Parts:", sheet?.parts);
-            console.log("Total parts:", sheet?.total_parts);
+            if (hit.part) {
+                selectedPartId = hit.part.id;
 
-            // Default to first part if available
-            if (sheet?.parts?.length > 0) {
-                selectedPartId = sheet.parts[0].id;
+                if (propertyMode === "sheet") {
+                    propertyMode = "contour";
+                }
+            } else {
+                propertyMode = "contour";
             }
+        }
+    }
+
+    async function handleSave() {
+        if (sheets.length === 0) return;
+        try {
+            loading = true;
+            const project = {
+                order_id: orderId,
+                name: filename || "Nesting Project",
+                sheets: sheets.map((s, i) => ({
+                    id: i,
+                    name: `Sheet ${i + 1}`,
+                    data: s,
+                })),
+                inventory: documentTasks,
+                stock: gncLocalStock,
+            };
+
+            if (orderId) {
+                await saveOrderNesting(project);
+            } else {
+                // Legacy single save
+                await saveGnc(sheet, filename, true);
+            }
+            alert("Project saved successfully!");
         } catch (err) {
-            alert("Error parsing GNC file");
-            console.error(err);
+            alert("Failed to save project: " + err.message);
         } finally {
             loading = false;
         }
     }
 
-    function handleContourSelect(e) {
-        const eventData = e.detail;
-
-        if (!eventData) {
-            selectedContour = null;
-            return;
-        }
-
-        // Handle new event structure: { contour, part }
-        if (eventData.contour) {
-            selectedContour = eventData.contour;
-
-            // If in part mode or switching to it, select the parent part
-            if (eventData.part) {
-                selectedPartId = eventData.part.id;
-
-                // If not already in part or contour mode, switch to contour mode
-                if (propertyMode === "sheet") {
-                    propertyMode = "contour";
-                }
-            } else {
-                // Fallback: auto-switch to contour mode
-                propertyMode = "contour";
-            }
-        } else {
-            // Legacy: direct contour object
-            selectedContour = eventData;
-            propertyMode = "contour";
-        }
-    }
-
-    async function handleSave() {
-        if (!sheet || !filename) return;
-        try {
-            const res = await saveGnc(sheet, filename, true);
-            alert(`Saved successfully to ${res.path}`);
-        } catch (err) {
-            alert("Failed to save file");
-        }
-    }
-
     async function handleSaveAsNewOrder() {
-        if (!sheet) return;
+        if (sheets.length === 0) return;
         const name = prompt("Enter name for the new Order:");
         if (!name) return;
 
         try {
-            // Need to import saveAsNewOrder
-            const { saveAsNewOrder } = await import("./api");
+            // This needs to be updated for multi-sheet if backend supports it
+            // For now, we save the active sheet
             const res = await saveAsNewOrder(name, sheet, documentId);
             alert(`New Order "${res.name}" created successfully!`);
-            // Redirect?
-            // push(`/documents/${res.id}/gnc`); // Need navigate
         } catch (e) {
             console.error(e);
             alert("Failed to save as new order: " + e.message);
@@ -455,14 +629,38 @@
             <button class="save-btn" onclick={handleSave} disabled={!sheet}
                 >Save Changes</button
             >
+            <div class="nest-controls">
+                <select bind:value={nestingMode} class="nest-mode-select">
+                    <option value="hull">Precise Hull</option>
+                    <option value="bbox">Bounding Box</option>
+                </select>
+                <button
+                    class="save-btn"
+                    onclick={() => startAutoNest(false)}
+                    disabled={!sheet}
+                    style="background-color: {isNesting
+                        ? '#ef4444'
+                        : '#8b5cf6'};"
+                >
+                    {isNesting
+                        ? `Stop Nesting (${nestingProgress}%)`
+                        : "Auto Nest"}
+                </button>
+            </div>
             <button
                 class="save-btn"
-                onclick={startAutoNest}
-                disabled={!sheet}
-                style="background-color: {isNesting ? '#ef4444' : '#8b5cf6'};"
+                onclick={() => startAutoNest(true)}
+                disabled={!sheet || isNesting}
+                style="background-color: #6d28d9;"
+                title="Unplace all and nest from scratch">Re-nest All</button
             >
-                {isNesting ? `Stop Nesting (${nestingProgress}%)` : "Auto Nest"}
-            </button>
+            <button
+                class="save-btn"
+                onclick={unplaceAll}
+                disabled={!sheet || isNesting}
+                style="background-color: #475569;"
+                title="Clear all parts from sheet">Unplace All</button
+            >
             <button
                 class="save-btn"
                 onclick={handleSaveAsNewOrder}
@@ -472,23 +670,74 @@
         </div>
     </div>
 
+    <div class="sheet-tabs">
+        {#each sheets as s, i}
+            <div class="tab-wrapper" class:active={activeSheetIndex === i}>
+                <button
+                    class="sheet-tab"
+                    onclick={() => (activeSheetIndex = i)}
+                >
+                    Sheet {i + 1}
+                </button>
+                <button class="close-tab" onclick={() => removeSheet(i)}
+                    >×</button
+                >
+            </div>
+        {/each}
+        <button class="add-sheet-btn" onclick={() => addSheet()}
+            >+ Add Sheet</button
+        >
+    </div>
+
     <div class="workspace">
+        <div class="stock-sidebar">
+            <h3>Local Stock</h3>
+            <div class="stock-list">
+                {#each gncLocalStock as item}
+                    <div class="stock-item">
+                        <span class="name">{item.name}</span>
+                        <div class="dims">{item.width}x{item.height}</div>
+                        <button
+                            class="apply-btn"
+                            onclick={() =>
+                                handleStockSelect({
+                                    target: { value: item.id },
+                                })}>Apply</button
+                        >
+                    </div>
+                {/each}
+            </div>
+
+            <h4 class="section-title">Templates</h4>
+            <div class="template-grid">
+                {#each stockTemplates as t}
+                    <button class="template-btn" onclick={() => addSheet(t)}>
+                        {t.name}
+                    </button>
+                {/each}
+            </div>
+        </div>
+
         <div class="canvas-area">
             {#if loading}
-                <div class="loading">Parsing GNC file...</div>
+                <div class="loading">Processing...</div>
             {:else if sheet}
                 <GncCanvas
                     {sheet}
                     width={800}
                     height={600}
-                    on:select={handleContourSelect}
+                    onselect={handleContourSelect}
+                    onAreaChange={(area) => {
+                        sheet.nestingArea = area;
+                        pushState();
+                    }}
                 />
             {:else}
                 <div class="placeholder">
-                    <p>No file loaded.</p>
-                    <p class="hint">
-                        Upload a .GNC file to visualize and edit.
-                    </p>
+                    <p>No sheet active.</p>
+                    <button class="btn-primary" onclick={() => addSheet()}
+                        >Create Blank Sheet</button
+                    >
                 </div>
             {/if}
         </div>
@@ -507,10 +756,15 @@
                     class:active={propertyMode === "contour"}
                     onclick={() => (propertyMode = "contour")}>Contour</button
                 >
+                <button
+                    class:active={propertyMode === "inventory"}
+                    onclick={() => (propertyMode = "inventory")}
+                    >Inventory</button
+                >
             </div>
 
             {#if !sheet}
-                <p class="hint-text">Load a GNC file to view properties.</p>
+                <p class="hint-text">Select or create a sheet.</p>
             {:else if propertyMode === "sheet"}
                 <!-- Sheet Mode -->
                 <h3>Sheet Properties</h3>
@@ -523,7 +777,7 @@
                             oninput={(e) =>
                                 updateSheetField(
                                     "program_width",
-                                    parseFloat(e.target.value),
+                                    parseFloat(e.currentTarget.value),
                                 )}
                             step="0.1"
                         />
@@ -534,7 +788,7 @@
                             oninput={(e) =>
                                 updateSheetField(
                                     "program_height",
-                                    parseFloat(e.target.value),
+                                    parseFloat(e.currentTarget.value),
                                 )}
                             step="0.1"
                         />
@@ -548,21 +802,10 @@
                         oninput={(e) =>
                             updateSheetField(
                                 "thickness",
-                                parseFloat(e.target.value),
+                                parseFloat(e.currentTarget.value),
                             )}
                         step="0.1"
                     />
-                </div>
-                <div class="prop-group">
-                    <span class="label">Stock Size:</span>
-                    <select onchange={handleStockSelect}>
-                        <option value="">-- Select Stock --</option>
-                        {#each stockItems as item}
-                            <option value={item.id}>
-                                {item.material?.name || "Unknown"} - {item.width}x{item.height}
-                            </option>
-                        {/each}
-                    </select>
                 </div>
                 <div class="prop-group">
                     <span class="label">Cut Count:</span>
@@ -572,7 +815,7 @@
                         oninput={(e) =>
                             updateSheetField(
                                 "cut_count",
-                                parseInt(e.target.value),
+                                parseInt(e.currentTarget.value),
                             )}
                         min="1"
                     />
@@ -584,10 +827,6 @@
                 <div class="prop-group">
                     <span class="label">Total Parts:</span>
                     <span class="value">{sheet.total_parts}</span>
-                </div>
-                <div class="prop-group">
-                    <span class="label">Total Contours:</span>
-                    <span class="value">{sheet.total_contours}</span>
                 </div>
             {:else if propertyMode === "part"}
                 <!-- Part Mode -->
@@ -612,39 +851,61 @@
                         <span class="value">{selectedPart.contours.length}</span
                         >
                     </div>
-                    <div class="prop-group">
-                        <span class="label">Corner Count:</span>
-                        <span class="value">{selectedPart.corner_count}</span>
-                    </div>
                 {/if}
-                <button
-                    class:active={propertyMode === "unplaced"}
-                    onclick={() => (propertyMode = "unplaced")}>Unplaced</button
-                >
                 <button
                     class="delete-btn"
                     onclick={() => handleRemovePart(selectedPartId)}
                     >Remove Part</button
                 >
-            {:else if propertyMode === "unplaced"}
-                <h3>Unplaced Parts</h3>
-                {#if unplacedParts.length === 0}
-                    <p class="hint">No unplaced parts.</p>
-                {:else}
-                    <div class="part-list">
-                        {#each unplacedParts as task}
-                            <div
-                                class="part-item"
-                                draggable="true"
-                                ondragstart={(e) => handleDragStart(e, task)}
-                                onclick={() => handlePlacePart(task)}
-                            >
-                                <span class="name">{task.name}</span>
-                                <button class="add-btn">+</button>
+            {:else if propertyMode === "inventory"}
+                <h3>Inventory</h3>
+
+                <div class="search-bar">
+                    <input
+                        type="text"
+                        placeholder="Search parts..."
+                        bind:value={inventorySearch}
+                    />
+                </div>
+
+                <div class="inventory-list">
+                    {#each filteredInventory as item}
+                        <div
+                            class="inventory-item"
+                            class:complete={item.remaining === 0}
+                        >
+                            <div class="info">
+                                <span class="name">{item.name}</span>
+                                <span class="stats"
+                                    >{item.placed} / {item.total}</span
+                                >
                             </div>
-                        {/each}
-                    </div>
-                {/if}
+                            <button
+                                class="add-btn"
+                                onclick={() => handlePlacePart(item)}
+                                disabled={item.remaining <= 0}>+</button
+                            >
+                        </div>
+                    {/each}
+                    {#if filteredInventory.length === 0}
+                        <p class="empty-text">No matching tasks.</p>
+                    {/if}
+                </div>
+
+                <h4 class="section-title">Library Parts</h4>
+                <div class="library-grid">
+                    {#each filteredLibrary as part}
+                        <button
+                            class="lib-item"
+                            onclick={() => handlePlacePart(part)}
+                        >
+                            {part.name}
+                        </button>
+                    {/each}
+                    {#if filteredLibrary.length === 0}
+                        <p class="empty-text">No matching library parts.</p>
+                    {/if}
+                </div>
             {:else if propertyMode === "contour"}
                 <!-- Contour Mode -->
                 <h3>Contour Properties</h3>
@@ -653,13 +914,8 @@
                         <span class="label">Contour ID:</span>
                         <span class="value">#{selectedContour.id}</span>
                     </div>
-                    <div class="prop-group">
-                        <span class="label">Corners:</span>
-                        <span class="value">{selectedContour.corner_count}</span
-                        >
-                    </div>
 
-                    <h4 class="section-title">Technology Parameters</h4>
+                    <h4 class="section-title">P-Codes</h4>
                     <div class="p-codes-list">
                         {#if selectedContour.metadata}
                             {#each Object.entries(selectedContour.metadata) as [key, value]}
@@ -673,23 +929,16 @@
                                             oninput={(e) =>
                                                 updatePCode(
                                                     key,
-                                                    e.target.value,
+                                                    e.currentTarget.value,
                                                 )}
                                         />
                                     </div>
                                 {/if}
                             {/each}
                         {:else}
-                            <p class="empty-props">
-                                No technological parameters found.
-                            </p>
+                            <p class="empty-props">No parameters found.</p>
                         {/if}
                     </div>
-                {:else}
-                    <p class="hint-text">
-                        Select a contour on the canvas to view and edit its
-                        properties.
-                    </p>
                 {/if}
             {/if}
         </div>
@@ -697,67 +946,76 @@
 </div>
 
 <style>
-    .view-container {
+    .sheet-tabs {
         display: flex;
-        flex-direction: column;
-        height: calc(100vh - 80px); /* Fit within layout */
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        background: #f1f5f9;
+        padding: 0.5rem 1rem 0 1rem;
+        gap: 0.25rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .tab-wrapper {
+        display: flex;
+        align-items: center;
+        background: #e2e8f0;
+        border-radius: 6px 6px 0 0;
         overflow: hidden;
     }
-    .header {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #f8fafc;
+    .tab-wrapper.active {
+        background: #3b82f6;
     }
-    h2 {
-        margin: 0;
-        font-size: 1.25rem;
-        color: #1e293b;
-    }
-
-    .actions {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    .file-input {
-        display: none;
-    }
-    .upload-btn {
-        background: white;
-        border: 1px solid #cbd5e1;
+    .sheet-tab {
+        border: none;
+        background: none;
         padding: 0.5rem 1rem;
-        border-radius: 6px;
         cursor: pointer;
         font-size: 0.875rem;
-        font-weight: 500;
+        color: #475569;
     }
-    .upload-btn:hover {
-        background: #f1f5f9;
+    .tab-wrapper.active .sheet-tab {
+        color: white;
+    }
+    .close-tab {
+        border: none;
+        background: none;
+        padding: 0 0.5rem;
+        cursor: pointer;
+        color: #94a3b8;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #94a3b8;
+        font-style: italic;
     }
 
-    .save-btn {
-        background-color: #3b82f6;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
+    .search-bar {
+        margin-bottom: 1rem;
+    }
+    .search-bar input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #e2e8f0;
         border-radius: 6px;
-        font-weight: 500;
+        font-size: 0.875rem;
+    }
+    .empty-text {
+        text-align: center;
+        padding: 1rem;
+        color: #94a3b8;
+        font-size: 0.875rem;
+        font-style: italic;
+    }
+    .tab-wrapper.active .close-tab {
+        color: #bfdbfe;
+    }
+    .add-sheet-btn {
+        border: 1px dashed #cbd5e1;
+        background: none;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        margin-bottom: 4px;
         cursor: pointer;
-    }
-    .save-btn:disabled {
-        background-color: #94a3b8;
-        cursor: not-allowed;
-    }
-    .filename {
-        font-family: monospace;
-        color: #64748b;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
 
     .workspace {
@@ -765,6 +1023,72 @@
         flex: 1;
         overflow: hidden;
     }
+    .stock-sidebar {
+        width: 250px;
+        border-right: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        overflow-y: auto;
+    }
+    .stock-sidebar h3 {
+        margin: 0;
+        font-size: 1rem;
+    }
+    .stock-item {
+        background: white;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 0.5rem;
+    }
+    .stock-item .dims {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin: 0.25rem 0;
+    }
+    .apply-btn {
+        width: 100%;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        padding: 0.25rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+    }
+
+    .template-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .nest-controls {
+        display: flex;
+        gap: 0;
+        align-items: center;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    .nest-mode-select {
+        background: #444;
+        color: white;
+        border: none;
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        border-right: 1px solid #555;
+        outline: none;
+    }
+    .template-btn {
+        background: white;
+        border: 1px solid #cbd5e1;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        cursor: pointer;
+    }
+
     .canvas-area {
         flex: 1;
         background: #1e1e1e;
@@ -772,119 +1096,154 @@
         justify-content: center;
         align-items: center;
         overflow: auto;
+        position: relative;
     }
     .placeholder,
     .loading {
         color: #64748b;
         text-align: center;
     }
-    .hint {
-        font-size: 0.875rem;
-        margin-top: 0.5rem;
+    .btn-primary {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 1rem;
     }
 
     .properties-panel {
         width: 300px;
         border-left: 1px solid #e2e8f0;
         background: white;
-        padding: 1.5rem;
+        padding: 1rem;
         overflow-y: auto;
     }
-    .properties-panel h3 {
-        margin-top: 0;
-        margin-bottom: 1rem;
-        font-size: 1.1rem;
-    }
-
-    .prop-group {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-    }
-    .label {
-        color: #64748b;
-    }
-    .value {
-        font-weight: 600;
-    }
-
-    .section-title {
-        margin-top: 1.5rem;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #94a3b8;
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 0.5rem;
-    }
-
-    .prop-field {
-        margin-bottom: 1rem;
-    }
-    .prop-field label {
-        display: block;
-        font-size: 0.875rem;
-        color: #475569;
-        margin-bottom: 0.25rem;
-    }
-    .prop-field input {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 4px;
-        font-family: monospace;
-    }
-    .hint-text {
-        color: #94a3b8;
-        font-size: 0.875rem;
-        text-align: center;
-        margin-top: 2rem;
-    }
-
-    /* Mode Selector */
     .mode-selector {
         display: flex;
-        gap: 4px;
+        gap: 0.25rem;
         margin-bottom: 1rem;
         background: #f1f5f9;
-        padding: 4px;
+        padding: 0.25rem;
         border-radius: 6px;
     }
     .mode-selector button {
         flex: 1;
-        padding: 0.5rem;
         border: none;
-        background: transparent;
+        background: none;
+        padding: 0.4rem;
         border-radius: 4px;
+        font-size: 0.75rem;
         cursor: pointer;
-        font-weight: 500;
-        font-size: 0.875rem;
-        color: #64748b;
-        transition: all 0.2s;
     }
     .mode-selector button.active {
         background: white;
-        color: #3b82f6;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-    .mode-selector button:hover:not(.active) {
-        color: #1e293b;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        font-weight: 500;
     }
 
-    /* Inline Inputs */
+    .inventory-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f8fafc;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+        border-left: 3px solid #3b82f6;
+    }
+    .inventory-item.complete {
+        border-left-color: #10b981;
+        opacity: 0.6;
+    }
+    .inventory-item .info {
+        display: flex;
+        flex-direction: column;
+    }
+    .inventory-item .name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+    }
+    .inventory-item .stats {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+    .add-btn {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .add-btn:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
+    }
+
+    .library-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .lib-item {
+        background: white;
+        border: 1px solid #e2e8f0;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .lib-item:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+
+    .prop-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+    }
     .inline-inputs {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 0.5rem;
     }
     .inline-inputs input {
-        flex: 1;
-        max-width: 100px;
+        width: 80px;
     }
-    .inline-inputs span {
+    input,
+    select {
+        padding: 0.4rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        font-size: 0.875rem;
+    }
+    .section-title {
+        margin: 1.5rem 0 0.5rem 0;
+        font-size: 0.8rem;
+        text-transform: uppercase;
         color: #64748b;
-        font-weight: 500;
+        letter-spacing: 0.05em;
+    }
+    .delete-btn {
+        width: 100%;
+        background: #fee2e2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+        padding: 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
     }
 </style>

@@ -1,48 +1,80 @@
 <script>
-    import { onMount, createEventDispatcher } from "svelte";
+    import { onMount } from "svelte";
 
-    export let sheet = null;
-    export let width = 800;
-    export let height = 600;
+    let {
+        sheet = null,
+        width = 800,
+        height = 600,
+        onselect = null,
+        onAreaChange = null,
+    } = $props();
 
-    const dispatch = createEventDispatcher();
-
-    let canvas;
-    let ctx = null;
-
-    // Scaling variables
-    let scale = 1;
-    let offsetX = 0;
-    let offsetY = 0;
+    let canvas = $state();
+    let ctx = $state(null);
 
     // Pan/Zoom controls
-    let userZoom = 1.0;
-    let panX = 0;
-    let panY = 0;
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
+    let userZoom = $state(1.0);
+    let panX = $state(0);
+    let panY = $state(0);
+    let isDragging = $state(false);
+    let dragStartX = $state(0);
+    let dragStartY = $state(0);
 
-    // Tool Modes: 'navigate' | 'select'
-    let toolMode = "navigate";
+    // Tool Modes: 'navigate' | 'select' | 'nestArea'
+    let toolMode = $state("navigate");
 
-    // Bounds for hit testing
-    let bounds = { minX: 0, minY: 0, maxX: 100, maxY: 100 };
-    let startX = 0;
-    let startY = 0;
+    // Nesting Area Dragging
+    let isDrawingArea = $state(false);
+    let areaStartWorld = $state(null);
+    let currentAreaWorld = $state(null);
 
-    let selectedContourId = null;
-    let hoverContourId = null;
+    let selectedContourId = $state(null);
+    let hoverContourId = $state(null);
 
-    $: if (sheet && canvas) {
-        console.log("GncCanvas: sheet changed, redrawing...", sheet);
-        draw();
-    }
+    // Reactive Layout Calculations using $derived
+    const bounds = $derived(
+        sheet
+            ? calculateBounds(sheet)
+            : { minX: 0, minY: 0, maxX: 100, maxY: 100 },
+    );
+
+    const layout = $derived.by(() => {
+        const dataW = bounds.maxX - bounds.minX;
+        const dataH = bounds.maxY - bounds.minY;
+
+        if (dataW === 0 && dataH === 0) {
+            return { scale: 1, startX: 0, startY: 0, bounds };
+        }
+
+        const padding = 20;
+        const availW = width - padding * 2;
+        const availH = height - padding * 2;
+
+        const scaleX = availW / dataW;
+        const scaleY = availH / dataH;
+        const baseScale = Math.min(scaleX, scaleY) * 0.95;
+        const s = baseScale * userZoom;
+
+        const contentW = dataW * s;
+        const contentH = dataH * s;
+
+        return {
+            scale: s,
+            startX: (width - contentW) / 2 + panX,
+            startY: (height - contentH) / 2 + panY,
+            bounds,
+        };
+    });
+
+    $effect(() => {
+        if (canvas && layout) {
+            draw();
+        }
+    });
 
     onMount(() => {
         if (canvas) {
             ctx = canvas.getContext("2d");
-            console.log("GncCanvas: mounted, ctx:", ctx);
             draw();
         }
     });
@@ -66,51 +98,29 @@
         let currentX = 0;
         let currentY = 0;
 
-        console.log(
-            "calculateBounds: sheet.parts.length =",
-            sheet.parts.length,
-        );
-
         for (const part of sheet.parts) {
-            console.log(
-                "calculateBounds: part.contours.length =",
-                part.contours.length,
-            );
+            const ox = part.x || 0;
+            const oy = part.y || 0;
+            let pCurrentX = 0;
+            let pCurrentY = 0;
+
             for (const contour of part.contours) {
-                console.log(
-                    "calculateBounds: contour.id =",
-                    contour.id,
-                    "commands.length =",
-                    contour.commands.length,
-                );
                 for (const cmd of contour.commands) {
-                    if (cmd.x !== undefined) currentX = cmd.x;
-                    if (cmd.y !== undefined) currentY = cmd.y;
+                    if (cmd.x !== undefined) pCurrentX = cmd.x;
+                    if (cmd.y !== undefined) pCurrentY = cmd.y;
 
                     if (cmd.x !== undefined || cmd.y !== undefined) {
                         hasPoints = true;
-                        if (currentX < minX) minX = currentX;
-                        if (currentX > maxX) maxX = currentX;
-                        if (currentY < minY) minY = currentY;
-                        if (currentY > maxY) maxY = currentY;
-                        console.log(
-                            "calculateBounds: found point",
-                            currentX,
-                            currentY,
-                            "from cmd.type =",
-                            cmd.type,
-                        );
+                        const absX = ox + pCurrentX;
+                        const absY = oy + pCurrentY;
+                        if (absX < minX) minX = absX;
+                        if (absX > maxX) maxX = absX;
+                        if (absY < minY) minY = absY;
+                        if (absY > maxY) maxY = absY;
                     }
                 }
             }
         }
-
-        console.log("calculateBounds: hasPoints =", hasPoints, "bounds =", {
-            minX,
-            minY,
-            maxX,
-            maxY,
-        });
 
         if (!hasPoints) return { minX: 0, minY: 0, maxX: 100, maxY: 100 };
         return { minX, minY, maxX, maxY };
@@ -119,71 +129,35 @@
     // Transform function: World -> Screen
     function toScreen(x, y) {
         return {
-            x: startX + (x - bounds.minX) * scale,
-            y: height - (startY + (y - bounds.minY) * scale),
+            x: layout.startX + (x - layout.bounds.minX) * layout.scale,
+            y:
+                height -
+                (layout.startY + (y - layout.bounds.minY) * layout.scale),
         };
     }
 
     // Inverse Transform: Screen -> World
     function toWorld(screenX, screenY) {
-        // x = (screenX - startX) / scale + minX
-        // screenY = H - (startY + (y - minY)*scale)
-        // startY + (y - minY)*scale = H - screenY
-        // (y - minY)*scale = H - screenY - startY
-        // y - minY = (H - screenY - startY) / scale
-        // y = (H - screenY - startY) / scale + minY
-
         return {
-            x: (screenX - startX) / scale + bounds.minX,
-            y: (height - screenY - startY) / scale + bounds.minY,
+            x: (screenX - layout.startX) / layout.scale + layout.bounds.minX,
+            y:
+                (height - screenY - layout.startY) / layout.scale +
+                layout.bounds.minY,
         };
     }
 
     function draw() {
-        if (!ctx || !sheet) {
-            console.log(
-                "GncCanvas draw: skipping - ctx:",
-                !!ctx,
-                "sheet:",
-                !!sheet,
-            );
-            return;
-        }
-
-        console.log("GncCanvas draw: starting draw with sheet:", sheet);
+        if (!ctx || !sheet || !layout) return;
 
         // Clear
         ctx.fillStyle = "#1e1e1e";
         ctx.fillRect(0, 0, width, height);
 
-        bounds = calculateBounds(sheet);
-        console.log("GncCanvas draw: bounds:", bounds);
+        const { scale, startX, startY, bounds } = layout;
 
-        const dataW = bounds.maxX - bounds.minX;
-        const dataH = bounds.maxY - bounds.minY;
-
-        if (dataW === 0 && dataH === 0) {
-            console.log("GncCanvas draw: no data (dataW and dataH are 0)");
-            return;
-        }
-
-        const padding = 20;
-        const availW = width - padding * 2;
-        const availH = height - padding * 2;
-
-        const scaleX = availW / dataW;
-        const scaleY = availH / dataH;
-        const baseScale = Math.min(scaleX, scaleY) * 0.95; // 0.95 safety factor
-        scale = baseScale * userZoom; // Apply user zoom
-
-        const contentW = dataW * scale;
-        const contentH = dataH * scale;
-
-        startX = (width - contentW) / 2 + panX;
-        startY = (height - contentH) / 2 + panY;
-
-        const tx = (x) => startX + (x - bounds.minX) * scale;
-        const ty = (y) => height - (startY + (y - bounds.minY) * scale); // Flip Y
+        const tx = (x, ox = 0) => startX + (x + ox - bounds.minX) * scale;
+        const ty = (y, oy = 0) =>
+            height - (startY + (y + oy - bounds.minY) * scale); // Flip Y
 
         // Draw Sheet Border
         if (sheet.program_width && sheet.program_height) {
@@ -192,19 +166,60 @@
             ctx.setLineDash([5, 5]);
             ctx.strokeRect(
                 tx(0),
-                ty(sheet.program_height), // Y logic might need checking: ty(height) is top? ty(0) is bottom.
+                ty(sheet.program_height),
                 sheet.program_width * scale,
                 sheet.program_height * scale,
             );
             ctx.setLineDash([]);
         }
 
+        // Draw nesting area if it exists on sheet
+        if (sheet.nestingArea) {
+            ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 5]);
+            ctx.strokeRect(
+                tx(sheet.nestingArea.x),
+                ty(sheet.nestingArea.y + sheet.nestingArea.height),
+                sheet.nestingArea.width * scale,
+                sheet.nestingArea.height * scale,
+            );
+            ctx.fillStyle = "rgba(0, 255, 0, 0.05)";
+            ctx.fillRect(
+                tx(sheet.nestingArea.x),
+                ty(sheet.nestingArea.y + sheet.nestingArea.height),
+                sheet.nestingArea.width * scale,
+                sheet.nestingArea.height * scale,
+            );
+            ctx.setLineDash([]);
+        }
+
+        // Draw current dragging area
+        if (isDrawingArea && areaStartWorld && currentAreaWorld) {
+            const minX = Math.min(areaStartWorld.x, currentAreaWorld.x);
+            const minY = Math.min(areaStartWorld.y, currentAreaWorld.y);
+            const maxX = Math.max(areaStartWorld.x, currentAreaWorld.x);
+            const maxY = Math.max(areaStartWorld.y, currentAreaWorld.y);
+
+            ctx.strokeStyle = "rgba(0, 255, 0, 0.8)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(
+                tx(minX),
+                ty(maxY),
+                (maxX - minX) * scale,
+                (maxY - minY) * scale,
+            );
+        }
+
         sheet.parts.forEach((part, pIndex) => {
             const hue = (pIndex * 137) % 360;
+            const ox = part.x || 0;
+            const oy = part.y || 0;
 
             part.contours.forEach((contour) => {
-                const isSelected = selectedContourId === contour.id;
-                const isHovered = hoverContourId === contour.id;
+                const combinedId = `${part.id}-${contour.id}`;
+                const isSelected = selectedContourId === combinedId;
+                const isHovered = hoverContourId === combinedId;
 
                 ctx.beginPath();
                 ctx.strokeStyle = isSelected
@@ -242,7 +257,7 @@
                         cmd.type === "G00" ||
                         (cmd.command === "G" && cmd.value === 0)
                     ) {
-                        ctx.moveTo(tx(currentX), ty(currentY));
+                        ctx.moveTo(tx(currentX, ox), ty(currentY, oy));
                         hasMoved = true;
                     } else if (
                         cmd.type === "G01" ||
@@ -252,10 +267,10 @@
                         cmd.type === "G40"
                     ) {
                         if (!hasMoved) {
-                            ctx.moveTo(tx(currentX), ty(currentY));
+                            ctx.moveTo(tx(currentX, ox), ty(currentY, oy));
                             hasMoved = true;
                         } else {
-                            ctx.lineTo(tx(currentX), ty(currentY));
+                            ctx.lineTo(tx(currentX, ox), ty(currentY, oy));
                         }
                     } else if (
                         cmd.type === "G02" ||
@@ -275,17 +290,17 @@
                             const centerY = prevY + j;
                             const radius = Math.sqrt(i * i + j * j);
 
-                            const cX = tx(centerX);
-                            const cY = ty(centerY);
+                            const cX = tx(centerX, ox);
+                            const cY = ty(centerY, oy);
                             const scaledRadius = radius * scale;
 
                             const angStart = Math.atan2(
-                                ty(prevY) - cY,
-                                tx(prevX) - cX,
+                                ty(prevY, oy) - cY,
+                                tx(prevX, ox) - cX,
                             );
                             const angEnd = Math.atan2(
-                                ty(currentY) - cY,
-                                tx(currentX) - cX,
+                                ty(currentY, oy) - cY,
+                                tx(currentX, ox) - cX,
                             );
 
                             const counterClockwise =
@@ -321,13 +336,17 @@
         const wX = worldPos.x;
         const wY = worldPos.y;
 
-        const threshold = 5 / scale;
+        const threshold = 5 / layout.scale;
 
         let closestContour = null;
         let closestPart = null;
         let minDistance = Infinity;
+        // ... (middle of function remains same, I'll use targetContent for better precision)
 
         for (const part of sheet.parts) {
+            const pX = part.x || 0;
+            const pY = part.y || 0;
+
             for (const contour of part.contours) {
                 let currentX = null;
                 let currentY = null;
@@ -356,10 +375,10 @@
                             dist = distancePointToSegment(
                                 wX,
                                 wY,
-                                currentX,
-                                currentY,
-                                nextX,
-                                nextY,
+                                currentX + pX,
+                                currentY + pY,
+                                nextX + pX,
+                                nextY + pY,
                             );
                         } else if (
                             cmd.type === "G02" ||
@@ -369,8 +388,8 @@
                         ) {
                             const i = cmd.i || 0;
                             const j = cmd.j || 0;
-                            const centerX = currentX + i;
-                            const centerY = currentY + j;
+                            const centerX = currentX + i + pX;
+                            const centerY = currentY + j + pY;
                             const radius = Math.sqrt(i * i + j * j);
 
                             const distToCenter = Math.sqrt(
@@ -379,12 +398,12 @@
                             dist = Math.abs(distToCenter - radius);
 
                             const startAngle = Math.atan2(
-                                currentY - centerY,
-                                currentX - centerX,
+                                currentY + pY - centerY,
+                                currentX + pX - centerX,
                             );
                             const endAngle = Math.atan2(
-                                nextY - centerY,
-                                nextX - centerX,
+                                nextY + pY - centerY,
+                                nextX + pX - centerX,
                             );
                             const pointAngle = Math.atan2(
                                 wY - centerY,
@@ -432,11 +451,11 @@
     function handleCanvasClick(event) {
         const hit = getContourAt(event.clientX, event.clientY);
         if (hit) {
-            selectedContourId = hit.contour.id;
-            dispatch("select", hit);
+            selectedContourId = `${hit.part.id}-${hit.contour.id}`;
+            if (onselect) onselect(hit);
         } else {
             selectedContourId = null;
-            dispatch("select", null);
+            if (onselect) onselect(null);
         }
         draw();
     }
@@ -486,21 +505,21 @@
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
         const newZoom = Math.max(0.1, Math.min(10, userZoom * delta));
 
-        if (scale === 0 || userZoom === 0) return;
+        if (layout.scale === 0 || userZoom === 0) return;
 
         // Calculate new pan to keep worldPos at mouseX/Y
-        const baseScale = scale / userZoom;
+        const baseScale = layout.scale / userZoom;
         const newScale = baseScale * newZoom;
 
-        const dataW = bounds.maxX - bounds.minX;
-        const dataH = bounds.maxY - bounds.minY;
+        const dataW = layout.bounds.maxX - layout.bounds.minX;
+        const dataH = layout.bounds.maxY - layout.bounds.minY;
         const newContentW = dataW * newScale;
         const newContentH = dataH * newScale;
 
         // Solve for newPanX/Y
-        const newStartX = mouseX - (worldPos.x - bounds.minX) * newScale;
+        const newStartX = mouseX - (worldPos.x - layout.bounds.minX) * newScale;
         const newStartY =
-            height - mouseY - (worldPos.y - bounds.minY) * newScale;
+            height - mouseY - (worldPos.y - layout.bounds.minY) * newScale;
 
         panX = newStartX - (width - newContentW) / 2;
         panY = newStartY - (height - newContentH) / 2;
@@ -514,8 +533,17 @@
         dragStartX = e.clientX;
         dragStartY = e.clientY;
 
+        const rect = canvas.getBoundingClientRect();
+
         if (toolMode === "navigate") {
             isDragging = true;
+        } else if (toolMode === "nestArea") {
+            isDrawingArea = true;
+            areaStartWorld = toWorld(
+                e.clientX - rect.left,
+                e.clientY - rect.top,
+            );
+            currentAreaWorld = areaStartWorld;
         }
     }
 
@@ -533,12 +561,19 @@
             draw();
         } else if (toolMode === "select") {
             const hit = getContourAt(e.clientX, e.clientY);
-            const newHoverId = hit ? hit.contour.id : null;
+            const newHoverId = hit ? `${hit.part.id}-${hit.contour.id}` : null;
 
             if (newHoverId !== hoverContourId) {
                 hoverContourId = newHoverId;
                 draw();
             }
+        } else if (toolMode === "nestArea" && isDrawingArea) {
+            const rect = canvas.getBoundingClientRect();
+            currentAreaWorld = toWorld(
+                e.clientX - rect.left,
+                e.clientY - rect.top,
+            );
+            draw();
         }
     }
 
@@ -562,6 +597,25 @@
             if (isClick) {
                 handleCanvasClick(e);
             }
+        } else if (toolMode === "nestArea" && isDrawingArea) {
+            isDrawingArea = false;
+            // Calculate final area rect
+            const minX = Math.min(areaStartWorld.x, currentAreaWorld.x);
+            const minY = Math.min(areaStartWorld.y, currentAreaWorld.y);
+            const maxX = Math.max(areaStartWorld.x, currentAreaWorld.x);
+            const maxY = Math.max(areaStartWorld.y, currentAreaWorld.y);
+
+            const newArea = {
+                x: minX,
+                y: minY,
+                width: maxX - minX,
+                height: maxY - minY,
+            };
+
+            if (newArea.width > 5 && newArea.height > 5) {
+                if (onAreaChange) onAreaChange(newArea);
+            }
+            draw();
         }
     }
 
@@ -604,6 +658,11 @@
             class:active={toolMode === "select"}
             onclick={() => (toolMode = "select")}
             title="Select">↖</button
+        >
+        <button
+            class:active={toolMode === "nestArea"}
+            onclick={() => (toolMode = "nestArea")}
+            title="Define Nesting Area">🎯</button
         >
     </div>
 

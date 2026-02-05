@@ -562,3 +562,33 @@ export async function deleteAssignee(id) {
 }
 
 
+// GNC Projects
+export async function fetchStockTemplates() {
+    const response = await fetch(`${API_URL}/api/gnc/stock-templates`, {
+        headers: getHeaders(),
+    });
+    return await response.json();
+}
+
+export async function fetchLibraryParts() {
+    const response = await fetch(`${API_URL}/api/gnc/library-parts`, {
+        headers: getHeaders(),
+    });
+    return await response.json();
+}
+
+export async function fetchOrderTasks(orderId) {
+    const response = await fetch(`${API_URL}/api/gnc/orders/${orderId}/tasks`, {
+        headers: getHeaders(),
+    });
+    return await response.json();
+}
+
+export async function saveOrderNesting(project) {
+    const response = await fetch(`${API_URL}/api/gnc/save-order-nesting`, {
+        method: 'POST',
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(project),
+    });
+    return await response.json();
+}

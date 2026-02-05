@@ -11,7 +11,7 @@ from starlette.requests import Request
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 from .sync_service import SyncService
-from .routers import documents, tasks, settings, assignees, orders, parts_gnc
+from .routers import documents, tasks, settings, assignees, orders, parts_gnc, gnc_projects
 from .startup import router as startup_router
 from .gnc_endpoints import router as gnc_router
 from .warehouse import router as warehouse_router
@@ -101,6 +101,7 @@ app.include_router(settings.router)
 app.include_router(assignees.router)
 app.include_router(orders.router)
 app.include_router(parts_gnc.router)
+app.include_router(gnc_projects.router)
 
 class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

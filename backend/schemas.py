@@ -312,3 +312,26 @@ class OrderItem(BaseModel):
 class OrderCreate(BaseModel):
     name: str # Order Name
     parts: List[OrderItem]
+
+# --- GNC Project & Multi-Sheet Nesting ---
+from .gnc_parser import GNCSheet # We use the parser model as base for sheets
+
+class GNCStockItem(BaseModel):
+    id: int
+    name: str
+    width: float
+    height: float
+    material: Optional[str] = None
+    quantity: int = 1
+
+class GNCProjectSheet(BaseModel):
+    id: int
+    data: GNCSheet
+    name: str
+
+class GNCProject(BaseModel):
+    order_id: Optional[int] = None
+    name: str
+    sheets: List[GNCProjectSheet] = []
+    inventory: List[Task] = [] # Tasks/Parts to be placed
+    stock: List[GNCStockItem] = [] # Local stock available for this session
