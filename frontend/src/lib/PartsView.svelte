@@ -7,13 +7,13 @@
         updatePart,
         getParts,
     } from "./api";
-    import { appState, addToTray } from "./appState.svelte.js";
+    import { appState, addToTray, setMenuActions, clearMenuActions } from "./appState.svelte.js";
     import PartThumbnail from "./components/PartThumbnail.svelte";
     import Tray from "./components/Tray.svelte";
     import ScanProgressModal from "./ScanProgressModal.svelte";
     import PartEditModal from "./PartEditModal.svelte";
     import PartPreviewModal from "./PartPreviewModal.svelte";
-    import { push } from "./Router.svelte"; // Import router push
+    import { push } from "./Router.svelte";
 
     // State
     let parts = $state([]);
@@ -114,19 +114,6 @@
         }
     }
 
-    function handleEdit(event) {
-        editingPart = event.detail; // Changed to match event detail for custom event or direct arg
-        // PartThumbnail dispatches standard 'onedit' with part as argument in custom logic or event detail?
-        // Let's check PartThumbnail dispatch.
-        // It calls onedit(part). In Svelte 5 props, this is a function call.
-        // So handleEdit(part).
-        // Wait, if it's passed as prop onedit={handleEdit}, it receives 'part'.
-        // Previous code treated it as event? No, updatePart logic suggests editingPart is the object.
-        // Let's standardise: onedit={(p) => handleEdit(p)} in template or matching sig.
-        // In template: `onedit={handleEdit}` implies handleEdit(part).
-    }
-
-    // Correcting handleEdit for prop usage
     function onEditPart(part) {
         editingPart = part;
         showEditModal = true;
@@ -138,12 +125,7 @@
     }
 
     function handleFilterInDocs(part) {
-        // Navigate to documents with part search
         push(`/documents?part_search=${encodeURIComponent(part.name)}`);
-        // Note: Router.push might not trigger full reload if it just changes state,
-        // but DocumentList needs to react to it.
-        // If DocumentList is already mounted, it might need to watch for route changes or query params.
-        // But commonly in SPA, this unmounts PartsView and mounts DocumentList.
     }
 
     async function handleSavePart(updatedPart) {
@@ -160,6 +142,19 @@
 
     onMount(() => {
         loadData();
+        setMenuActions([
+            {
+                label: "Parts",
+                items: [
+                    { label: "Rescan Library", action: startScan },
+                    { label: "Refresh", action: loadData }
+                ]
+            }
+        ]);
+
+        return () => {
+            clearMenuActions();
+        };
     });
 </script>
 
@@ -249,10 +244,6 @@
             <div class="title-row">
                 <h2>Parts Library</h2>
             </div>
-            <div class="actions">
-                <button onclick={startScan}>🔄 Rescan Library</button>
-                <button onclick={() => loadData()}>↻ Refresh</button>
-            </div>
         </header>
 
         {#if loading}
@@ -296,10 +287,9 @@
     .parts-layout {
         display: flex;
         height: calc(
-            100vh - 40px
-        ); /* Fill screen height minus some space if needed */
+            100vh - 60px
+        ); /* Adjusted for header */
         gap: 20px;
-        padding: 20px;
         box-sizing: border-box;
         overflow: hidden; /* Prevent parent scrolling */
     }
@@ -391,11 +381,6 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-    }
-
-    .actions {
-        display: flex;
-        gap: 10px;
     }
 
     h2 {

@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { fetchDocuments, updateTask } from './api.js';
+    import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
 
     let documents = $state([]);
     let assigneeFilter = $state('');
@@ -12,6 +13,19 @@
         if (assigneeFilter) {
             loadData();
         }
+
+        setMenuActions([
+            {
+                label: "Job",
+                items: [
+                    { label: "Refresh", action: loadData }
+                ]
+            }
+        ]);
+
+        return () => {
+            clearMenuActions();
+        };
     });
 
     async function loadData() {

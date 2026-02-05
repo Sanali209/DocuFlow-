@@ -14,6 +14,7 @@
         saveOrderNesting,
         saveAsNewOrder,
     } from "./api";
+    import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
     import GncCanvas from "./components/GncCanvas.svelte";
 
     // Props
@@ -112,7 +113,8 @@
     }
 
     async function handleFileSelect(e) {
-        const file = e.target.files[0];
+        // Handle file selection from input element or other source
+        const file = e.target ? e.target.files[0] : e;
         if (!file) return;
 
         filename = file.name;
@@ -135,6 +137,10 @@
         } finally {
             loading = false;
         }
+    }
+
+    function triggerFileUpload() {
+        document.getElementById('gnc-upload-input').click();
     }
 
     function updateInventory() {
@@ -381,6 +387,37 @@
                 }
             };
         }
+
+        setMenuActions([
+            {
+                label: "File",
+                items: [
+                    { label: "Open File", action: triggerFileUpload },
+                    { label: "Save Changes", action: handleSave },
+                    { label: "Save as New Order", action: handleSaveAsNewOrder }
+                ]
+            },
+            {
+                label: "Edit",
+                items: [
+                    { label: "Undo", action: undo },
+                    { label: "Redo", action: redo }
+                ]
+            },
+            {
+                label: "Nesting",
+                items: [
+                    { label: "Auto Nest", action: () => startAutoNest(false) },
+                    { label: "Re-nest All", action: () => startAutoNest(true) },
+                    { label: "Unplace All", action: unplaceAll }
+                ]
+            }
+        ]);
+
+        return () => {
+            clearMenuActions();
+            if (nestingWorker) nestingWorker.terminate();
+        };
     });
 
     function unplaceAll() {
@@ -602,72 +639,23 @@
 <div class="view-container">
     <div class="header">
         <h2>GNC Editor</h2>
-        <div class="actions">
-            <input
-                type="file"
-                id="gnc-upload"
-                accept=".gnc,.nc"
-                onchange={handleFileSelect}
-                class="file-input"
-            />
-            <label for="gnc-upload" class="upload-btn">Open File</label>
-            {#if filename}
-                <span class="filename">{filename}</span>
-            {/if}
-            <button
-                class="icon-btn"
-                onclick={undo}
-                disabled={historyIndex <= 0}
-                title="Undo">↩</button
-            >
-            <button
-                class="icon-btn"
-                onclick={redo}
-                disabled={historyIndex >= history.length - 1}
-                title="Redo">↪</button
-            >
-            <button class="save-btn" onclick={handleSave} disabled={!sheet}
-                >Save Changes</button
-            >
-            <div class="nest-controls">
+        <!-- Actions are now in the global menu -->
+        <input
+            type="file"
+            id="gnc-upload-input"
+            accept=".gnc,.nc"
+            onchange={handleFileSelect}
+            class="hidden-input"
+        />
+        {#if filename}
+            <span class="filename">{filename}</span>
+        {/if}
+        <div class="nest-controls">
                 <select bind:value={nestingMode} class="nest-mode-select">
                     <option value="hull">Precise Hull</option>
                     <option value="bbox">Bounding Box</option>
                 </select>
-                <button
-                    class="save-btn"
-                    onclick={() => startAutoNest(false)}
-                    disabled={!sheet}
-                    style="background-color: {isNesting
-                        ? '#ef4444'
-                        : '#8b5cf6'};"
-                >
-                    {isNesting
-                        ? `Stop Nesting (${nestingProgress}%)`
-                        : "Auto Nest"}
-                </button>
             </div>
-            <button
-                class="save-btn"
-                onclick={() => startAutoNest(true)}
-                disabled={!sheet || isNesting}
-                style="background-color: #6d28d9;"
-                title="Unplace all and nest from scratch">Re-nest All</button
-            >
-            <button
-                class="save-btn"
-                onclick={unplaceAll}
-                disabled={!sheet || isNesting}
-                style="background-color: #475569;"
-                title="Clear all parts from sheet">Unplace All</button
-            >
-            <button
-                class="save-btn"
-                onclick={handleSaveAsNewOrder}
-                disabled={!sheet}
-                style="background-color: #10b981;">Save as New Order</button
-            >
-        </div>
     </div>
 
     <div class="sheet-tabs">
@@ -946,6 +934,10 @@
 </div>
 
 <style>
+    .hidden-input {
+        display: none;
+    }
+
     .sheet-tabs {
         display: flex;
         background: #f1f5f9;

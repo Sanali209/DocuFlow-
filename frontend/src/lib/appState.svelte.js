@@ -10,7 +10,10 @@ export const appState = $state({
     },
     // Tray Management
     partTray: [], // { part, quantity }
-    trayVisible: false
+    trayVisible: false,
+
+    // Global Menu Actions
+    menuActions: [] // Array of { label: string, items: Array<{ label: string, action: () => void }> }
 });
 
 export function setUserRole(role) {
@@ -22,6 +25,15 @@ export function setUserRole(role) {
 
 export function setConfigStatus(status) {
     appState.configStatus = status;
+}
+
+// Menu Management
+export function setMenuActions(actions) {
+    appState.menuActions = actions;
+}
+
+export function clearMenuActions() {
+    appState.menuActions = [];
 }
 
 // Tray helper functions exported below
