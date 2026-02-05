@@ -1,6 +1,7 @@
 <script>
     import { onMount } from "svelte";
     import JournalEntryModal from "./JournalEntryModal.svelte";
+    import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
     import {
         fetchJournalEntries,
         createJournalEntry,
@@ -35,6 +36,10 @@
         }
     }
 
+    function toggleForm() {
+        showForm = !showForm;
+    }
+
     onMount(() => {
         newEntryAuthor = localStorage.getItem("journal_author") || "";
         loadEntries();
@@ -45,8 +50,19 @@
         };
         window.addEventListener('journal-entries-updated', handleJournalUpdated);
         
+        setMenuActions([
+            {
+                label: "Journal",
+                items: [
+                    { label: "New Entry", action: toggleForm },
+                    { label: "Refresh", action: loadEntries }
+                ]
+            }
+        ]);
+
         return () => {
             window.removeEventListener('journal-entries-updated', handleJournalUpdated);
+            clearMenuActions();
         };
     });
 
@@ -141,9 +157,6 @@
                 <option value="done">Done</option>
             </select>
         </div>
-        <button class="add-btn" onclick={() => (showForm = !showForm)}>
-            {showForm ? "Cancel" : "+ New Entry"}
-        </button>
     </div>
 
     {#if showForm}
@@ -272,14 +285,6 @@
         border: 1px solid #e2e8f0;
         border-radius: 6px;
         font-family: inherit;
-    }
-    .add-btn {
-        background: #0f172a;
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
     }
     .entry-form {
         background: white;

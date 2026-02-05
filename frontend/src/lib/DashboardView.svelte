@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { fetchDocuments, fetchMaterials } from './api.js';
+    import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
 
     let stats = $state({
         totalDocuments: 0,
@@ -36,6 +37,18 @@
 
     onMount(() => {
         loadDashboardData();
+        setMenuActions([
+            {
+                label: "Dashboard",
+                items: [
+                    { label: "Refresh", action: loadDashboardData }
+                ]
+            }
+        ]);
+
+        return () => {
+            clearMenuActions();
+        };
     });
 
     async function loadDashboardData() {

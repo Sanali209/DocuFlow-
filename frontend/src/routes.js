@@ -6,6 +6,7 @@ import PartsView from "./lib/PartsView.svelte";
 import GncView from "./lib/GncView.svelte";
 import StockView from "./lib/StockView.svelte";
 import SetupView from "./lib/SetupView.svelte";
+import SettingsView from "./lib/SettingsView.svelte";
 
 // Define the routes
 export default {
@@ -16,5 +17,6 @@ export default {
     "/parts": PartsView,
     "/gnc": GncView,
     "/stock": StockView,
-    "/setup": SetupView
+    "/setup": SetupView,
+    "/settings": SettingsView
 };

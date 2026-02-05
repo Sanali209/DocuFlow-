@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { fetchStock, createStockItem, deleteStockItem, fetchMaterials } from './api';
+    import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
 
     let items = $state([]);
     let materials = $state([]);
@@ -32,6 +33,10 @@
         }
     }
 
+    function toggleAddForm() {
+        showAddForm = !showAddForm;
+    }
+
     async function handleAdd() {
         if (!newItem.material_id) return;
         try {
@@ -56,15 +61,27 @@
         }
     }
 
-    onMount(loadData);
+    onMount(() => {
+        loadData();
+        setMenuActions([
+            {
+                label: "Stock",
+                items: [
+                    { label: "Add Stock", action: toggleAddForm },
+                    { label: "Refresh", action: loadData }
+                ]
+            }
+        ]);
+
+        return () => {
+            clearMenuActions();
+        };
+    });
 </script>
 
 <div class="view-container">
     <div class="header">
         <h2>Stock Management</h2>
-        <button class="primary-btn" onclick={() => showAddForm = !showAddForm}>
-            {showAddForm ? 'Cancel' : 'Add Stock'}
-        </button>
     </div>
 
     {#if showAddForm}

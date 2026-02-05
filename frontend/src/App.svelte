@@ -2,14 +2,11 @@
     import { onMount } from "svelte";
     import Router, { push, location } from "./lib/Router.svelte";
     import routes from "./routes";
-    import Sidebar from "./lib/Sidebar.svelte";
-    import SettingsModal from "./lib/SettingsModal.svelte";
+    import Header from "./lib/Header.svelte";
     import Modal from "./lib/Modal.svelte";
     import { appState, setConfigStatus } from "./lib/appState.svelte.js";
 
     import "./lib/design_system.css";
-
-    let isSettingsOpen = $state(false);
 
     onMount(async () => {
         try {
@@ -29,40 +26,18 @@
             push("/setup");
         }
     });
-
-    function openSettings() {
-        isSettingsOpen = true;
-    }
 </script>
 
 <div class="app-container">
     {#if location.path !== "/setup"}
-        <Sidebar />
+        <Header />
     {/if}
 
     <main class="main-content">
-        <div class="top-bar">
-            <div class="spacer"></div>
-            <button
-                class="settings-btn"
-                onclick={openSettings}
-                title="Settings"
-            >
-                ⚙️
-            </button>
-        </div>
-
         <div class="route-content">
             <Router {routes} />
         </div>
     </main>
-
-    <Modal isOpen={isSettingsOpen} close={() => (isSettingsOpen = false)}>
-        <SettingsModal
-            isOpen={isSettingsOpen}
-            close={() => (isSettingsOpen = false)}
-        />
-    </Modal>
 </div>
 
 <style>
@@ -73,6 +48,7 @@
 
     .app-container {
         display: flex;
+        flex-direction: column;
         min-height: 100vh;
     }
 
@@ -81,32 +57,7 @@
         display: flex;
         flex-direction: column;
         overflow-x: hidden;
-    }
-
-    .top-bar {
-        height: 48px;
-        display: flex;
-        align-items: center;
-        padding: 0 1rem;
-        background: white;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .spacer {
-        flex: 1;
-    }
-
-    .settings-btn {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        cursor: pointer;
-        padding: 0.5rem;
-        border-radius: 50%;
-        transition: background 0.2s;
-    }
-    .settings-btn:hover {
-        background: #e2e8f0;
+        background-color: #f8fafc;
     }
 
     .route-content {
