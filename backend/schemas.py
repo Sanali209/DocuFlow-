@@ -234,6 +234,9 @@ class Setting(BaseModel):
     class Config:
         from_attributes = True
 
+class DatabaseConfig(BaseModel):
+    database_path: str
+
 # Update JournalEntry to have document info if needed (using DocumentBase to avoid recursion loop with Document.journal_entries)
 class JournalEntryWithDoc(JournalEntry):
     document: Optional[DocumentBase] = None
@@ -335,3 +338,7 @@ class GNCProject(BaseModel):
     sheets: List[GNCProjectSheet] = []
     inventory: List[Task] = [] # Tasks/Parts to be placed
     stock: List[GNCStockItem] = [] # Local stock available for this session
+
+class GNCProjectUpdate(BaseModel):
+    order_id: int
+    sheets: List[GNCProjectSheet]

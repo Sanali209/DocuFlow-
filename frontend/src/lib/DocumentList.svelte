@@ -9,6 +9,7 @@
         updateJournalEntry,
         downloadDocumentZip,
     } from "./api.js";
+    import { push } from "./Router.svelte";
     import Modal from "./Modal.svelte";
     import DocumentView from "./DocumentView.svelte";
     import DocumentTasks from "./DocumentTasks.svelte";
@@ -367,7 +368,7 @@
                     <select
                         value={doc.status}
                         onchange={(e) =>
-                            handleStatusChange(doc, e.target.value)}
+                            handleStatusChange(doc, e.currentTarget.value)}
                         class="status-select {doc.status}"
                     >
                         <option
@@ -650,6 +651,15 @@
                                         }}
                                     >
                                         📦 Download Zip
+                                    </button>
+                                    <button
+                                        class="dropdown-item"
+                                        onclick={() => {
+                                            push(`/gnc?orderId=${doc.id}`);
+                                            closeDropdown();
+                                        }}
+                                    >
+                                        ⚙️ Edit in GNC Editor
                                     </button>
                                 {/if}
                                 <button

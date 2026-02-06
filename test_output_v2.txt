@@ -7,7 +7,8 @@ plugins: anyio-4.3.0, asyncio-1.2.0, mock-3.15.0, qt-4.5.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 collecting ... collected 1 item
 
-backend/tests/test_gnc_fidelity.py::test_gnc_multi_part_nesting FAILED   [100%]
+backend/tests/test_gnc_fidelity.py::test_gnc_multi_part_nesting Generated 18 contour lines (Source had 190)
+FAILED
 
 ================================== FAILURES ===================================
 _________________________ test_gnc_multi_part_nesting _________________________
@@ -59,15 +60,18 @@ _________________________ test_gnc_multi_part_nesting _________________________
         lines = generated.splitlines()
     
         # Verification 1: Count contours
-        # The source part has some number of contours. Let's say N.
-        # Total contours should be 2*N.
-        n_source_contours = len(source_part.contours)
+        # Count how many (==== CONTOUR lines were in the original part
+        n_source_contour_headers = content.count("(==== CONTOUR")
+    
         contour_lines = [l for l in lines if "(==== CONTOUR" in l]
->       assert len(contour_lines) == 2 * n_source_contours
-E       AssertionError: assert 18 == (2 * 10)
+        print(f"Generated {len(contour_lines)} contour lines (Source had {n_source_contour_headers})")
+    
+>       assert len(contour_lines) == 2 * n_source_contour_headers, f"Expected {2*n_source_contour_headers} contours, got {len(contour_lines)}"
+E       AssertionError: Expected 380 contours, got 18
+E       assert 18 == (2 * 190)
 E        +  where 18 = len(['(==== CONTOUR  1 ====)', '(==== CONTOUR  2 ====)', '(==== CONTOUR  3 ====)', '(==== CONTOUR  4 ====)', '(==== CONTOUR  5 ====)', '(==== CONTOUR  6 ====)', ...])
 
-backend\tests\test_gnc_fidelity.py:59: AssertionError
+backend\tests\test_gnc_fidelity.py:61: AssertionError
 =========================== short test summary info ===========================
 FAILED backend/tests/test_gnc_fidelity.py::test_gnc_multi_part_nesting - Asse...
-============================== 1 failed in 0.42s ==============================
+============================== 1 failed in 0.45s ==============================

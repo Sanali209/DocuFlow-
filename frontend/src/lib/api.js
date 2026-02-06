@@ -40,6 +40,14 @@ export async function fetchDocuments(search = '', type = '', status = '', sortBy
     return await response.json();
 }
 
+export async function fetchDashboardStats() {
+    const response = await fetch(`${API_URL}/dashboard/stats`, {
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch dashboard stats');
+    return await response.json();
+}
+
 export async function fetchTags() {
     const response = await fetch(`${API_URL}/tags`, {
         headers: getHeaders()
@@ -219,11 +227,11 @@ export async function createTask(documentId, task) {
     return await response.json();
 }
 
-export async function saveAsNewOrder(name, sheet, originalDocumentId) {
+export async function saveAsNewOrder(name, sheets, originalDocumentId) {
     const response = await fetch(`${API_URL}/documents/save-as-new-order`, {
         method: 'POST',
         headers: getHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ name, sheet, original_document_id: originalDocumentId }),
+        body: JSON.stringify({ name, sheets, original_document_id: originalDocumentId }),
     });
     if (!response.ok) {
         const error = await response.json().catch(() => ({}));
@@ -563,12 +571,7 @@ export async function deleteAssignee(id) {
 
 
 // GNC Projects
-export async function fetchStockTemplates() {
-    const response = await fetch(`${API_URL}/api/gnc/stock-templates`, {
-        headers: getHeaders(),
-    });
-    return await response.json();
-}
+
 
 export async function fetchLibraryParts() {
     const response = await fetch(`${API_URL}/api/gnc/library-parts`, {
@@ -590,5 +593,37 @@ export async function saveOrderNesting(project) {
         headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(project),
     });
+    return await response.json();
+}
+
+export async function fetchOrderNestingProject(orderId) {
+    const response = await fetch(`${API_URL}/api/gnc/orders/${orderId}/project`, {
+        headers: getHeaders(),
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Failed to fetch nesting project');
+    }
+    return await response.json();
+}
+
+export async function fetchDatabaseConfig() {
+    const response = await fetch(`${API_URL}/settings/database-config`, {
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch database config');
+    return await response.json();
+}
+
+export async function updateDatabaseConfig(config) {
+    const response = await fetch(`${API_URL}/settings/database-config`, {
+        method: 'PUT',
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(config),
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Failed to update database config');
+    }
     return await response.json();
 }

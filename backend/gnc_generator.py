@@ -1,75 +1,12 @@
 import re
 from .gnc_parser import GNCSheet, GNCPart, GNCContour, GNCCommand
 
+
 class GNCGenerator:
     def __init__(self):
-        pass
-
-    def generate(self, sheet: GNCSheet) -> str:
-        """
-        Reconstructs the GNC file content from the GNCSheet object.
-        Applies updates from metadata to the corresponding lines.
-        """
-        lines = []
-
-        # Flatten structure: Parts -> Contours -> Commands
-
-        for part in sheet.parts:
-            # Note: The parser now preserves the `(PART NAME:...)` line as a METADATA command
-            # in the part's contour list (usually Contour 0).
-            # So we do NOT need to synthesize it here.
-
-            for contour in part.contours:
-                for cmd in contour.commands:
-                    line_text = cmd.original_text
-
-                    # Update SHEET line if present
-                    if "(*SHEET" in line_text or "(*SHEET" in line_text.upper():
-                        if sheet.program_width is not None and sheet.program_height is not None:
-                            # Reconstruct SHEET line with updated values
-                            param_5 = sheet.metadata.get('sheet_param_5', '1')
-                            param_6 = sheet.metadata.get('sheet_param_6', '0.0')
-                            param_7 = sheet.metadata.get('sheet_param_7', '0.0')
-                            
-                            # Preserve line number prefix if present (for _801 format)
-                            if line_text.strip().startswith('N'):
-                                # Extract line number
-                                n_match = re.match(r'(N\d+\s+)', line_text.strip())
-                                prefix = n_match.group(1) if n_match else ''
-                                line_text = f"{prefix}(*SHEET {sheet.program_width} {sheet.program_height} {sheet.thickness or 0} {sheet.cut_count or 1} {param_5} {param_6} {param_7} )"
-                            else:
-                                line_text = f"(*SHEET {sheet.program_width} {sheet.program_height} {sheet.thickness or 0} {sheet.cut_count or 1} {param_5} {param_6} {param_7} )"
-
-                    # Update P-Codes in Metadata lines
-                    if cmd.type == "METADATA":
-                        # Office format: *N P-codes (existing)
-                        if line_text.strip().startswith("*N") and "P" in line_text:
-                            # Check if it's _801 format (P660=X,P150=Y,P151=Z)
-                            if "P660=" in line_text:
-                                # _801 format P-codes
-                                p660 = contour.metadata.get('P660', '1')
-                                p150 = contour.metadata.get('P150', '1')
-                                p151 = contour.metadata.get('P151', '1')
-                                line_text = re.sub(
-                                    r'P660=\d+,P150=\d+,P151=\d+',
-                                    f'P660={p660},P150={p150},P151={p151}',
-                                    line_text
-                                )
-                            else:
-                                # Office format: P###=value
-                                def replace_pcode(match):
-                                    key = match.group(1)
-                                    meta_key = f"P{key}"
-                                    if meta_key in contour.metadata:
-                                        new_val = str(contour.metadata[meta_key])
-                                        return f"P{key}={new_val}"
-                                    return match.group(0)
-
-                                line_text = re.sub(r'P(\d+)=([^\s,]+)', replace_pcode, line_text)
-
-                    lines.append(line_text)
-
-        return "\n".join(lines)
+        self.contour_counter = 1
+        self.n_code_counter = 1005
+        self.n_code_step = 5
 
     def _apply_offsets(self, line_text: str, offset_x: float, offset_y: float) -> str:
         """
@@ -80,7 +17,6 @@ class GNCGenerator:
             return line_text
 
         # Regex to find X and Y values
-        # We look for X followed by a number, potentially negative/decimal
         def replace_coord(match):
             axis = match.group(1).upper()
             val_str = match.group(2)
@@ -104,85 +40,94 @@ class GNCGenerator:
             
         return line_text
 
+    def _renumber_line(self, line_text: str) -> str:
+        """
+        Renumber CONTOUR IDs and N-codes globally.
+        """
+        # 1. Renumber Contours: (==== CONTOUR  X ====)
+        if "(==== CONTOUR" in line_text.upper():
+            line_text = re.sub(r'\(={4,}\s*CONTOUR\s+\d+\s+={4,}\)', 
+                               f"(==== CONTOUR  {self.contour_counter} ====)", 
+                               line_text, flags=re.IGNORECASE)
+            self.contour_counter += 1
+            return line_text
+
+        # 2. Renumber N-codes: N1005 ... SSD[SD.Cr_Nb1=1005]
+        if line_text.strip().startswith('N') or "SSD[SD.Cr_Nb1=" in line_text:
+            # Replace N code
+            new_n = self.n_code_counter
+            line_text = re.sub(r'^N\d+', f"N{new_n}", line_text.strip())
+            
+            # Replace SSD Cr_Nb1 if present
+            line_text = re.sub(r'SSD\[SD\.Cr_Nb1=\d+\]', f"SSD[SD.Cr_Nb1={new_n}]", line_text)
+            
+            self.n_code_counter += self.n_code_step
+            return line_text
+
+        return line_text
+
     def generate(self, sheet: GNCSheet) -> str:
         """
         Reconstructs the GNC file content from the GNCSheet object.
-        Applies updates from metadata to the corresponding lines.
+        Applies updates from metadata and performs global renumbering.
         """
+        self.contour_counter = 1
+        
+        # Initialize N-code from metadata or default
+        self.n_code_counter = sheet.metadata.get('n_code_start', 1005)
+        self.n_code_step = sheet.metadata.get('n_code_step', 5)
+        
         lines = []
 
-        # Flatten structure: Parts -> Contours -> Commands
+        # 1. Headers
+        if sheet.header_commands:
+            for cmd in sheet.header_commands:
+                lines.append(cmd.original_text)
+        else:
+            # Fallback Template
+            lines.append(f"(Generated by DocuFlow GNC Editor)")
+            if sheet.metadata.get('model'):
+                lines.append(f"(*MODEL {sheet.metadata['model']})")
+            if sheet.program_width and sheet.program_height:
+                lines.append(f"(*SHEET {sheet.program_width} {sheet.program_height} {sheet.thickness or 0} {sheet.cut_count or 1} 1 0.0 0.0 )")
+            lines.append("G71 G90")
+            lines.append("CALL P999998")
+            lines.append("G54")
 
+        # 2. Parts
         for part in sheet.parts:
-            # Note: The parser now preserves the `(PART NAME:...)` line as a METADATA command
-            # in the part's contour list (usually Contour 0).
-            
-            # Determine Offsets for this Part
-            # We use loose typing access because Pydantic model might not have x/y fields defined
-            # if they were added dynamically in frontend/JSON. 
-            # But wait, GNCSheet.parts is List[GNCPart]. GNCPart doesn't have x/y.
-            # We need to make sure the data passed to generate() includes x/y or logic to extract it.
-            # The input `sheet` is a GNCSheet object.
-            # If we want to support offsets, we need to know them.
-            # The frontend sends JSON which *has* x/y. 
-            # But FastAPI/Pydantic validation might strip extra fields if not in model!
-            # We must update GNCPart model to include x/y (Defaults to 0).
-            
+            # Part separator
+            lines.append("(*****Part info*****)")
+            lines.append(f"(PART NAME:{part.name or 'UNKNOWN'})")
+
             offset_x = getattr(part, 'x', 0.0) or 0.0
             offset_y = getattr(part, 'y', 0.0) or 0.0
 
             for contour in part.contours:
                 for cmd in contour.commands:
                     line_text = cmd.original_text
-                    if not line_text: continue
+                    if not line_text:
+                        continue
 
-                    # Update SHEET line if present
-                    if "(*SHEET" in line_text or "(*SHEET" in line_text.upper():
-                        if sheet.program_width is not None and sheet.program_height is not None:
-                            # Reconstruct SHEET line with updated values
+                    # Skip redundant Part Info/Contour lines if they are already in the stream 
+                    # from parsing, because we generate them explicitly above.
+                    if "(PART NAME:" in line_text.upper():
+                        continue
+
+                    # Update SHEET line if present (in case it was in header_commands or part metadata)
+                    if "(*SHEET" in line_text.upper():
+                         if sheet.program_width is not None and sheet.program_height is not None:
                             param_5 = sheet.metadata.get('sheet_param_5', '1')
                             param_6 = sheet.metadata.get('sheet_param_6', '0.0')
                             param_7 = sheet.metadata.get('sheet_param_7', '0.0')
-                            
-                            # Preserve line number prefix if present (for _801 format)
-                            if line_text.strip().startswith('N'):
-                                # Extract line number
-                                n_match = re.match(r'(N\d+\s+)', line_text.strip())
-                                prefix = n_match.group(1) if n_match else ''
-                                line_text = f"{prefix}(*SHEET {sheet.program_width} {sheet.program_height} {sheet.thickness or 0} {sheet.cut_count or 1} {param_5} {param_6} {param_7} )"
-                            else:
-                                line_text = f"(*SHEET {sheet.program_width} {sheet.program_height} {sheet.thickness or 0} {sheet.cut_count or 1} {param_5} {param_6} {param_7} )"
+                            line_text = f"(*SHEET {sheet.program_width} {sheet.program_height} {sheet.thickness or 0} {sheet.cut_count or 1} {param_5} {param_6} {param_7} )"
 
-                    # Update P-Codes in Metadata lines
-                    if cmd.type == "METADATA":
-                        # Office format: *N P-codes (existing)
-                        if line_text.strip().startswith("*N") and "P" in line_text:
-                            # Check if it's _801 format (P660=X,P150=Y,P151=Z)
-                            if "P660=" in line_text:
-                                # _801 format P-codes
-                                p660 = contour.metadata.get('P660', '1')
-                                p150 = contour.metadata.get('P150', '1')
-                                p151 = contour.metadata.get('P151', '1')
-                                line_text = re.sub(
-                                    r'P660=\d+,P150=\d+,P151=\d+',
-                                    f'P660={p660},P150={p150},P151={p151}',
-                                    line_text
-                                )
-                            else:
-                                # Office format: P###=value
-                                def replace_pcode(match):
-                                    key = match.group(1)
-                                    meta_key = f"P{key}"
-                                    if meta_key in contour.metadata:
-                                        new_val = str(contour.metadata[meta_key])
-                                        return f"P{key}={new_val}"
-                                    return match.group(0)
+                    # Renumber
+                    line_text = self._renumber_line(line_text)
 
-                                line_text = re.sub(r'P(\d+)=([^\s,]+)', replace_pcode, line_text)
-                    
-                    # Apply Coordinate Offsets (for G-codes)
-                    if cmd.type not in ["METADATA", "COMMENT"]:
-                         line_text = self._apply_offsets(line_text, offset_x, offset_y)
+                    # Apply Coordinate Offsets
+                    if cmd.type not in ["METADATA", "COMMENT", "HEADER"]:
+                        line_text = self._apply_offsets(line_text, offset_x, offset_y)
 
                     lines.append(line_text)
 

@@ -14,18 +14,7 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/stock-templates", response_model=List[schemas.GNCStockItem])
-async def get_stock_templates():
-    """
-    Returns common sheet templates for nesting.
-    These are 'session' stock items, not necessarily from the warehouse DB.
-    """
-    templates = [
-        {"id": 1, "name": "Standard Sheet (3000x1500)", "width": 3000, "height": 1500, "material": "Steel", "quantity": 10},
-        {"id": 2, "name": "Small Sheet (2000x1000)", "width": 2000, "height": 1000, "material": "Steel", "quantity": 5},
-        {"id": 3, "name": "Square Sheet (1250x1250)", "width": 1250, "height": 1250, "material": "Aluminum", "quantity": 2},
-    ]
-    return templates
+
 
 @router.get("/library-parts", response_model=List[schemas.Part])
 async def get_library_parts(db: Session = Depends(get_db)):
@@ -44,14 +33,42 @@ async def get_order_tasks(order_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Order not found")
     return doc.tasks
 
+@router.get("/orders/{order_id}/project")
+async def get_order_nesting_project(order_id: int, db: Session = Depends(get_db)):
+    """
+    Returns the full nesting project state (nesting_project.json) for an order.
+    """
+    doc = db.query(models.Document).filter(models.Document.id == order_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    # Standard path calculation
+    base_path = "static/uploads/gncEditor"
+    safe_name = "".join(c for c in doc.name if c.isalnum() or c in (' ', '-', '_')).strip()
+    order_folder = f"{doc.id}_{safe_name}"
+    project_file = os.path.join(base_path, order_folder, "nesting_project.json")
+    
+    if not os.path.exists(project_file):
+        raise HTTPException(status_code=404, detail="Nesting project state not found for this order")
+        
+    import json
+    with open(project_file, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
 @router.post("/save-order-nesting")
 async def save_order_nesting(project: schemas.GNCProject, db: Session = Depends(get_db)):
     """
-    Saves the multi-sheet nesting result.
-    In a real implementation, this would generate GNC files for each sheet and update the order tasks.
-    For now, we'll simulate the save success and log the action.
+    Saves or updates the multi-sheet nesting result for an order.
+    Uses OrderService to persist GNC files and nesting_project.json.
     """
-    # TODO: Implement GNC generation and file saving logic
-    # project.sheets contains the GNC data for each sheet.
-    
-    return {"status": "success", "message": f"Saved project '{project.name}' with {len(project.sheets)} sheets."}
+    try:
+        from ..services.orders import OrderService
+        if project.order_id:
+            # Update existing
+            return OrderService.update_order_nesting(db, project.order_id, [s.model_dump() for s in project.sheets])
+        else:
+            # Create new (if name provided)
+            return OrderService.save_multi_sheet_order(db, [s.model_dump() for s in project.sheets], project.name)
+    except Exception as e:
+        print(f"Error saving order nesting: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

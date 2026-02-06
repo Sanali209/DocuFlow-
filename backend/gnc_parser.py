@@ -29,13 +29,18 @@ class GNCPart(BaseModel):
     id: int
     contours: List[GNCContour] = []
     name: Optional[str] = None
+    x: Optional[float] = 0.0
+    y: Optional[float] = 0.0
     metadata: Dict[str, Any] = {}
 
     # Stats
     corner_count: int = 0
 
 class GNCSheet(BaseModel):
+    name: Optional[str] = None
+    task_id: Optional[int] = None
     parts: List[GNCPart] = []
+    header_commands: List[GNCCommand] = [] # Captured global headers
     metadata: Dict[str, Any] = {}
 
     # Stats
@@ -91,6 +96,21 @@ class GNCParser:
 
         lines = content.splitlines()
         part_counter = 1
+        
+        # Detect starting N-code and step
+        n_codes_found = []
+        for line in lines[:200]: # Look at first 200 lines for efficiency
+            match = re.search(r'^N(\d+)', line.strip())
+            if match:
+                n_codes_found.append(int(match.group(1)))
+                if len(n_codes_found) >= 2:
+                    break
+        
+        if len(n_codes_found) >= 2:
+            sheet.metadata['n_code_start'] = n_codes_found[0]
+            sheet.metadata['n_code_step'] = n_codes_found[1] - n_codes_found[0]
+        elif len(n_codes_found) == 1:
+            sheet.metadata['n_code_start'] = n_codes_found[0]
 
         for i, line in enumerate(lines):
             line = line.strip()
@@ -159,11 +179,8 @@ class GNCParser:
                 current_part = GNCPart(id=part_counter, name=p_name)
                 part_counter += 1
                 sheet.parts.append(current_part)
-                current_contour = None
-
-                if current_contour is None:
-                    current_contour = GNCContour(id=0) # 0 for header/metadata
-                    current_part.contours.append(current_contour)
+                current_contour = GNCContour(id=1)
+                current_part.contours.append(current_contour)
 
                 cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
                 current_contour.commands.append(cmd)
@@ -218,11 +235,10 @@ class GNCParser:
 
             if commands_found:
                 if current_part is None:
-                    # Use filename as default part name if not set
-                    default_name = os.path.basename(filename).replace('.gnc', '').replace('.GNC', '')
-                    current_part = GNCPart(id=part_counter, name=f"{default_name} (Auto)")
-                    part_counter += 1
-                    sheet.parts.append(current_part)
+                    # Capture header commands before any part is detected
+                    cmd = GNCCommand(type="HEADER", line_number=i+1, original_text=line)
+                    sheet.header_commands.append(cmd)
+                    continue
 
                 if current_contour is None:
                     current_contour = GNCContour(id=1)
@@ -258,11 +274,11 @@ class GNCParser:
             elif coord_pattern.search(line):
                 # Modal Line
                 if current_part is None:
-                    # Use filename as default part name if not set
-                    default_name = os.path.basename(filename).replace('.gnc', '').replace('.GNC', '')
-                    current_part = GNCPart(id=part_counter, name=f"{default_name} (Auto)")
-                    part_counter += 1
-                    sheet.parts.append(current_part)
+                    # Capture header commands before any part is detected
+                    cmd = GNCCommand(type="HEADER", line_number=i+1, original_text=line)
+                    sheet.header_commands.append(cmd)
+                    continue
+
                 if current_contour is None:
                     current_contour = GNCContour(id=1)
                     current_part.contours.append(current_contour)
@@ -284,13 +300,13 @@ class GNCParser:
                 # Yes, unless we want to strip it. To support "faithful regeneration", we should keep it.
 
                 if current_part is None:
-                    # Use filename as default part name if not set
-                    default_name = os.path.basename(filename).replace('.gnc', '').replace('.GNC', '')
-                    current_part = GNCPart(id=part_counter, name=f"{default_name} (Auto)")
-                    part_counter += 1
-                    sheet.parts.append(current_part)
+                    # Capture header commands before any part is detected
+                    cmd = GNCCommand(type="HEADER", line_number=i+1, original_text=line)
+                    sheet.header_commands.append(cmd)
+                    continue
+
                 if current_contour is None:
-                    current_contour = GNCContour(id=0)
+                    current_contour = GNCContour(id=1)
                     current_part.contours.append(current_contour)
 
                 cmd = GNCCommand(type="METADATA", line_number=i+1, original_text=line)
@@ -310,6 +326,11 @@ class GNCParser:
         # If it's a sheet (nesting file) OR we found real parts, discard the Auto ones
         is_sheet = sheet.program_width is not None or sheet.thickness is not None
         if (real_parts and auto_parts) or (is_sheet and auto_parts):
+            # Preserve commands from Auto parts (like header comments) by moving them to the first real part
+            if real_parts:
+                for auto_p in auto_parts:
+                    # Prepend auto_p contours to the first real part's contours
+                    real_parts[0].contours = auto_p.contours + real_parts[0].contours
             sheet.parts = real_parts
         
         sheet.total_parts = len(sheet.parts)

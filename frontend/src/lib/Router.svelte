@@ -68,6 +68,16 @@
         ActiveComponent = matched;
     });
 
+    let queryProps = $derived.by(() => {
+        if (typeof window === "undefined") return {};
+        const params = new URLSearchParams(window.location.search);
+        const p = {};
+        for (const [k, v] of params.entries()) {
+            p[k] = v;
+        }
+        return p;
+    });
+
     onMount(() => {
         window.addEventListener("popstate", handleNavigation);
         return () => {
@@ -77,7 +87,7 @@
 </script>
 
 {#if ActiveComponent}
-    <ActiveComponent />
+    <ActiveComponent {...queryProps} />
 {:else}
     <p>404 Not Found</p>
 {/if}

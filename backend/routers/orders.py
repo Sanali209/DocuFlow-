@@ -24,7 +24,7 @@ def create_order_endpoint(
 
 class OrderFromGNC(BaseModel):
     name: str
-    sheet: Dict[str, Any]
+    sheets: List[Dict[str, Any]]
     original_document_id: int | None = None
 
 @router.post("/documents/save-as-new-order", response_model=schemas.Document)
@@ -33,7 +33,7 @@ def save_as_new_order(
     db: Session = Depends(get_db)
 ):
     try:
-        return OrderService.save_order_from_nested_sheet(db, item.sheet, item.name, item.original_document_id)
+        return OrderService.save_multi_sheet_order(db, item.sheets, item.name, item.original_document_id)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=str(e))

@@ -11,7 +11,7 @@ from starlette.requests import Request
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 from .sync_service import SyncService
-from .routers import documents, tasks, settings, assignees, orders, parts_gnc, gnc_projects
+from .routers import documents, tasks, settings, assignees, orders, parts_gnc, gnc_projects, dashboard
 from .startup import router as startup_router
 from .gnc_endpoints import router as gnc_router
 from .warehouse import router as warehouse_router
@@ -95,6 +95,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(startup_router)
 app.include_router(gnc_router)
 app.include_router(warehouse_router)
+app.include_router(dashboard.router)
 app.include_router(documents.router)
 app.include_router(tasks.router)
 app.include_router(settings.router)

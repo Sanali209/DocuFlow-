@@ -1,16 +1,28 @@
 <script>
     import { onMount } from "svelte";
-    import { fetchSetting, updateSetting, testPath } from "./api";
+    import {
+        fetchSetting,
+        updateSetting,
+        testPath,
+        fetchDatabaseConfig,
+        updateDatabaseConfig,
+    } from "./api";
 
-    let activeTab = $state("general"); // 'general' | 'nesting'
+    let activeTab = $state("general"); // 'general' | 'nesting' | 'database'
     let docNameRegex = $state("");
     let userRole = $state("admin");
     let syncMihtavPath = $state("");
     let syncSidraPath = $state("");
 
+    // Database Settings
+    let databasePath = $state("");
+    let refreshing = $state(false);
+
     // Nesting Settings
     let nestingRotations = $state(4);
     let nestingPopulation = $state(10);
+    let nestingSpacing = $state(5);
+    let gncLibraryPageSize = $state(24);
 
     let loading = $state(true);
     let testing = $state({ mihtav: false, sidra: false });
@@ -25,6 +37,9 @@
                 sidraSetting,
                 rotSetting,
                 popSetting,
+                spacSetting,
+                pageSizeSetting,
+                dbConfig,
             ] = await Promise.all([
                 fetchSetting("doc_name_regex").catch(() => ({ value: "" })),
                 fetchSetting("sync_mihtav_path").catch(() => ({ value: "" })),
@@ -33,12 +48,24 @@
                 fetchSetting("nesting_population").catch(() => ({
                     value: "10",
                 })),
+                fetchSetting("nesting_spacing").catch(() => ({
+                    value: "5",
+                })),
+                fetchSetting("gnc_library_page_size").catch(() => ({
+                    value: "24",
+                })),
+                fetchDatabaseConfig().catch(() => ({
+                    database_path: "sql_app.db",
+                })),
             ]);
             docNameRegex = regexSetting.value || "";
             syncMihtavPath = mihtavSetting.value || "";
             syncSidraPath = sidraSetting.value || "";
             nestingRotations = parseInt(rotSetting.value) || 4;
             nestingPopulation = parseInt(popSetting.value) || 10;
+            nestingSpacing = parseFloat(spacSetting?.value) || 5;
+            gncLibraryPageSize = parseInt(pageSizeSetting?.value) || 24;
+            databasePath = dbConfig.database_path;
 
             // Load role
             const storedRole = localStorage.getItem("user_role");
@@ -76,10 +103,26 @@
                 updateSetting("doc_name_regex", docNameRegex),
                 updateSetting("sync_mihtav_path", syncMihtavPath),
                 updateSetting("sync_sidra_path", syncSidraPath),
-                updateSetting("nesting_rotations", nestingRotations.toString()),
                 updateSetting(
                     "nesting_population",
                     nestingPopulation.toString(),
+                ),
+                updateSetting("nesting_rotations", nestingRotations.toString()),
+                updateSetting("nesting_spacing", nestingSpacing.toString()),
+                updateSetting(
+                    "gnc_library_page_size",
+                    gncLibraryPageSize.toString(),
+                ),
+                updateDatabaseConfig({ database_path: databasePath }).then(
+                    (res) => {
+                        if (res.ok) {
+                            refreshing = true;
+                            // Wait for backend to reload (usually ~1-2s)
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 3000);
+                        }
+                    },
                 ),
             ]);
 
@@ -87,8 +130,9 @@
             localStorage.setItem("user_role", userRole);
 
             // Reload page to apply role changes globally
-            window.location.reload();
-
+            if (!refreshing) {
+                window.location.reload();
+            }
         } catch (e) {
             alert("Failed to save settings. Ensure you have Admin privileges.");
             console.error(e);
@@ -123,6 +167,12 @@
                 >
                     Nesting
                 </button>
+                <button
+                    class:active={activeTab === "database"}
+                    onclick={() => (activeTab = "database")}
+                >
+                    Database
+                </button>
             </div>
 
             <div class="tab-content">
@@ -142,12 +192,13 @@
 
                         <h3 class="section-title">Sync Folder Paths</h3>
                         <p class="section-hint">
-                            Configure paths to network folders for automatic file
-                            import.
+                            Configure paths to network folders for automatic
+                            file import.
                         </p>
 
                         <div class="field path-field">
-                            <label for="mihtav-path">Mihtav (Orders) Path</label>
+                            <label for="mihtav-path">Mihtav (Orders) Path</label
+                            >
                             <div class="path-input-group">
                                 <input
                                     id="mihtav-path"
@@ -166,7 +217,8 @@
                             {#if testResults.mihtav}
                                 <span
                                     class="test-result"
-                                    class:success={testResults.mihtav.accessible}
+                                    class:success={testResults.mihtav
+                                        .accessible}
                                     class:error={!testResults.mihtav.accessible}
                                 >
                                     {testResults.mihtav.accessible
@@ -214,18 +266,41 @@
                                 <option value="operator"
                                     >Operator (Read-Only)</option
                                 >
-                                <option value="admin">Admin (Full Access)</option>
+                                <option value="admin"
+                                    >Admin (Full Access)</option
+                                >
                             </select>
                             <p class="hint">
                                 Switching mode will reload the application.
                             </p>
                         </div>
+                        <hr class="divider" />
+                        <h3 class="section-title">Editor Settings</h3>
+                        <div class="field">
+                            <label for="gnc-page-size"
+                                >GNC Library Page Size</label
+                            >
+                            <input
+                                id="gnc-page-size"
+                                type="number"
+                                bind:value={gncLibraryPageSize}
+                                min="1"
+                                max="100"
+                            />
+                            <p class="hint">
+                                Number of parts to show per page in the GNC
+                                Editor's library.
+                            </p>
+                        </div>
                     </div>
                 {:else if activeTab === "nesting"}
                     <div class="card">
-                        <h3 class="section-title">Auto-Nesting Configuration</h3>
+                        <h3 class="section-title">
+                            Auto-Nesting Configuration
+                        </h3>
                         <p class="section-hint">
-                            Adjust parameters for the nesting algorithm (SVGnest).
+                            Adjust parameters for the nesting algorithm
+                            (SVGnest).
                         </p>
 
                         <div class="field">
@@ -257,6 +332,46 @@
                                 slower.
                             </p>
                         </div>
+
+                        <div class="field">
+                            <label for="spacing">Part Spacing (mm)</label>
+                            <input
+                                id="spacing"
+                                type="number"
+                                bind:value={nestingSpacing}
+                                min="0"
+                                step="0.5"
+                            />
+                            <p class="hint">Minimum distance between parts.</p>
+                        </div>
+                    </div>
+                {:else if activeTab === "database"}
+                    <div class="card">
+                        <h3 class="section-title">Database Storage</h3>
+                        <p class="section-hint">
+                            Configure the location of the SQLite database file.
+                        </p>
+
+                        <div class="field">
+                            <label for="db-path">Database Path</label>
+                            <input
+                                id="db-path"
+                                type="text"
+                                bind:value={databasePath}
+                                placeholder="e.g., sql_app.db or data/production.db"
+                            />
+                            <p class="hint">
+                                Provide a relative or absolute path. If the
+                                directory doesn't exist, it will be created.
+                            </p>
+                        </div>
+
+                        {#if refreshing}
+                            <div class="refresh-overlay">
+                                <div class="spinner"></div>
+                                <p>Applying changes and refreshing system...</p>
+                            </div>
+                        {/if}
                     </div>
                 {/if}
             </div>
@@ -294,7 +409,7 @@
         background: white;
         padding: 2rem;
         border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         border: 1px solid #e2e8f0;
     }
     .field {
@@ -409,5 +524,40 @@
     .tabs button:hover:not(.active) {
         color: #334155;
         background: #f1f5f9;
+    }
+
+    .refresh-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        z-index: 10;
+        border-radius: 8px;
+    }
+
+    .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #0f172a;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .card {
+        position: relative;
     }
 </style>

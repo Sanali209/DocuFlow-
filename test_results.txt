@@ -1,0 +1,43 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\sanal\AppData\Local\Programs\Python\Python311\python.exe
+cachedir: .pytest_cache
+PySide6 6.7.2 -- Qt runtime 6.7.2 -- Qt compiled 6.7.2
+rootdir: D:\github\DocuFlow-
+plugins: anyio-4.3.0, asyncio-1.2.0, mock-3.15.0, qt-4.5.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 2 items
+
+backend/test_gnc_refactor.py::test_gnc_roundtrip FAILED                  [ 50%]
+backend/test_gnc_refactor.py::test_gnc_offsets PASSED                    [100%]
+
+================================== FAILURES ===================================
+_____________________________ test_gnc_roundtrip ______________________________
+
+    def test_gnc_roundtrip():
+        if not os.path.exists(SAMPLE_GNC_PATH):
+            pytest.skip("Sample GNC file not found")
+    
+        with open(SAMPLE_GNC_PATH, "r", encoding="utf-8") as f:
+            original_content = f.read()
+    
+        parser = GNCParser()
+        sheet = parser.parse(original_content, SAMPLE_GNC_PATH)
+    
+        generator = GNCGenerator()
+        generated_content = generator.generate(sheet)
+    
+        # We expect high-fidelity reconstruction
+        # Some whitespace might differ but commands should be identical
+        orig_lines = [l.strip() for l in original_content.splitlines() if l.strip()]
+        gen_lines = [l.strip() for l in generated_content.splitlines() if l.strip()]
+    
+        # For now, let's compare some key lines
+        assert orig_lines[0] == gen_lines[0] # Header comment
+        assert "(*SHEET" in gen_lines[4]
+>       assert "(PART NAME:" in gen_lines[28]
+E       AssertionError: assert '(PART NAME:' in '(*****Part info*****)'
+
+backend\test_gnc_refactor.py:31: AssertionError
+=========================== short test summary info ===========================
+FAILED backend/test_gnc_refactor.py::test_gnc_roundtrip - AssertionError: ass...
+========================= 1 failed, 1 passed in 0.46s =========================

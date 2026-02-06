@@ -57,3 +57,26 @@ def delete_filter_preset(preset_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Preset not found")
     return {"ok": True}
+
+@router.get("/settings/database-config", response_model=schemas.DatabaseConfig)
+def get_db_config(role: str = Depends(verify_admin)):
+    from .. import config
+    return schemas.DatabaseConfig(database_path=config.get_db_path())
+
+@router.put("/settings/database-config")
+def update_db_config(db_config: schemas.DatabaseConfig, role: str = Depends(verify_admin)):
+    from .. import config
+    import pathlib
+    
+    # Save to config file
+    success = config.save_config({"database_path": db_config.database_path})
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to save database configuration")
+
+    # Trigger reload by touching main.py
+    # This works because uvicorn is started with --reload in run_solid.py
+    main_py = pathlib.Path(__file__).parent.parent / "main.py"
+    if main_py.exists():
+        main_py.touch()
+    
+    return {"ok": True, "message": "Database path updated. System is refreshing..."}

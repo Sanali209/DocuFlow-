@@ -9,12 +9,15 @@ self.onmessage = function (e) {
     if (type === 'START_NESTING') {
         const { sheets, inventory, stock, config } = payload;
         const nestingMode = config.nestingMode || 'hull';
+        const spacing = config.spacing !== undefined ? config.spacing : 5;
+        const rotations = config.rotations || 4;
 
         console.log("Worker: START_NESTING received", {
             sheetsCount: sheets.length,
             inventorySize: inventory.length,
             multiSheet: config.multiSheet,
-            mode: nestingMode
+            mode: nestingMode,
+            rotations: rotations
         });
 
         // 1. Prepare Inventory with Welding and Polygon Extraction
@@ -32,7 +35,9 @@ self.onmessage = function (e) {
                     ...item,
                     width: processed.width || item.width || 100,
                     height: processed.height || item.height || 100,
-                    polygon: nestingMode === 'hull' ? processed.polygon : null,
+                    polygon: processed.polygon || null,
+                    minX: processed.minX || 0,
+                    minY: processed.minY || 0,
                     originalRef: item,
                     instanceId: i
                 });
@@ -59,29 +64,58 @@ self.onmessage = function (e) {
         for (let part of partsToPlace) {
             let placed = false;
 
-            for (let sheet of resultSheets) {
-                const area = sheet.nestingArea || {
-                    x: 10, y: 10,
-                    width: (sheet.width || 2000) - 20,
-                    height: (sheet.height || 1000) - 20
-                };
+            // Try different rotations
+            const angleStep = 360 / rotations;
+            for (let r = 0; r < rotations; r++) {
+                const angle = r * angleStep;
+                let rotatedPart = part;
 
-                const pos = findPlacement(part, sheet, area);
-                if (pos) {
-                    const newPartId = Math.max(0, ...resultSheets.flatMap(s => s.parts || []).map(p => p.id), ...placedParts.map(p => p.id)) + 1;
-                    const newPart = {
-                        ...part,
-                        id: newPartId,
-                        x: pos.x,
-                        y: pos.y,
-                        sheetIndex: resultSheets.indexOf(sheet)
-                    };
-                    sheet.parts = [...(sheet.parts || []), newPart];
-                    placedParts.push(newPart);
-                    placed = true;
-                    console.log(`Worker: Placed ${part.name} at ${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}`);
-                    break;
+                if (angle !== 0) {
+                    const rotated = rotatePolygon(part.polygon, angle);
+                    if (rotated) {
+                        const bounds = getPolygonBounds(rotated);
+                        // Normalize
+                        const normalizedPoly = rotated.map(p => ({
+                            x: p.x - bounds.minX,
+                            y: p.y - bounds.minY
+                        }));
+                        rotatedPart = {
+                            ...part,
+                            polygon: normalizedPoly,
+                            width: bounds.width,
+                            height: bounds.height,
+                            rotation: angle
+                        };
+                    }
+                } else {
+                    rotatedPart.rotation = 0;
                 }
+
+                for (let sheet of resultSheets) {
+                    const area = sheet.nestingArea || {
+                        x: 10, y: 10,
+                        width: (sheet.width || 2000) - 20,
+                        height: (sheet.height || 1000) - 20
+                    };
+
+                    const pos = findPlacement(rotatedPart, sheet, area, spacing, config);
+                    if (pos) {
+                        const newPartId = Math.max(0, ...resultSheets.flatMap(s => s.parts || []).map(p => p.id), ...placedParts.map(p => p.id)) + 1;
+                        const newPart = {
+                            ...rotatedPart,
+                            id: newPartId,
+                            x: pos.x,
+                            y: pos.y,
+                            sheetIndex: resultSheets.indexOf(sheet)
+                        };
+                        sheet.parts = [...(sheet.parts || []), newPart];
+                        placedParts.push(newPart);
+                        placed = true;
+                        console.log(`Worker: Placed ${part.name} at ${pos.x.toFixed(1)}, ${pos.y.toFixed(1)} with rotation ${angle}`);
+                        break;
+                    }
+                }
+                if (placed) break;
             }
 
             // New Sheet if needed
@@ -96,20 +130,48 @@ self.onmessage = function (e) {
                 };
 
                 const area = { x: 10, y: 10, width: newSheet.width - 20, height: newSheet.height - 20 };
-                const pos = findPlacement(part, newSheet, area);
-                if (pos) {
-                    const newPartId = Math.max(0, ...resultSheets.flatMap(s => s.parts || []).map(p => p.id), ...placedParts.map(p => p.id)) + 1;
-                    const newPart = {
-                        ...part,
-                        id: newPartId,
-                        x: pos.x,
-                        y: pos.y,
-                        sheetIndex: resultSheets.length
-                    };
-                    newSheet.parts.push(newPart);
-                    resultSheets.push(newSheet);
-                    placedParts.push(newPart);
-                    placed = true;
+                // Also try rotations for new sheet
+                const angleStep = 360 / rotations;
+                for (let r = 0; r < rotations; r++) {
+                    const angle = r * angleStep;
+                    let rotatedPart = part;
+                    if (angle !== 0) {
+                        const rotated = rotatePolygon(part.polygon, angle);
+                        if (rotated) {
+                            const bounds = getPolygonBounds(rotated);
+                            const normalizedPoly = rotated.map(p => ({
+                                x: p.x - bounds.minX,
+                                y: p.y - bounds.minY
+                            }));
+                            rotatedPart = {
+                                ...part,
+                                polygon: normalizedPoly,
+                                width: bounds.width,
+                                height: bounds.height,
+                                rotation: angle
+                            };
+                        }
+                    } else {
+                        rotatedPart.rotation = 0;
+                    }
+
+                    const pos = findPlacement(rotatedPart, newSheet, area, spacing, config);
+                    if (pos) {
+                        const newPartId = Math.max(0, ...resultSheets.flatMap(s => s.parts || []).map(p => p.id), ...placedParts.map(p => p.id)) + 1;
+                        const newPart = {
+                            ...rotatedPart,
+                            id: newPartId,
+                            x: pos.x,
+                            y: pos.y,
+                            sheetIndex: resultSheets.length
+                        };
+                        newSheet.parts.push(newPart);
+                        resultSheets.push(newSheet);
+                        placedParts.push(newPart);
+                        placed = true;
+                        break;
+                    }
+                    if (placed) break;
                 }
             }
 
@@ -128,6 +190,30 @@ self.onmessage = function (e) {
 
     } else if (type === 'STOP_NESTING') {
         self.postMessage({ type: 'STOPPED' });
+    } else if (type === 'ANALYZE_SHEET') {
+        const { sheet } = payload;
+        console.log("Worker: Analysis started for sheet", sheet.id);
+
+        const analyzedParts = sheet.parts.map(part => {
+            const processed = weldAndCloseContours(part);
+            return {
+                ...part,
+                width: processed.width || part.width || 0,
+                height: processed.height || part.height || 0,
+                polygon: processed.polygon || null,
+                minX: processed.minX || 0,
+                minY: processed.minY || 0,
+                analysisComplete: true
+            };
+        });
+
+        self.postMessage({
+            type: 'ANALYSIS_COMPLETE',
+            payload: {
+                sheetId: sheet.id,
+                parts: analyzedParts
+            }
+        });
     }
 };
 
@@ -248,20 +334,45 @@ function weldAndCloseContours(part) {
     };
 }
 
+function rotatePolygon(poly, angle) {
+    if (!poly) return null;
+    const rad = (angle * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    return poly.map(p => ({
+        x: p.x * cos - p.y * sin,
+        y: p.x * sin + p.y * cos
+    }));
+}
+
+function getPolygonBounds(poly) {
+    if (!poly || poly.length === 0) return { minX: 0, minY: 0, width: 0, height: 0 };
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    poly.forEach(p => {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+    });
+    return { minX, minY, width: maxX - minX, height: maxY - minY };
+}
+
 function dist(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 
-function findPlacement(part, sheet, area) {
+function findPlacement(part, sheet, area, padding, config) {
     const pw = part.width;
     const ph = part.height;
-    const padding = 5;
 
-    for (let y = area.y; y <= area.y + area.height - ph; y += 5) {
-        for (let x = area.x; x <= area.x + area.width - pw; x += 5) {
+    // Step size can be smaller than padding for better fit, or equal. 5mm is a reasonable default.
+    const step = 5;
+
+    for (let y = area.y; y <= area.y + area.height - ph; y += step) {
+        for (let x = area.x; x <= area.x + area.width - pw; x += step) {
             let collision = false;
             for (let other of (sheet.parts || [])) {
-                if (checkCollision(x, y, part, other, padding)) {
+                if (checkCollision(x, y, part, other, padding, config)) {
                     collision = true;
                     break;
                 }
@@ -272,20 +383,20 @@ function findPlacement(part, sheet, area) {
     return null;
 }
 
-function checkCollision(x1, y1, part1, other, padding) {
+function checkCollision(x1, y1, part1, other, padding, config) {
     // 1. Fast bounding box check
     if (!(x1 + part1.width + padding < other.x || x1 > other.x + other.width + padding ||
         y1 + part1.height + padding < other.y || y1 > other.y + other.height + padding)) {
 
-        // 2. Precise hull check if both have polygons
-        if (part1.polygon && other.polygon) {
+        // 2. Precise hull check if both have polygons AND we are in 'hull' mode
+        if (config.nestingMode === 'hull' && part1.polygon && other.polygon) {
             return polygonsIntersect(
                 part1.polygon.map(p => ({ x: p.x + x1, y: p.y + y1 })),
                 other.polygon.map(p => ({ x: p.x + other.x, y: p.y + other.y })),
                 padding
             );
         }
-        return true; // Fallback to BBox if either lacks polygon
+        return true; // Fallback to BBox if either lacks polygon or we are in 'bbox' mode
     }
     return false;
 }
@@ -303,7 +414,39 @@ function polygonsIntersect(a, b, padding) {
     }
     // Check if any point is inside the other
     if (pointInPolygon(a[0], b) || pointInPolygon(b[0], a)) return true;
+
+    // Check padding (minimum distance)
+    if (padding > 0) {
+        // Check if any point of A is close to B
+        for (let i = 0; i < a.length; i++) {
+            if (pointPolygonDist(a[i], b) < padding) return true;
+        }
+        // Check if any point of B is close to A
+        for (let i = 0; i < b.length; i++) {
+            if (pointPolygonDist(b[i], a) < padding) return true;
+        }
+    }
+
     return false;
+}
+
+function pointPolygonDist(p, poly) {
+    let minD2 = Infinity;
+    for (let i = 0; i < poly.length; i++) {
+        const p1 = poly[i];
+        const p2 = poly[(i + 1) % poly.length];
+        const d2 = distToSegmentSquared(p, p1, p2);
+        if (d2 < minD2) minD2 = d2;
+    }
+    return Math.sqrt(minD2);
+}
+
+function distToSegmentSquared(p, v, w) {
+    const l2 = (v.x - w.x) ** 2 + (v.y - w.y) ** 2;
+    if (l2 === 0) return (p.x - v.x) ** 2 + (p.y - v.y) ** 2;
+    let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+    t = Math.max(0, Math.min(1, t));
+    return (p.x - (v.x + t * (w.x - v.x))) ** 2 + (p.y - (v.y + t * (w.y - v.y))) ** 2;
 }
 
 function segmentsIntersect(p1, p2, p3, p4) {

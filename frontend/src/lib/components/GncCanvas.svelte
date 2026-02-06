@@ -7,6 +7,8 @@
         height = 600,
         onselect = null,
         onAreaChange = null,
+        showDebug = false,
+        nestingMode = "hull",
     } = $props();
 
     let canvas = $state();
@@ -111,8 +113,8 @@
 
                     if (cmd.x !== undefined || cmd.y !== undefined) {
                         hasPoints = true;
-                        const absX = ox + pCurrentX;
-                        const absY = oy + pCurrentY;
+                        const absX = part.x - (part.minX || 0) + pCurrentX;
+                        const absY = part.y - (part.minY || 0) + pCurrentY;
                         if (absX < minX) minX = absX;
                         if (absX > maxX) maxX = absX;
                         if (absY < minY) minY = absY;
@@ -211,10 +213,11 @@
             );
         }
 
+        // Draw Parts (Main Layer)
         sheet.parts.forEach((part, pIndex) => {
             const hue = (pIndex * 137) % 360;
-            const ox = part.x || 0;
-            const oy = part.y || 0;
+            const ox = (part.x || 0) - (part.minX || 0);
+            const oy = (part.y || 0) - (part.minY || 0);
 
             part.contours.forEach((contour) => {
                 const combinedId = `${part.id}-${contour.id}`;
@@ -323,6 +326,57 @@
                 ctx.shadowBlur = 0; // Reset
             });
         });
+
+        // Debug visualization (Overlay)
+        if (showDebug) {
+            sheet.parts.forEach((part) => {
+                // For main contours (original coordinates), we need to shift by minX
+                // But for normalized Debug data (BBox/Hull being 0-based), we ONLY need the placement position (part.x, part.y)
+                // However, our `tx` function assumes it's handling world coords and subtracts bounds.
+
+                // Let's define specific offsets for Debug elements
+                // Hull/BBox are already normalized (0,0 is top-left of part), so we just place them at part.x, part.y
+                const oxDebug = part.x || 0;
+                const oyDebug = part.y || 0;
+
+                // Draw Bounding Box if mode is 'bbox' or fallback
+                if (nestingMode === "bbox" || !part.polygon) {
+                    ctx.strokeStyle = "rgba(255, 0, 0, 0.8)"; // Red for BBox
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([2, 2]);
+                    ctx.strokeRect(
+                        tx(0, oxDebug),
+                        ty(part.height || 0, oyDebug),
+                        (part.width || 0) * scale,
+                        (part.height || 0) * scale,
+                    );
+                }
+
+                // Draw Hull Polygon if mode is 'hull' and available
+                if (nestingMode === "hull" && part.polygon) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = "rgba(0, 255, 255, 0.8)"; // Cyan for Hull
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([]);
+
+                    // Polygon points are relative to (0,0)
+                    part.polygon.forEach((p, i) => {
+                        const sx = tx(p.x, oxDebug);
+                        const sy = ty(p.y, oyDebug);
+                        if (i === 0) ctx.moveTo(sx, sy);
+                        else ctx.lineTo(sx, sy);
+                    });
+                    ctx.closePath();
+                    ctx.stroke();
+
+                    // Fill semi-transparent
+                    ctx.fillStyle = "rgba(0, 255, 255, 0.2)";
+                    ctx.fill();
+                }
+
+                ctx.setLineDash([]);
+            });
+        }
     }
 
     function getContourAt(clientX, clientY) {
@@ -341,11 +395,10 @@
         let closestContour = null;
         let closestPart = null;
         let minDistance = Infinity;
-        // ... (middle of function remains same, I'll use targetContent for better precision)
 
         for (const part of sheet.parts) {
-            const pX = part.x || 0;
-            const pY = part.y || 0;
+            const pX = (part.x || 0) - (part.minX || 0);
+            const pY = (part.y || 0) - (part.minY || 0);
 
             for (const contour of part.contours) {
                 let currentX = null;

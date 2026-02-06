@@ -1,10 +1,11 @@
 import os
 import json
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = os.path.join("static", "config.json")
 
 def get_config_path():
-    # In one-file/one-dir mode, we want it near the executable or script
+    # Ensure static directory exists
+    os.makedirs("static", exist_ok=True)
     return os.path.abspath(CONFIG_FILE)
 
 def load_config():
@@ -36,9 +37,11 @@ def get_db_path():
 
 def get_db_url():
     db_path = get_db_path()
-    # Ensure it's an absolute path if it is something like "Z:/..."?
-    # SQLAlchemy handles sqlite:///absolute/path/to/db
-    # If it is a relative path, it treats it relative to CWD.
     
-    # Check if user entered a full path
+    # Ensure the directory for the database exists
+    db_dir = os.path.dirname(os.path.abspath(db_path))
+    if db_dir and not os.path.exists(db_dir):
+        print(f"Creating database directory: {db_dir}")
+        os.makedirs(db_dir, exist_ok=True)
+        
     return f"sqlite:///{db_path}"

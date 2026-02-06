@@ -1,18 +1,18 @@
 <script>
     import { onMount } from "svelte";
+    import { push } from "./Router.svelte";
     import {
         parseGnc,
         saveGnc,
         fetchTasks,
         fetchPartGnc,
-        fetchStock,
         fetchMaterials,
         fetchSetting,
-        fetchStockTemplates,
         fetchLibraryParts,
         fetchOrderTasks,
         saveOrderNesting,
         saveAsNewOrder,
+        fetchOrderNestingProject,
     } from "./api";
     import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
     import GncCanvas from "./components/GncCanvas.svelte";
@@ -27,17 +27,20 @@
     let selectedContour = $state(null);
     let filename = $state("");
     let loading = $state(false);
+    let showDebug = $state(false);
     let documentTasks = $state([]); // Tasks from the DB/Order
     let inventory = $state([]); // Refined inventory: includes placed/total counts
-    let gncLocalStock = $state([]); // Local stock for this session
     let libraryParts = $state([]); // Parts from library
-    let stockTemplates = $state([]); // Common sheet sizes
+    let materials = $state([]); // Available materials
 
     // Property panel modes
     let propertyMode = $state("sheet"); // 'sheet' | 'part' | 'contour' | 'inventory' | 'stock'
     let selectedPartId = $state(null);
+    let libraryPageSize = $state(24);
 
     let inventorySearch = $state("");
+    let libraryPage = $state(1);
+
     let nestingMode = $state("hull"); // 'bbox' | 'hull'
 
     const filteredInventory = $derived(
@@ -52,6 +55,23 @@
         ),
     );
 
+    const totalLibraryPages = $derived(
+        Math.ceil(filteredLibrary.length / libraryPageSize),
+    );
+
+    const paginatedLibrary = $derived(
+        filteredLibrary.slice(
+            (libraryPage - 1) * libraryPageSize,
+            libraryPage * libraryPageSize,
+        ),
+    );
+
+    $effect(() => {
+        // Reset page if search changes
+        inventorySearch;
+        libraryPage = 1;
+    });
+
     // Derived: Tasks that have not been placed
     // We match by... name? Or if we have metadata.
     // For now, let's assume we list all tasks and user drags them in.
@@ -63,6 +83,8 @@
         try {
             if (orderId) {
                 documentTasks = await fetchOrderTasks(orderId);
+                // Attempt to load full nesting project if editing an order
+                await loadProjectState();
             } else {
                 documentTasks = await fetchTasks(documentId);
             }
@@ -72,43 +94,30 @@
         }
     }
 
-    async function loadStockData() {
+    async function loadProjectState() {
+        if (!orderId) return;
         try {
-            const [stocks, templates, library] = await Promise.all([
-                fetchStock(),
-                fetchStockTemplates(),
-                fetchLibraryParts(),
-            ]);
-            stockTemplates = templates;
-            libraryParts = library;
-            // Initialize local stock with templates or existing stock
-            gncLocalStock = [...templates];
+            loading = true;
+            const project = await fetchOrderNestingProject(orderId);
+            if (project && project.sheets) {
+                sheets = project.sheets.map((s) => ({
+                    ...s.data,
+                    name: s.name,
+                    task_id: s.data.task_id || null,
+                }));
+                if (sheets.length > 0) {
+                    activeSheetIndex = 0;
+                }
+                // Optional: sync inventory if project.inventory is more accurate
+                // documentTasks = project.inventory || documentTasks;
+            }
         } catch (e) {
-            console.error("Failed to load stock data", e);
-        }
-    }
-
-    function handleStockSelect(e) {
-        if (!sheet) {
-            alert("No active sheet to update.");
-            e.target.value = "";
-            return;
-        }
-
-        const itemId = parseInt(e.target.value);
-        if (!itemId) return;
-
-        const item = gncLocalStock.find((i) => i.id === itemId);
-        if (!item) return;
-
-        const confirmMsg = `Update sheet dimensions to ${item.width}x${item.height} (${item.material || "N/A"})?`;
-        if (confirm(confirmMsg)) {
-            pushState();
-            sheet.program_width = item.width;
-            sheet.program_height = item.height;
-            sheet.material = item.material;
-        } else {
-            e.target.value = "";
+            console.warn(
+                "No existing nesting project found for this order, starting fresh.",
+                e,
+            );
+        } finally {
+            loading = false;
         }
     }
 
@@ -131,6 +140,15 @@
             if (parsedSheet?.parts?.length > 0) {
                 selectedPartId = parsedSheet.parts[0].id;
             }
+            // Trigger analysis immediately to get debug data
+            if (nestingWorker) {
+                // CLONE to avoid Proxy issues
+                const sheetData = JSON.parse(JSON.stringify(parsedSheet));
+                nestingWorker.postMessage({
+                    type: "ANALYZE_SHEET",
+                    payload: { sheet: sheetData },
+                });
+            }
         } catch (err) {
             alert("Error parsing GNC file");
             console.error(err);
@@ -140,7 +158,7 @@
     }
 
     function triggerFileUpload() {
-        document.getElementById('gnc-upload-input').click();
+        document.getElementById("gnc-upload-input").click();
     }
 
     function updateInventory() {
@@ -186,6 +204,8 @@
             thickness: 0,
             cut_count: 1,
             material: template?.material || "Steel",
+            name: template?.name || `Sheet ${sheets.length + 1}`,
+            task_id: template?.task_id || null,
         };
         sheets = [...sheets, newSheet];
         activeSheetIndex = sheets.length - 1;
@@ -334,7 +354,16 @@
 
             sheet.parts = [...sheet.parts, newPart];
             sheet.total_parts = sheet.parts.length;
+            sheet.total_parts = sheet.parts.length;
             updateInventory();
+            if (nestingWorker) {
+                // CLONE the sheet to avoid sending Proxies (Svelte 5 $state) to worker
+                const sheetData = JSON.parse(JSON.stringify(sheet));
+                nestingWorker.postMessage({
+                    type: "ANALYZE_SHEET",
+                    payload: { sheet: sheetData },
+                });
+            }
         } catch (e) {
             console.error(e);
             alert("Failed to place part.");
@@ -360,9 +389,25 @@
     let isNesting = $state(false);
     let nestingProgress = $state(0);
 
+    $effect(() => {
+        if (orderId || documentId) {
+            loadDocumentData();
+        }
+    });
+
     onMount(() => {
-        loadStockData();
-        if (documentId) loadDocumentData();
+        fetchLibraryParts()
+            .then((lib) => (libraryParts = lib))
+            .catch(console.error);
+
+        fetchMaterials()
+            .then((m) => (materials = m))
+            .catch(console.error);
+        fetchSetting("gnc_library_page_size")
+            .then((res) => {
+                if (res.value) libraryPageSize = parseInt(res.value);
+            })
+            .catch(() => {});
 
         // Initialize Worker
         if (window.Worker) {
@@ -384,6 +429,22 @@
                     alert("Nesting complete!");
                 } else if (type === "STOPPED") {
                     isNesting = false;
+                } else if (type === "ANALYSIS_COMPLETE") {
+                    // Update sheet parts with analyzed data (polygon, minX, minY)
+                    const { sheetId, parts } = payload;
+                    const sheetIdx = sheets.findIndex(
+                        (s) =>
+                            s.id === sheetId ||
+                            (s.id === undefined && sheetId === undefined),
+                    ); // Check handling of IDs
+                    if (sheetIdx !== -1) {
+                        sheets[sheetIdx].parts = parts;
+                        // Force update of derived sheet if active
+                        if (activeSheetIndex === sheetIdx) {
+                            sheets = [...sheets];
+                        }
+                        console.log("Analysis complete for sheet", sheetId);
+                    }
                 }
             };
         }
@@ -394,24 +455,27 @@
                 items: [
                     { label: "Open File", action: triggerFileUpload },
                     { label: "Save Changes", action: handleSave },
-                    { label: "Save as New Order", action: handleSaveAsNewOrder }
-                ]
+                    {
+                        label: "Save as New Order",
+                        action: handleSaveAsNewOrder,
+                    },
+                ],
             },
             {
                 label: "Edit",
                 items: [
                     { label: "Undo", action: undo },
-                    { label: "Redo", action: redo }
-                ]
+                    { label: "Redo", action: redo },
+                ],
             },
             {
                 label: "Nesting",
                 items: [
                     { label: "Auto Nest", action: () => startAutoNest(false) },
                     { label: "Re-nest All", action: () => startAutoNest(true) },
-                    { label: "Unplace All", action: unplaceAll }
-                ]
-            }
+                    { label: "Unplace All", action: unplaceAll },
+                ],
+            },
         ]);
 
         return () => {
@@ -525,28 +589,39 @@
 
         let rotations = 4;
         let population = 10;
+        let spacing = 5;
 
         try {
-            const [rotRes, popRes] = await Promise.all([
+            const [rotRes, popRes, spacRes] = await Promise.all([
                 fetchSetting("nesting_rotations").catch(() => ({ value: "4" })),
                 fetchSetting("nesting_population").catch(() => ({
                     value: "10",
                 })),
+                fetchSetting("nesting_spacing").catch(() => ({
+                    value: "5",
+                })),
             ]);
             rotations = parseInt(rotRes.value) || 4;
             population = parseInt(popRes.value) || 10;
+            spacing = parseFloat(spacRes.value) || 5;
         } catch (e) {
             console.warn("Using default nesting settings", e);
         }
 
-        const config = { rotations, population, multiSheet: true, nestingMode };
+        const config = {
+            rotations,
+            population,
+            spacing,
+            multiSheet: true,
+            nestingMode,
+        };
 
         nestingWorker.postMessage({
             type: "START_NESTING",
             payload: {
                 sheets: JSON.parse(JSON.stringify(sheets)),
                 inventory: JSON.parse(JSON.stringify(tasksToNest)),
-                stock: JSON.parse(JSON.stringify(gncLocalStock)),
+                stock: [],
                 config,
             },
         });
@@ -582,11 +657,11 @@
                 name: filename || "Nesting Project",
                 sheets: sheets.map((s, i) => ({
                     id: i,
-                    name: `Sheet ${i + 1}`,
+                    name: s.name || `Sheet ${i + 1}`,
                     data: s,
                 })),
                 inventory: documentTasks,
-                stock: gncLocalStock,
+                stock: [],
             };
 
             if (orderId) {
@@ -609,10 +684,18 @@
         if (!name) return;
 
         try {
-            // This needs to be updated for multi-sheet if backend supports it
-            // For now, we save the active sheet
-            const res = await saveAsNewOrder(name, sheet, documentId);
+            const allSheets = sheets.map((s, i) => ({
+                name: s.metadata?.program_name || `Sheet ${i + 1}`,
+                data: s,
+            }));
+
+            const res = await saveAsNewOrder(name, allSheets, documentId);
             alert(`New Order "${res.name}" created successfully!`);
+            // Redirect to the new order
+            push(`/gnc?orderId=${res.id}`);
+            // Force reload data
+            orderId = res.id;
+            loadDocumentData();
         } catch (e) {
             console.error(e);
             alert("Failed to save as new order: " + e.message);
@@ -638,7 +721,6 @@
 
 <div class="view-container">
     <div class="header">
-        <h2>GNC Editor</h2>
         <!-- Actions are now in the global menu -->
         <input
             type="file"
@@ -651,11 +733,15 @@
             <span class="filename">{filename}</span>
         {/if}
         <div class="nest-controls">
-                <select bind:value={nestingMode} class="nest-mode-select">
-                    <option value="hull">Precise Hull</option>
-                    <option value="bbox">Bounding Box</option>
-                </select>
-            </div>
+            <select bind:value={nestingMode} class="nest-mode-select">
+                <option value="hull">Precise Hull</option>
+                <option value="bbox">Bounding Box</option>
+            </select>
+            <label class="debug-toggle">
+                <input type="checkbox" bind:checked={showDebug} />
+                Debug
+            </label>
+        </div>
     </div>
 
     <div class="sheet-tabs">
@@ -665,7 +751,7 @@
                     class="sheet-tab"
                     onclick={() => (activeSheetIndex = i)}
                 >
-                    Sheet {i + 1}
+                    {s.name || `Sheet ${i + 1}`}
                 </button>
                 <button class="close-tab" onclick={() => removeSheet(i)}
                     >×</button
@@ -678,40 +764,14 @@
     </div>
 
     <div class="workspace">
-        <div class="stock-sidebar">
-            <h3>Local Stock</h3>
-            <div class="stock-list">
-                {#each gncLocalStock as item}
-                    <div class="stock-item">
-                        <span class="name">{item.name}</span>
-                        <div class="dims">{item.width}x{item.height}</div>
-                        <button
-                            class="apply-btn"
-                            onclick={() =>
-                                handleStockSelect({
-                                    target: { value: item.id },
-                                })}>Apply</button
-                        >
-                    </div>
-                {/each}
-            </div>
-
-            <h4 class="section-title">Templates</h4>
-            <div class="template-grid">
-                {#each stockTemplates as t}
-                    <button class="template-btn" onclick={() => addSheet(t)}>
-                        {t.name}
-                    </button>
-                {/each}
-            </div>
-        </div>
-
         <div class="canvas-area">
             {#if loading}
                 <div class="loading">Processing...</div>
             {:else if sheet}
                 <GncCanvas
                     {sheet}
+                    {showDebug}
+                    {nestingMode}
                     width={800}
                     height={600}
                     onselect={handleContourSelect}
@@ -756,6 +816,16 @@
             {:else if propertyMode === "sheet"}
                 <!-- Sheet Mode -->
                 <h3>Sheet Properties</h3>
+                <div class="prop-group">
+                    <span class="label">Sheet Name:</span>
+                    <input
+                        type="text"
+                        value={sheet.name || ""}
+                        oninput={(e) =>
+                            updateSheetField("name", e.currentTarget.value)}
+                        placeholder="Sheet Name"
+                    />
+                </div>
                 <div class="prop-group">
                     <span class="label">Program Size (mm):</span>
                     <div class="inline-inputs">
@@ -810,7 +880,18 @@
                 </div>
                 <div class="prop-group">
                     <span class="label">Material:</span>
-                    <span class="value">{sheet.material || "N/A"}</span>
+                    <select
+                        value={sheet.material || ""}
+                        onchange={(e) =>
+                            updateSheetField("material", e.currentTarget.value)}
+                    >
+                        <option value="">Select Material</option>
+                        {#each materials as material}
+                            <option value={material.name}
+                                >{material.name}</option
+                            >
+                        {/each}
+                    </select>
                 </div>
                 <div class="prop-group">
                     <span class="label">Total Parts:</span>
@@ -882,7 +963,7 @@
 
                 <h4 class="section-title">Library Parts</h4>
                 <div class="library-grid">
-                    {#each filteredLibrary as part}
+                    {#each paginatedLibrary as part}
                         <button
                             class="lib-item"
                             onclick={() => handlePlacePart(part)}
@@ -894,6 +975,28 @@
                         <p class="empty-text">No matching library parts.</p>
                     {/if}
                 </div>
+
+                {#if totalLibraryPages > 1}
+                    <div class="pagination-controls">
+                        <button
+                            class="page-btn"
+                            disabled={libraryPage === 1}
+                            onclick={() => libraryPage--}
+                        >
+                            ←
+                        </button>
+                        <span class="page-info"
+                            >Page {libraryPage} of {totalLibraryPages}</span
+                        >
+                        <button
+                            class="page-btn"
+                            disabled={libraryPage === totalLibraryPages}
+                            onclick={() => libraryPage++}
+                        >
+                            →
+                        </button>
+                    </div>
+                {/if}
             {:else if propertyMode === "contour"}
                 <!-- Contour Mode -->
                 <h3>Contour Properties</h3>
@@ -990,16 +1093,6 @@
         border-radius: 6px;
         font-size: 0.875rem;
     }
-    .empty-text {
-        text-align: center;
-        padding: 1rem;
-        color: #94a3b8;
-        font-size: 0.875rem;
-        font-style: italic;
-    }
-    .tab-wrapper.active .close-tab {
-        color: #bfdbfe;
-    }
     .add-sheet-btn {
         border: 1px dashed #cbd5e1;
         background: none;
@@ -1015,47 +1108,7 @@
         flex: 1;
         overflow: hidden;
     }
-    .stock-sidebar {
-        width: 250px;
-        border-right: 1px solid #e2e8f0;
-        background: #f8fafc;
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        overflow-y: auto;
-    }
-    .stock-sidebar h3 {
-        margin: 0;
-        font-size: 1rem;
-    }
-    .stock-item {
-        background: white;
-        padding: 0.75rem;
-        border-radius: 6px;
-        border: 1px solid #e2e8f0;
-        margin-bottom: 0.5rem;
-    }
-    .stock-item .dims {
-        font-size: 0.8rem;
-        color: #64748b;
-        margin: 0.25rem 0;
-    }
-    .apply-btn {
-        width: 100%;
-        background: #f1f5f9;
-        border: 1px solid #cbd5e1;
-        padding: 0.25rem;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        cursor: pointer;
-    }
 
-    .template-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-    }
     .nest-controls {
         display: flex;
         gap: 0;
@@ -1063,6 +1116,15 @@
         border-radius: 6px;
         overflow: hidden;
     }
+    .debug-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #64748b;
+        cursor: pointer;
+    }
+
     .nest-mode-select {
         background: #444;
         color: white;
@@ -1237,5 +1299,44 @@
         padding: 0.5rem;
         border-radius: 6px;
         cursor: pointer;
+    }
+
+    /* Pagination CSS */
+    .pagination-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding: 0.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    .page-btn {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .page-btn:hover:not(:disabled) {
+        background: #e2e8f0;
+        border-color: #94a3b8;
+    }
+    .page-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+    .page-info {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 500;
+        min-width: 80px;
+        text-align: center;
     }
 </style>
