@@ -1,15 +1,16 @@
 <script>
-    import { onMount } from 'svelte';
-    import { fetchDocuments, updateTask } from './api.js';
+    import { onMount } from "svelte";
+    import { productionService, docService } from "./stores/services.js";
+    import { uiState } from "./stores/appState.svelte.js";
     import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
 
     let documents = $state([]);
-    let assigneeFilter = $state('');
+    let assigneeFilter = $state("");
     let loading = $state(false);
 
     onMount(() => {
         // Load assignee from localStorage
-        assigneeFilter = localStorage.getItem('job_assignee') || '';
+        assigneeFilter = localStorage.getItem("job_assignee") || "";
         if (assigneeFilter) {
             loadData();
         }
@@ -17,10 +18,8 @@
         setMenuActions([
             {
                 label: "Job",
-                items: [
-                    { label: "Refresh", action: loadData }
-                ]
-            }
+                items: [{ label: "Refresh", action: loadData }],
+            },
         ]);
 
         return () => {
@@ -36,58 +35,89 @@
 
         loading = true;
         try {
-            // Fetch all documents and filter on client side for now
-            // For better performance, this should be server-side
-            const allDocs = await fetchDocuments();
-            
-            // Filter to only documents with tasks for this assignee
-            documents = allDocs
-                .map(doc => ({
-                    ...doc,
-                    tasks: (doc.tasks || []).filter(t => 
-                        t.assignee && 
-                        t.assignee.toLowerCase().includes(assigneeFilter.toLowerCase()) &&
-                        (t.status === 'pending' || t.status === 'planned')
-                    )
-                }))
-                .filter(doc => doc.tasks.length > 0);
+            // Fetch jobs directly using the new filtered endpoint
+            const tasks = await productionService.fetchJobs(0, 1000, {
+                assignee: assigneeFilter,
+                status: "pending", // We could also fetch 'planned' if needed
+            });
+
+            // For now, planned tasks are also shown. Let's fetch both.
+            const [pendingTasks, plannedTasks] = await Promise.all([
+                productionService.fetchJobs(0, 1000, {
+                    assignee: assigneeFilter,
+                    status: "pending",
+                }),
+                productionService.fetchJobs(0, 1000, {
+                    assignee: assigneeFilter,
+                    status: "planned",
+                }),
+            ]);
+
+            const allTasks = [...pendingTasks, ...plannedTasks];
+
+            // We still need the Document names, so we need to bridge this.
+            // If the Task model doesn't include document names, we might need a join or fetch docs too.
+            // For now, let's fetch all documents once to have names, as the original logic did.
+            const allDocs = await docService.fetchDocuments();
+            const docMap = new Map(allDocs.map((d) => [d.id, d]));
+
+            // Group tasks by document
+            const groupedByDoc = {};
+            allTasks.forEach((t) => {
+                if (!groupedByDoc[t.document_id]) {
+                    const doc = docMap.get(t.document_id);
+                    groupedByDoc[t.document_id] = {
+                        id: t.document_id,
+                        name: doc ? doc.name : `Doc ${t.document_id}`,
+                        type: doc ? doc.type : "other",
+                        tasks: [],
+                    };
+                }
+                groupedByDoc[t.document_id].tasks.push(t);
+            });
+
+            documents = Object.values(groupedByDoc);
         } catch (e) {
             console.error(e);
+            uiState.addNotification("Failed to load jobs", "error");
         } finally {
             loading = false;
         }
     }
 
     function handleAssigneeChange() {
-        localStorage.setItem('job_assignee', assigneeFilter);
+        localStorage.setItem("job_assignee", assigneeFilter);
         loadData();
     }
 
     async function markTaskDone(taskId) {
         try {
-            await updateTask(taskId, { status: 'done' });
+            await productionService.updateJobStatus(taskId, "done");
             await loadData();
+            uiState.addNotification("Task marked as done", "info");
         } catch (e) {
             console.error(e);
-            alert('Failed to update task status');
+            uiState.addNotification("Failed to update task status", "error");
         }
     }
 
     // Group tasks by document and material
     function getGroupedTasks(doc) {
         const tasks = doc.tasks || [];
-        
+
         // Sort tasks: pending first, then planned
         const sortedTasks = [...tasks].sort((a, b) => {
-            if (a.status === 'pending' && b.status !== 'pending') return -1;
-            if (a.status !== 'pending' && b.status === 'pending') return 1;
+            if (a.status === "pending" && b.status !== "pending") return -1;
+            if (a.status !== "pending" && b.status === "pending") return 1;
             return 0;
         });
 
         // Group by material
         const byMaterial = {};
-        sortedTasks.forEach(task => {
-            const materialKey = task.material ? task.material.name : '(No Material)';
+        sortedTasks.forEach((task) => {
+            const materialKey = task.material
+                ? task.material.name
+                : "(No Material)";
             if (!byMaterial[materialKey]) {
                 byMaterial[materialKey] = [];
             }
@@ -101,29 +131,37 @@
 <div class="job-view">
     <div class="assignee-filter">
         <label for="assignee">Assignee:</label>
-        <input 
-            id="assignee" 
-            type="text" 
+        <input
+            id="assignee"
+            type="text"
             bind:value={assigneeFilter}
             onchange={handleAssigneeChange}
             placeholder="Enter assignee name..."
         />
-        <button class="btn-load" onclick={loadData} disabled={loading || !assigneeFilter.trim()}>
-            {loading ? 'Loading...' : 'Load'}
+        <button
+            class="btn-load"
+            onclick={loadData}
+            disabled={loading || !assigneeFilter.trim()}
+        >
+            {loading ? "Loading..." : "Load"}
         </button>
     </div>
 
     {#if loading}
         <div class="loading-state">Loading tasks...</div>
     {:else if !assigneeFilter.trim()}
-        <div class="empty-state">Enter an assignee name above to view their tasks.</div>
+        <div class="empty-state">
+            Enter an assignee name above to view their tasks.
+        </div>
     {:else if documents.length === 0}
-        <div class="empty-state">No pending or planned tasks found for this assignee.</div>
+        <div class="empty-state">
+            No pending or planned tasks found for this assignee.
+        </div>
     {:else}
         <div class="documents-list">
             {#each documents as doc (doc.id)}
                 {@const groupedTasks = getGroupedTasks(doc)}
-                
+
                 <div class="doc-group">
                     <div class="doc-header">
                         <h3>{doc.name}</h3>
@@ -133,23 +171,35 @@
                     {#each Object.entries(groupedTasks) as [materialName, tasks]}
                         <div class="material-group">
                             <div class="material-header">
-                                <span class="material-name">📦 {materialName}</span>
-                                <span class="task-count">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</span>
+                                <span class="material-name"
+                                    >📦 {materialName}</span
+                                >
+                                <span class="task-count"
+                                    >{tasks.length} task{tasks.length !== 1
+                                        ? "s"
+                                        : ""}</span
+                                >
                             </div>
 
                             <div class="tasks-list">
                                 {#each tasks as task (task.id)}
                                     <div class="task-row {task.status}">
                                         <div class="task-info">
-                                            <span class="task-status-badge {task.status}">{task.status}</span>
-                                            <button 
+                                            <span
+                                                class="task-status-badge {task.status}"
+                                                >{task.status}</span
+                                            >
+                                            <button
                                                 class="btn-done"
-                                                onclick={() => markTaskDone(task.id)}
+                                                onclick={() =>
+                                                    markTaskDone(task.id)}
                                                 title="Mark as done"
                                             >
                                                 ✓
                                             </button>
-                                            <span class="task-name">{task.name}</span>
+                                            <span class="task-name"
+                                                >{task.name}</span
+                                            >
                                         </div>
                                     </div>
                                 {/each}
@@ -261,9 +311,18 @@
         font-weight: 600;
         text-transform: uppercase;
     }
-    .doc-badge.plan { background-color: #dbeafe; color: #1e40af; }
-    .doc-badge.mail { background-color: #fce7f3; color: #9d174d; }
-    .doc-badge.other { background-color: #f3f4f6; color: #374151; }
+    .doc-badge.plan {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    .doc-badge.mail {
+        background-color: #fce7f3;
+        color: #9d174d;
+    }
+    .doc-badge.other {
+        background-color: #f3f4f6;
+        color: #374151;
+    }
 
     .material-group {
         margin-bottom: 1rem;

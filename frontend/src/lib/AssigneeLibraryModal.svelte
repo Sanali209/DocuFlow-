@@ -1,11 +1,6 @@
 <script>
     import { onMount } from "svelte";
-    import {
-        fetchAssignees,
-        createAssignee,
-        updateAssignee,
-        deleteAssignee,
-    } from "./api.js";
+    import { settingService } from "./stores/services.js";
 
     let { isOpen, close } = $props();
     let assignees = $state([]);
@@ -15,7 +10,7 @@
 
     async function loadAssignees() {
         if (isOpen) {
-            assignees = await fetchAssignees();
+            assignees = await settingService.fetchAssignees();
         }
     }
 
@@ -26,7 +21,9 @@
     async function handleAdd() {
         if (!newAssigneeName.trim()) return;
         try {
-            await createAssignee({ name: newAssigneeName.trim() });
+            await settingService.createAssignee({
+                name: newAssigneeName.trim(),
+            });
             newAssigneeName = "";
             await loadAssignees();
         } catch (e) {
@@ -43,7 +40,7 @@
     async function saveEdit() {
         if (!editingName.trim() || editingId === null) return;
         try {
-            await updateAssignee(editingId, editingName.trim());
+            await settingService.updateAssignee(editingId, editingName.trim());
             editingId = null;
             editingName = "";
             await loadAssignees();
@@ -61,7 +58,7 @@
     async function handleDelete(id) {
         if (!confirm("Delete this assignee?")) return;
         try {
-            await deleteAssignee(id);
+            await settingService.deleteAssignee(id);
             await loadAssignees();
         } catch (e) {
             console.error(e);

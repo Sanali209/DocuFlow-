@@ -3,14 +3,15 @@
 
     let {
         sheet = null,
-        width = 800,
-        height = 600,
         onselect = null,
         onAreaChange = null,
         showDebug = false,
         nestingMode = "hull",
     } = $props();
 
+    let container = $state();
+    let width = $state(800);
+    let height = $state(600);
     let canvas = $state();
     let ctx = $state(null);
 
@@ -700,7 +701,12 @@
     }
 </script>
 
-<div class="canvas-container" style="width: {width}px; height: {height}px;">
+<div
+    class="canvas-container"
+    bind:this={container}
+    bind:clientWidth={width}
+    bind:clientHeight={height}
+>
     <div class="toolbar">
         <button
             class:active={toolMode === "navigate"}
@@ -749,6 +755,9 @@
         overflow: hidden;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: 400px;
     }
     canvas {
         display: block;

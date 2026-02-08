@@ -1,6 +1,6 @@
 <script>
     import { onMount } from "svelte";
-    import { fetchMaterials, fetchAssignees } from "./api.js";
+    import { inventoryService, settingService } from "./stores/services.js";
     import MaterialLibraryModal from "./MaterialLibraryModal.svelte";
     import AssigneeLibraryModal from "./AssigneeLibraryModal.svelte";
 
@@ -16,11 +16,11 @@
     let isAssigneeLibraryOpen = $state(false);
 
     async function loadMaterials() {
-        materials = await fetchMaterials();
+        materials = await inventoryService.fetchMaterials();
     }
 
     async function loadAssignees() {
-        assignees = await fetchAssignees();
+        assignees = await settingService.fetchAssignees();
     }
 
     $effect(() => {

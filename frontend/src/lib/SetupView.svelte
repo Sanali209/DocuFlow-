@@ -1,6 +1,7 @@
 <script>
     import { onMount } from "svelte";
-    import { checkConfig, testPath, updateSetting } from "./api"; // Ensure updateSetting is exported or similar
+    import { settingService } from "./stores/services.js";
+    import { uiState } from "./stores/appState.svelte.js";
     import { push } from "./Router.svelte";
     import { appState } from "./appState.svelte.js";
 
@@ -12,8 +13,7 @@
     onMount(async () => {
         // Fetch current config if available
         try {
-            const res = await fetch("/api/config");
-            const data = await res.json();
+            const data = await settingService.fetchDatabaseConfig();
             if (data.database_path) dbPath = data.database_path;
         } catch (e) {
             console.error(e);
@@ -25,23 +25,9 @@
         testing = true;
         testResult = null;
         try {
-            // Test if the DIRECTORY of the DB exists (we can't test file if it doesn't exist yet, but maybe dir)
-            // Or just check if path is accessible.
-            // The API test-path checks existence.
-            // For a new DB, we might want to check the folder.
-            // Let's just send the path.
-            const res = await fetch("/api/test-path", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ path: dbPath }),
-            });
-            const data = await res.json();
-
-            // Logic: If it's a file path, check if parent dir exists
-            // Since backend test_path covers basic existence.
-
+            const data = await settingService.testPath(dbPath);
             testResult = {
-                ok: data.accessible || !data.exists, // If it doesn't exist, we might be able to create it (sqlite)
+                ok: data.accessible || !data.exists,
                 message: data.accessible
                     ? "Path exists and is readable."
                     : data.exists
@@ -58,27 +44,29 @@
     async function handleSave() {
         saving = true;
         try {
-            const res = await fetch("/api/config", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ database_path: dbPath }),
+            const res = await settingService.updateDatabaseConfig({
+                database_path: dbPath,
             });
-            const data = await res.json();
-            if (data.ok) {
-                // Config saved.
-                // We typically need to restart the backend to pick up the NEW database string in database.py?
-                // Or does separate process reload?
-                // For this architecture, a restart is safest.
-                alert(
-                    "Configuration saved. Please restart the application (Server) to apply changes.",
+            if (res.ok) {
+                uiState.addNotification(
+                    "Configuration saved. Application will restart.",
+                    "info",
                 );
-                appState.configStatus = "configured"; // Optimistic
-                push("/");
+                appState.configStatus = "configured";
+                // Wait for restart
+                setTimeout(() => {
+                    push("/");
+                    window.location.reload();
+                }, 3000);
             } else {
-                alert("Failed to save config.");
+                uiState.addNotification(
+                    "Failed to save configuration",
+                    "error",
+                );
             }
         } catch (e) {
-            alert("Error saving config: " + e.message);
+            uiState.addNotification("Error saving configuration", "error");
+            console.error(e);
         } finally {
             saving = false;
         }

@@ -1,10 +1,10 @@
 <script>
-    import { createJournalEntry, updateJournalEntry, uploadFile } from './api.js';
+    import { journalService, docService } from "./stores/services.js";
 
     let { isOpen, close, documentId, documentName, entry = null } = $props();
-    let text = $state('');
-    let type = $state('info');
-    let author = $state('');
+    let text = $state("");
+    let type = $state("info");
+    let author = $state("");
     let loading = $state(false);
     let attachments = $state([]);
     let isUploading = $state(false);
@@ -13,15 +13,15 @@
         if (isOpen) {
             if (entry) {
                 // Edit mode
-                text = entry.text || '';
-                type = entry.type || 'info';
-                author = entry.author || '';
+                text = entry.text || "";
+                type = entry.type || "info";
+                author = entry.author || "";
                 attachments = entry.attachments || [];
             } else {
                 // Create mode
-                author = localStorage.getItem('journal_author') || '';
-                text = '';
-                type = 'info';
+                author = localStorage.getItem("journal_author") || "";
+                text = "";
+                type = "info";
                 attachments = [];
             }
         }
@@ -34,19 +34,19 @@
         isUploading = true;
         try {
             for (const file of files) {
-                const result = await uploadFile(file);
+                const result = await docService.uploadFile(file);
                 attachments.push({
                     file_path: result.file_path,
                     filename: result.filename,
-                    media_type: result.media_type
+                    media_type: result.media_type,
                 });
             }
         } catch (err) {
-            console.error('Upload failed', err);
-            alert('Failed to upload attachment');
+            console.error("Upload failed", err);
+            alert("Failed to upload attachment");
         } finally {
             isUploading = false;
-            e.target.value = '';
+            e.target.value = "";
         }
     }
 
@@ -57,32 +57,32 @@
     async function handleSubmit(e) {
         e.preventDefault();
         loading = true;
-        if (author) localStorage.setItem('journal_author', author);
+        if (author) localStorage.setItem("journal_author", author);
 
         try {
             const journalData = {
                 text,
                 type,
-                status: entry?.status || 'pending',
+                status: entry?.status || "pending",
                 author,
                 document_id: documentId,
-                attachments
+                attachments,
             };
 
             if (entry) {
                 // Update existing entry
-                await updateJournalEntry(entry.id, journalData);
+                await journalService.updateEntry(entry.id, journalData);
             } else {
                 // Create new entry
-                await createJournalEntry(journalData);
+                await journalService.createEntry(journalData);
             }
-            
+
             // Dispatch custom event to notify other components
-            window.dispatchEvent(new CustomEvent('journal-entries-updated'));
+            window.dispatchEvent(new CustomEvent("journal-entries-updated"));
             close();
         } catch (err) {
             console.error(err);
-            alert(entry ? 'Failed to update note' : 'Failed to create note');
+            alert(entry ? "Failed to update note" : "Failed to create note");
         } finally {
             loading = false;
         }
@@ -90,64 +90,93 @@
 </script>
 
 {#if isOpen}
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="modal-overlay" onclick={close}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
-        <div class="modal-header">
-            <h3>{entry ? 'Edit Note' : `Add Note to ${documentName}`}</h3>
-            <button class="close-btn" onclick={close}>&times;</button>
-        </div>
-
-        <form onsubmit={handleSubmit} class="modal-body">
-            <div class="form-group">
-                <label for="author">Author</label>
-                <input id="author" type="text" bind:value={author} placeholder="Your Name" />
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-overlay" onclick={close}>
+        <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+                <h3>{entry ? "Edit Note" : `Add Note to ${documentName}`}</h3>
+                <button class="close-btn" onclick={close}>&times;</button>
             </div>
 
-            <div class="form-group">
-                <label for="type">Type</label>
-                <select id="type" bind:value={type}>
-                    <option value="info">Info</option>
-                    <option value="warning">Warning</option>
-                    <option value="error">Error</option>
-                </select>
-            </div>
+            <form onsubmit={handleSubmit} class="modal-body">
+                <div class="form-group">
+                    <label for="author">Author</label>
+                    <input
+                        id="author"
+                        type="text"
+                        bind:value={author}
+                        placeholder="Your Name"
+                    />
+                </div>
 
-            <div class="form-group">
-                <label for="text">Message</label>
-                <textarea id="text" bind:value={text} required rows="4"></textarea>
-            </div>
+                <div class="form-group">
+                    <label for="type">Type</label>
+                    <select id="type" bind:value={type}>
+                        <option value="info">Info</option>
+                        <option value="warning">Warning</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label for="attachments">Attachments</label>
-                <div class="file-upload-wrapper">
-                    <input id="attachments" type="file" multiple onchange={handleFileSelect} disabled={isUploading} />
-                    {#if isUploading}
-                        <p class="upload-status">Uploading...</p>
+                <div class="form-group">
+                    <label for="text">Message</label>
+                    <textarea id="text" bind:value={text} required rows="4"
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="attachments">Attachments</label>
+                    <div class="file-upload-wrapper">
+                        <input
+                            id="attachments"
+                            type="file"
+                            multiple
+                            onchange={handleFileSelect}
+                            disabled={isUploading}
+                        />
+                        {#if isUploading}
+                            <p class="upload-status">Uploading...</p>
+                        {/if}
+                    </div>
+                    {#if attachments.length > 0}
+                        <div class="attachments-list">
+                            {#each attachments as att, i}
+                                <div class="attachment-item">
+                                    <span class="attachment-name"
+                                        >{att.filename}</span
+                                    >
+                                    <button
+                                        type="button"
+                                        class="remove-btn"
+                                        onclick={() => removeAttachment(i)}
+                                        >×</button
+                                    >
+                                </div>
+                            {/each}
+                        </div>
                     {/if}
                 </div>
-                {#if attachments.length > 0}
-                    <div class="attachments-list">
-                        {#each attachments as att, i}
-                            <div class="attachment-item">
-                                <span class="attachment-name">{att.filename}</span>
-                                <button type="button" class="remove-btn" onclick={() => removeAttachment(i)}>×</button>
-                            </div>
-                        {/each}
-                    </div>
-                {/if}
-            </div>
 
-            <div class="actions">
-                <button type="button" class="btn-secondary" onclick={close}>Cancel</button>
-                <button type="submit" class="btn-primary" disabled={loading}>
-                    {loading ? 'Saving...' : (entry ? 'Update Note' : 'Add Note')}
-                </button>
-            </div>
-        </form>
+                <div class="actions">
+                    <button type="button" class="btn-secondary" onclick={close}
+                        >Cancel</button
+                    >
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                        disabled={loading}
+                    >
+                        {loading
+                            ? "Saving..."
+                            : entry
+                              ? "Update Note"
+                              : "Add Note"}
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 {/if}
 
 <style>
@@ -208,7 +237,9 @@
         font-weight: 500;
         color: #475569;
     }
-    input, select, textarea {
+    input,
+    select,
+    textarea {
         padding: 0.75rem;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
@@ -277,6 +308,12 @@
         cursor: pointer;
         border: none;
     }
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-secondary { background: #f1f5f9; color: #475569; }
+    .btn-primary {
+        background: #3b82f6;
+        color: white;
+    }
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+    }
 </style>

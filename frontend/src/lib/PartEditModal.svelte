@@ -1,5 +1,5 @@
 <script>
-    import { fetchMaterials } from "./api";
+    import { inventoryService } from "./stores/services.js";
 
     let { show = $bindable(false), part = null, onsave } = $props();
 
@@ -27,7 +27,7 @@
 
     async function loadMaterials() {
         try {
-            materials = await fetchMaterials();
+            materials = await inventoryService.fetchMaterials();
         } catch (e) {
             console.error("Failed to load materials:", e);
         }

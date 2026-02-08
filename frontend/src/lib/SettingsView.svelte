@@ -1,18 +1,15 @@
 <script>
     import { onMount } from "svelte";
-    import {
-        fetchSetting,
-        updateSetting,
-        testPath,
-        fetchDatabaseConfig,
-        updateDatabaseConfig,
-    } from "./api";
+    import { settingService } from "./stores/services.js";
+    import { uiState } from "./stores/appState.svelte.js";
 
     let activeTab = $state("general"); // 'general' | 'nesting' | 'database'
     let docNameRegex = $state("");
     let userRole = $state("admin");
     let syncMihtavPath = $state("");
     let syncSidraPath = $state("");
+    let syncRescanInterval = $state(60);
+    let rescanning = $state(false);
 
     // Database Settings
     let databasePath = $state("");
@@ -40,23 +37,37 @@
                 spacSetting,
                 pageSizeSetting,
                 dbConfig,
+                rescanSetting,
             ] = await Promise.all([
-                fetchSetting("doc_name_regex").catch(() => ({ value: "" })),
-                fetchSetting("sync_mihtav_path").catch(() => ({ value: "" })),
-                fetchSetting("sync_sidra_path").catch(() => ({ value: "" })),
-                fetchSetting("nesting_rotations").catch(() => ({ value: "4" })),
-                fetchSetting("nesting_population").catch(() => ({
+                settingService
+                    .fetchSetting("doc_name_regex")
+                    .catch(() => ({ value: "" })),
+                settingService
+                    .fetchSetting("sync_mihtav_path")
+                    .catch(() => ({ value: "" })),
+                settingService
+                    .fetchSetting("sync_sidra_path")
+                    .catch(() => ({ value: "" })),
+                settingService
+                    .fetchSetting("nesting_rotations")
+                    .catch(() => ({ value: "4" })),
+                settingService.fetchSetting("nesting_population").catch(() => ({
                     value: "10",
                 })),
-                fetchSetting("nesting_spacing").catch(() => ({
+                settingService.fetchSetting("nesting_spacing").catch(() => ({
                     value: "5",
                 })),
-                fetchSetting("gnc_library_page_size").catch(() => ({
-                    value: "24",
-                })),
-                fetchDatabaseConfig().catch(() => ({
+                settingService
+                    .fetchSetting("gnc_library_page_size")
+                    .catch(() => ({
+                        value: "24",
+                    })),
+                settingService.fetchDatabaseConfig().catch(() => ({
                     database_path: "sql_app.db",
                 })),
+                settingService
+                    .fetchSetting("sync_rescan_interval")
+                    .catch(() => ({ value: "60" })),
             ]);
             docNameRegex = regexSetting.value || "";
             syncMihtavPath = mihtavSetting.value || "";
@@ -66,6 +77,7 @@
             nestingSpacing = parseFloat(spacSetting?.value) || 5;
             gncLibraryPageSize = parseInt(pageSizeSetting?.value) || 24;
             databasePath = dbConfig.database_path;
+            syncRescanInterval = parseInt(rescanSetting?.value) || 60;
 
             // Load role
             const storedRole = localStorage.getItem("user_role");
@@ -85,7 +97,7 @@
         }
         testing[type] = true;
         try {
-            const result = await testPath(path);
+            const result = await settingService.testPath(path);
             testResults[type] = {
                 accessible: result.ok,
                 error: result.error,
@@ -100,21 +112,35 @@
     async function saveSettings() {
         try {
             await Promise.all([
-                updateSetting("doc_name_regex", docNameRegex),
-                updateSetting("sync_mihtav_path", syncMihtavPath),
-                updateSetting("sync_sidra_path", syncSidraPath),
-                updateSetting(
+                settingService.updateSetting("doc_name_regex", docNameRegex),
+                settingService.updateSetting(
+                    "sync_mihtav_path",
+                    syncMihtavPath,
+                ),
+                settingService.updateSetting("sync_sidra_path", syncSidraPath),
+                settingService.updateSetting(
                     "nesting_population",
                     nestingPopulation.toString(),
                 ),
-                updateSetting("nesting_rotations", nestingRotations.toString()),
-                updateSetting("nesting_spacing", nestingSpacing.toString()),
-                updateSetting(
+                settingService.updateSetting(
+                    "nesting_rotations",
+                    nestingRotations.toString(),
+                ),
+                settingService.updateSetting(
+                    "nesting_spacing",
+                    nestingSpacing.toString(),
+                ),
+                settingService.updateSetting(
                     "gnc_library_page_size",
                     gncLibraryPageSize.toString(),
                 ),
-                updateDatabaseConfig({ database_path: databasePath }).then(
-                    (res) => {
+                settingService.updateSetting(
+                    "sync_rescan_interval",
+                    syncRescanInterval.toString(),
+                ),
+                settingService
+                    .updateDatabaseConfig({ database_path: databasePath })
+                    .then((res) => {
                         if (res.ok) {
                             refreshing = true;
                             // Wait for backend to reload (usually ~1-2s)
@@ -122,20 +148,36 @@
                                 window.location.reload();
                             }, 3000);
                         }
-                    },
-                ),
+                    }),
             ]);
 
             // Save role locally
             localStorage.setItem("user_role", userRole);
+            uiState.addNotification("Settings saved successfully", "info");
 
             // Reload page to apply role changes globally
             if (!refreshing) {
                 window.location.reload();
             }
         } catch (e) {
-            alert("Failed to save settings. Ensure you have Admin privileges.");
+            uiState.addNotification(
+                "Failed to save settings. Admin access required.",
+                "error",
+            );
             console.error(e);
+        }
+    }
+
+    async function handleManualRescan() {
+        rescanning = true;
+        try {
+            await settingService.triggerRescan();
+            uiState.addNotification("Rescan triggered successfully", "info");
+        } catch (e) {
+            uiState.addNotification("Failed to trigger rescan", "error");
+            console.error(e);
+        } finally {
+            rescanning = false;
         }
     }
 
@@ -258,6 +300,32 @@
                                         : `✗ ${testResults.sidra.error || "Path not accessible"}`}
                                 </span>
                             {/if}
+                        </div>
+
+                        <div class="field">
+                            <label for="rescan-interval"
+                                >Auto-Rescan Interval (minutes)</label
+                            >
+                            <div class="path-input-group">
+                                <input
+                                    id="rescan-interval"
+                                    type="number"
+                                    bind:value={syncRescanInterval}
+                                    min="1"
+                                    placeholder="60"
+                                />
+                                <button
+                                    class="test-btn"
+                                    onclick={handleManualRescan}
+                                    disabled={rescanning}
+                                >
+                                    {rescanning ? "Scanning..." : "Rescan Now"}
+                                </button>
+                            </div>
+                            <p class="hint">
+                                How often to scan folders for new files. Set to
+                                0 to disable auto-scan.
+                            </p>
                         </div>
 
                         <div class="field">

@@ -1,16 +1,22 @@
 <script>
-    import { onMount } from 'svelte';
-    import { fetchMaterials, createMaterial, updateMaterial, deleteMaterial } from './api.js';
+    import { onMount } from "svelte";
+    import { inventoryService } from "./stores/services.js";
+    import { uiState } from "./stores/appState.svelte.js";
 
     let { isOpen, close } = $props();
     let materials = $state([]);
-    let newMaterialName = $state('');
+    let newMaterialName = $state("");
     let editingId = $state(null);
-    let editingName = $state('');
+    let editingName = $state("");
 
     async function loadMaterials() {
         if (isOpen) {
-            materials = await fetchMaterials();
+            try {
+                materials = await inventoryService.fetchMaterials();
+            } catch (e) {
+                console.error(e);
+                uiState.addNotification("Failed to load materials", "error");
+            }
         }
     }
 
@@ -21,12 +27,15 @@
     async function handleAdd() {
         if (!newMaterialName.trim()) return;
         try {
-            await createMaterial({ name: newMaterialName.trim() });
-            newMaterialName = '';
+            await inventoryService.createMaterial({
+                name: newMaterialName.trim(),
+            });
+            newMaterialName = "";
+            uiState.addNotification("Material added", "info");
             await loadMaterials();
         } catch (e) {
             console.error(e);
-            alert('Failed to add material');
+            uiState.addNotification("Failed to add material", "error");
         }
     }
 
@@ -38,100 +47,125 @@
     async function saveEdit() {
         if (!editingName.trim() || editingId === null) return;
         try {
-            await updateMaterial(editingId, editingName.trim());
+            await inventoryService.updateMaterial(
+                editingId,
+                editingName.trim(),
+            );
             editingId = null;
-            editingName = '';
+            editingName = "";
+            uiState.addNotification("Material updated", "info");
             await loadMaterials();
         } catch (e) {
             console.error(e);
-            alert('Failed to update material');
+            uiState.addNotification("Failed to update material", "error");
         }
     }
 
     function cancelEdit() {
         editingId = null;
-        editingName = '';
+        editingName = "";
     }
 
     async function handleDelete(id) {
-        if (!confirm('Delete this material?')) return;
+        if (!confirm("Delete this material?")) return;
         try {
-            await deleteMaterial(id);
+            await inventoryService.deleteMaterial(id);
+            uiState.addNotification("Material deleted", "info");
             await loadMaterials();
         } catch (e) {
             console.error(e);
-            alert('Failed to delete material');
+            uiState.addNotification("Failed to delete material", "error");
         }
     }
 </script>
 
 {#if isOpen}
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="modal-overlay" onclick={close}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
-        <div class="modal-header">
-            <h3>Material Library</h3>
-            <button class="close-btn" onclick={close}>&times;</button>
-        </div>
-
-        <div class="modal-body">
-            <div class="add-section">
-                <input 
-                    type="text" 
-                    bind:value={newMaterialName} 
-                    placeholder="New material name..."
-                    onkeydown={(e) => e.key === 'Enter' && handleAdd()}
-                />
-                <button class="btn-add" onclick={handleAdd}>Add</button>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal-overlay" onclick={close}>
+        <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+                <h3>Material Library</h3>
+                <button class="close-btn" onclick={close}>&times;</button>
             </div>
 
-            <table class="materials-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each materials as material (material.id)}
-                        <tr>
-                            <td>
-                                {#if editingId === material.id}
-                                    <input 
-                                        type="text" 
-                                        bind:value={editingName}
-                                        class="edit-input"
-                                        autofocus
-                                        onkeydown={(e) => {
-                                            if (e.key === 'Enter') saveEdit();
-                                            if (e.key === 'Escape') cancelEdit();
-                                        }}
-                                    />
-                                {:else}
-                                    {material.name}
-                                {/if}
-                            </td>
-                            <td>
-                                {#if editingId === material.id}
-                                    <button class="btn-icon" onclick={saveEdit} title="Save">✓</button>
-                                    <button class="btn-icon" onclick={cancelEdit} title="Cancel">✕</button>
-                                {:else}
-                                    <button class="btn-icon" onclick={() => startEdit(material)} title="Edit">✏️</button>
-                                    <button class="btn-icon delete" onclick={() => handleDelete(material.id)} title="Delete">🗑️</button>
-                                {/if}
-                            </td>
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
+            <div class="modal-body">
+                <div class="add-section">
+                    <input
+                        type="text"
+                        bind:value={newMaterialName}
+                        placeholder="New material name..."
+                        onkeydown={(e) => e.key === "Enter" && handleAdd()}
+                    />
+                    <button class="btn-add" onclick={handleAdd}>Add</button>
+                </div>
 
-            {#if materials.length === 0}
-                <div class="empty-state">No materials yet. Add one above.</div>
-            {/if}
+                <table class="materials-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#each materials as material (material.id)}
+                            <tr>
+                                <td>
+                                    {#if editingId === material.id}
+                                        <input
+                                            type="text"
+                                            bind:value={editingName}
+                                            class="edit-input"
+                                            onkeydown={(e) => {
+                                                if (e.key === "Enter")
+                                                    saveEdit();
+                                                if (e.key === "Escape")
+                                                    cancelEdit();
+                                            }}
+                                        />
+                                    {:else}
+                                        {material.name}
+                                    {/if}
+                                </td>
+                                <td>
+                                    {#if editingId === material.id}
+                                        <button
+                                            class="btn-icon"
+                                            onclick={saveEdit}
+                                            title="Save">✓</button
+                                        >
+                                        <button
+                                            class="btn-icon"
+                                            onclick={cancelEdit}
+                                            title="Cancel">✕</button
+                                        >
+                                    {:else}
+                                        <button
+                                            class="btn-icon"
+                                            onclick={() => startEdit(material)}
+                                            title="Edit">✏️</button
+                                        >
+                                        <button
+                                            class="btn-icon delete"
+                                            onclick={() =>
+                                                handleDelete(material.id)}
+                                            title="Delete">🗑️</button
+                                        >
+                                    {/if}
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+
+                {#if materials.length === 0}
+                    <div class="empty-state">
+                        No materials yet. Add one above.
+                    </div>
+                {/if}
+            </div>
         </div>
     </div>
-</div>
 {/if}
 
 <style>

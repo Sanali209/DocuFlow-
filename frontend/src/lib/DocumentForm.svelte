@@ -1,11 +1,7 @@
 <script>
     import { onMount } from "svelte";
-    import {
-        createDocument,
-        updateDocument,
-        deleteAttachment,
-        uploadFile,
-    } from "./api.js";
+    import { docService } from "./stores/services.js";
+    import { uiState } from "./stores/appState.svelte.js";
     import TagInput from "./TagInput.svelte";
     import ImagePreviewModal from "./ImagePreviewModal.svelte";
 
@@ -81,7 +77,7 @@
         isUploading = true;
         try {
             for (const file of files) {
-                const result = await uploadFile(file);
+                const result = await docService.uploadFile(file);
                 // result format: { file_path: "/uploads/...", filename: "...", media_type: "..." }
                 // Need to match Attachment structure
                 newAttachments.push({
@@ -111,7 +107,7 @@
             if (!confirm("Permanently delete this attachment?")) return;
             const att = attachments[index];
             try {
-                await deleteAttachment(att.id);
+                await docService.deleteAttachment(att.id);
                 attachments.splice(index, 1);
             } catch (e) {
                 console.error("Failed to delete attachment", e);
@@ -143,9 +139,11 @@
             };
 
             if (document) {
-                await updateDocument(document.id, docData);
+                await docService.updateDocument(document.id, docData);
+                uiState.addNotification("Document updated", "info");
             } else {
-                await createDocument(docData);
+                await docService.createDocument(docData);
+                uiState.addNotification("Document registered", "info");
             }
 
             if (!document) {

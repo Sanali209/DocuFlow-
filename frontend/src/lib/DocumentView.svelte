@@ -1,20 +1,37 @@
 <script>
-    import { marked } from 'marked';
+    import { marked } from "marked";
+    import DocumentTasks from "./DocumentTasks.svelte";
+    import { productionService, docService } from "./stores/services.js";
 
-    let { document } = $props();
-    let htmlContent = $derived(document && document.content ? marked.parse(document.content) : '<p>No content available.</p>');
+    let { document = $bindable() } = $props();
+    let htmlContent = $derived(
+        document && document.content
+            ? marked.parse(document.content)
+            : "<p>No content available.</p>",
+    );
+
+    async function handleRefresh() {
+        try {
+            const updated = await docService.getDocument(document.id);
+            document = updated;
+        } catch (e) {
+            console.error("Failed to refresh document", e);
+        }
+    }
 </script>
 
 <div class="document-view">
     <h2>{document?.name}</h2>
     <div class="meta">
         <span class="badge {document?.type}">{document?.type}</span>
-        <span class="badge status-{document?.status}">{document?.status.replace('_', ' ')}</span>
+        <span class="badge status-{document?.status}"
+            >{document?.status.replace("_", " ")}</span
+        >
         <span class="date">{document?.registration_date}</span>
         {#if document?.author}
             <span class="author">By {document.author}</span>
         {/if}
-         {#if document?.done_date}
+        {#if document?.done_date}
             <span class="date">Done: {document.done_date}</span>
         {/if}
     </div>
@@ -37,10 +54,12 @@
             <div class="grid">
                 {#each document.attachments as att}
                     <div class="attachment-card">
-                         {#if att.media_type && att.media_type.startsWith('image/')}
+                        {#if att.media_type && att.media_type.startsWith("image/")}
                             <img src={att.file_path} alt={att.filename} />
-                         {/if}
-                         <a href={att.file_path} target="_blank" rel="noreferrer">{att.filename}</a>
+                        {/if}
+                        <a href={att.file_path} target="_blank" rel="noreferrer"
+                            >{att.filename}</a
+                        >
                     </div>
                 {/each}
             </div>
@@ -54,17 +73,28 @@
                 {#each document.journal_entries as entry}
                     <div class="note-card">
                         <div class="note-header">
-                            <span class="note-badge {entry.type}">{entry.type}</span>
-                            <span class="note-author">{entry.author || 'Unknown'}</span>
+                            <span class="note-badge {entry.type}"
+                                >{entry.type}</span
+                            >
+                            <span class="note-author"
+                                >{entry.author || "Unknown"}</span
+                            >
                             <span class="note-date">{entry.created_at}</span>
-                            <span class="note-status {entry.status}">{entry.status}</span>
+                            <span class="note-status {entry.status}"
+                                >{entry.status}</span
+                            >
                         </div>
                         <p class="note-text">{entry.text}</p>
                         {#if entry.attachments?.length > 0}
                             <div class="note-attachments">
                                 <strong>Attachments:</strong>
                                 {#each entry.attachments as att}
-                                    <a href={att.file_path} target="_blank" rel="noreferrer" class="note-attachment-link">
+                                    <a
+                                        href={att.file_path}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        class="note-attachment-link"
+                                    >
                                         📎 {att.filename}
                                     </a>
                                 {/each}
@@ -75,6 +105,10 @@
             </div>
         </div>
     {/if}
+
+    <div class="tasks-section">
+        <DocumentTasks {document} refresh={() => window.location.reload()} />
+    </div>
 </div>
 
 <style>
@@ -98,11 +132,26 @@
         font-weight: 600;
         text-transform: uppercase;
     }
-    .plan { background-color: #dbeafe; color: #1e40af; }
-    .mail { background-color: #fce7f3; color: #9d174d; }
-    .other { background-color: #f3f4f6; color: #374151; }
-    .status-in_progress { background-color: #fef3c7; color: #92400e; }
-    .status-done { background-color: #dcfce7; color: #166534; }
+    .plan {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    .mail {
+        background-color: #fce7f3;
+        color: #9d174d;
+    }
+    .other {
+        background-color: #f3f4f6;
+        color: #374151;
+    }
+    .status-in_progress {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    .status-done {
+        background-color: #dcfce7;
+        color: #166534;
+    }
 
     .tags-row {
         display: flex;
@@ -132,7 +181,8 @@
         width: 100%;
         margin: 1rem 0;
     }
-    :global(.markdown-body th), :global(.markdown-body td) {
+    :global(.markdown-body th),
+    :global(.markdown-body td) {
         border: 1px solid #cbd5e1;
         padding: 0.5rem;
     }
@@ -140,7 +190,8 @@
         background-color: #f1f5f9;
         font-weight: 600;
     }
-    :global(.markdown-body h1), :global(.markdown-body h2) {
+    :global(.markdown-body h1),
+    :global(.markdown-body h2) {
         border-bottom: 1px solid #e2e8f0;
         padding-bottom: 0.3rem;
     }
@@ -206,9 +257,15 @@
         border-radius: 8px;
         border-left: 3px solid #cbd5e1;
     }
-    .note-card.info { border-left-color: #3b82f6; }
-    .note-card.warning { border-left-color: #f59e0b; }
-    .note-card.error { border-left-color: #ef4444; }
+    .note-card.info {
+        border-left-color: #3b82f6;
+    }
+    .note-card.warning {
+        border-left-color: #f59e0b;
+    }
+    .note-card.error {
+        border-left-color: #ef4444;
+    }
     .note-header {
         display: flex;
         align-items: center;
@@ -225,9 +282,15 @@
         border-radius: 4px;
         color: white;
     }
-    .note-badge.info { background: #3b82f6; }
-    .note-badge.warning { background: #f59e0b; }
-    .note-badge.error { background: #ef4444; }
+    .note-badge.info {
+        background: #3b82f6;
+    }
+    .note-badge.warning {
+        background: #f59e0b;
+    }
+    .note-badge.error {
+        background: #ef4444;
+    }
     .note-author {
         font-weight: 600;
         color: #1e293b;
@@ -302,11 +365,13 @@
             padding-top: 0.75rem;
             font-size: 0.9rem;
         }
-        .attachments, .notes-section {
+        .attachments,
+        .notes-section {
             margin-top: 1rem;
             padding-top: 0.75rem;
         }
-        .attachments h3, .notes-section h3 {
+        .attachments h3,
+        .notes-section h3 {
             font-size: 0.95rem;
             margin-bottom: 0.75rem;
         }

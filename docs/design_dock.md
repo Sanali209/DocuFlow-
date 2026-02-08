@@ -1,22 +1,23 @@
 [DESIGN_DOC]
 Context:
-- Problem: Missing dependency `python-multipart` for `run_solid.py`.
-- Constraints: Windows environment, specific Python path.
-- Non-goals: Full refactor of build system.
+- Problem: User requested a comprehensive list of available agent skills.
+- Constraints: Maintain strict adherence to project logging and documentation rules.
+- Non-goals: Modification of actual skill implementations.
 
 Architecture:
-- Components: FASTAPI backend, Svelte frontend (via `run_solid.py`).
-- Data flow: Local execution.
-- External dependencies: `python-multipart`, `uvicorn`.
+- Components: Meta-information retrieval from system instructions.
+- Data flow: Local agent context to user response.
+- External dependencies: None.
 
 Key Decisions:
-- [D1] Use full path to python executable for pip install – Rationale: `pip` command not in PATH, avoid ambiguity.
+- [D1] Self-Inventory – Rationale: Proactive communication of capabilities to assist user in task delegation.
 
 Interfaces:
 - N/A
 
 Assumptions & TODOs:
-- Assumptions: User will run `run_solid.py` manually after install.
+- Assumptions: User is familiar with basic AI agent interactions.
 - Open questions: None.
 - TODOs (with priority): None.
 [/DESIGN_DOC]
+

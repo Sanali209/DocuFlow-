@@ -1,14 +1,6 @@
 <script>
-    import {
-        fetchDocuments,
-        updateDocumentStatus,
-        deleteDocument,
-        fetchFilterPresets,
-        createFilterPreset,
-        deleteFilterPreset,
-        updateJournalEntry,
-        downloadDocumentZip,
-    } from "./api.js";
+    import { docService, journalService } from "./stores/services.js";
+    import { uiState } from "./stores/appState.svelte.js";
     import { push } from "./Router.svelte";
     import Modal from "./Modal.svelte";
     import DocumentView from "./DocumentView.svelte";
@@ -44,51 +36,58 @@
     let { onEdit } = $props();
 
     export async function refresh() {
-        let docs = await fetchDocuments(
-            search,
-            filterType,
-            filterStatus,
-            sortBy,
-            sortOrder,
-            filterTag,
-            startDate,
-            endDate,
-            dateField,
-            filterAssignee,
-            partSearch,
-        );
-
-        // Client-side filtering by task types if specified
-        // Note: For better performance with large datasets, this should be moved to server-side filtering
-        if (filterTaskTypes && filterTaskTypes.length > 0) {
-            docs = docs.filter((doc) => {
-                if (!doc.tasks || doc.tasks.length === 0) return false;
-                // Check if document has any tasks with the selected types
-                return doc.tasks.some((task) =>
-                    filterTaskTypes.includes(task.status),
-                );
+        try {
+            let docs = await docService.fetchDocuments({
+                search,
+                type: filterType,
+                status: filterStatus,
+                sort_by: sortBy,
+                sort_order: sortOrder,
+                tag: filterTag,
+                start_date: startDate,
+                end_date: endDate,
+                date_field: dateField,
+                assignee: filterAssignee,
+                part_search: partSearch,
             });
-        }
 
-        // Client-side filtering by material if specified
-        if (filterMaterial) {
-            docs = docs.filter((doc) => {
-                if (!doc.tasks || doc.tasks.length === 0) return false;
-                // Check if document has any tasks with the selected material
-                return doc.tasks.some(
-                    (task) =>
-                        task.material_id &&
-                        task.material_id.toString() ===
-                            filterMaterial.toString(),
-                );
-            });
-        }
+            // Client-side filtering by task types if specified
+            if (filterTaskTypes && filterTaskTypes.length > 0) {
+                docs = docs.filter((doc) => {
+                    if (!doc.tasks || doc.tasks.length === 0) return false;
+                    return doc.tasks.some((task) =>
+                        filterTaskTypes.includes(task.status),
+                    );
+                });
+            }
 
-        documents = docs;
+            // Client-side filtering by material if specified
+            if (filterMaterial) {
+                docs = docs.filter((doc) => {
+                    if (!doc.tasks || doc.tasks.length === 0) return false;
+                    return doc.tasks.some(
+                        (task) =>
+                            task.material_id &&
+                            task.material_id.toString() ===
+                                filterMaterial.toString(),
+                    );
+                });
+            }
+
+            documents = docs;
+        } catch (e) {
+            console.error("Failed to load documents", e);
+            uiState.addNotification("Failed to load documents", "error");
+        }
     }
 
     async function loadPresets() {
-        presets = await fetchFilterPresets();
+        try {
+            const res = await fetch("/api/filter-presets"); // Need to add to a service later
+            presets = await res.json();
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     onMount(() => {
@@ -103,14 +102,24 @@
     });
 
     async function handleStatusChange(doc, newStatus) {
-        await updateDocumentStatus(doc.id, newStatus);
-        refresh();
+        try {
+            await docService.updateStatus(doc.id, newStatus);
+            refresh();
+            uiState.addNotification(`Status updated to ${newStatus}`, "info");
+        } catch (e) {
+            uiState.addNotification("Failed to update status", "error");
+        }
     }
 
     async function handleDelete(id) {
         if (confirm("Are you sure you want to delete this document?")) {
-            await deleteDocument(id);
-            refresh();
+            try {
+                await docService.deleteDocument(id);
+                refresh();
+                uiState.addNotification("Document deleted", "info");
+            } catch (e) {
+                uiState.addNotification("Failed to delete document", "error");
+            }
         }
     }
 
@@ -155,12 +164,13 @@
     async function toggleNoteStatus(entryId, currentStatus) {
         const newStatus = currentStatus === "pending" ? "done" : "pending";
         try {
-            await updateJournalEntry(entryId, { status: newStatus });
+            await journalService.updateEntry(entryId, { status: newStatus });
             refresh();
             // Dispatch event to refresh journal view
             window.dispatchEvent(new CustomEvent("journal-entries-updated"));
         } catch (e) {
             console.error("Failed to update note status", e);
+            uiState.addNotification("Failed to update note status", "error");
         }
     }
 
@@ -210,12 +220,17 @@
         });
 
         try {
-            await createFilterPreset({ name, config });
+            const res = await fetch("/api/filter-presets", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, config }),
+            });
+            if (!res.ok) throw new Error("Failed to save preset");
             await loadPresets();
-            alert("Preset saved!");
+            uiState.addNotification("Preset saved", "info");
         } catch (e) {
             console.error(e);
-            alert("Failed to save preset");
+            uiState.addNotification("Failed to save preset", "error");
         }
     }
 
@@ -245,10 +260,15 @@
         e.stopPropagation(); // prevent selection change
         if (!confirm("Delete this preset?")) return;
         try {
-            await deleteFilterPreset(id);
+            const res = await fetch(`/api/filter-presets/${id}`, {
+                method: "DELETE",
+            });
+            if (!res.ok) throw new Error("Failed to delete preset");
             await loadPresets();
+            uiState.addNotification("Preset deleted", "info");
         } catch (e) {
             console.error(e);
+            uiState.addNotification("Failed to delete preset", "error");
         }
     }
 
@@ -286,7 +306,7 @@
 
     async function handleDownloadZip(doc) {
         try {
-            await downloadDocumentZip(doc.id, doc.name);
+            await docService.downloadDocumentZip(doc.id);
         } catch (e) {
             console.error(e);
             alert(
@@ -870,7 +890,8 @@
         line-height: 1.5;
         /* Truncate multi-line if needed, but "multiline items" implies showing more */
         display: -webkit-box;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }

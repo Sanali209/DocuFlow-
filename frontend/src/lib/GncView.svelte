@@ -2,18 +2,13 @@
     import { onMount } from "svelte";
     import { push } from "./Router.svelte";
     import {
-        parseGnc,
-        saveGnc,
-        fetchTasks,
-        fetchPartGnc,
-        fetchMaterials,
-        fetchSetting,
-        fetchLibraryParts,
-        fetchOrderTasks,
-        saveOrderNesting,
-        saveAsNewOrder,
-        fetchOrderNestingProject,
-    } from "./api";
+        gncService,
+        productionService,
+        inventoryService,
+        settingService,
+        docService,
+    } from "./stores/services.js";
+    import { uiState } from "./stores/appState.svelte.js";
     import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
     import GncCanvas from "./components/GncCanvas.svelte";
 
@@ -82,15 +77,21 @@
         if (!id) return;
         try {
             if (orderId) {
-                documentTasks = await fetchOrderTasks(orderId);
+                documentTasks =
+                    await productionService.fetchOrderTasks(orderId);
                 // Attempt to load full nesting project if editing an order
                 await loadProjectState();
             } else {
-                documentTasks = await fetchTasks(documentId);
+                // In the new system, jobs are fetched via productionService
+                // Fetching all tasks for a document
+                documentTasks = await productionService.fetchJobs(0, 1000, {
+                    document_id: documentId,
+                });
             }
             updateInventory();
         } catch (e) {
             console.error("Failed to load tasks", e);
+            uiState.addNotification("Failed to load document tasks", "error");
         }
     }
 
@@ -98,7 +99,8 @@
         if (!orderId) return;
         try {
             loading = true;
-            const project = await fetchOrderNestingProject(orderId);
+            const project =
+                await productionService.fetchOrderNestingProject(orderId);
             if (project && project.sheets) {
                 sheets = project.sheets.map((s) => ({
                     ...s.data,
@@ -108,8 +110,6 @@
                 if (sheets.length > 0) {
                     activeSheetIndex = 0;
                 }
-                // Optional: sync inventory if project.inventory is more accurate
-                // documentTasks = project.inventory || documentTasks;
             }
         } catch (e) {
             console.warn(
@@ -133,7 +133,7 @@
         selectedContour = null;
 
         try {
-            const parsedSheet = await parseGnc(file);
+            const parsedSheet = await gncService.parseGnc(file);
             sheets = [parsedSheet];
             updateInventory();
 
@@ -149,9 +149,10 @@
                     payload: { sheet: sheetData },
                 });
             }
+            uiState.addNotification("GNC file parsed successfully", "info");
         } catch (err) {
-            alert("Error parsing GNC file");
             console.error(err);
+            uiState.addNotification("Error parsing GNC file", "error");
         } finally {
             loading = false;
         }
@@ -291,13 +292,16 @@
                 return;
             }
 
-            const partSheet = await fetchPartGnc(partId);
+            const partSheet = await inventoryService.fetchPartGnc(partId);
             if (
                 !partSheet ||
                 !partSheet.parts ||
                 partSheet.parts.length === 0
             ) {
-                alert("No geometry found for this part.");
+                uiState.addNotification(
+                    "No geometry found for this part",
+                    "warning",
+                );
                 return;
             }
 
@@ -396,14 +400,17 @@
     });
 
     onMount(() => {
-        fetchLibraryParts()
+        inventoryService
+            .fetchLibraryParts()
             .then((lib) => (libraryParts = lib))
             .catch(console.error);
 
-        fetchMaterials()
+        inventoryService
+            .fetchMaterials()
             .then((m) => (materials = m))
             .catch(console.error);
-        fetchSetting("gnc_library_page_size")
+        settingService
+            .fetchSetting("gnc_library_page_size")
             .then((res) => {
                 if (res.value) libraryPageSize = parseInt(res.value);
             })
@@ -564,7 +571,8 @@
 
             if (partId) {
                 try {
-                    const partSheet = await fetchPartGnc(partId);
+                    const partSheet =
+                        await inventoryService.fetchPartGnc(partId);
                     if (partSheet?.parts?.length > 0) {
                         let partDef =
                             partSheet.parts.find(
@@ -593,11 +601,13 @@
 
         try {
             const [rotRes, popRes, spacRes] = await Promise.all([
-                fetchSetting("nesting_rotations").catch(() => ({ value: "4" })),
-                fetchSetting("nesting_population").catch(() => ({
+                settingService
+                    .fetchSetting("nesting_rotations")
+                    .catch(() => ({ value: "4" })),
+                settingService.fetchSetting("nesting_population").catch(() => ({
                     value: "10",
                 })),
-                fetchSetting("nesting_spacing").catch(() => ({
+                settingService.fetchSetting("nesting_spacing").catch(() => ({
                     value: "5",
                 })),
             ]);
@@ -665,14 +675,15 @@
             };
 
             if (orderId) {
-                await saveOrderNesting(project);
+                await productionService.saveOrderNesting(project);
             } else {
                 // Legacy single save
-                await saveGnc(sheet, filename, true);
+                await gncService.saveGnc(sheet, filename, true);
             }
-            alert("Project saved successfully!");
+            uiState.addNotification("Project saved successfully", "info");
         } catch (err) {
-            alert("Failed to save project: " + err.message);
+            console.error(err);
+            uiState.addNotification("Failed to save project", "error");
         } finally {
             loading = false;
         }
@@ -689,8 +700,12 @@
                 data: s,
             }));
 
-            const res = await saveAsNewOrder(name, allSheets, documentId);
-            alert(`New Order "${res.name}" created successfully!`);
+            const res = await productionService.saveAsNewOrder(
+                name,
+                allSheets,
+                documentId,
+            );
+            uiState.addNotification(`New Order "${res.name}" created`, "info");
             // Redirect to the new order
             push(`/gnc?orderId=${res.id}`);
             // Force reload data
@@ -698,7 +713,7 @@
             loadDocumentData();
         } catch (e) {
             console.error(e);
-            alert("Failed to save as new order: " + e.message);
+            uiState.addNotification("Failed to save as new order", "error");
         }
     }
 
@@ -772,8 +787,6 @@
                     {sheet}
                     {showDebug}
                     {nestingMode}
-                    width={800}
-                    height={600}
                     onselect={handleContourSelect}
                     onAreaChange={(area) => {
                         sheet.nestingArea = area;
@@ -1037,6 +1050,14 @@
 </div>
 
 <style>
+    .view-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        max-height: calc(100vh - 64px); /* Account for header if any */
+        overflow: hidden;
+    }
+
     .hidden-input {
         display: none;
     }
@@ -1075,12 +1096,6 @@
         padding: 0 0.5rem;
         cursor: pointer;
         color: #94a3b8;
-    }
-    .empty-state {
-        text-align: center;
-        padding: 2rem;
-        color: #94a3b8;
-        font-style: italic;
     }
 
     .search-bar {
@@ -1133,14 +1148,6 @@
         font-size: 0.8rem;
         border-right: 1px solid #555;
         outline: none;
-    }
-    .template-btn {
-        background: white;
-        border: 1px solid #cbd5e1;
-        padding: 0.5rem;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        cursor: pointer;
     }
 
     .canvas-area {

@@ -1,10 +1,10 @@
 <script>
-    import { onMount } from 'svelte';
-    import { fetchTags } from './api.js';
+    import { onMount } from "svelte";
+    import { docService } from "./stores/services.js";
 
     let { selectedTags = $bindable([]), placeholder = "Add tag..." } = $props();
 
-    let inputValue = $state('');
+    let inputValue = $state("");
     let allTags = $state([]);
     let suggestions = $state([]);
     let showSuggestions = $state(false);
@@ -12,7 +12,7 @@
 
     onMount(async () => {
         try {
-            allTags = await fetchTags();
+            allTags = await docService.fetchTags();
         } catch (e) {
             console.error("Failed to fetch tags", e);
         }
@@ -22,26 +22,27 @@
         inputValue = e.target.value;
 
         // Check for comma
-        if (inputValue.includes(',')) {
-            const parts = inputValue.split(',');
+        if (inputValue.includes(",")) {
+            const parts = inputValue.split(",");
             // If comma is not at start, process preceding part
             for (let part of parts) {
                 part = part.trim();
                 if (part) {
-                     if (!selectedTags.includes(part)) {
+                    if (!selectedTags.includes(part)) {
                         selectedTags = [...selectedTags, part];
-                     }
+                    }
                 }
             }
-             inputValue = ''; // Clear input after comma
-             showSuggestions = false;
-             return;
+            inputValue = ""; // Clear input after comma
+            showSuggestions = false;
+            return;
         }
 
         if (inputValue) {
-            suggestions = allTags.filter(t =>
-                t.name.toLowerCase().includes(inputValue.toLowerCase()) &&
-                !selectedTags.includes(t.name)
+            suggestions = allTags.filter(
+                (t) =>
+                    t.name.toLowerCase().includes(inputValue.toLowerCase()) &&
+                    !selectedTags.includes(t.name),
             );
             showSuggestions = true;
         } else {
@@ -53,22 +54,26 @@
         if (name && !selectedTags.includes(name)) {
             selectedTags = [...selectedTags, name];
         }
-        inputValue = '';
+        inputValue = "";
         showSuggestions = false;
         inputEl.focus();
     }
 
     function removeTag(name) {
-        selectedTags = selectedTags.filter(t => t !== name);
+        selectedTags = selectedTags.filter((t) => t !== name);
     }
 
     function handleKeydown(e) {
-        if (e.key === 'Enter') {
+        if (e.key === "Enter") {
             e.preventDefault();
             if (inputValue.trim()) {
                 addTag(inputValue.trim());
             }
-        } else if (e.key === 'Backspace' && !inputValue && selectedTags.length > 0) {
+        } else if (
+            e.key === "Backspace" &&
+            !inputValue &&
+            selectedTags.length > 0
+        ) {
             removeTag(selectedTags[selectedTags.length - 1]);
         }
     }
@@ -78,7 +83,8 @@
     {#each selectedTags as tag}
         <span class="tag-chip">
             {tag}
-            <button type="button" onclick={() => removeTag(tag)}>&times;</button>
+            <button type="button" onclick={() => removeTag(tag)}>&times;</button
+            >
         </span>
     {/each}
 
@@ -90,7 +96,7 @@
             oninput={handleInput}
             onkeydown={handleKeydown}
             {placeholder}
-            onblur={() => setTimeout(() => showSuggestions = false, 200)}
+            onblur={() => setTimeout(() => (showSuggestions = false), 200)}
             onfocus={() => inputValue && (showSuggestions = true)}
         />
 
@@ -164,7 +170,7 @@
         background: white;
         border: 1px solid #e2e8f0;
         border-radius: 4px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         list-style: none;
         padding: 0;
         margin: 0;

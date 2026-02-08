@@ -1,6 +1,7 @@
 <script>
     import { onMount } from "svelte";
-    import { fetchDashboardStats } from "./api.js";
+    import { uiState } from "./stores/appState.svelte.js";
+    import { docService } from "./stores/services.js"; // For stats
     import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
 
     let stats = $state(null);
@@ -25,11 +26,12 @@
         loading = true;
         error = null;
         try {
-            stats = await fetchDashboardStats();
+            stats = await docService.fetchDashboardStats();
         } catch (e) {
             console.error("Failed to load dashboard data", e);
             error =
                 "Failed to load dashboard statistics. Please try again later.";
+            uiState.addNotification("Dashboard stats failed", "error");
         } finally {
             loading = false;
         }

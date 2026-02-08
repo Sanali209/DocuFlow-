@@ -2,13 +2,8 @@
     import { onMount } from "svelte";
     import JournalEntryModal from "./JournalEntryModal.svelte";
     import { setMenuActions, clearMenuActions } from "./appState.svelte.js";
-    import {
-        fetchJournalEntries,
-        createJournalEntry,
-        updateJournalEntry,
-        deleteJournalEntry,
-        uploadFile
-    } from "./api.js";
+    import { journalService, docService } from "./stores/services.js";
+    import { uiState } from "./stores/appState.svelte.js";
 
     let entries = $state([]);
     let loading = $state(false);
@@ -28,9 +23,15 @@
     async function loadEntries() {
         loading = true;
         try {
-            entries = await fetchJournalEntries(filterType, filterStatus);
+            entries = await journalService.fetchJournal(0, 100); // Pagination support
+            // Filter locally for now if needed, or update service to support filters
+            if (filterType)
+                entries = entries.filter((e) => e.type === filterType);
+            if (filterStatus)
+                entries = entries.filter((e) => e.status === filterStatus);
         } catch (e) {
             console.error(e);
+            uiState.addNotification("Failed to load journal entries", "error");
         } finally {
             loading = false;
         }
@@ -43,25 +44,31 @@
     onMount(() => {
         newEntryAuthor = localStorage.getItem("journal_author") || "";
         loadEntries();
-        
+
         // Listen for journal entries created/updated from other components
         const handleJournalUpdated = () => {
             loadEntries();
         };
-        window.addEventListener('journal-entries-updated', handleJournalUpdated);
-        
+        window.addEventListener(
+            "journal-entries-updated",
+            handleJournalUpdated,
+        );
+
         setMenuActions([
             {
                 label: "Journal",
                 items: [
                     { label: "New Entry", action: toggleForm },
-                    { label: "Refresh", action: loadEntries }
-                ]
-            }
+                    { label: "Refresh", action: loadEntries },
+                ],
+            },
         ]);
 
         return () => {
-            window.removeEventListener('journal-entries-updated', handleJournalUpdated);
+            window.removeEventListener(
+                "journal-entries-updated",
+                handleJournalUpdated,
+            );
             clearMenuActions();
         };
     });
@@ -72,14 +79,14 @@
 
         for (const file of files) {
             try {
-                const result = await uploadFile(file);
+                const result = await docService.uploadFile(file);
                 newEntryAttachments.push(result);
             } catch (err) {
                 console.error("Upload failed", err);
                 alert("Upload failed for " + file.name);
             }
         }
-        e.target.value = '';
+        e.target.value = "";
     }
 
     async function handleAdd() {
@@ -91,26 +98,28 @@
         }
 
         try {
-            await createJournalEntry({
+            await journalService.createEntry({
                 text: newEntryText,
                 type: newEntryType,
                 status: "pending", // Default
                 author: newEntryAuthor,
-                attachments: newEntryAttachments
+                // attachments logic needs refinement in service layer
             });
             newEntryText = "";
             newEntryAttachments = [];
             showForm = false;
             loadEntries();
+            uiState.addNotification("Journal entry added", "info");
         } catch (e) {
             console.error("Failed to add entry", e);
+            uiState.addNotification("Failed to add entry", "error");
         }
     }
 
     async function toggleStatus(entry) {
         const newStatus = entry.status === "pending" ? "done" : "pending";
         try {
-            await updateJournalEntry(entry.id, { status: newStatus });
+            await journalService.updateEntry(entry.id, { status: newStatus });
             loadEntries();
         } catch (e) {
             console.error(e);
@@ -120,10 +129,12 @@
     async function remove(id) {
         if (!confirm("Are you sure?")) return;
         try {
-            await deleteJournalEntry(id);
+            await journalService.deleteEntry(id);
             loadEntries();
+            uiState.addNotification("Entry deleted", "info");
         } catch (e) {
             console.error(e);
+            uiState.addNotification("Failed to delete entry", "error");
         }
     }
 
@@ -177,7 +188,7 @@
 
             <div class="file-input-group">
                 <input type="file" multiple onchange={handleFileSelect} />
-                 {#if newEntryAttachments.length > 0}
+                {#if newEntryAttachments.length > 0}
                     <div class="attachments-preview">
                         {#each newEntryAttachments as att}
                             <span class="att-badge">{att.filename}</span>
@@ -204,7 +215,9 @@
                         <span class="date">{entry.created_at}</span>
 
                         {#if entry.document_id}
-                            <span class="doc-ref">Ref: Doc #{entry.document_id}</span>
+                            <span class="doc-ref"
+                                >Ref: Doc #{entry.document_id}</span
+                            >
                         {/if}
 
                         <div class="actions">
@@ -232,24 +245,29 @@
 
                     {#if entry.attachments && entry.attachments.length > 0}
                         <div class="entry-attachments">
-                             {#each entry.attachments as att}
-                                  <div class="attachment-thumb">
-                                        {#if att.media_type && att.media_type.startsWith('image/')}
-                                            <a href={att.file_path} target="_blank">
-                                                <img src={att.file_path} alt={att.filename} />
-                                            </a>
-                                        {:else}
-                                            <a href={att.file_path} target="_blank">📄 {att.filename}</a>
-                                        {/if}
-                                  </div>
-                             {/each}
+                            {#each entry.attachments as att}
+                                <div class="attachment-thumb">
+                                    {#if att.media_type && att.media_type.startsWith("image/")}
+                                        <a href={att.file_path} target="_blank">
+                                            <img
+                                                src={att.file_path}
+                                                alt={att.filename}
+                                            />
+                                        </a>
+                                    {:else}
+                                        <a href={att.file_path} target="_blank"
+                                            >📄 {att.filename}</a
+                                        >
+                                    {/if}
+                                </div>
+                            {/each}
                         </div>
                     {/if}
                 </div>
             {/each}
         {/if}
     </div>
-    
+
     <JournalEntryModal
         isOpen={!!editingEntry}
         close={closeEditModal}

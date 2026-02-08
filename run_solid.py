@@ -26,6 +26,8 @@ def build_frontend():
         print("Frontend dependencies already installed (skipping npm install).")
 
     print("Running npm build...")
+    # Standardize VITE_API_URL for the built frontend
+    os.environ["VITE_API_URL"] = "/api"
     run_command("npm run build", cwd=frontend_dir)
 
 def deploy_frontend():
@@ -83,6 +85,8 @@ if __name__ == "__main__":
         # Open browser after a short delay
         Timer(1.5, open_browser).start()
         
-        # Run Uvicorn
-        # We run the backend app, which is configured to serve static files
-        uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+        # Add backend to sys.path so 'src' is importable as a top-level package
+        sys.path.insert(0, os.path.join(os.getcwd(), "backend"))
+        
+        # Run Uvicorn with the refactored Pro API
+        uvicorn.run("src.api.main:app", host="0.0.0.0", port=8000, reload=True)

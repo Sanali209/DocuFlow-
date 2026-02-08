@@ -1,13 +1,13 @@
 <script>
     import { onMount } from "svelte";
+    import { inventoryService, gncService } from "./stores/services.js";
+    import { uiState } from "./stores/appState.svelte.js";
     import {
-        fetchParts,
-        fetchMaterials,
-        scanParts,
-        updatePart,
-        getParts,
-    } from "./api";
-    import { appState, addToTray, setMenuActions, clearMenuActions } from "./appState.svelte.js";
+        appState,
+        addToTray,
+        setMenuActions,
+        clearMenuActions,
+    } from "./appState.svelte.js";
     import PartThumbnail from "./components/PartThumbnail.svelte";
     import Tray from "./components/Tray.svelte";
     import ScanProgressModal from "./ScanProgressModal.svelte";
@@ -59,10 +59,14 @@
             if (maxHeight) filters.max_height = maxHeight;
 
             const [partsData, matData] = await Promise.all([
-                fetchParts(currentPage * limit, limit, filters),
+                inventoryService.fetchParts(
+                    currentPage * limit,
+                    limit,
+                    filters,
+                ),
                 // Only load materials once if empty
                 materials.length === 0
-                    ? fetchMaterials()
+                    ? inventoryService.fetchMaterials()
                     : Promise.resolve(materials),
             ]);
 
@@ -70,7 +74,7 @@
             if (materials.length === 0) materials = matData;
         } catch (e) {
             console.error(e);
-            alert("Failed to load parts");
+            uiState.addNotification("Failed to load parts", "error");
         } finally {
             loading = false;
         }
@@ -97,16 +101,15 @@
         scanMessage = "Initializing scan...";
 
         try {
-            await scanParts((update) => {
-                scanProgress = update.percent || 0;
-                scanStatus = update.status || "";
-                scanMessage = update.message || "";
-            });
+            await inventoryService.rescanParts();
 
-            // Reload parts after scan completes
-            if (scanStatus === "complete") {
-                await loadData();
-            }
+            scanProgress = 100;
+            scanStatus = "complete";
+            scanMessage =
+                "Scan triggered successfully. Check back in a few moments.";
+
+            // Reload parts
+            await loadData();
         } catch (e) {
             console.error("Scan error:", e);
             scanStatus = "error";
@@ -130,13 +133,13 @@
 
     async function handleSavePart(updatedPart) {
         try {
-            await updatePart(editingPart.id, updatedPart);
+            await inventoryService.updatePart(editingPart.id, updatedPart);
             await loadData();
-            alert("Part updated successfully");
+            uiState.addNotification("Part updated successfully", "info");
             showEditModal = false;
         } catch (e) {
             console.error("Update error:", e);
-            alert("Failed to update part");
+            uiState.addNotification("Failed to update part", "error");
         }
     }
 
@@ -147,9 +150,9 @@
                 label: "Parts",
                 items: [
                     { label: "Rescan Library", action: startScan },
-                    { label: "Refresh", action: loadData }
-                ]
-            }
+                    { label: "Refresh", action: loadData },
+                ],
+            },
         ]);
 
         return () => {
@@ -286,9 +289,7 @@
 <style>
     .parts-layout {
         display: flex;
-        height: calc(
-            100vh - 60px
-        ); /* Adjusted for header */
+        height: calc(100vh - 60px); /* Adjusted for header */
         gap: 20px;
         box-sizing: border-box;
         overflow: hidden; /* Prevent parent scrolling */

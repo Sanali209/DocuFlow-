@@ -1,11 +1,6 @@
 <script>
     import { onMount } from "svelte";
-    import {
-        updateTask,
-        deleteTask,
-        createTask,
-        fetchAssignees,
-    } from "./api.js";
+    import { productionService, settingService } from "./stores/services.js";
     import TaskModal from "./TaskModal.svelte";
     import AssigneeLibraryModal from "./AssigneeLibraryModal.svelte";
 
@@ -23,11 +18,11 @@
     let isAssigneeLibraryOpen = $state(false);
 
     onMount(async () => {
-        assignees = await fetchAssignees();
+        assignees = await settingService.fetchAssignees();
     });
 
     async function refreshAssignees() {
-        assignees = await fetchAssignees();
+        assignees = await settingService.fetchAssignees();
     }
 
     // Sort tasks: pending/planned first, then done
@@ -120,7 +115,7 @@
     async function handleStatusChange(task, newStatus) {
         try {
             task.status = newStatus; // Optimistic update
-            await updateTask(task.id, { status: newStatus });
+            await productionService.updateJobStatus(task.id, newStatus);
             refresh(); // Refresh parent to update badges/counts
         } catch (e) {
             console.error(e);
@@ -129,7 +124,10 @@
 
     async function handleAssigneeChange(task, newAssignee) {
         try {
-            await updateTask(task.id, { assignee: newAssignee });
+            await productionService.updateJob(task.id, {
+                ...task,
+                assignee: newAssignee,
+            });
         } catch (e) {
             console.error(e);
         }
@@ -138,7 +136,7 @@
     async function handleDelete(id) {
         if (!confirm("Delete task?")) return;
         try {
-            await deleteTask(id);
+            await productionService.deleteJob(id);
             tasks = tasks.filter((t) => t.id !== id);
             refresh();
         } catch (e) {
@@ -150,12 +148,17 @@
         try {
             if (taskData.id) {
                 // Update existing task
-                const updatedTask = await updateTask(taskData.id, {
-                    name: taskData.name,
-                    assignee: taskData.assignee,
-                    material_id: taskData.material_id,
-                    gnc_file_path: taskData.gnc_file_path,
-                });
+                const updatedTask = await productionService.updateJob(
+                    taskData.id,
+                    {
+                        id: taskData.id,
+                        name: taskData.name,
+                        assignee: taskData.assignee,
+                        material_id: taskData.material_id,
+                        gnc_file_path: taskData.gnc_file_path,
+                        document_id: document.id,
+                    },
+                );
 
                 // Update local state
                 tasks = tasks.map((t) =>
@@ -164,12 +167,13 @@
                 refresh();
             } else {
                 // Create new task
-                const newTask = await createTask(document.id, {
+                const newTask = await productionService.createJob({
                     name: taskData.name,
                     assignee: taskData.assignee,
                     status: "planned",
                     material_id: taskData.material_id,
                     gnc_file_path: taskData.gnc_file_path,
+                    document_id: document.id,
                 });
                 tasks = [...tasks, newTask];
                 refresh();

@@ -6,7 +6,7 @@
         clearTray,
         toggleTray,
     } from "../appState.svelte.js";
-    import { createOrder } from "../api.js";
+    import { docService } from "../stores/services.js";
 
     let creating = $state(false);
     let orderName = $state("");
@@ -22,7 +22,7 @@
                 id: i.part.id,
                 qty: i.quantity,
             }));
-            await createOrder(items, orderName);
+            await docService.createOrder(orderName, items);
 
             clearTray();
             toggleTray();

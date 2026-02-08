@@ -1,6 +1,6 @@
 <script>
     import { onMount } from "svelte";
-    import { fetchMaterials, fetchAssignees } from "./api.js";
+    import { inventoryService, settingService } from "./stores/services.js";
 
     let { isOpen, close, filters, onApply } = $props();
 
@@ -44,7 +44,7 @@
 
     async function loadMaterials() {
         try {
-            materials = await fetchMaterials();
+            materials = await inventoryService.fetchMaterials();
         } catch (e) {
             console.error("Failed to load materials", e);
         }
@@ -52,7 +52,7 @@
 
     async function loadAssignees() {
         try {
-            assignees = await fetchAssignees();
+            assignees = await settingService.fetchAssignees();
         } catch (e) {
             console.error("Failed to load assignees", e);
         }
