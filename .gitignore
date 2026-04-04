@@ -13,3 +13,6 @@ dist/
 frontend/dist/
 coverage/
 frontend/node_modules/
+docs/obsidian/docuFlow/.obsidian/plugins/copilot/data.json
+/shared_network/
+/src/docuflow/shared_network/

@@ -1,0 +1,73 @@
+import pytest
+import anyio
+import json
+from pathlib import Path
+from docuflow.infrastructure.bus import FileBusSystem
+from docuflow.infrastructure.config import Config
+
+@pytest.fixture
+def bus_config(tmp_path):
+    """Fixture for file bus testing with a temporary directory."""
+    shared_path = tmp_path / "shared"
+    shared_path.mkdir()
+    (shared_path / "BUS").mkdir()
+    (shared_path / "BUS" / "INBOX").mkdir()
+    (shared_path / "BUS" / "OUTBOX").mkdir()
+    
+    return Config(
+        node_id="TEST_NODE",
+        shared_path=str(shared_path)
+    )
+
+@pytest.mark.anyio
+async def test_file_bus_send_request(bus_config):
+    """Test that send_request creates a correctly named file atomically."""
+    bus = FileBusSystem(config=bus_config)
+    
+    req_id = await bus.send_request(
+        target_id="COORD",
+        command="PING",
+        data={"hello": "world"}
+    )
+    
+    # Check that the file exists in INBOX
+    inbox_path = Path(bus_config.shared_path) / "BUS" / "INBOX"
+    expected_filename = f"REQ_TEST_NODE_COORD_{req_id}.json"
+    file_path = inbox_path / expected_filename
+    
+    assert file_path.exists()
+    
+    # Verify content
+    with open(file_path, "r") as f:
+        msg = json.load(f)
+        assert msg["header"]["from"] == "TEST_NODE"
+        assert msg["header"]["to"] == "COORD"
+        assert msg["header"]["cmd"] == "PING"
+        assert msg["body"]["hello"] == "world"
+
+@pytest.mark.anyio
+async def test_file_bus_poll_inbox(bus_config):
+    """Test that poll_messages identifies requests for the current node."""
+    bus = FileBusSystem(config=bus_config)
+    inbox_path = Path(bus_config.shared_path) / "BUS" / "INBOX"
+    
+    # Create a request file for TEST_NODE
+    req_filename = "REQ_OTHER_TEST_NODE_12345.json"
+    req_path = inbox_path / req_filename
+    payload = {
+        "header": {"from": "OTHER", "to": "TEST_NODE", "id": "12345", "cmd": "TEST"},
+        "body": {}
+    }
+    with open(req_path, "w") as f:
+        json.dump(payload, f)
+        
+    # Create a request file for another node (should be ignored)
+    other_req_path = inbox_path / "REQ_OTHER_WRONG_12346.json"
+    with open(other_req_path, "w") as f:
+        json.dump({"header": {"to": "WRONG"}}, f)
+
+    messages = await bus.poll_messages(folder="INBOX")
+    
+    assert len(messages) == 1
+    assert messages[0]["header"]["id"] == "12345"
+    assert messages[0]["_filename"] == req_filename

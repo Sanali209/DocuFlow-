@@ -1,0 +1,26 @@
+Order: 		SIDRA-353203-SHLAV-2-07.07.2025.Dsp
+Date:  		Thursday, July 10, 2025    
+Time: 		08:30:30
+Machine: 	HANS_G3015-REXROTH
+Notes:      	
+Subnest#:	7, 2
+-------------------------------------------------------------------------------------------
+|Size X     |Size Y     |Material    |Thickness |Qty     |Area      |Weight   |Efficiency | 
+-------------------------------------------------------------------------------------------
+|3000       |1500       |SS 1.4003   |1.5       |1       |4.50      |52.65    |67.98      | 
+-------------------------------------------------------------------------------------------
+Parts in Subnest:
+---------------------------------------------------------------------------------------------------------------------------
+|Name                                                              |Ordered Qty  |Placed Qty |Weight    |Gross            |
+---------------------------------------------------------------------------------------------------------------------------
+|\\mrk\public\mrkdata\cutting_drawings\3400-28-010-C.dft           |22           |22         |2.15      |3.7              |
+|\\mrk\public\mrkdata\cutting_drawings\3400-28-011-C.dft           |22           |22         |1.52      |2.62             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-036-C.dft           |22           |22         |3.37      |5.81             |
+|\\mrk\public\mrkdata\cutting_drawings\7065-92-167-A.dft           |22           |22         |1.37      |2.36             |
+|\\mrk\public\mrkdata\cutting_drawings\3400-28-012-B.dft           |44           |44         |0.34      |0.59             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-010-C.dft           |22           |22         |0.83      |1.44             |
+|\\mrk\public\mrkdata\cutting_drawings\3391-20-271-A.dft           |22           |22         |0.14      |0.24             |
+|\\mrk\public\mrkdata\cutting_drawings\7058-92-017-A.dft           |22           |22         |0.11      |0.19             |
+|\\mrk\public\mrkdata\cutting_drawings\3400-28-016-A.dft           |88           |88         |0.03      |0.06             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-035-A.dft           |22           |22         |0.12      |0.2              |
+---------------------------------------------------------------------------------------------------------------------------

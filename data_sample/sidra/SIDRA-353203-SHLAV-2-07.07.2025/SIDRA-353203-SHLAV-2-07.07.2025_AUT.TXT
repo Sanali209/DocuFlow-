@@ -1,0 +1,366 @@
+Order: SIDRA-353203-SHLAV-2-07.07.2025.Dsp
+Date:  Thursday, July 10, 2025    Time: 08:32:57
+Machine: HANS_G3015-REXROTH
+Notes:      
+Total number of sheets:   207
+Total Number of SubNests: 34
+Order Efficiency:         73.92
+Total ordered parts: 5258
+Total Placed Parts:  5258
+Sub Nests in Order:
+----------------------------------------------------------------------------------------------------
+|Plate#  |Size X     |Size Y     |Material    |Thickness |Qty     |Area      |Weight   |Efficiency | 
+----------------------------------------------------------------------------------------------------
+|1, 1    |2500       |1250       |ST 37-2     |4         |2       |3.13      |97.5     |59.7       | 
+|1, 2    |2500       |1250       |ST 37-2     |4         |1       |3.13      |97.5     |61.46      | 
+|2, 1    |2500       |1250       |ST 37-2     |5         |2       |3.13      |121.875  |65.67      | 
+|2, 2    |780        |1250       |ST 37-2     |5         |1       |0.97      |38.025   |56.97      | 
+|3, 1    |760        |1250       |ST 37-2     |6         |1       |0.95      |44.46    |67.44      | 
+|4, 1    |680        |1250       |ST 37-2     |8         |1       |0.85      |53.04    |61.3       | 
+|5, 1    |450        |1250       |SS 1.4003   |1         |1       |0.56      |4.388    |61.55      | 
+|6, 1    |2500       |1250       |SS 1.4003   |1.2       |5       |3.13      |29.25    |93.63      | 
+|6, 2    |2500       |1250       |SS 1.4003   |1.2       |1       |3.13      |29.25    |67.17      | 
+|6, 3    |2500       |1250       |SS 1.4003   |1.2       |1       |3.13      |29.25    |69.93      | 
+|7, 1    |3000       |1500       |SS 1.4003   |1.5       |7       |4.50      |52.65    |55.3       | 
+|7, 2    |3000       |1500       |SS 1.4003   |1.5       |1       |4.50      |52.65    |67.98      | 
+|7, 3    |3000       |1500       |SS 1.4003   |1.5       |1       |4.50      |52.65    |81.51      | 
+|8, 1    |3000       |1500       |SS 1.4003   |2         |1       |4.50      |70.2     |69.43      | 
+|8, 2    |1220       |1500       |SS 1.4003   |2         |1       |1.83      |28.548   |63.31      | 
+|9, 1    |3000       |1500       |SS 1.4003   |3         |2       |4.50      |105.3    |67.37      | 
+|9, 2    |3000       |1500       |SS 1.4003   |3         |1       |4.50      |105.3    |62.1       | 
+|10, 1   |3000       |1500       |AA 5052-H32 |1.5       |2       |4.50      |18.225   |80.94      | 
+|10, 2   |3000       |1500       |AA 5052-H32 |1.5       |1       |4.50      |18.225   |81.3       | 
+|11, 1   |2500       |1250       |AA 5052-H32 |3         |22      |3.13      |25.313   |85.98      | 
+|11, 2   |2500       |1250       |AA 5052-H32 |3         |11      |3.13      |25.313   |75.77      | 
+|11, 3   |3000       |1500       |AA 5052-H32 |3         |11      |4.50      |36.45    |92.29      | 
+|11, 4   |3000       |1500       |AA 5052-H32 |3         |22      |4.50      |36.45    |56.4       | 
+|11, 5   |3000       |1500       |AA 5052-H32 |3         |22      |4.50      |36.45    |72.93      | 
+|11, 6   |3250       |1250       |AA 5052-H32 |3         |22      |4.06      |32.906   |68.04      | 
+|11, 7   |3250       |1250       |AA 5052-H32 |3         |22      |4.06      |32.906   |83.16      | 
+|11, 8   |4000       |1250       |AA 5052-H32 |3         |22      |5.00      |40.5     |71.64      | 
+|12, 1   |250        |1300       |SS 304      |4         |1       |0.33      |10.14    |71.63      | 
+|13, 1   |3000       |1500       |SAE 4130    |6         |1       |4.50      |210.6    |52.55      | 
+|14, 1   |3000       |1500       |AA 5052-H32 |2         |3       |4.50      |24.3     |79.61      | 
+|14, 2   |1310       |1500       |AA 5052-H32 |2         |1       |1.97      |10.611   |67.51      | 
+|15, 1   |3000       |1500       |AA 5052-H32 |4         |11      |4.50      |48.6     |82.07      | 
+|15, 2   |3000       |1500       |AA 5052-H32 |4         |2       |4.50      |48.6     |75.45      | 
+|15, 3   |1600       |1050       |AA 5052-H32 |4         |1       |1.68      |18.144   |89.82      | 
+----------------------------------------------------------------------------------------------------
+Parts in Order:-
+---------------------------------------------------------------------------------------------------------------------------
+|Name                                                              |Ordered Qty  |Placed Qty |Weight    |Gross            |
+---------------------------------------------------------------------------------------------------------------------------
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-116-A.dft           |88           |88         |0.12      |0.24             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-117-A.dft           |88           |88         |0.11      |0.2              |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-115-B.dft           |88           |88         |0.1       |0.19             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-118-A.dft           |88           |88         |0.09      |0.17             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-120-B.dft           |44           |44         |0.23      |0.43             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-123-B.dft           |44           |44         |0.23      |0.43             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-121-A.dft           |44           |44         |0.15      |0.28             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-124-A.dft           |44           |44         |0.15      |0.28             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-119-B.dft           |44           |44         |0.3       |0.49             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-232-B.dft           |88           |88         |0.22      |0.36             |
+|\\mrk\public\mrkdata\cutting_drawings\3399-31-003-A.dft           |22           |22         |0.24      |0.36             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-037-A.dft           |44           |44         |0.24      |0.36             |
+|\\mrk\public\mrkdata\cutting_drawings\7092-92-024-C.dft           |44           |44         |0.08      |0.12             |
+|\\mrk\public\mrkdata\cutting_drawings\3391-08-038-A.dft           |44           |44         |0.18      |0.27             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-121-A.dft           |44           |44         |0.05      |0.08             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-053-A.dft           |22           |22         |0.41      |0.63             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-126-A.dft           |44           |44         |0.24      |0.37             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-31-265-C.dft           |22           |22         |0.32      |0.49             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-31-267-C.dft           |396          |396        |0.31      |0.48             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-31-266-C.dft           |66           |66         |0.28      |0.44             |
+|\\mrk\public\mrkdata\cutting_drawings\3429-20-066-A.dft           |220          |220        |0.05      |0.08             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-109-A.dft           |44           |44         |0.05      |0.08             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-141-A.dft           |22           |22         |0.48      |0.8              |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-101-B.dft           |22           |22         |0.48      |0.8              |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-144-B.dft           |22           |22         |0.53      |0.89             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-111-B.dft           |22           |22         |0.46      |0.77             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-138-C.dft           |22           |22         |0.75      |1.25             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-135-A.dft           |22           |22         |0.6       |0.99             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-115-B.dft           |22           |22         |0.6       |0.99             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-103-B.dft           |22           |22         |0.23      |0.39             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-143-A.dft           |22           |22         |0.24      |0.39             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-102-B.dft           |22           |22         |0.4       |0.67             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-142-A.dft           |22           |22         |0.4       |0.67             |
+|\\mrk\public\mrkdata\cutting_drawings\3398-20-032-A.dft           |220          |220        |0.17      |0.28             |
+|\\mrk\public\mrkdata\cutting_drawings\7031-82-090-A.dft           |88           |88         |0.09      |0.14             |
+|\\mrk\public\mrkdata\cutting_drawings\3405-31-095-E.dft           |22           |22         |0.33      |0.46             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-038-A.dft           |66           |66         |0.54      |0.81             |
+|\\mrk\public\mrkdata\cutting_drawings\3404-20-089-C.dft           |66           |66         |0.61      |0.93             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-070-A.dft           |22           |22         |0.61      |0.93             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-053-A.dft           |44           |44         |0.68      |1.04             |
+|\\mrk\public\mrkdata\cutting_drawings\3391-20-272-B.dft           |22           |22         |0.21      |0.32             |
+|\\mrk\public\mrkdata\cutting_drawings\7020-92-058-B.dft           |22           |22         |0.18      |0.28             |
+|\\mrk\public\mrkdata\cutting_drawings\7078-92-001-A.dft           |44           |44         |0.41      |0.62             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-123-A.dft           |44           |44         |0.12      |0.19             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-100-A.dft           |22           |22         |0.24      |0.37             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-140-A.dft           |22           |22         |0.24      |0.37             |
+|\\mrk\public\mrkdata\cutting_drawings\7036-92-056-B.dft           |44           |44         |0.26      |0.39             |
+|\\mrk\public\mrkdata\cutting_drawings\7036-92-051-B.dft           |44           |44         |0.26      |0.4              |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-116-B.dft           |44           |44         |0.13      |0.2              |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-137-A.dft           |44           |44         |0.07      |0.11             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-110-A.dft           |44           |44         |0.03      |0.04             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-124-A.dft           |88           |88         |0.03      |0.04             |
+|\\mrk\public\mrkdata\cutting_drawings\3447-20-032-A.dft           |22           |22         |0.98      |1.45             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-147-B.dft           |22           |22         |0.56      |0.83             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-127-B.dft           |22           |22         |0.56      |0.83             |
+|\\mrk\public\mrkdata\cutting_drawings\3447-20-031-A.dft           |44           |44         |0.24      |0.35             |
+|\\mrk\public\mrkdata\cutting_drawings\7058-92-448-C.dft           |44           |44         |0.15      |0.22             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-128-A.dft           |44           |44         |0.08      |0.12             |
+|\\mrk\public\mrkdata\cutting_drawings\3400-28-010-C.dft           |22           |22         |2.15      |3.7              |
+|\\mrk\public\mrkdata\cutting_drawings\3400-28-011-C.dft           |22           |22         |1.52      |2.62             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-036-C.dft           |22           |22         |3.37      |5.81             |
+|\\mrk\public\mrkdata\cutting_drawings\7065-92-167-A.dft           |22           |22         |1.37      |2.36             |
+|\\mrk\public\mrkdata\cutting_drawings\3400-28-012-B.dft           |44           |44         |0.34      |0.59             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-010-C.dft           |22           |22         |0.83      |1.44             |
+|\\mrk\public\mrkdata\cutting_drawings\3391-20-271-A.dft           |22           |22         |0.14      |0.24             |
+|\\mrk\public\mrkdata\cutting_drawings\7058-92-017-A.dft           |22           |22         |0.11      |0.19             |
+|\\mrk\public\mrkdata\cutting_drawings\3400-28-016-A.dft           |88           |88         |0.03      |0.06             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-035-A.dft           |22           |22         |0.12      |0.2              |
+|\\mrk\public\mrkdata\cutting_drawings\3433-29-080-A.dft           |44           |44         |3.42      |3.91             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-045-A.dft           |44           |44         |0.13      |0.15             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-046-A.dft           |88           |88         |0.09      |0.1              |
+|\\mrk\public\mrkdata\cutting_drawings\3492-11-025-A.dft           |22           |22         |0.18      |0.21             |
+|\\mrk\public\mrkdata\cutting_drawings\3400-28-033-A.dft           |44           |44         |0.06      |0.1              |
+|\\mrk\public\mrkdata\cutting_drawings\3455-20-016-B.dft           |22           |22         |1.02      |1.24             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-20-005-A.dft           |22           |22         |10.23     |12.46            |
+|\\mrk\public\mrkdata\cutting_drawings\3455-31-041-A.dft           |22           |22         |4.07      |5.24             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-31-013-A.dft           |44           |44         |4.29      |5.22             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-20-018-A.dft           |44           |44         |0.04      |0.05             |
+|\\mrk\public\mrkdata\cutting_drawings\3419-20-017-A.dft           |176          |176        |0.01      |0.01             |
+|\\mrk\public\mrkdata\cutting_drawings\3532-11-001-B.dft           |22           |22         |29.01     |40.5             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-11-004-G.dft           |22           |22         |22.39     |32.91            |
+|\\mrk\public\mrkdata\cutting_drawings\3532-11-002-B.dft           |22           |22         |27.36     |32.91            |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-009-A.dft           |22           |22         |10.94     |14.71            |
+|\\mrk\public\mrkdata\cutting_drawings\3433-11-005-G.dft           |22           |22         |17.59     |24.12            |
+|\\mrk\public\mrkdata\cutting_drawings\3455-20-001-B.dft           |22           |22         |15.51     |20.86            |
+|\\mrk\public\mrkdata\cutting_drawings\3455-20-022-A.dft           |22           |22         |1.44      |1.94             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-032-A.dft           |22           |22         |0.65      |0.87             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-047-A.dft           |22           |22         |0.5       |0.68             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-20-002-B.dft           |22           |22         |8.25      |11.1             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-001-E.dft           |22           |22         |8.58      |11.54            |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-002-E.dft           |22           |22         |5.46      |7.35             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-029-A.dft           |22           |22         |0.43      |0.58             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-022-A.dft           |22           |22         |0.44      |0.59             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-025-A.dft           |22           |22         |0.25      |0.34             |
+|\\mrk\public\mrkdata\cutting_drawings\3409-20-096-A.dft           |44           |44         |0.03      |0.04             |
+|\\mrk\public\mrkdata\cutting_drawings\7065-92-168-A.dft           |22           |22         |0.24      |0.33             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-022-B.dft           |22           |22         |0.31      |0.42             |
+|\\mrk\public\mrkdata\cutting_drawings\3386-20-021-B.dft           |22           |22         |0.14      |0.19             |
+|\\mrk\public\mrkdata\cutting_drawings\3385-20-062-B.dft           |22           |22         |0.17      |0.23             |
+|\\mrk\public\mrkdata\cutting_drawings\3409-20-019-A.dft           |22           |22         |0.49      |0.66             |
+|\\mrk\public\mrkdata\cutting_drawings\3383-20-030-B.dft           |22           |22         |0.41      |0.56             |
+|\\mrk\public\mrkdata\cutting_drawings\3409-20-097-A.dft           |22           |22         |0.02      |0.02             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-050-A.dft           |44           |44         |0.08      |0.11             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-20-021-A.dft           |22           |22         |0.08      |0.1              |
+|\\mrk\public\mrkdata\cutting_drawings\3455-20-020-A.dft           |22           |22         |0.08      |0.1              |
+|\\mrk\public\mrkdata\cutting_drawings\7020-82-040-B.dft           |88           |88         |0.04      |0.05             |
+|\\mrk\public\mrkdata\cutting_drawings\3411-20-098-A.dft           |22           |22         |0         |0.01             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-035-A.dft           |22           |22         |0.14      |0.18             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-034-A.dft           |22           |22         |0.23      |0.3              |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-033-A.dft           |22           |22         |0.08      |0.1              |
+|\\mrk\public\mrkdata\cutting_drawings\3433-20-041-B.dft           |44           |44         |0.26      |0.34             |
+|\\mrk\public\mrkdata\cutting_drawings\3386-20-022-A.dft           |22           |22         |0.11      |0.14             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-027-A.dft           |22           |22         |0.12      |0.15             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-023-B.dft           |22           |22         |0.65      |0.83             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-024-A.dft           |22           |22         |0.6       |0.77             |
+|\\mrk\public\mrkdata\cutting_drawings\3386-20-023-A.dft           |22           |22         |0.04      |0.05             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-026-B.dft           |22           |22         |0.18      |0.23             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-025-B.dft           |22           |22         |0.18      |0.23             |
+|\\mrk\public\mrkdata\cutting_drawings\3383-20-056-A.dft           |22           |22         |0.06      |0.08             |
+|\\mrk\public\mrkdata\cutting_drawings\3402-30-045-B.dft           |22           |22         |0.03      |0.04             |
+|\\mrk\public\mrkdata\cutting_drawings\3413-20-034-A.dft           |44           |44         |0         |0.01             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-11-006-E.dft           |22           |22         |0.63      |0.78             |
+|\\mrk\public\mrkdata\cutting_drawings\3433-11-009-D.dft           |22           |22         |0.47      |0.58             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-001-A.dft           |22           |22         |0.25      |0.31             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-11-002-A.dft           |22           |22         |0.25      |0.31             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-020-B.dft           |22           |22         |0.11      |0.14             |
+|\\mrk\public\mrkdata\cutting_drawings\3455-65-021-B.dft           |22           |22         |0.16      |0.2              |
+|\\mrk\public\mrkdata\cutting_drawings\3455-30-016-A.dft           |44           |44         |0.04      |0.05             |
+---------------------------------------------------------------------------------------------------------------------------
+Parts in Sub Nests:
+--------------------------------------------------------------
+| Order         | SN_NUM   | P_NUM    | Placed Qty | SN_Qty  |
+--------------------------------------------------------------
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 23       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 24       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 25       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 26       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 27       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 28       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 29       | 5          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 30       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 31       | 3          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 32       | 6          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 33       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 34       | 35         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 1     | 35       | 32         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 2     | 29       | 12         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 2     | 31       | 16         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 2     | 32       | 10         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 2     | 34       | 150        | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 1, 2     | 35       | 24         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 1     | 16       | 10         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 1     | 19       | 198        | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 1     | 20       | 29         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 1     | 21       | 110        | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 1     | 22       | 12         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 2     | 16       | 2          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 2     | 17       | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 2     | 18       | 22         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 2     | 20       | 8          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 2, 2     | 22       | 20         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 3, 1     | 11       | 22         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 3, 1     | 12       | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 3, 1     | 13       | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 3, 1     | 14       | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 3, 1     | 15       | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 4, 1     | 9        | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 4, 1     | 10       | 88         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 5, 1     | 73       | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 6, 1     | 69       | 8          | 5       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 6, 2     | 69       | 2          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 6, 2     | 70       | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 6, 2     | 71       | 75         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 6, 2     | 72       | 2          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 6, 3     | 69       | 2          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 6, 3     | 71       | 13         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 6, 3     | 72       | 20         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 59       | 2          | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 60       | 1          | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 61       | 3          | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 62       | 3          | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 63       | 6          | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 64       | 3          | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 65       | 3          | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 66       | 3          | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 67       | 12         | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 1     | 68       | 3          | 7       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 59       | 7          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 60       | 7          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 61       | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 62       | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 63       | 2          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 64       | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 65       | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 66       | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 67       | 4          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 2     | 68       | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 3     | 59       | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 7, 3     | 60       | 8          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 1     | 53       | 22         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 1     | 54       | 22         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 1     | 55       | 20         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 1     | 56       | 8          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 1     | 57       | 3          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 1     | 58       | 16         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 2     | 55       | 2          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 2     | 56       | 36         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 2     | 57       | 41         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 8, 2     | 58       | 28         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 37       | 33         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 38       | 33         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 39       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 40       | 20         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 41       | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 43       | 18         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 44       | 6          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 49       | 1          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 50       | 4          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 51       | 22         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 1     | 52       | 44         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 40       | 4          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 42       | 22         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 43       | 8          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 44       | 32         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 45       | 22         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 46       | 22         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 47       | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 48       | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 49       | 42         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 9, 2     | 50       | 36         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 1    | 122      | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 1    | 123      | 2          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 1    | 124      | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 1    | 125      | 11         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 1    | 126      | 2          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 1    | 127      | 2          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 1    | 128      | 20         | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 2    | 123      | 18         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 2    | 126      | 18         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 2    | 127      | 18         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 10, 2    | 128      | 4          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 1    | 85       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 1    | 86       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 2    | 89       | 1          | 11      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 2    | 91       | 2          | 11      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 3    | 89       | 1          | 11      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 3    | 90       | 2          | 11      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 83       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 87       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 88       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 92       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 93       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 94       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 95       | 2          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 96       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 97       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 98       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 99       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 100      | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 101      | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 102      | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 103      | 2          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 104      | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 105      | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 106      | 4          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 4    | 107      | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 5    | 84       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 6    | 81       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 7    | 82       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 11, 8    | 80       | 1          | 22      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 12, 1    | 36       | 22         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 13, 1    | 1        | 88         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 13, 1    | 2        | 88         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 13, 1    | 3        | 88         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 13, 1    | 4        | 88         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 13, 1    | 5        | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 13, 1    | 6        | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 13, 1    | 7        | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 13, 1    | 8        | 44         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 108      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 109      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 110      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 111      | 14         | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 112      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 113      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 114      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 115      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 116      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 117      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 119      | 5          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 120      | 7          | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 1    | 121      | 14         | 3       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 108      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 109      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 110      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 111      | 2          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 112      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 113      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 114      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 115      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 116      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 117      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 118      | 22         | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 119      | 7          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 120      | 1          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 14, 2    | 121      | 2          | 1       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 15, 1    | 74       | 2          | 11      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 15, 1    | 75       | 2          | 11      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 15, 1    | 77       | 4          | 11      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 15, 1    | 78       | 4          | 11      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 15, 1    | 79       | 16         | 11      |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 15, 2    | 76       | 9          | 2       |
+| SIDRA-353203-SHLAV-2-07.07.2025.Dsp| 15, 3    | 76       | 4          | 1       |
+--------------------------------------------------------------

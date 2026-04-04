@@ -1,0 +1,265 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.9, pytest-9.0.2, pluggy-1.6.0 -- D:\github\DocuFlow-\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\github\DocuFlow-
+configfile: pyproject.toml
+plugins: anyio-4.13.0, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/unit/features/test_folder_scanner.py::test_scan_creates_work_item FAILED [100%]
+
+================================== FAILURES ===================================
+_________________________ test_scan_creates_work_item _________________________
+
+self = <sqlalchemy.engine.base.Connection object at 0x000001E7A844F800>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x000001E7A820DA00>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x000001E7A8478FE0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x000001E7A8478E00>
+parameters = [('2026-04-04 08:23:29.257438', '2026-04-04 08:23:29.257438', 1, 'TEST', 'PART', 1, ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1967: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x000001E7A820DA00>
+cursor = <sqlite3.Cursor object at 0x000001E7A8465D40>
+statement = 'INSERT INTO taskpart (created_at, updated_at, task_item_id, part_sku, version, qty, part_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+parameters = ('2026-04-04 08:23:29.257438', '2026-04-04 08:23:29.257438', 1, 'TEST', 'PART', 1, ...)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x000001E7A8478FE0>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlite3.OperationalError: database is locked
+
+.venv\Lib\site-packages\sqlalchemy\engine\default.py:952: OperationalError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-124/test_scan_creates_work_item0')
+scanner = <docuflow.features.folder_scanner.system.FolderScannerSystem object at 0x000001E7A82C28A0>
+mock_sdk = <MagicMock id='2094469798064'>
+engine = Engine(sqlite:///C:\Users\User\AppData\Local\Temp\pytest-of-User\pytest-124\test_scan_creates_work_item0\test_docuflow.db)
+
+    @pytest.mark.asyncio
+    async def test_scan_creates_work_item(tmp_path, scanner, mock_sdk, engine):
+        """Test that scanning a valid folder creates a WorkItem in the DB."""
+        # Setup test directory
+        sidra_root = tmp_path / "sidra"
+        sidra_root.mkdir()
+    
+        folder_name = "SIDRA-353203-SHLAV-2-07.07.2025"
+        wi_folder = sidra_root / folder_name
+        wi_folder.mkdir()
+    
+        # Create a dummy GNC file
+        gnc_file = wi_folder / "01-01-SIDRA-TEST.GNC"
+        gnc_file.write_text("(*SHEET 2000 1000 2 1)\n(PART NAME:TEST-PART)\n")
+    
+        settings = await mock_sdk.resolve_system_by_type(FolderScannerSettings)
+        settings.sidra_scan_path = str(sidra_root)
+    
+        # Run one scan
+>       await scanner.scan_directory_path(sidra_root, WorkItemType.SIDRA, settings)
+
+tests\unit\features\test_folder_scanner.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\docuflow\features\folder_scanner\system.py:165: in scan_directory_path
+    await self._process_folder_contents(entry, work_item, root_path)
+src\docuflow\features\folder_scanner\system.py:217: in _process_folder_contents
+    await self.process_task_file(gnc_path, work_item, root_path)
+src\docuflow\features\folder_scanner\system.py:263: in process_task_file
+    await self.resolve_part_mapping(part_data, task, mat_id)
+src\docuflow\features\folder_scanner\system.py:319: in resolve_part_mapping
+    db_session.commit()
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:2030: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:1311: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:1286: in _prepare_impl
+    self.session.flush()
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:4331: in flush
+    self._flush(objects)
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:4466: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py:121: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:4427: in _flush
+    flush_context.execute()
+.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py:466: in execute
+    rec.execute(self)
+.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py:642: in execute
+    util.preloaded.orm_persistence.save_obj(
+.venv\Lib\site-packages\sqlalchemy\orm\persistence.py:93: in save_obj
+    _emit_insert_statements(
+.venv\Lib\site-packages\sqlalchemy\orm\persistence.py:1233: in _emit_insert_statements
+    result = connection.execute(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1419: in execute
+    return meth(
+.venv\Lib\site-packages\sqlalchemy\sql\elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1846: in _execute_context
+    return self._exec_single_context(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1967: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x000001E7A820DA00>
+cursor = <sqlite3.Cursor object at 0x000001E7A8465D40>
+statement = 'INSERT INTO taskpart (created_at, updated_at, task_item_id, part_sku, version, qty, part_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+parameters = ('2026-04-04 08:23:29.257438', '2026-04-04 08:23:29.257438', 1, 'TEST', 'PART', 1, ...)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x000001E7A8478FE0>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
+E       [SQL: INSERT INTO taskpart (created_at, updated_at, task_item_id, part_sku, version, qty, part_id) VALUES (?, ?, ?, ?, ?, ?, ?)]
+E       [parameters: ('2026-04-04 08:23:29.257438', '2026-04-04 08:23:29.257438', 1, 'TEST', 'PART', 1, 1)]
+E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+.venv\Lib\site-packages\sqlalchemy\engine\default.py:952: OperationalError
+------------------------------ Captured log call ------------------------------
+WARNING  docuflow.features.folder_scanner.parsers.svg_gen:svg_gen.py:44 Generated SVG for TEST has zero dimensions.
+=========================== short test summary info ===========================
+FAILED tests/unit/features/test_folder_scanner.py::test_scan_creates_work_item - sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
+[SQL: INSERT INTO taskpart (created_at, updated_at, task_item_id, part_sku, version, qty, part_id) VALUES (?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('2026-04-04 08:23:29.257438', '2026-04-04 08:23:29.257438', 1, 'TEST', 'PART', 1, 1)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+============================== 1 failed in 8.40s ==============================

@@ -1,0 +1,41 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.9, pytest-9.0.2, pluggy-1.6.0 -- D:\github\DocuFlow-\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\github\DocuFlow-
+configfile: pyproject.toml
+plugins: anyio-4.13.0, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 4 items
+
+tests/unit/features/test_notifications_and_view.py::test_notification_render PASSED [ 25%]
+tests/unit/features/test_notifications_and_view.py::test_notification_emit PASSED [ 50%]
+tests/unit/features/test_notifications_and_view.py::test_view_smoke PASSED [ 75%]
+tests/unit/features/test_notifications_and_view.py::test_role_seeding FAILED [100%]
+
+================================== FAILURES ===================================
+______________________________ test_role_seeding ______________________________
+
+engine = Engine(sqlite:///:memory:)
+
+    @pytest.mark.asyncio
+    async def test_role_seeding(engine):
+        from docuflow.features.admin.system import AdminSystem
+        from docuflow.application.bus.orchestrator import P2POrchestrator
+    
+        mock_orchestrator = MagicMock(spec=P2POrchestrator)
+        mock_signer = MagicMock()
+        config = Config(node_id="test")
+    
+        admin = AdminSystem(None, mock_orchestrator, mock_signer, config) # Session not needed for seeding role names in memory if using engine manually later, but for compliance:
+        with Session(engine) as session:
+            admin = AdminSystem(session, mock_orchestrator, mock_signer, config)
+            admin.seed_default_roles()
+            session.commit()
+>           roles = session.exec(select(Role)).all()
+                                        ^^^^
+E           NameError: name 'Role' is not defined
+
+tests\unit\features\test_notifications_and_view.py:79: NameError
+=========================== short test summary info ===========================
+FAILED tests/unit/features/test_notifications_and_view.py::test_role_seeding - NameError: name 'Role' is not defined
+========================= 1 failed, 3 passed in 3.37s =========================

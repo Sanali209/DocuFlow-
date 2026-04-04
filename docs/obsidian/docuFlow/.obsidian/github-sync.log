@@ -1,0 +1,962 @@
+{"timestamp":"2026-03-15T09:49:00.083Z","level":"INFO","message":"Starting sync"}
+{"timestamp":"2026-03-15T09:49:03.609Z","level":"INFO","message":"Actions to sync","additional_data":[{"type":"upload","filePath":".trash/Без названия.md"}]}
+{"timestamp":"2026-03-15T09:49:05.147Z","level":"INFO","message":"Sync done"}
+{"timestamp":"2026-03-15T09:51:25.528Z","level":"INFO","message":"Adding config dir to metadata"}
+{"timestamp":"2026-03-15T09:51:43.984Z","level":"INFO","message":"Starting sync"}
+{"timestamp":"2026-03-15T09:51:48.346Z","level":"INFO","message":"Actions to sync","additional_data":[{"type":"upload","filePath":".trash/Без названия.md"},{"type":"upload","filePath":".obsidian/appearance.json"},{"type":"upload","filePath":".obsidian/app.json"},{"type":"upload","filePath":".obsidian/core-plugins.json"},{"type":"upload","filePath":".obsidian/graph.json"},{"type":"upload","filePath":".obsidian/workspace.json"},{"type":"upload","filePath":".obsidian/workspace-mobile.json"},{"type":"upload","filePath":".obsidian/community-plugins.json"},{"type":"upload","filePath":".obsidian/github-sync.log"},{"type":"upload","filePath":".obsidian/plugins/obsidian-tasks-plugin/manifest.json"},{"type":"upload","filePath":".obsidian/plugins/obsidian-tasks-plugin/main.js"},{"type":"upload","filePath":".obsidian/plugins/obsidian-tasks-plugin/styles.css"},{"type":"upload","filePath":".obsidian/plugins/github-gitless-sync/manifest.json"},{"type":"upload","filePath":".obsidian/plugins/github-gitless-sync/main.js"},{"type":"upload","filePath":".obsidian/plugins/github-gitless-sync/styles.css"},{"type":"upload","filePath":".obsidian/plugins/github-gitless-sync/data.json"},{"type":"upload","filePath":".obsidian/plugins/note-refactor-obsidian/manifest.json"},{"type":"upload","filePath":".obsidian/plugins/note-refactor-obsidian/main.js"},{"type":"upload","filePath":".obsidian/plugins/note-refactor-obsidian/styles.css"},{"type":"upload","filePath":".obsidian/plugins/obsidian-excalidraw-plugin/manifest.json"},{"type":"upload","filePath":".obsidian/plugins/obsidian-excalidraw-plugin/main.js"},{"type":"upload","filePath":".obsidian/plugins/obsidian-excalidraw-plugin/styles.css"},{"type":"upload","filePath":".obsidian/plugins/dataview/manifest.json"},{"type":"upload","filePath":".obsidian/plugins/dataview/main.js"},{"type":"upload","filePath":".obsidian/plugins/dataview/styles.css"}]}
+{"timestamp":"2026-03-15T09:52:03.552Z","level":"INFO","message":"Sync done"}
+{"timestamp":"2026-03-15T09:53:06.574Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T09:53:06.590Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T10:07:08.352Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T10:07:08.377Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T10:07:18.684Z","level":"INFO","message":"Starting sync"}
+{"timestamp":"2026-03-15T10:07:26.256Z","level":"INFO","message":"Actions to sync","additional_data":[{"type":"upload","filePath":".trash/Без названия.md"},{"type":"upload","filePath":".obsidian/workspace-mobile.json"},{"type":"upload","filePath":".obsidian/community-plugins.json"},{"type":"upload","filePath":".obsidian/github-sync.log"}]}
+{"timestamp":"2026-03-15T10:35:44.353Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T10:35:44.378Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T10:39:24.918Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T10:39:25.030Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T10:39:29.231Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T10:39:29.259Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T10:39:43.899Z","level":"INFO","message":"Received rename event","additional_data":"00_Inbox/Идея о нескольких ембедингах.md"}
+{"timestamp":"2026-03-15T10:39:43.925Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Идея о нескольких ембедингах.md"}
+{"timestamp":"2026-03-15T10:39:43.952Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Идея о нескольких ембедингах.md"}
+{"timestamp":"2026-03-15T10:39:43.957Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T10:39:43.965Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T11:05:03.310Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T11:05:03.335Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T12:28:13.361Z","level":"INFO","message":"Received create event","additional_data":"02_Maps/Projects_Master_MOC.md"}
+{"timestamp":"2026-03-15T12:28:13.429Z","level":"INFO","message":"Received create event","additional_data":"02_Maps/System"}
+{"timestamp":"2026-03-15T12:28:13.442Z","level":"INFO","message":"Received create event","additional_data":"02_Maps/System/Needs_Reatomization.md"}
+{"timestamp":"2026-03-15T12:28:13.443Z","level":"INFO","message":"Received create event","additional_data":"02_Maps/System/Unknown_Projects.md"}
+{"timestamp":"2026-03-15T12:28:13.453Z","level":"INFO","message":"Received modify event","additional_data":"_system/Jules/Protocols/protocol-master-pipeline.md"}
+{"timestamp":"2026-03-15T12:28:13.465Z","level":"INFO","message":"Received modify event","additional_data":"_system/Jules/Protocols/protocol-raw-processor.md"}
+{"timestamp":"2026-03-15T12:28:13.476Z","level":"INFO","message":"Received create event","additional_data":"_system/Jules/Protocols/protocol-reatomize.md"}
+{"timestamp":"2026-03-15T12:28:13.481Z","level":"INFO","message":"Received create event","additional_data":"_system/Jules/Protocols/protocol-research.md"}
+{"timestamp":"2026-03-15T12:28:13.488Z","level":"INFO","message":"Received modify event","additional_data":"_system/Jules/Protocols/protocol-tools.md"}
+{"timestamp":"2026-03-15T12:28:13.500Z","level":"INFO","message":"Received create event","additional_data":"_system/scripts"}
+{"timestamp":"2026-03-15T12:28:13.504Z","level":"INFO","message":"Received create event","additional_data":"_system/scripts/create_project.py"}
+{"timestamp":"2026-03-15T12:28:13.505Z","level":"INFO","message":"Received create event","additional_data":"_system/scripts/generate_uids.py"}
+{"timestamp":"2026-03-15T12:28:13.505Z","level":"INFO","message":"Received create event","additional_data":"_system/scripts/update_links.py"}
+{"timestamp":"2026-03-15T12:28:13.512Z","level":"INFO","message":"Received modify event","additional_data":"AGENT.md"}
+{"timestamp":"2026-03-15T12:28:13.519Z","level":"INFO","message":"Received create event","additional_data":"proposal_master_pipeline.md"}
+{"timestamp":"2026-03-15T12:28:13.527Z","level":"INFO","message":"Received modify event","additional_data":"README.md"}
+{"timestamp":"2026-03-15T12:28:13.687Z","level":"INFO","message":"Updated created file","additional_data":"02_Maps/Projects_Master_MOC.md"}
+{"timestamp":"2026-03-15T12:28:13.739Z","level":"INFO","message":"Updated created file","additional_data":"02_Maps/System/Needs_Reatomization.md"}
+{"timestamp":"2026-03-15T12:28:13.749Z","level":"INFO","message":"Updated created file","additional_data":"02_Maps/System/Unknown_Projects.md"}
+{"timestamp":"2026-03-15T12:28:13.769Z","level":"INFO","message":"Updated modified file","additional_data":"_system/Jules/Protocols/protocol-raw-processor.md"}
+{"timestamp":"2026-03-15T12:28:13.785Z","level":"INFO","message":"Updated created file","additional_data":"_system/Jules/Protocols/protocol-reatomize.md"}
+{"timestamp":"2026-03-15T12:28:13.791Z","level":"INFO","message":"Updated created file","additional_data":"_system/Jules/Protocols/protocol-research.md"}
+{"timestamp":"2026-03-15T12:28:13.807Z","level":"INFO","message":"Updated modified file","additional_data":"_system/Jules/Protocols/protocol-tools.md"}
+{"timestamp":"2026-03-15T12:28:13.813Z","level":"INFO","message":"Updated created file","additional_data":"_system/scripts/create_project.py"}
+{"timestamp":"2026-03-15T12:28:13.830Z","level":"INFO","message":"Updated created file","additional_data":"_system/scripts/generate_uids.py"}
+{"timestamp":"2026-03-15T12:28:13.854Z","level":"INFO","message":"Updated created file","additional_data":"_system/scripts/update_links.py"}
+{"timestamp":"2026-03-15T12:28:13.870Z","level":"INFO","message":"Updated modified file","additional_data":"AGENT.md"}
+{"timestamp":"2026-03-15T12:28:13.877Z","level":"INFO","message":"Updated created file","additional_data":"proposal_master_pipeline.md"}
+{"timestamp":"2026-03-15T12:28:13.889Z","level":"INFO","message":"Updated modified file","additional_data":"README.md"}
+{"timestamp":"2026-03-15T12:29:24.541Z","level":"INFO","message":"Received delete event","additional_data":"Reinforcement Learning.md"}
+{"timestamp":"2026-03-15T12:29:24.600Z","level":"INFO","message":"Updated deleted file","additional_data":"Reinforcement Learning.md"}
+{"timestamp":"2026-03-15T12:29:34.547Z","level":"INFO","message":"Received delete event","additional_data":"proposal_master_pipeline.md"}
+{"timestamp":"2026-03-15T12:29:34.582Z","level":"INFO","message":"Updated deleted file","additional_data":"proposal_master_pipeline.md"}
+{"timestamp":"2026-03-15T12:31:41.748Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T12:31:41.763Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T12:31:57.568Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:31:57.670Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:32:13.568Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:32:13.586Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:32:26.263Z","level":"INFO","message":"Received rename event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:26.274Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:26.283Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:26.286Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:32:26.294Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:32:32.197Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:32.221Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:34.326Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:34.349Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:46.683Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:46.705Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:48.874Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:48.893Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:53.359Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:53.373Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:55.509Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:55.530Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:58.189Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:32:58.210Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:33:00.625Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:33:00.640Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Futures planing.md"}
+{"timestamp":"2026-03-15T12:34:04.330Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T12:34:04.342Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T12:34:11.015Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:34:11.126Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:34:16.162Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:34:16.186Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T12:34:54.873Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T12:34:54.883Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T12:35:03.750Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T12:35:03.908Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T12:35:07.734Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T12:35:07.757Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T12:36:37.029Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T12:36:37.042Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T12:36:43.794Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T12:36:43.927Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T12:36:46.861Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T12:36:46.929Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T12:37:11.165Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T12:37:11.174Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T12:37:17.279Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T12:37:17.418Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T12:37:21.183Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T12:37:21.268Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T12:37:55.004Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T12:37:55.013Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T12:38:04.857Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T12:38:04.988Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T12:38:08.265Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T12:38:08.342Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T13:07:50.153Z","level":"INFO","message":"Loading metadata"}
+{"timestamp":"2026-03-15T13:07:50.167Z","level":"INFO","message":"Loaded metadata"}
+{"timestamp":"2026-03-15T13:15:43.449Z","level":"INFO","message":"Received create event","additional_data":"Без названия.md"}
+{"timestamp":"2026-03-15T13:15:43.581Z","level":"INFO","message":"Updated created file","additional_data":"Без названия.md"}
+{"timestamp":"2026-03-15T13:15:51.226Z","level":"INFO","message":"Received delete event","additional_data":"Без названия.md"}
+{"timestamp":"2026-03-15T13:15:51.249Z","level":"INFO","message":"Updated deleted file","additional_data":"Без названия.md"}
+{"timestamp":"2026-03-15T13:31:54.838Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Research_AI_Obsidian_Integration.md"}
+{"timestamp":"2026-03-15T13:31:54.873Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Research_Dizdock_Architecture.md"}
+{"timestamp":"2026-03-15T13:31:54.883Z","level":"INFO","message":"Received modify event","additional_data":"02_Maps/00_Artificial_Intelligence_MOC.md"}
+{"timestamp":"2026-03-15T13:31:54.904Z","level":"INFO","message":"Received modify event","additional_data":"02_Maps/00_Development_Architecture_MOC.md"}
+{"timestamp":"2026-03-15T13:31:54.970Z","level":"INFO","message":"Received modify event","additional_data":"02_Maps/00_PKM_Obsidian_MOC.md"}
+{"timestamp":"2026-03-15T13:31:55.095Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Research_AI_Obsidian_Integration.md"}
+{"timestamp":"2026-03-15T13:31:55.109Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Research_Dizdock_Architecture.md"}
+{"timestamp":"2026-03-15T13:32:26.558Z","level":"INFO","message":"Received modify event","additional_data":"01_Notes/Big_Todo.md"}
+{"timestamp":"2026-03-15T13:32:38.889Z","level":"INFO","message":"Received modify event","additional_data":"01_Notes/Big_Todo.md"}
+{"timestamp":"2026-03-15T13:32:49.895Z","level":"INFO","message":"Received modify event","additional_data":"03_Archive/_Merged_Duplicates/Obsidian_Questions.md"}
+{"timestamp":"2026-03-15T13:33:19.771Z","level":"INFO","message":"Received modify event","additional_data":"03_Archive/_Merged_Duplicates/Obsidian_Questions.md"}
+{"timestamp":"2026-03-15T13:33:32.648Z","level":"INFO","message":"Received modify event","additional_data":"03_Archive/Raw_History/Questions.md"}
+{"timestamp":"2026-03-15T13:35:04.217Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T13:35:04.390Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T13:35:08.378Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T13:35:08.405Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T13:36:58.891Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T13:36:59.001Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T13:37:25.447Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T13:37:25.488Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T13:37:35.437Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T13:37:35.561Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T13:38:12.566Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T13:38:12.829Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T13:38:16.561Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:38:16.678Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:38:27.385Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:38:27.453Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:38:30.696Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:38:37.307Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:38:46.477Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:38:46.560Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:38:51.102Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:38:57.883Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:09.928Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:10.197Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:12.825Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:12.894Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:37.738Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:38.009Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:48.515Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:48.730Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:58.324Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:39:58.489Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:01.033Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:01.090Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:20.612Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:20.756Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:24.084Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:24.119Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:32.473Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:32.542Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:41.945Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:42.007Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:40:57.035Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:41:04.131Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:41:07.080Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:41:07.145Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:41:16.860Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T13:41:16.895Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T14:05:13.646Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Android_Whiteboards_Comparison.md"}
+{"timestamp":"2026-03-15T14:05:13.672Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/iPad_A16_Games_Recommendations.md"}
+{"timestamp":"2026-03-15T14:05:13.692Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Modern_Python_Web_Frameworks.md"}
+{"timestamp":"2026-03-15T14:05:13.702Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/Django_Gallery/Gallery_Project_Architecture.md"}
+{"timestamp":"2026-03-15T14:05:13.717Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия 1_20260315135128.md"}
+{"timestamp":"2026-03-15T14:05:13.723Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия 2_20260315135129.md"}
+{"timestamp":"2026-03-15T14:05:13.734Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия 3_20260315135130.md"}
+{"timestamp":"2026-03-15T14:05:13.757Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия_20260315135131.md"}
+{"timestamp":"2026-03-15T14:05:13.909Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T14:05:13.925Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:05:13.969Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T14:05:14.011Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T14:05:14.078Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Android_Whiteboards_Comparison.md"}
+{"timestamp":"2026-03-15T14:05:14.178Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/iPad_A16_Games_Recommendations.md"}
+{"timestamp":"2026-03-15T14:05:14.256Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Modern_Python_Web_Frameworks.md"}
+{"timestamp":"2026-03-15T14:05:14.312Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/Django_Gallery/Gallery_Project_Architecture.md"}
+{"timestamp":"2026-03-15T14:05:14.322Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия 1_20260315135128.md"}
+{"timestamp":"2026-03-15T14:05:14.342Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия 2_20260315135129.md"}
+{"timestamp":"2026-03-15T14:05:14.354Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия 3_20260315135130.md"}
+{"timestamp":"2026-03-15T14:05:14.384Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия_20260315135131.md"}
+{"timestamp":"2026-03-15T14:05:14.407Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T14:05:14.452Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:05:14.464Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T14:05:14.473Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T14:11:01.624Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T14:11:01.768Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T14:11:05.501Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T14:11:05.521Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T14:13:17.806Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T14:13:17.901Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T14:14:09.350Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T14:14:09.467Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T14:14:16.257Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:14:16.392Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:14:19.257Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:14:19.280Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:14:37.143Z","level":"INFO","message":"Received rename event","additional_data":"00_Inbox/Правила для агента при разработке приложений.md"}
+{"timestamp":"2026-03-15T14:14:37.196Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Правила для агента при разработке приложений.md"}
+{"timestamp":"2026-03-15T14:14:37.206Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Правила для агента при разработке приложений.md"}
+{"timestamp":"2026-03-15T14:14:37.209Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:14:37.215Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:16:22.248Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:16:22.309Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:16:26.342Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:16:26.415Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:16:37.895Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:16:37.920Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T14:20:58.874Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T14:20:59.016Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T14:21:02.652Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T14:21:02.675Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T14:22:10.708Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T14:22:10.859Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T14:22:14.571Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T14:22:14.604Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T14:23:10.652Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 5.md"}
+{"timestamp":"2026-03-15T14:23:10.818Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 5.md"}
+{"timestamp":"2026-03-15T14:24:00.804Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 5.md"}
+{"timestamp":"2026-03-15T14:24:01.077Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 5.md"}
+{"timestamp":"2026-03-15T14:24:05.377Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Без названия 6.md"}
+{"timestamp":"2026-03-15T14:24:05.542Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Без названия 6.md"}
+{"timestamp":"2026-03-15T14:24:08.861Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 6.md"}
+{"timestamp":"2026-03-15T14:24:13.617Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 6.md"}
+{"timestamp":"2026-03-15T14:24:16.956Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Без названия 6.md"}
+{"timestamp":"2026-03-15T14:24:16.983Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Без названия 6.md"}
+{"timestamp":"2026-03-15T15:09:27.371Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/App_Development_Agent_Rules.md"}
+{"timestamp":"2026-03-15T15:09:27.427Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Data_Port_Pattern_Python.md"}
+{"timestamp":"2026-03-15T15:09:27.436Z","level":"INFO","message":"Received modify event","additional_data":"01_Notes/iPad_A16_Games_Recommendations.md"}
+{"timestamp":"2026-03-15T15:09:27.449Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/n8n_Python_Integration.md"}
+{"timestamp":"2026-03-15T15:09:27.453Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Network_Subnet_Scanning.md"}
+{"timestamp":"2026-03-15T15:09:27.459Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/NotebookLM_API_Integration.md"}
+{"timestamp":"2026-03-15T15:09:27.463Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/Django_Gallery/Django_Reactive_HTMX_Alpine.md"}
+{"timestamp":"2026-03-15T15:09:27.470Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/ToPlay_ToWatch_List.md"}
+{"timestamp":"2026-03-15T15:09:27.478Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/_Merged_Duplicates/iPad_Games_MMO_Survival_20260315143610.md"}
+{"timestamp":"2026-03-15T15:09:27.486Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия 1_20260315143334.md"}
+{"timestamp":"2026-03-15T15:09:27.493Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия 2_20260315143359.md"}
+{"timestamp":"2026-03-15T15:09:27.501Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия 3_20260315143422.md"}
+{"timestamp":"2026-03-15T15:09:27.507Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия 4_20260315143450.md"}
+{"timestamp":"2026-03-15T15:09:27.512Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия 5_20260315143527.md"}
+{"timestamp":"2026-03-15T15:09:27.518Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия 6_20260315143610.md"}
+{"timestamp":"2026-03-15T15:09:27.524Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Без названия_20260315143715.md"}
+{"timestamp":"2026-03-15T15:09:27.530Z","level":"INFO","message":"Received create event","additional_data":"03_Archive/Raw_History/Правила для агента при разработке приложений_20260315143757.md"}
+{"timestamp":"2026-03-15T15:09:27.537Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T15:09:27.574Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T15:09:27.578Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T15:09:27.584Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T15:09:27.587Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 5.md"}
+{"timestamp":"2026-03-15T15:09:27.593Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия 6.md"}
+{"timestamp":"2026-03-15T15:09:27.620Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T15:09:27.722Z","level":"INFO","message":"Received delete event","additional_data":"00_Inbox/Правила для агента при разработке приложений.md"}
+{"timestamp":"2026-03-15T15:09:28.098Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/App_Development_Agent_Rules.md"}
+{"timestamp":"2026-03-15T15:09:28.126Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Data_Port_Pattern_Python.md"}
+{"timestamp":"2026-03-15T15:09:28.138Z","level":"INFO","message":"Updated modified file","additional_data":"01_Notes/iPad_A16_Games_Recommendations.md"}
+{"timestamp":"2026-03-15T15:09:28.146Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/n8n_Python_Integration.md"}
+{"timestamp":"2026-03-15T15:09:28.158Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Network_Subnet_Scanning.md"}
+{"timestamp":"2026-03-15T15:09:28.172Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/NotebookLM_API_Integration.md"}
+{"timestamp":"2026-03-15T15:09:28.179Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/Django_Gallery/Django_Reactive_HTMX_Alpine.md"}
+{"timestamp":"2026-03-15T15:09:28.190Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/ToPlay_ToWatch_List.md"}
+{"timestamp":"2026-03-15T15:09:28.201Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/_Merged_Duplicates/iPad_Games_MMO_Survival_20260315143610.md"}
+{"timestamp":"2026-03-15T15:09:28.208Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия 1_20260315143334.md"}
+{"timestamp":"2026-03-15T15:09:28.220Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия 2_20260315143359.md"}
+{"timestamp":"2026-03-15T15:09:28.228Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия 3_20260315143422.md"}
+{"timestamp":"2026-03-15T15:09:28.239Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия 4_20260315143450.md"}
+{"timestamp":"2026-03-15T15:09:28.251Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия 5_20260315143527.md"}
+{"timestamp":"2026-03-15T15:09:28.258Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия 6_20260315143610.md"}
+{"timestamp":"2026-03-15T15:09:28.270Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Без названия_20260315143715.md"}
+{"timestamp":"2026-03-15T15:09:28.300Z","level":"INFO","message":"Updated created file","additional_data":"03_Archive/Raw_History/Правила для агента при разработке приложений_20260315143757.md"}
+{"timestamp":"2026-03-15T15:09:28.345Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 1.md"}
+{"timestamp":"2026-03-15T15:09:28.382Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 2.md"}
+{"timestamp":"2026-03-15T15:09:28.419Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 3.md"}
+{"timestamp":"2026-03-15T15:09:28.460Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 4.md"}
+{"timestamp":"2026-03-15T15:09:28.492Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 5.md"}
+{"timestamp":"2026-03-15T15:09:28.526Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия 6.md"}
+{"timestamp":"2026-03-15T15:09:28.542Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Без названия.md"}
+{"timestamp":"2026-03-15T15:09:28.549Z","level":"INFO","message":"Updated deleted file","additional_data":"00_Inbox/Правила для агента при разработке приложений.md"}
+{"timestamp":"2026-03-15T15:15:53.591Z","level":"INFO","message":"Received create event","additional_data":"Без названия.base"}
+{"timestamp":"2026-03-15T15:15:53.746Z","level":"INFO","message":"Updated created file","additional_data":"Без названия.base"}
+{"timestamp":"2026-03-15T15:16:09.453Z","level":"INFO","message":"Received modify event","additional_data":"Без названия.base"}
+{"timestamp":"2026-03-15T15:16:09.472Z","level":"INFO","message":"Updated modified file","additional_data":"Без названия.base"}
+{"timestamp":"2026-03-15T15:16:12.513Z","level":"INFO","message":"Received modify event","additional_data":"Без названия.base"}
+{"timestamp":"2026-03-15T15:16:12.542Z","level":"INFO","message":"Updated modified file","additional_data":"Без названия.base"}
+{"timestamp":"2026-03-15T15:16:28.423Z","level":"INFO","message":"Received delete event","additional_data":"Без названия.base"}
+{"timestamp":"2026-03-15T15:16:28.465Z","level":"INFO","message":"Updated deleted file","additional_data":"Без названия.base"}
+{"timestamp":"2026-03-16T03:03:42.085Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/AI_Agents_Ecosystem.md"}
+{"timestamp":"2026-03-16T03:03:42.115Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Android_Whiteboards_Comparison.md"}
+{"timestamp":"2026-03-16T03:03:42.121Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/App_Development_Agent_Rules.md"}
+{"timestamp":"2026-03-16T03:03:42.128Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Big_Todo.md"}
+{"timestamp":"2026-03-16T03:03:42.137Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Data_Port_Pattern_Python.md"}
+{"timestamp":"2026-03-16T03:03:42.144Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Dizdock_Ceh_Requirements.md"}
+{"timestamp":"2026-03-16T03:03:42.158Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Django_Advanced_Gallery_Project.md"}
+{"timestamp":"2026-03-16T03:03:42.166Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Draw.io candidate to my scheme draving softwore.md"}
+{"timestamp":"2026-03-16T03:03:42.171Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/gemini long read.md"}
+{"timestamp":"2026-03-16T03:03:42.176Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/gemini long reed.md"}
+{"timestamp":"2026-03-16T03:03:42.181Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/gemini longread.md"}
+{"timestamp":"2026-03-16T03:03:42.186Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Gemini_Chat_Architecture_DAM.md"}
+{"timestamp":"2026-03-16T03:03:42.197Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Gemini_Chat_LlamaIndex_Neo4j.md"}
+{"timestamp":"2026-03-16T03:03:42.206Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/iPad_A16_Games_Recommendations.md"}
+{"timestamp":"2026-03-16T03:03:42.211Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/LLAMA Indexing.md"}
+{"timestamp":"2026-03-16T03:03:42.217Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/LLM-приложения для упорядочивания информации.md"}
+{"timestamp":"2026-03-16T03:03:42.222Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Modern_Python_Web_Frameworks.md"}
+{"timestamp":"2026-03-16T03:03:42.230Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/n8n_Python_Integration.md"}
+{"timestamp":"2026-03-16T03:03:42.237Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Network_Subnet_Scanning.md"}
+{"timestamp":"2026-03-16T03:03:42.243Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/NotebookLM_API_Integration.md"}
+{"timestamp":"2026-03-16T03:03:42.248Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Pydantic and Neo4j inside gemini long read.md"}
+{"timestamp":"2026-03-16T03:03:42.253Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/README.md"}
+{"timestamp":"2026-03-16T03:03:42.260Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Research_AI_Obsidian_Integration.md"}
+{"timestamp":"2026-03-16T03:03:42.266Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Research_Dizdock_Architecture.md"}
+{"timestamp":"2026-03-16T03:03:42.274Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Sattelite app for Fast api services.md"}
+{"timestamp":"2026-03-16T03:03:42.281Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Settings Inside.md"}
+{"timestamp":"2026-03-16T03:03:42.289Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Software_List.md"}
+{"timestamp":"2026-03-16T03:03:42.301Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/ToPlay_ToWatch_List.md"}
+{"timestamp":"2026-03-16T03:03:42.309Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/VFS and Asset Intelligence.md"}
+{"timestamp":"2026-03-16T03:03:42.313Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T03:03:42.323Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/cosmic_telescope"}
+{"timestamp":"2026-03-16T03:03:42.335Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/cosmic_telescope/TODO.md"}
+{"timestamp":"2026-03-16T03:03:42.339Z","level":"INFO","message":"Received modify event","additional_data":"01_Notes/Projects/Django_Gallery/Main_Gallery_Futures.md"}
+{"timestamp":"2026-03-16T03:03:42.345Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/LLMProxy"}
+{"timestamp":"2026-03-16T03:03:42.351Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/LLMProxy/Diagram of LLMProxy anatomy.md"}
+{"timestamp":"2026-03-16T03:03:42.354Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/rag_service"}
+{"timestamp":"2026-03-16T03:03:42.357Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/rag_service/old_docks"}
+{"timestamp":"2026-03-16T03:03:42.358Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/rag_service/Tech Stack — RagService.md"}
+{"timestamp":"2026-03-16T03:03:42.363Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/rag_service/old_docks/Без названия 1.md"}
+{"timestamp":"2026-03-16T03:03:42.365Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/rag_service/old_docks/Без названия 2.md"}
+{"timestamp":"2026-03-16T03:03:42.365Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/rag_service/old_docks/Без названия.md"}
+{"timestamp":"2026-03-16T03:03:42.371Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/Rules for my python projects.md"}
+{"timestamp":"2026-03-16T03:03:42.379Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/Список моих проектов.md"}
+{"timestamp":"2026-03-16T03:03:42.383Z","level":"INFO","message":"Received modify event","additional_data":"02_Maps/00_Artificial_Intelligence_MOC.md"}
+{"timestamp":"2026-03-16T03:03:42.389Z","level":"INFO","message":"Received modify event","additional_data":"02_Maps/00_Development_Architecture_MOC.md"}
+{"timestamp":"2026-03-16T03:03:42.393Z","level":"INFO","message":"Received modify event","additional_data":"02_Maps/09_Global_TODO_Dashboard.md"}
+{"timestamp":"2026-03-16T03:03:42.400Z","level":"INFO","message":"Received modify event","additional_data":"02_Maps/Projects/Django_Gallery_MOC.md"}
+{"timestamp":"2026-03-16T03:03:42.403Z","level":"INFO","message":"Received modify event","additional_data":"02_Maps/System/Needs_Reatomization.md"}
+{"timestamp":"2026-03-16T03:03:42.409Z","level":"INFO","message":"Received modify event","additional_data":"02_Maps/System/Unknown_Projects.md"}
+{"timestamp":"2026-03-16T03:03:42.413Z","level":"INFO","message":"Received create event","additional_data":"_system/YamlRules.md"}
+{"timestamp":"2026-03-16T03:03:42.416Z","level":"INFO","message":"Received create event","additional_data":"Curent mainds.canvas"}
+{"timestamp":"2026-03-16T03:03:42.427Z","level":"INFO","message":"Received create event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:03:42.809Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/AI_Agents_Ecosystem.md"}
+{"timestamp":"2026-03-16T03:03:42.816Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Android_Whiteboards_Comparison.md"}
+{"timestamp":"2026-03-16T03:03:42.823Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/App_Development_Agent_Rules.md"}
+{"timestamp":"2026-03-16T03:03:42.829Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Big_Todo.md"}
+{"timestamp":"2026-03-16T03:03:42.834Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Data_Port_Pattern_Python.md"}
+{"timestamp":"2026-03-16T03:03:42.837Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Dizdock_Ceh_Requirements.md"}
+{"timestamp":"2026-03-16T03:03:42.839Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Django_Advanced_Gallery_Project.md"}
+{"timestamp":"2026-03-16T03:03:42.842Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Gemini_Chat_Architecture_DAM.md"}
+{"timestamp":"2026-03-16T03:03:42.845Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Gemini_Chat_LlamaIndex_Neo4j.md"}
+{"timestamp":"2026-03-16T03:03:42.848Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/iPad_A16_Games_Recommendations.md"}
+{"timestamp":"2026-03-16T03:03:42.850Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Modern_Python_Web_Frameworks.md"}
+{"timestamp":"2026-03-16T03:03:42.851Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/n8n_Python_Integration.md"}
+{"timestamp":"2026-03-16T03:03:42.854Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Network_Subnet_Scanning.md"}
+{"timestamp":"2026-03-16T03:03:42.856Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/NotebookLM_API_Integration.md"}
+{"timestamp":"2026-03-16T03:03:42.858Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Research_AI_Obsidian_Integration.md"}
+{"timestamp":"2026-03-16T03:03:42.862Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Research_Dizdock_Architecture.md"}
+{"timestamp":"2026-03-16T03:03:42.864Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Software_List.md"}
+{"timestamp":"2026-03-16T03:03:42.865Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/System_Critique.md"}
+{"timestamp":"2026-03-16T03:03:42.868Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/ToPlay_ToWatch_List.md"}
+{"timestamp":"2026-03-16T03:03:42.870Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/_Merged_Duplicates/iPad_Games_MMO_Survival_20260315143610.md"}
+{"timestamp":"2026-03-16T03:03:42.872Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/_Merged_Duplicates/Note_Taking_Software.md"}
+{"timestamp":"2026-03-16T03:03:42.874Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/_Merged_Duplicates/Obsidian_Questions.md"}
+{"timestamp":"2026-03-16T03:03:42.876Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/_Merged_Duplicates"}
+{"timestamp":"2026-03-16T03:03:42.884Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History"}
+{"timestamp":"2026-03-16T03:03:42.884Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/BIG TODO.md"}
+{"timestamp":"2026-03-16T03:03:42.884Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Development Plan Django Advanced Gallery.md"}
+{"timestamp":"2026-03-16T03:03:42.885Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Dizdock raw цех.md"}
+{"timestamp":"2026-03-16T03:03:42.885Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Gemini chat.md"}
+{"timestamp":"2026-03-16T03:03:42.885Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Gemini raw chat.md"}
+{"timestamp":"2026-03-16T03:03:42.885Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Library of apps wot i use.md"}
+{"timestamp":"2026-03-16T03:03:42.885Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Questions.md"}
+{"timestamp":"2026-03-16T03:03:42.885Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Software.md"}
+{"timestamp":"2026-03-16T03:03:42.885Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Критика системы.md"}
+{"timestamp":"2026-03-16T03:03:42.885Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Экосистема библиотек для разработки и обучения ИИ-агентов.md"}
+{"timestamp":"2026-03-16T03:03:42.886Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Futures planing.md"}
+{"timestamp":"2026-03-16T03:03:42.886Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/REPORT_2024-03-15.md"}
+{"timestamp":"2026-03-16T03:03:42.886Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 1.md"}
+{"timestamp":"2026-03-16T03:03:42.886Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 2.md"}
+{"timestamp":"2026-03-16T03:03:42.886Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 3.md"}
+{"timestamp":"2026-03-16T03:03:42.887Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 4.md"}
+{"timestamp":"2026-03-16T03:03:42.887Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия.md"}
+{"timestamp":"2026-03-16T03:03:42.887Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 1_20260315135128.md"}
+{"timestamp":"2026-03-16T03:03:42.887Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 2_20260315135129.md"}
+{"timestamp":"2026-03-16T03:03:42.887Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 3_20260315135130.md"}
+{"timestamp":"2026-03-16T03:03:42.887Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия_20260315135131.md"}
+{"timestamp":"2026-03-16T03:03:42.887Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 1_20260315143334.md"}
+{"timestamp":"2026-03-16T03:03:42.888Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 2_20260315143359.md"}
+{"timestamp":"2026-03-16T03:03:42.888Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 3_20260315143422.md"}
+{"timestamp":"2026-03-16T03:03:42.888Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 4_20260315143450.md"}
+{"timestamp":"2026-03-16T03:03:42.888Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 5_20260315143527.md"}
+{"timestamp":"2026-03-16T03:03:42.888Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия 6_20260315143610.md"}
+{"timestamp":"2026-03-16T03:03:42.888Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Без названия_20260315143715.md"}
+{"timestamp":"2026-03-16T03:03:42.888Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive/Raw_History/Правила для агента при разработке приложений_20260315143757.md"}
+{"timestamp":"2026-03-16T03:03:42.888Z","level":"INFO","message":"Received delete event","additional_data":"03_Archive"}
+{"timestamp":"2026-03-16T03:03:43.254Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols/protocol-cross-linking.md"}
+{"timestamp":"2026-03-16T03:03:43.262Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols/protocol-deduplication.md"}
+{"timestamp":"2026-03-16T03:03:43.271Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols/protocol-log-synth.md"}
+{"timestamp":"2026-03-16T03:03:43.279Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols/protocol-master-pipeline.md"}
+{"timestamp":"2026-03-16T03:03:43.295Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols/protocol-moc-builder.md"}
+{"timestamp":"2026-03-16T03:03:43.303Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols/protocol-raw-processor.md"}
+{"timestamp":"2026-03-16T03:03:43.322Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols/protocol-reatomize.md"}
+{"timestamp":"2026-03-16T03:03:43.327Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols/protocol-research.md"}
+{"timestamp":"2026-03-16T03:03:43.345Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols/protocol-tools.md"}
+{"timestamp":"2026-03-16T03:03:43.357Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules/Protocols"}
+{"timestamp":"2026-03-16T03:03:43.395Z","level":"INFO","message":"Received delete event","additional_data":"_system/Jules"}
+{"timestamp":"2026-03-16T03:03:43.458Z","level":"INFO","message":"Received delete event","additional_data":"_system/Obsidian_Setup/Plugins_Guide.md"}
+{"timestamp":"2026-03-16T03:03:43.466Z","level":"INFO","message":"Received delete event","additional_data":"_system/Obsidian_Setup"}
+{"timestamp":"2026-03-16T03:03:43.485Z","level":"INFO","message":"Received delete event","additional_data":"AGENT.md"}
+{"timestamp":"2026-03-16T03:03:43.488Z","level":"INFO","message":"Received delete event","additional_data":"personalZ/Pass.md"}
+{"timestamp":"2026-03-16T03:03:43.491Z","level":"INFO","message":"Received delete event","additional_data":"personalZ"}
+{"timestamp":"2026-03-16T03:03:43.509Z","level":"INFO","message":"Received delete event","additional_data":"README.md"}
+{"timestamp":"2026-03-16T03:03:44.704Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/AI_Agents_Ecosystem.md"}
+{"timestamp":"2026-03-16T03:03:44.765Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Android_Whiteboards_Comparison.md"}
+{"timestamp":"2026-03-16T03:03:44.779Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/App_Development_Agent_Rules.md"}
+{"timestamp":"2026-03-16T03:03:44.789Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Big_Todo.md"}
+{"timestamp":"2026-03-16T03:03:44.800Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Data_Port_Pattern_Python.md"}
+{"timestamp":"2026-03-16T03:03:44.814Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Dizdock_Ceh_Requirements.md"}
+{"timestamp":"2026-03-16T03:03:44.826Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Django_Advanced_Gallery_Project.md"}
+{"timestamp":"2026-03-16T03:03:44.838Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Draw.io candidate to my scheme draving softwore.md"}
+{"timestamp":"2026-03-16T03:03:44.851Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/gemini long read.md"}
+{"timestamp":"2026-03-16T03:03:44.871Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/gemini long reed.md"}
+{"timestamp":"2026-03-16T03:03:44.879Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/gemini longread.md"}
+{"timestamp":"2026-03-16T03:03:44.885Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Gemini_Chat_Architecture_DAM.md"}
+{"timestamp":"2026-03-16T03:03:44.891Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Gemini_Chat_LlamaIndex_Neo4j.md"}
+{"timestamp":"2026-03-16T03:03:44.896Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/iPad_A16_Games_Recommendations.md"}
+{"timestamp":"2026-03-16T03:03:44.903Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/LLAMA Indexing.md"}
+{"timestamp":"2026-03-16T03:03:44.910Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/LLM-приложения для упорядочивания информации.md"}
+{"timestamp":"2026-03-16T03:03:44.923Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Modern_Python_Web_Frameworks.md"}
+{"timestamp":"2026-03-16T03:03:44.928Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/n8n_Python_Integration.md"}
+{"timestamp":"2026-03-16T03:03:44.936Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Network_Subnet_Scanning.md"}
+{"timestamp":"2026-03-16T03:03:44.951Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/NotebookLM_API_Integration.md"}
+{"timestamp":"2026-03-16T03:03:44.962Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Pydantic and Neo4j inside gemini long read.md"}
+{"timestamp":"2026-03-16T03:03:44.972Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Research_AI_Obsidian_Integration.md"}
+{"timestamp":"2026-03-16T03:03:44.981Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Research_Dizdock_Architecture.md"}
+{"timestamp":"2026-03-16T03:03:44.992Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Sattelite app for Fast api services.md"}
+{"timestamp":"2026-03-16T03:03:45.005Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Settings Inside.md"}
+{"timestamp":"2026-03-16T03:03:45.021Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Software_List.md"}
+{"timestamp":"2026-03-16T03:03:45.029Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/ToPlay_ToWatch_List.md"}
+{"timestamp":"2026-03-16T03:03:45.038Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/VFS and Asset Intelligence.md"}
+{"timestamp":"2026-03-16T03:03:45.046Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T03:03:45.058Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/cosmic_telescope/TODO.md"}
+{"timestamp":"2026-03-16T03:03:45.068Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/LLMProxy/Diagram of LLMProxy anatomy.md"}
+{"timestamp":"2026-03-16T03:03:45.081Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/rag_service/Tech Stack — RagService.md"}
+{"timestamp":"2026-03-16T03:03:45.091Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/rag_service/old_docks/Без названия 1.md"}
+{"timestamp":"2026-03-16T03:03:45.096Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/rag_service/old_docks/Без названия 2.md"}
+{"timestamp":"2026-03-16T03:03:45.103Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/rag_service/old_docks/Без названия.md"}
+{"timestamp":"2026-03-16T03:03:45.113Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/Rules for my python projects.md"}
+{"timestamp":"2026-03-16T03:03:45.123Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/Список моих проектов.md"}
+{"timestamp":"2026-03-16T03:03:45.140Z","level":"INFO","message":"Updated modified file","additional_data":"02_Maps/System/Needs_Reatomization.md"}
+{"timestamp":"2026-03-16T03:03:45.151Z","level":"INFO","message":"Updated modified file","additional_data":"02_Maps/System/Unknown_Projects.md"}
+{"timestamp":"2026-03-16T03:03:45.161Z","level":"INFO","message":"Updated created file","additional_data":"_system/YamlRules.md"}
+{"timestamp":"2026-03-16T03:03:45.170Z","level":"INFO","message":"Updated created file","additional_data":"Curent mainds.canvas"}
+{"timestamp":"2026-03-16T03:03:45.180Z","level":"INFO","message":"Updated created file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:03:45.189Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/Android_Whiteboards_Comparison.md"}
+{"timestamp":"2026-03-16T03:03:45.199Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/App_Development_Agent_Rules.md"}
+{"timestamp":"2026-03-16T03:03:45.209Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/Data_Port_Pattern_Python.md"}
+{"timestamp":"2026-03-16T03:03:45.215Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/iPad_A16_Games_Recommendations.md"}
+{"timestamp":"2026-03-16T03:03:45.225Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/Modern_Python_Web_Frameworks.md"}
+{"timestamp":"2026-03-16T03:03:45.234Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/n8n_Python_Integration.md"}
+{"timestamp":"2026-03-16T03:03:45.245Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/Network_Subnet_Scanning.md"}
+{"timestamp":"2026-03-16T03:03:45.252Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/NotebookLM_API_Integration.md"}
+{"timestamp":"2026-03-16T03:03:45.262Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/Research_AI_Obsidian_Integration.md"}
+{"timestamp":"2026-03-16T03:03:45.272Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/Research_Dizdock_Architecture.md"}
+{"timestamp":"2026-03-16T03:03:45.284Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/ToPlay_ToWatch_List.md"}
+{"timestamp":"2026-03-16T03:03:45.291Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/_Merged_Duplicates/iPad_Games_MMO_Survival_20260315143610.md"}
+{"timestamp":"2026-03-16T03:03:45.312Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия 1_20260315135128.md"}
+{"timestamp":"2026-03-16T03:03:45.322Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия 2_20260315135129.md"}
+{"timestamp":"2026-03-16T03:03:45.328Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия 3_20260315135130.md"}
+{"timestamp":"2026-03-16T03:03:45.334Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия_20260315135131.md"}
+{"timestamp":"2026-03-16T03:03:45.342Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия 1_20260315143334.md"}
+{"timestamp":"2026-03-16T03:03:45.354Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия 2_20260315143359.md"}
+{"timestamp":"2026-03-16T03:03:45.361Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия 3_20260315143422.md"}
+{"timestamp":"2026-03-16T03:03:45.367Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия 4_20260315143450.md"}
+{"timestamp":"2026-03-16T03:03:45.378Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия 5_20260315143527.md"}
+{"timestamp":"2026-03-16T03:03:45.387Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия 6_20260315143610.md"}
+{"timestamp":"2026-03-16T03:03:45.403Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Без названия_20260315143715.md"}
+{"timestamp":"2026-03-16T03:03:45.413Z","level":"INFO","message":"Updated deleted file","additional_data":"03_Archive/Raw_History/Правила для агента при разработке приложений_20260315143757.md"}
+{"timestamp":"2026-03-16T03:03:45.423Z","level":"INFO","message":"Updated deleted file","additional_data":"_system/Jules/Protocols/protocol-cross-linking.md"}
+{"timestamp":"2026-03-16T03:03:45.434Z","level":"INFO","message":"Updated deleted file","additional_data":"_system/Jules/Protocols/protocol-deduplication.md"}
+{"timestamp":"2026-03-16T03:03:45.445Z","level":"INFO","message":"Updated deleted file","additional_data":"_system/Jules/Protocols/protocol-log-synth.md"}
+{"timestamp":"2026-03-16T03:03:45.452Z","level":"INFO","message":"Updated deleted file","additional_data":"_system/Jules/Protocols/protocol-moc-builder.md"}
+{"timestamp":"2026-03-16T03:03:45.462Z","level":"INFO","message":"Updated deleted file","additional_data":"_system/Jules/Protocols/protocol-raw-processor.md"}
+{"timestamp":"2026-03-16T03:03:45.470Z","level":"INFO","message":"Updated deleted file","additional_data":"_system/Jules/Protocols/protocol-reatomize.md"}
+{"timestamp":"2026-03-16T03:03:45.476Z","level":"INFO","message":"Updated deleted file","additional_data":"_system/Jules/Protocols/protocol-research.md"}
+{"timestamp":"2026-03-16T03:03:45.485Z","level":"INFO","message":"Updated deleted file","additional_data":"_system/Jules/Protocols/protocol-tools.md"}
+{"timestamp":"2026-03-16T03:03:45.495Z","level":"INFO","message":"Updated deleted file","additional_data":"AGENT.md"}
+{"timestamp":"2026-03-16T03:03:45.510Z","level":"INFO","message":"Updated deleted file","additional_data":"personalZ/Pass.md"}
+{"timestamp":"2026-03-16T03:03:45.519Z","level":"INFO","message":"Updated deleted file","additional_data":"README.md"}
+{"timestamp":"2026-03-16T03:04:45.144Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:45.170Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:47.470Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:47.503Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:49.516Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:49.535Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:51.569Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:51.603Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:53.599Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:53.639Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:55.640Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:55.673Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:57.672Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:57.695Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:04:59.995Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:00.019Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:19.942Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:19.974Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:21.975Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:22.002Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:23.989Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:24.012Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:26.003Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:26.026Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:28.019Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:28.046Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:30.036Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:30.055Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:32.043Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:32.058Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:35.317Z","level":"INFO","message":"Received modify event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:35.339Z","level":"INFO","message":"Updated modified file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:48.552Z","level":"INFO","message":"Received rename event","additional_data":"00_Inbox/rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:48.563Z","level":"INFO","message":"Received create event","additional_data":"00_Inbox/rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:48.571Z","level":"INFO","message":"Updated created file","additional_data":"00_Inbox/rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:48.574Z","level":"INFO","message":"Received delete event","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:05:48.582Z","level":"INFO","message":"Updated deleted file","additional_data":"rtk ai plugin install on windows.md"}
+{"timestamp":"2026-03-16T03:06:11.739Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T03:06:11.785Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T03:06:15.087Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T03:06:15.115Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T03:06:17.348Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T03:06:17.405Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T03:06:32.658Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T03:06:32.698Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:50:35.232Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:50:35.286Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:10.475Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:10.511Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:12.491Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:12.512Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:14.511Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:14.559Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:16.528Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:16.552Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:18.537Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:18.563Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:20.591Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:20.623Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:23.068Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:23.101Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:25.251Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:25.292Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:38.141Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:38.178Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:40.163Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:40.193Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:45.874Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:45.913Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:58.146Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:51:58.184Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:57:18.209Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:57:18.249Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:57:20.781Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:57:20.842Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:57:24.211Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:57:24.240Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:57:36.063Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:57:36.107Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:57:37.982Z","level":"INFO","message":"Received create event","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:57:38.037Z","level":"INFO","message":"Updated created file","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:57:48.808Z","level":"INFO","message":"Received modify event","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:57:48.840Z","level":"INFO","message":"Updated modified file","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:57:52.848Z","level":"INFO","message":"Received modify event","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:57:52.881Z","level":"INFO","message":"Updated modified file","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:00.071Z","level":"INFO","message":"Received modify event","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:00.086Z","level":"INFO","message":"Updated modified file","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:03.944Z","level":"INFO","message":"Received modify event","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:03.971Z","level":"INFO","message":"Updated modified file","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:08.033Z","level":"INFO","message":"Received modify event","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:08.050Z","level":"INFO","message":"Updated modified file","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:10.196Z","level":"INFO","message":"Received modify event","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:10.214Z","level":"INFO","message":"Updated modified file","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:13.007Z","level":"INFO","message":"Received modify event","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:13.040Z","level":"INFO","message":"Updated modified file","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T04:58:39.676Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:58:39.705Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:03.645Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:03.695Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:08.265Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:08.303Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:22.370Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:22.428Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:44.424Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:44.456Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:46.449Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:46.486Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:48.485Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:48.527Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:51.484Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:51.532Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:54.561Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:54.627Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:56.950Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T04:59:56.987Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:03.353Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:03.399Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:05.377Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:05.416Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:07.421Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:07.458Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:29.009Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:29.045Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:31.469Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:31.495Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:34.002Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:34.030Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:36.092Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:36.132Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:43.677Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:43.726Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:59.700Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:00:59.731Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:03.292Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:03.317Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:06.242Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:06.267Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:08.270Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:08.315Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:12.683Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:12.722Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:15.697Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:15.720Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:23.532Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:23.572Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:27.383Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:01:27.413Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:08.952Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:08.992Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:15.664Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:15.709Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:18.106Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:18.157Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:20.647Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:20.686Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:22.761Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:02:22.785Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:00.368Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:00.400Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:08.393Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:08.415Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:45.255Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:45.290Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:47.581Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:47.615Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:51.361Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:51.402Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:54.006Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:03:54.047Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:29.202Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:29.233Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:34.157Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:34.194Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:37.754Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:37.777Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:41.488Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:41.510Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:43.812Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:43.848Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:46.024Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:46.077Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:49.423Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:49.453Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:52.676Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:52.704Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:55.266Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:04:55.305Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:26.317Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:26.351Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:47.606Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:47.632Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:49.743Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:49.778Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:56.925Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:56.959Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:59.893Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:06:59.932Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:06.355Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:06.383Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:09.818Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:09.846Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:12.890Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:12.923Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:26.809Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:26.851Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:45.957Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:45.989Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:56.579Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:07:56.634Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:01.190Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:01.214Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:03.214Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:03.268Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:10.840Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:10.862Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:19.408Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:19.460Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:21.474Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:21.529Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:23.526Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:23.577Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:25.550Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:25.583Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:27.576Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:27.641Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:29.959Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:30.012Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:44.710Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:44.740Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:53.722Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:53.757Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:56.208Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:08:56.257Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:09:07.533Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:09:07.555Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-16T05:10:32.108Z","level":"INFO","message":"Received create event","additional_data":"Без названия.canvas"}
+{"timestamp":"2026-03-16T05:10:32.222Z","level":"INFO","message":"Updated created file","additional_data":"Без названия.canvas"}
+{"timestamp":"2026-03-16T05:11:02.203Z","level":"INFO","message":"Received rename event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:02.225Z","level":"INFO","message":"Received create event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:02.234Z","level":"INFO","message":"Updated created file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:02.237Z","level":"INFO","message":"Received delete event","additional_data":"Без названия.canvas"}
+{"timestamp":"2026-03-16T05:11:02.246Z","level":"INFO","message":"Updated deleted file","additional_data":"Без названия.canvas"}
+{"timestamp":"2026-03-16T05:11:22.910Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:22.934Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:33.453Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:33.482Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:38.337Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:38.369Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:47.374Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:47.388Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:54.290Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:11:54.304Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:12:18.719Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:12:18.734Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:12:23.773Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:12:23.787Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:12:33.792Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:12:33.812Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:12:39.323Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:12:39.356Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:01.878Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:01.910Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:09.135Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:09.154Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:11.271Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:11.285Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:14.050Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:14.073Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:17.513Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:17.531Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:27.582Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:27.602Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:32.562Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:32.587Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:36.787Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:36.814Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:43.490Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:13:43.516Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:00.420Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:00.435Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:06.621Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:06.641Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:19.774Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:19.788Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:24.335Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:24.365Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:27.170Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:27.193Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:36.713Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:36.732Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:41.595Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:41.608Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:48.282Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:48.311Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:50.807Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:14:50.830Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:01.473Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:01.485Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:06.131Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:06.148Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:24.621Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:24.630Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:40.553Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:40.568Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:44.669Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:44.680Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:46.941Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:46.980Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:53.191Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:53.207Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:57.263Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:15:57.276Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:16:11.446Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:16:11.534Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:17:21.357Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:17:21.387Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:17:29.807Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:17:29.826Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:17:56.854Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:17:56.881Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:01.250Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:01.270Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:03.581Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:03.625Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:08.316Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:08.326Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:10.381Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:10.397Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:14.108Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:14.133Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:16.267Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:16.301Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:23.344Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:18:23.374Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:32:45.828Z","level":"INFO","message":"Received modify event","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T05:32:45.857Z","level":"INFO","message":"Updated modified file","additional_data":"Архитектурный паттерн Слоеная архитектура.md"}
+{"timestamp":"2026-03-16T05:38:12.779Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:12.800Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:20.766Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:20.780Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:26.753Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:26.767Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:29.901Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:29.922Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:38.659Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:38.678Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:41.100Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:41.121Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:43.602Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:43.623Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:47.709Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:47.722Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:57.492Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:38:57.506Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:39:03.521Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:39:03.538Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:39:11.204Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:39:11.220Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:39:22.008Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:39:22.021Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T05:50:11.835Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Без названия.md"}
+{"timestamp":"2026-03-16T05:50:12.024Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Без названия.md"}
+{"timestamp":"2026-03-16T05:50:15.847Z","level":"INFO","message":"Received modify event","additional_data":"01_Notes/Без названия.md"}
+{"timestamp":"2026-03-16T05:50:15.872Z","level":"INFO","message":"Updated modified file","additional_data":"01_Notes/Без названия.md"}
+{"timestamp":"2026-03-16T05:50:58.977Z","level":"INFO","message":"Received rename event","additional_data":"01_Notes/Список патернов проектирования и шаблонов архитектур.md"}
+{"timestamp":"2026-03-16T05:50:59.048Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Список патернов проектирования и шаблонов архитектур.md"}
+{"timestamp":"2026-03-16T05:50:59.059Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Список патернов проектирования и шаблонов архитектур.md"}
+{"timestamp":"2026-03-16T05:50:59.061Z","level":"INFO","message":"Received delete event","additional_data":"01_Notes/Без названия.md"}
+{"timestamp":"2026-03-16T05:50:59.068Z","level":"INFO","message":"Updated deleted file","additional_data":"01_Notes/Без названия.md"}
+{"timestamp":"2026-03-16T06:13:27.806Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:27.834Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:29.965Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:29.995Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:32.197Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:32.224Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:34.241Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:34.257Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:36.580Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:36.602Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:39.496Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:39.526Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:41.881Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:41.903Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:44.143Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:44.155Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:46.194Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:46.203Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:48.238Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:48.257Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:50.744Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:50.757Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:54.678Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:54.702Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:59.125Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:13:59.155Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:14:04.490Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:14:04.518Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:14:24.012Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:14:24.032Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:14:26.404Z","level":"INFO","message":"Received modify event","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-16T06:14:26.436Z","level":"INFO","message":"Updated modified file","additional_data":"Наьюбоосок базового фраймворка.canvas"}
+{"timestamp":"2026-03-17T03:24:29.812Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Big_Todo.md"}
+{"timestamp":"2026-03-17T03:24:29.822Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/amaind"}
+{"timestamp":"2026-03-17T03:24:29.833Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/Projects/amaind/amaind project index.md"}
+{"timestamp":"2026-03-17T03:24:29.836Z","level":"INFO","message":"Received modify event","additional_data":"01_Notes/Projects/Список моих проектов.md"}
+{"timestamp":"2026-03-17T03:24:29.846Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/SoftCatalog"}
+{"timestamp":"2026-03-17T03:24:29.851Z","level":"INFO","message":"Received create event","additional_data":"01_Notes/SoftCatalog/ComfyUI.md"}
+{"timestamp":"2026-03-17T03:24:29.913Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Big_Todo.md"}
+{"timestamp":"2026-03-17T03:24:29.925Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/Projects/amaind/amaind project index.md"}
+{"timestamp":"2026-03-17T03:24:29.936Z","level":"INFO","message":"Updated modified file","additional_data":"01_Notes/Projects/Список моих проектов.md"}
+{"timestamp":"2026-03-17T03:24:29.952Z","level":"INFO","message":"Updated created file","additional_data":"01_Notes/SoftCatalog/ComfyUI.md"}
+{"timestamp":"2026-03-17T03:24:50.618Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:24:50.669Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:24:57.914Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:24:57.955Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:25:06.125Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:25:06.163Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:25:08.364Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:25:08.396Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:25:11.372Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:25:11.403Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:03.166Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:03.192Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:06.084Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:06.110Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:09.353Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:09.394Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:13.295Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:13.336Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:17.470Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:17.499Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:27.375Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:27.399Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:29.401Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:29.443Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:31.422Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:31.454Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:33.453Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:33.486Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:35.507Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:35.553Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:37.527Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:37.587Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:39.592Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:39.620Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:43.382Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:43.427Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:45.451Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:45.504Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:49.919Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:49.942Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:52.148Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:52.197Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:54.213Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:26:54.240Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:27:01.650Z","level":"INFO","message":"Received modify event","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
+{"timestamp":"2026-03-17T03:27:01.707Z","level":"INFO","message":"Updated modified file","additional_data":"00_Inbox/Основы гибкого Python-фреймворка gemini longread.md"}
