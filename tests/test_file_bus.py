@@ -1,7 +1,7 @@
 import pytest
-import anyio
 import json
 from pathlib import Path
+from docuflow.infrastructure import constants
 from docuflow.infrastructure.bus import FileBusSystem
 from docuflow.infrastructure.config import Config
 
@@ -71,3 +71,31 @@ async def test_file_bus_poll_inbox(bus_config):
     assert len(messages) == 1
     assert messages[0]["header"]["id"] == "12345"
     assert messages[0]["_filename"] == req_filename
+
+@pytest.mark.anyio
+async def test_file_bus_write_message_for_broadcast(bus_config):
+    """Critical path: orchestrator broadcast must be persisted via FileBus.write_message."""
+    bus = FileBusSystem(config=bus_config)
+    payload = {
+        "sender_id": "TEST_NODE",
+        "sequence": 1,
+        "timestamp": 123.0,
+        "payload": {"command": "PING", "data": {"ok": True}},
+        "signature": "sig",
+    }
+
+    await bus.write_message(payload)
+
+    inbox_path = Path(bus_config.shared_path) / "BUS" / "INBOX"
+    files = sorted(inbox_path.glob("*.json"))
+    assert len(files) == 1
+    assert files[0].name.startswith(constants.BUS_PREFIX_BROADCAST)
+
+    with open(files[0], "r", encoding="utf-8") as f:
+        stored = json.load(f)
+    assert stored["sender_id"] == "TEST_NODE"
+    assert stored["payload"]["command"] == "PING"
+
+    messages = await bus.poll_messages(folder="INBOX")
+    assert len(messages) == 1
+    assert messages[0]["payload"]["command"] == "PING"

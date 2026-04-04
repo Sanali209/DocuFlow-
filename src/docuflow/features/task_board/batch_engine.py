@@ -61,18 +61,24 @@ class BatchEngine:
     - create_batch — создание нового батча
     - split_batch — разделение батча
     """
+
+    def __init__(self, session: Session):
+        self.session = session
     
-    def compute(self, tasks: List[TaskItem], rule: BatchRule) -> List[BatchGroup]:
+    def compute(self, tasks: List[TaskItem], rule: Optional[BatchRule] = None) -> List[BatchGroup]:
         """
         Группирует задачи по критериям материала.
         
         Args:
             tasks: Список задач для группировки
-            rule: Правила группировки
+            rule: Правила группировки (необязательно, используются стандартные)
         
         Returns:
             List[BatchGroup] — список батчей
         """
+        if rule is None:
+            rule = BatchRule()
+            
         if not tasks:
             return []
         
@@ -104,14 +110,15 @@ class BatchEngine:
         
         return groups
     
-    def apply_batches(self, groups: List[BatchGroup], session: Session) -> None:
+    def apply_batches(self, groups: List[BatchGroup], session: Optional[Session] = None) -> None:
         """
         Применяет батчи к базе данных.
         
         Args:
             groups: Список батчей
-            session: SQLModel сессия
+            session: SQLModel сессия (необязательно)
         """
+        session = session or self.session
         for group in groups:
             for task in group.tasks:
                 task.batch_group_id = str(group.batch_group_id)
@@ -119,17 +126,18 @@ class BatchEngine:
         
         session.commit()
     
-    def check_stock_alerts(self, tasks: List[TaskItem], session: Session) -> List[StockAlert]:
+    def check_stock_alerts(self, tasks: List[TaskItem], session: Optional[Session] = None) -> List[StockAlert]:
         """
         Проверяет наличие деталей в запасе.
         
         Args:
             tasks: Список задач
-            session: SQLModel сессия
+            session: SQLModel сессия (необязательно)
         
         Returns:
             List[StockAlert] — список предупреждений
         """
+        session = session or self.session
         alerts = []
         
         for task in tasks:
@@ -157,14 +165,14 @@ class BatchEngine:
         
         return alerts
     
-    def move_task(self, task_id: int, new_batch_group_id: str, session: Session) -> TaskItem:
+    def move_task(self, task_id: int, new_batch_group_id: str, session: Optional[Session] = None) -> TaskItem:
         """
         Перемещает задачу в другой батч.
         
         Args:
             task_id: ID задачи
             new_batch_group_id: ID нового батча
-            session: SQLModel сессия
+            session: SQLModel сессия (необязательно)
         
         Returns:
             TaskItem — обновлённая задача
@@ -172,6 +180,7 @@ class BatchEngine:
         Raises:
             ValueError: если задача не найдена
         """
+        session = session or self.session
         task = session.get(TaskItem, task_id)
         if task is None:
             raise ValueError(f"Задача с ID {task_id} не найдена")
@@ -183,17 +192,18 @@ class BatchEngine:
         
         return task
     
-    def create_batch(self, task_ids: List[int], session: Session) -> str:
+    def create_batch(self, task_ids: List[int], session: Optional[Session] = None) -> str:
         """
         Создаёт новый батч для списка задач.
         
         Args:
             task_ids: Список ID задач
-            session: SQLModel сессия
+            session: SQLModel сессия (необязательно)
         
         Returns:
             str — ID нового батча
         """
+        session = session or self.session
         new_batch_id = str(uuid4())
         
         for task_id in task_ids:
@@ -209,7 +219,7 @@ class BatchEngine:
         self,
         batch_group_id: str,
         task_ids_to_separate: List[int],
-        session: Session,
+        session: Optional[Session] = None,
     ) -> str:
         """
         Разделяет батч на два.
@@ -217,11 +227,12 @@ class BatchEngine:
         Args:
             batch_group_id: ID исходного батча
             task_ids_to_separate: ID задач для разделения
-            session: SQLModel сессия
+            session: SQLModel сессия (необязательно)
         
         Returns:
             str — ID нового батча
         """
+        session = session or self.session
         new_batch_id = str(uuid4())
         
         for task_id in task_ids_to_separate:

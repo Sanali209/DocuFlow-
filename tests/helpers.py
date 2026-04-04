@@ -1,7 +1,13 @@
 from dishka import make_async_container
+from sqlalchemy import Engine
+from sqlmodel import SQLModel
 from docuflow.infrastructure.di import AppProvider
 from docuflow.sdk import SDK
 from docuflow.infrastructure.config import Config
+
+# Ensure SQLModel metadata is fully populated for test schema creation.
+import docuflow.domain.entities.identity  # noqa: F401
+import docuflow.domain.entities.production  # noqa: F401
 
 async def create_test_sdk(config: Config) -> SDK:
     """Helper to initialize a fully-isolated SDK instance for testing.
@@ -15,14 +21,11 @@ async def create_test_sdk(config: Config) -> SDK:
         
     Returns:
         An initialized SDK instance.
-        
-    Example:
-        >>> config = Config(node_id="NODE_A")
-        >>> sdk = await create_test_sdk(config)
-        >>> await sdk.on_startup()
     """
     provider = AppProvider(config)
     container = make_async_container(provider)
+    engine = await container.get(Engine)
+    SQLModel.metadata.create_all(engine)
     sdk = SDK(container)
     await sdk.on_startup()
     return sdk

@@ -244,6 +244,7 @@ class TaskBoardView:
             return
         
         groups = engine.compute(unassigned)
+        engine.apply_batches(groups)
         ui.notify(f"Создано {len(groups)} батчей", type="positive")
         self.render.refresh()
     
@@ -308,7 +309,6 @@ class TaskBoardView:
             select(TaskItem).where(
                 TaskItem.assigned_to_node.is_(None),
                 TaskItem.status.in_([
-                    TaskItemStatus.NEW,
                     TaskItemStatus.PLANNED,
                 ]),
             )

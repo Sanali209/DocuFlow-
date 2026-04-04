@@ -58,7 +58,7 @@ class WorkItemCard:
                 with ui.grid(columns=2).classes("w-full gap-4 mb-6 p-4 bg-gray-50 rounded"):
                     self._info_item("Наряд", self.work_item.sidra_number or "—")
                     self._info_item("Тип", self.work_item.work_item_type)
-                    self._info_item("Тор", self.work_item.tor_version or "—")
+                    self._info_item("Шаг Сидры (Тор)", self.work_item.sidra_step or "—")
                     self._info_item("Проект ID", str(self.work_item.project_id))
                     
                     if self.work_item.doc_received_at:
@@ -139,7 +139,8 @@ class WorkItemCard:
     
     def _render_work_log(self) -> None:
         """Рендерит историю событий."""
-        logs = self.work_item.work_logs
+        from sqlmodel import select
+        logs = self.system.db_session.exec(select(WorkLog).where(WorkLog.work_item_id == self.work_item.id)).all()
         if not logs:
             ui.label("История пуста").classes("italic text-gray-400")
             return
@@ -150,7 +151,7 @@ class WorkItemCard:
                     ui.label(log.created_at.strftime("%H:%M")).classes("text-caption text-gray-500 w-12")
                     with ui.column().classes("gap-0 flex-grow"):
                         ui.label(log.message).classes("text-body2")
-                        ui.label(f"👤 {log.user}").classes("text-[10px] text-gray-400 uppercase")
+                        ui.label(f"👤 {log.author}").classes("text-[10px] text-gray-400 uppercase")
                     
                     # Icons for log types
                     icon = "info"
@@ -158,7 +159,7 @@ class WorkItemCard:
                     if log.log_type == WorkLogType.STATUS_CHANGE.value:
                         icon = "swap_horiz"
                         color = "orange"
-                    elif log.log_type == WorkLogType.ERROR.value:
+                    elif log.log_type == WorkLogType.SCAN_ERROR.value:
                         icon = "error"
                         color = "red"
                     
@@ -167,7 +168,7 @@ class WorkItemCard:
     def _register_document(self, dialog: ui.dialog) -> None:
         """Обработка регистрации документа."""
         try:
-            self.system.register_document(self.work_item.id, user=self.user)
+            self.system.register_physical_document(self.work_item.id, author=self.user)
             ui.notify(f"Документ зарегистрирован", type="positive")
             dialog.close()
             # Note: The view should refresh items
@@ -177,11 +178,10 @@ class WorkItemCard:
     def _block_work_item(self, dialog: ui.dialog) -> None:
         """Блокировка наряда."""
         try:
-            self.system.set_status(
+            self.system.update_production_status(
                 self.work_item.id, 
                 new_status=WorkItemStatus.BLOCKED,
-                reason="Заблокировано вручную из карточки",
-                user=self.user
+                reason_note="Заблокировано вручную из карточки"
             )
             ui.notify(f"Наряд заблокирован", type="warning")
             dialog.close()

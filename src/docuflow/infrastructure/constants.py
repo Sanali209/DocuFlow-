@@ -4,8 +4,7 @@ This module houses all 'magic' strings, numbers, and protocol literals
 to ensure a self-documenting and maintainable codebase.
 
 Examples:
-    >>> from docuflow.infrastructure import constants
-    >>> print(constants.BUS_INBOX_DIR)
+    >>> BUS_INBOX_DIR
     INBOX
 """
 
@@ -17,6 +16,7 @@ BUS_TEMP_PREFIX = "TEMP_"
 BUS_EXTENSION = ".json"
 BUS_PREFIX_REQ = "REQ_"
 BUS_PREFIX_RES = "RES_"
+BUS_PREFIX_BROADCAST = "BROADCAST_"
 BUS_DELIMITER = "_"
 
 # --- Distributed Coordination ---

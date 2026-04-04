@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import time
 from pathlib import Path
@@ -33,7 +32,7 @@ class InboxHandler(FileSystemEventHandler):
         if event.is_directory:
             return
 
-        filename = os.path.basename(event.src_path)
+        filename = os.path.basename(os.fsdecode(event.src_path))
         if self._is_valid_new_message(filename):
             logger.debug(f"FileBus: Valid new message detected: {filename}")
 
@@ -52,10 +51,8 @@ class FileBusSystem(BaseSystem):
     polling-based monitoring.
 
     Examples:
-        >>> # Sending a request to another node
-        >>> bus = container.get(FileBusSystem)
-        >>> await bus.send_request("STATION_A", "CLEAN_HEAD", {"force": True})
-        '1712012345678'
+        Create an instance with node configuration and use `send_request()`
+        or `send_response()` from an async context.
     """
 
     def __init__(self, config: Config):
@@ -159,6 +156,17 @@ class FileBusSystem(BaseSystem):
         file_path = target_dir / filename
         await anyio.Path(file_path).unlink(missing_ok=True)
 
+    async def write_message(self, payload: Dict[str, Any]) -> str:
+        """Write a raw P2P envelope for orchestrator-level broadcasts.
+
+        Returns:
+            The generated protocol message id used in the filename.
+        """
+        message_id = self._generate_unique_id()
+        filename = self._build_broadcast_filename(self._node_id, message_id)
+        await self._atomic_write(self._inbox, filename, payload)
+        return message_id
+
     # --- Private Helpers: Complexity Decomposition ---
 
     def _ensure_directories_exist(self) -> None:
@@ -169,6 +177,13 @@ class FileBusSystem(BaseSystem):
     def _generate_unique_id(self) -> str:
         """Generate a millisecond-precision timestamp ID."""
         return str(int(time.time() * 1000))
+
+    def _build_broadcast_filename(self, from_id: str, unique_id: str) -> str:
+        """Construct a broadcast filename visible to all nodes."""
+        return (
+            f"{constants.BUS_PREFIX_BROADCAST}{from_id}"
+            f"{constants.BUS_DELIMITER}{unique_id}{constants.BUS_EXTENSION}"
+        )
 
     def _build_filename(
         self, prefix: str, from_id: str, to_id: str, unique_id: str
@@ -204,6 +219,12 @@ class FileBusSystem(BaseSystem):
             return False
         if filename.startswith(constants.BUS_TEMP_PREFIX):
             return False
+
+        if (
+            folder_name == constants.BUS_INBOX_DIR
+            and filename.startswith(constants.BUS_PREFIX_BROADCAST)
+        ):
+            return True
 
         # Protocol check: {TYPE}_{FROM}_{TO}_{ID}.json
         # Check if current node_id is in the 'TO' position
