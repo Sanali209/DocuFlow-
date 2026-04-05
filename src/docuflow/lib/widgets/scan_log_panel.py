@@ -46,9 +46,10 @@ class ScanLogPanel:
                         )
                     for log in logs:
                         self._render_log_item(log)
-        except Exception:
+        except Exception as e:
             # Silent fail for UI polling to avoid spamming alerts
-            pass
+            import logging
+            logging.getLogger(__name__).debug(f"Scan log panel refresh failed: {e}")
 
     def _render_log_item(self, log: WorkLog):
         """Render a single log entry with a badge."""

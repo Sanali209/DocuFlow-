@@ -153,8 +153,10 @@ class AppProvider(Provider):
             from loguru import logger
 
             logger.debug(f"AppProvider: created SDK instance id={id(self._sdk)}")
-        except Exception:
-            pass
+        except Exception as e:
+            # Loguru import failed - continue without debug logging
+            import sys
+            print(f"Warning: SDK debug logging unavailable: {e}", file=sys.stderr)
         return self._sdk
 
     # --- Vertical Slice Feature Systems ---

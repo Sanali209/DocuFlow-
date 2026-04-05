@@ -191,5 +191,7 @@ class SDK:
         if self._orchestrator:
             try:
                 await self._orchestrator.on_shutdown()
-            except Exception:
-                pass
+            except Exception as e:
+                # Orchestrator shutdown failure - log but continue cleanup
+                from loguru import logger
+                logger.error(f"SDK: Orchestrator shutdown failed: {e}")

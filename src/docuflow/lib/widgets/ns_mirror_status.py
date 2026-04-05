@@ -59,5 +59,7 @@ class NSMirrorStatus:
                     self.main_status.classes("text-white")
                     self.sub_status.text = f"{bucket_count} target files matching network"
 
-        except Exception:
-            pass
+        except Exception as e:
+            # UI polling failure - silent to avoid alert spam
+            import logging
+            logging.getLogger(__name__).debug(f"NS Mirror status widget update failed: {e}")
