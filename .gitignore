@@ -1,12 +1,24 @@
 __pycache__/
 *.pyc
 .env
+!.env.template
 venv/
 .venv/
-backend/sql_app.db
-sql_app.db
+
+# Runtime artifacts - databases
+*.db
 *.db-shm
 *.db-wal
+
+# Runtime artifacts - env files
+*.env
+!.env.template
+
+# Runtime artifacts - shared network
+shared_network/
+
+# Debug/reproduction scripts
+reproduce_issue.py
 node_modules/
 dist/
 .DS_Store
