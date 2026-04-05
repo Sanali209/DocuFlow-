@@ -357,7 +357,12 @@ class FolderScannerSystem(BaseSystem):
             return FolderScannerSettings(**data)
 
     def _calculate_file_checksum(self, file_path: Path) -> str:
-        md5 = hashlib.md5()
+        """Calculate MD5 checksum for file deduplication and change detection.
+        
+        Note: MD5 is used here only for fast file comparison and deduplication,
+        not for cryptographic security. For this use case, MD5 is acceptable.
+        """
+        md5 = hashlib.md5()  # noqa: S324
         with open(file_path, "rb") as f:
             for chunk in iter(lambda: f.read(self.FILE_HASH_CHUNK_SIZE), b""):
                 md5.update(chunk)

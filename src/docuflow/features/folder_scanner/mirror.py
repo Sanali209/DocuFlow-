@@ -168,7 +168,12 @@ class NSMirrorService(BaseSystem):
         return Path(scan_root_str) / task.file_path
 
     def _calculate_md5(self, path: Path) -> str:
-        h = hashlib.md5()
+        """Calculate MD5 checksum for file deduplication and change detection.
+        
+        Note: MD5 is used here only for fast file comparison and deduplication,
+        not for cryptographic security. For this use case, MD5 is acceptable.
+        """
+        h = hashlib.md5()  # noqa: S324
         with open(path, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 h.update(chunk)
