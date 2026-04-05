@@ -51,11 +51,22 @@ class AuthSystem(BaseSystem):
 
         return user
 
-    def bootstrap_admin(self, default_password: str = "docuflow_admin") -> User | None:
+    def bootstrap_admin(self, default_password: str | None = None) -> User | None:
         """
         Ensures at least one administrative user exists in the cluster.
         Symmetry: Every node must be able to bootstrap an initial admin if empty.
+        
+        Args:
+            default_password: Admin password. If None, reads from DOCUFLOW_ADMIN_PASSWORD env var.
         """
+        import os
+        from loguru import logger
+        
+        if default_password is None:
+            default_password = os.getenv("DOCUFLOW_ADMIN_PASSWORD")
+            if not default_password:
+                logger.warning("DOCUFLOW_ADMIN_PASSWORD not set, skipping admin bootstrap")
+                return None
         # 1. Check if the administrative role exists
         admin_role_name = "Админ"
         role_statement = select(Role).where(Role.name == admin_role_name)
