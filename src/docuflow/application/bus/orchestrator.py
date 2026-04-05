@@ -108,7 +108,7 @@ class P2POrchestrator(BaseSystem):
         try:
             import asyncio
 
-            asyncio.create_task(self._run_orchestration_master())
+            self._orchestration_task = asyncio.create_task(self._run_orchestration_master())
         except ImportError:
             # Fallback for non-asyncio anyio backends (e.g. Trio)
             # In a real production system, we'd have a more robust backend-agnostic starter
