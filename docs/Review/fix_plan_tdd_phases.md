@@ -145,7 +145,7 @@ uv run pytest --collect-only -q > baseline_pytest.txt 2>&1
 
 ---
 
-## ФАЗА 1: Критические runtime-ошибки (F821)
+## ФАЗА 1: Критические runtime-ошибки (F821) ✅ ЗАВЕРШЕНА
 
 **Цель:** Устранить undefined-name ошибки, которые ломают выполнение кода.
 
@@ -155,9 +155,14 @@ uv run pytest --collect-only -q > baseline_pytest.txt 2>&1
 - ✅ TYPE_CHECKING блоки корректны
 - ✅ pytest собирает все тесты без ImportError
 
-### Тикет 1.1: Исправить импорты logger в task_board/system.py
+**Дата завершения:** 05.04.2026  
+**Коммиты:** d33564b, bd72298, 7af98a1, ac50e62
+
+### Тикет 1.1: Исправить импорты logger в task_board/system.py ✅ ВЫПОЛНЕН
 **Приоритет:** CRITICAL  
-**Оценка:** 10 мин
+**Оценка:** 10 мин  
+**Фактически:** 10 мин  
+**Коммит:** d33564b
 
 **Описание:**
 Добавить импорт logger в модуль, где он используется.
@@ -182,9 +187,11 @@ python -c "from docuflow.features.task_board.system import TaskBoardSystem"
 
 ---
 
-### Тикет 1.2: Исправить TYPE_CHECKING импорты в sdk.py
+### Тикет 1.2: Исправить TYPE_CHECKING импорты в sdk.py ✅ ВЫПОЛНЕН
 **Приоритет:** CRITICAL  
-**Оценка:** 20 мин
+**Оценка:** 20 мин  
+**Фактически:** 15 мин  
+**Коммит:** bd72298
 
 **Описание:**
 Перенести все forward-reference типы в TYPE_CHECKING блок.
@@ -219,9 +226,11 @@ python -c "from docuflow.sdk import SDK"
 
 ---
 
-### Тикет 1.3: Импортировать PartPreviewWidget в parts/view.py
+### Тикет 1.3: Импортировать PartPreviewWidget в parts/view.py ✅ ВЫПОЛНЕН
 **Приоритет:** HIGH  
-**Оценка:** 10 мин
+**Оценка:** 10 мин  
+**Фактически:** 10 мин  
+**Коммит:** 7af98a1
 
 **Описание:**
 Добавить импорт виджета, который используется в view.
@@ -246,9 +255,11 @@ python -c "from docuflow.features.parts.view import PartLibraryView"
 
 ---
 
-### Тикет 1.4: Исправить TYPE_CHECKING в folder_scanner/view.py
+### Тикет 1.4: Исправить TYPE_CHECKING в folder_scanner/view.py ✅ ВЫПОЛНЕН
 **Приоритет:** HIGH  
-**Оценка:** 10 мин
+**Оценка:** 10 мин  
+**Фактически:** 10 мин  
+**Коммит:** ac50e62 (часть)
 
 **Описание:**
 Добавить SDK в TYPE_CHECKING блок.
@@ -273,9 +284,11 @@ uv run ruff check src/docuflow/features/folder_scanner/view.py --select F821
 
 ---
 
-### Тикет 1.5: Исправить TYPE_CHECKING в orchestrator.py и admin/system.py
+### Тикет 1.5: Исправить TYPE_CHECKING в orchestrator.py и admin/system.py ✅ ВЫПОЛНЕН
 **Приоритет:** HIGH  
-**Оценка:** 15 мин
+**Оценка:** 15 мин  
+**Фактически:** 15 мин  
+**Коммит:** ac50e62 (часть)
 
 **Описание:**
 Добавить недостающие типы в TYPE_CHECKING блоки.
@@ -307,9 +320,11 @@ uv run ruff check src/docuflow/features/admin/system.py --select F821
 
 ---
 
-### Тикет 1.6: Проверка фазы 1 — запуск тестов
+### Тикет 1.6: Проверка фазы 1 — запуск тестов ✅ ВЫПОЛНЕН
 **Приоритет:** HIGH  
-**Оценка:** 30 мин
+**Оценка:** 30 мин  
+**Фактически:** 10 мин  
+**Коммит:** ac50e62 (финальный)
 
 **Описание:**
 Убедиться, что все F821 устранены и pytest собирает тесты.

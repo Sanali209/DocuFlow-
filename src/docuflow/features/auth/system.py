@@ -60,8 +60,9 @@ class AuthSystem(BaseSystem):
             default_password: Admin password. If None, reads from DOCUFLOW_ADMIN_PASSWORD env var.
         """
         import os
+
         from loguru import logger
-        
+
         if default_password is None:
             default_password = os.getenv("DOCUFLOW_ADMIN_PASSWORD")
             if not default_password:
