@@ -513,12 +513,12 @@ async def admin_view(admin_system: AdminSystem) -> None:
                                     "Allowed Modules (comma-sep)", value=w.allowed_modules
                                 ).props("dark rounded standout")
 
-                                async def _update_binding(wp=w):
+                                async def _update_binding(wp=w, nid=new_nid, allow=allowed):
                                     admin_system.upsert_workplace(
                                         {
                                             "name": wp.name,
-                                            "node_id": new_nid.value,
-                                            "allowed_modules": allowed.value,
+                                            "node_id": nid.value,
+                                            "allowed_modules": allow.value,
                                         }
                                     )
                                     edit_wp.close()
