@@ -1,0 +1,79 @@
+tests/application/test_access_logic.py: 3
+tests/application/test_auth_logic.py: 3
+tests/application/test_dispatcher_routing.py: 3
+tests/application/test_inventory_system.py: 2
+tests/application/test_orchestrator_errors.py: 1
+tests/application/test_orchestrator_lifecycle.py: 2
+tests/integration/test_concurrent_writers.py: 1
+tests/smoke/test_workshop_pipeline.py: 1
+tests/test_admin_security.py: 2
+tests/test_code_quality.py: 7
+tests/test_config.py: 3
+tests/test_config_intervals.py: 2
+tests/test_coordination.py: 3
+tests/test_e2e_cluster_sync.py: 1
+tests/test_e2e_hubs.py: 1
+tests/test_file_bus.py: 3
+tests/test_folder_scanner_integration.py: 8
+tests/test_housekeeping.py: 2
+tests/test_identity_models.py: 3
+tests/test_inventory_integration.py: 1
+tests/test_scanner_diagnosis.py: 15
+tests/test_security_hmac.py: 4
+tests/test_settings_registry.py: 2
+tests/test_settings_repository.py: 8
+tests/unit/domain/test_folder_name_parser.py: 5
+tests/unit/domain/test_gnc_parser.py: 4
+tests/unit/domain/test_production_entities.py: 5
+tests/unit/domain/test_task_file_parser.py: 6
+tests/unit/features/test_batch_engine.py: 10
+tests/unit/features/test_chat_system.py: 6
+tests/unit/features/test_consumable_system.py: 5
+tests/unit/features/test_folder_scanner.py: 3
+tests/unit/features/test_incident_system.py: 4
+tests/unit/features/test_material_system.py: 6
+tests/unit/features/test_notifications_and_view.py: 4
+tests/unit/features/test_ns_mirror.py: 2
+tests/unit/features/test_part_library_system.py: 4
+tests/unit/features/test_phase_c.py: 5
+tests/unit/features/test_production_system.py: 4
+tests/unit/features/test_project_system.py: 3
+tests/unit/features/test_report_system.py: 4
+tests/unit/features/test_task_board_system.py: 9
+tests/unit/features/test_view_preset_system.py: 19
+tests/unit/features/test_work_item_system.py: 8
+tests/unit/infrastructure/test_file_bus_atomic_write.py: 3
+tests/unit/lib/test_widgets.py: 12
+tests/unit/test_atomic_write.py: 2
+tests/unit/test_sdk_singleton.py: 1
+tests/unit/test_svg_generator.py: 3
+tests/unit/test_temp_cleanup.py: 1
+
+=================================== ERRORS ====================================
+_____________________ ERROR collecting tests/test_main.py _____________________
+ImportError while importing test module 'D:\github\DocuFlow-\tests\test_main.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\sanal\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_main.py:6: in <module>
+    from docuflow.main import fastapi_app
+E   ImportError: cannot import name 'fastapi_app' from 'docuflow.main' (D:\github\DocuFlow-\src\docuflow\main.py)
+________ ERROR collecting tests/unit/features/test_inventory_system.py ________
+import file mismatch:
+imported module 'test_inventory_system' has this __file__ attribute:
+  D:\github\DocuFlow-\tests\application\test_inventory_system.py
+which is not the same as the test file we want to collect:
+  D:\github\DocuFlow-\tests\unit\features\test_inventory_system.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+============================== warnings summary ===============================
+tests\test_settings_repository.py:11
+  D:\github\DocuFlow-\tests\test_settings_repository.py:11: PytestCollectionWarning: cannot collect test class 'TestModuleSettings' because it has a __init__ constructor (from: tests/test_settings_repository.py)
+    class TestModuleSettings(BaseModuleSettings):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests/test_main.py
+ERROR tests/unit/features/test_inventory_system.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!

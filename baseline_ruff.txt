@@ -1,0 +1,27 @@
+74	E501  	line-too-long
+50	RUF001	ambiguous-unicode-character-string
+18	RUF002	ambiguous-unicode-character-docstring
+13	F821  	undefined-name
+ 8	UP042 	replace-str-enum
+ 6	E712  	true-false-comparison
+ 5	RUF012	mutable-class-default
+ 4	RUF003	ambiguous-unicode-character-comment
+ 4	RUF013	implicit-optional
+ 4	S110  	try-except-pass
+ 4	W291  	trailing-whitespace
+ 3	E711  	none-comparison
+ 2	B023  	function-uses-loop-variable
+ 2	E402  	module-import-not-at-top-of-file
+ 2	E741  	ambiguous-variable-name
+ 2	RUF015	unnecessary-iterable-allocation-for-first-element
+ 2	S107  	hardcoded-password-default
+ 2	S324  	hashlib-insecure-hash-function
+ 1	B007  	unused-loop-control-variable
+ 1	F841  	unused-variable
+ 1	RUF006	asyncio-dangling-task
+ 1	S104  	hardcoded-bind-all-interfaces
+ 1	S603  	subprocess-without-shell-equals-true
+ 1	S607  	start-process-with-partial-path
+ 1	S701  	jinja2-autoescape-false
+Found 212 errors.
+No fixes available (29 hidden fixes can be enabled with the `--unsafe-fixes` option).
