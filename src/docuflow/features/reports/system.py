@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from jinja2 import BaseLoader, Environment
+from jinja2 import BaseLoader, Environment, select_autoescape
 from loguru import logger
 from sqlmodel import Session, select
 
@@ -134,7 +134,10 @@ class ReportSystem(BaseSystem):
             "node_id": self._config.node_id,
         }
 
-        env = Environment(loader=BaseLoader())
+        env = Environment(
+            loader=BaseLoader(),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
         jinja_template = env.from_string(report_template.template_html)
         return jinja_template.render(**rendering_context)
 
