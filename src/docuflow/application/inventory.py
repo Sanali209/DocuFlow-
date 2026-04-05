@@ -1,35 +1,31 @@
-from typing import List, Optional
 from sqlmodel import Session, select
-from docuflow.domain.entities.production import MaterialStock
+
 from docuflow.application.bus.orchestrator import P2POrchestrator
+from docuflow.domain.entities.production import MaterialStock
 from docuflow.infrastructure.security import HMACSigner
+
 
 class InventorySystem:
     """Manages the distributed material inventory and P2P stock synchronization.
-    
-    This system ensures that changes to physical stock levels are cryptographically 
+
+    This system ensures that changes to physical stock levels are cryptographically
     signed and broadcasted to all nodes in the cluster.
     """
-    
-    def __init__(
-        self, 
-        session: Session, 
-        orchestrator: P2POrchestrator,
-        signer: HMACSigner
-    ):
+
+    def __init__(self, session: Session, orchestrator: P2POrchestrator, signer: HMACSigner):
         self._session = session
         self._orchestrator = orchestrator
         self._signer = signer
 
-    def get_all_materials(self) -> List[MaterialStock]:
+    def get_all_materials(self) -> list[MaterialStock]:
         """Listing all available material stocks from the local synchronized database."""
         statement = select(MaterialStock)
         return list(self._session.exec(statement).all())
 
     def update_stock(self, material_id: int, absolute_quantity: float) -> MaterialStock:
         """Adjusting the absolute quantity of a specific material and broadcasting the update.
-        
-        This implementation follows the 'absolute-value' sync model to ensure 
+
+        This implementation follows the 'absolute-value' sync model to ensure
         cluster-wide consistency in a P2P environment.
         """
         material = self._session.get(MaterialStock, material_id)
@@ -47,16 +43,13 @@ class InventorySystem:
             "type": "UPDATE_STOCK",
             "material_id": material.id,
             "quantity": material.quantity,
-            "unit": material.unit
+            "unit": material.unit,
         }
-        
+
         # 3. Broadcast across the cluster via the HMAC-signed bus
-        # Note: In a real system, the Orchestrator would encapsulate the 
+        # Note: In a real system, the Orchestrator would encapsulate the
         # specific command formatting and signature.
-        self._orchestrator.broadcast_command(
-            command="UPDATE_STOCK",
-            data=payload
-        )
+        self._orchestrator.broadcast_command(command="UPDATE_STOCK", data=payload)
 
         return material
 
@@ -69,12 +62,7 @@ class InventorySystem:
 
         # Broadcast the new entity to the cluster
         self._orchestrator.broadcast_command(
-            command="CREATE_MATERIAL",
-            data={
-                "name": name,
-                "quantity": quantity,
-                "unit": unit
-            }
+            command="CREATE_MATERIAL", data={"name": name, "quantity": quantity, "unit": unit}
         )
-        
+
         return new_material

@@ -1,8 +1,19 @@
-from sqlalchemy import Column, Integer, String, Date, Enum, Text, ForeignKey, Table, Float, DateTime, Boolean
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import date, datetime
-import enum
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -14,11 +25,13 @@ document_tags = Table(
     Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
 )
 
+
 class TagDB(Base):
     __tablename__ = "tags"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     documents = relationship("DocumentDB", secondary=document_tags, back_populates="tags")
+
 
 class AttachmentDB(Base):
     __tablename__ = "attachments"
@@ -31,6 +44,7 @@ class AttachmentDB(Base):
     created_at = Column(Date, default=date.today)
     document = relationship("DocumentDB", back_populates="attachments")
 
+
 class MaterialDB(Base):
     __tablename__ = "materials"
     id = Column(Integer, primary_key=True, index=True)
@@ -39,27 +53,32 @@ class MaterialDB(Base):
     parts = relationship("PartDB", back_populates="material")
     stock_items = relationship("StockItemDB", back_populates="material")
 
+
 class DocumentDB(Base):
     __tablename__ = "documents"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(Text, nullable=True)
-    type = Column(String) # Store enum as string
-    status = Column(String) # Store enum as string
+    type = Column(String)  # Store enum as string
+    status = Column(String)  # Store enum as string
     registration_date = Column(Date, default=date.today)
     content = Column(Text, nullable=True)
     author = Column(String, nullable=True)
     done_date = Column(Date, nullable=True)
 
-    attachments = relationship("AttachmentDB", back_populates="document", cascade="all, delete-orphan")
+    attachments = relationship(
+        "AttachmentDB", back_populates="document", cascade="all, delete-orphan"
+    )
     tasks = relationship("TaskDB", back_populates="document", cascade="all, delete-orphan")
     tags = relationship("TagDB", secondary=document_tags, back_populates="documents")
+
 
 class TaskPartDB(Base):
     __tablename__ = "task_parts"
     task_id = Column(Integer, ForeignKey("tasks.id"), primary_key=True)
     part_id = Column(Integer, ForeignKey("parts.id"), primary_key=True)
     quantity = Column(Integer, default=1)
+
 
 # Association table for Task <-> Assignee
 task_assignees = Table(
@@ -68,6 +87,7 @@ task_assignees = Table(
     Column("task_id", Integer, ForeignKey("tasks.id")),
     Column("assignee_id", Integer, ForeignKey("assignees.id")),
 )
+
 
 class TaskDB(Base):
     __tablename__ = "tasks"
@@ -82,9 +102,10 @@ class TaskDB(Base):
     document = relationship("DocumentDB", back_populates="tasks")
     material = relationship("MaterialDB", back_populates="tasks")
     parts = relationship("PartDB", secondary="task_parts")
-    
+
     # Many-to-Many relationship
     assignees = relationship("AssigneeDB", secondary=task_assignees, backref="tasks")
+
 
 class PartDB(Base):
     __tablename__ = "parts"
@@ -99,10 +120,13 @@ class PartDB(Base):
     stats = Column(Text, nullable=True)
 
     material = relationship("MaterialDB", back_populates="parts")
+
+
 class SettingDB(Base):
     __tablename__ = "settings"
     key = Column(String, primary_key=True, index=True)
     value = Column(String)
+
 
 class JournalEntryDB(Base):
     __tablename__ = "journal_entries"
@@ -117,6 +141,7 @@ class JournalEntryDB(Base):
     document = relationship("DocumentDB", back_populates="journal_entries")
     attachments = relationship("AttachmentDB", back_populates="journal_entry")
 
+
 class StockItemDB(Base):
     __tablename__ = "stock_items"
     id = Column(Integer, primary_key=True, index=True)
@@ -129,6 +154,7 @@ class StockItemDB(Base):
 
     material = relationship("MaterialDB", back_populates="stock_items")
 
+
 class ReservationDB(Base):
     __tablename__ = "reservations"
     id = Column(Integer, primary_key=True, index=True)
@@ -136,6 +162,7 @@ class ReservationDB(Base):
     stock_item_id = Column(Integer, ForeignKey("stock_items.id"))
     quantity_reserved = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.now)
+
 
 class ConsumptionDB(Base):
     __tablename__ = "consumptions"
@@ -145,6 +172,7 @@ class ConsumptionDB(Base):
     quantity_used = Column(Integer, default=0)
     remnants_created = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.now)
+
 
 class AuditLogDB(Base):
     __tablename__ = "audit_logs"
@@ -157,16 +185,19 @@ class AuditLogDB(Base):
     previous_value = Column(Text, nullable=True)
     new_value = Column(Text, nullable=True)
 
+
 class AssigneeDB(Base):
     __tablename__ = "assignees"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
 
+
 class FilterPresetDB(Base):
     __tablename__ = "filter_presets"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
-    config = Column(Text) # JSON string of filter settings
+    config = Column(Text)  # JSON string of filter settings
+
 
 # Add missing relationships to DocumentDB
 DocumentDB.journal_entries = relationship("JournalEntryDB", back_populates="document")

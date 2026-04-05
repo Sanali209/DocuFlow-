@@ -2,7 +2,6 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Dict, Optional
 
 import anyio
 from loguru import logger
@@ -33,7 +32,7 @@ class CoordinationSystem(BaseSystem):
         self._heartbeat_interval = config.heartbeat_interval
         self._timeout_seconds = config.coordinator_timeout
         self._stop_event = anyio.Event()
-        
+
         # Cooldown period after a manual step-down to prevent immediate re-election
         self._step_down_until: float = 0.0
 
@@ -50,9 +49,11 @@ class CoordinationSystem(BaseSystem):
     async def on_startup(self) -> None:
         """Initialize the coordination state and attempt initial election."""
         heartbeats_dir = Path(self.config.shared_path) / constants.COORDINATOR_HEARTBEATS_DIR
-        logger.info(f"Coordination [{self._node_id}]: Mapping heartbeats to {heartbeats_dir.absolute()}")
+        logger.info(
+            f"Coordination [{self._node_id}]: Mapping heartbeats to {heartbeats_dir.absolute()}"
+        )
         heartbeats_dir.mkdir(parents=True, exist_ok=True)
-        
+
         await self.try_become_leader()
         self._stop_event = anyio.Event()
 
@@ -78,32 +79,38 @@ class CoordinationSystem(BaseSystem):
         """Write node-specific status to the shared heartbeats directory."""
         heartbeats_dir = Path(self.config.shared_path) / constants.COORDINATOR_HEARTBEATS_DIR
         heartbeat_file = heartbeats_dir / f"node_{self._node_id}.json"
-        
+
         payload = {
             "node_id": self._node_id,
             "is_leader": self._is_leader,
             "timestamp": time.time(),
             "last_active": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "pid": os.getpid()
+            "pid": os.getpid(),
         }
-        
+
         try:
             # Atomic write for status files
             temp_path = heartbeat_file.with_suffix(".tmp")
-            logger.debug(f"Coordination [{self._node_id}]: Writing heartbeat {payload['timestamp']} to {temp_path}")
+            logger.debug(
+                f"Coordination [{self._node_id}]: Writing heartbeat {payload['timestamp']} to {temp_path}"
+            )
             await anyio.Path(temp_path).write_text(json.dumps(payload, indent=2))
             os.replace(temp_path, heartbeat_file)
-            logger.debug(f"Coordination [{self._node_id}]: Heartbeat published (leader={self._is_leader})")
+            logger.debug(
+                f"Coordination [{self._node_id}]: Heartbeat published (leader={self._is_leader})"
+            )
         except OSError as error:
-            logger.error(f"Coordination [{self._node_id}]: CRITICAL - Failed to emit heartbeat: {error}")
+            logger.error(
+                f"Coordination [{self._node_id}]: CRITICAL - Failed to emit heartbeat: {error}"
+            )
 
     async def try_become_leader(self) -> bool:
         """Execute the leader election algorithm.
-        
+
         This method attempts to acquire the shared lock file. If the lock
         is missing or stale (no heartbeat), this node will take ownership.
         If self already owns it, the heartbeat is renewed.
-        
+
         This method respects the manual step-down cooldown period.
 
         Returns:
@@ -126,9 +133,7 @@ class CoordinationSystem(BaseSystem):
                 return True
 
             if self._is_lock_stale(lock_metadata):
-                logger.warning(
-                    f"Coordination: Takeover from {lock_metadata.get('node_id')}"
-                )
+                logger.warning(f"Coordination: Takeover from {lock_metadata.get('node_id')}")
                 return await self._acquire_lock_atomically()
 
             self._is_leader = False
@@ -140,7 +145,7 @@ class CoordinationSystem(BaseSystem):
 
     # --- Private Helpers: Complexity Decomposition ---
 
-    async def _read_lock_metadata(self) -> Optional[Dict]:
+    async def _read_lock_metadata(self) -> dict | None:
         """Safely read and parse the shared lock file content."""
         try:
             content = await anyio.Path(self._lock_path).read_text()
@@ -148,11 +153,11 @@ class CoordinationSystem(BaseSystem):
         except (json.JSONDecodeError, OSError):
             return None
 
-    def _is_self_owned(self, lock_metadata: Dict) -> bool:
+    def _is_self_owned(self, lock_metadata: dict) -> bool:
         """Check if the existing lock belongs to this current node."""
         return lock_metadata.get("node_id") == self._node_id
 
-    def _is_lock_stale(self, lock_metadata: Dict) -> bool:
+    def _is_lock_stale(self, lock_metadata: dict) -> bool:
         """Check if the lock owner has failed to heartbeat within the timeout."""
         last_heartbeat = lock_metadata.get("timestamp", 0)
         age = time.time() - last_heartbeat
@@ -191,7 +196,7 @@ class CoordinationSystem(BaseSystem):
 
     async def step_down(self, cooldown: float = 10.0) -> None:
         """Manually release leadership and enter a cooldown period.
-        
+
         Args:
             cooldown: Seconds to wait before attempting re-election.
         """
@@ -199,7 +204,7 @@ class CoordinationSystem(BaseSystem):
             logger.warning(f"Coordination: Manual step-down triggered for {self._node_id}")
             await self._release_lock()
             self._is_leader = False
-        
+
         self._step_down_until = time.time() + cooldown
 
     async def _release_lock(self) -> None:

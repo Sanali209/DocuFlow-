@@ -1,7 +1,7 @@
-import sqlite3
 import os
+import sqlite3
 
-db_path = r'd:\github\DocuFlow-\sql_app.db'
+db_path = r"d:\github\DocuFlow-\sql_app.db"
 if not os.path.exists(db_path):
     print(f"DB not found at {db_path} (root)")
 
@@ -14,11 +14,11 @@ try:
     print("Tables:")
     for t in tables:
         print(t[0])
-        
+
     print("-" * 20)
     # Try querying config/settings if name found
     for t in tables:
-        if 'setting' in t[0] or 'config' in t[0]:
+        if "setting" in t[0] or "config" in t[0]:
             print(f"\n--- Querying {t[0]} ---")
             cursor.execute(f"SELECT * FROM {t[0]}")
             rows = cursor.fetchall()

@@ -1,6 +1,6 @@
 import json
-import asyncio
 
+import anyio
 import pytest
 
 from docuflow.infrastructure.config import Config
@@ -13,13 +13,11 @@ async def test_concurrent_writers(tmp_path):
     system = FileBusSystem(cfg)
     system._ensure_directories_exist()
 
-    async def writer(idx: int):
-        filename = f"REQ_node_foo_{idx}.json"
-        payload = {"header": {"id": str(idx)}, "body": {"x": idx}}
-        await system._atomic_write(system._inbox, filename, payload)
-
-    tasks = [writer(i) for i in range(20)]
-    await asyncio.gather(*tasks)
+    async with anyio.create_task_group() as tg:
+        for i in range(20):
+            filename = f"REQ_node_foo_{i}.json"
+            payload = {"header": {"id": str(i)}, "body": {"x": i}}
+            tg.start_soon(system._atomic_write, system._inbox, filename, payload)
 
     # Verify files
     for i in range(20):

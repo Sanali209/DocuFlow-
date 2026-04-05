@@ -1,8 +1,7 @@
-import json
-import time
 import datetime
+import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 import anyio
 from loguru import logger
@@ -36,11 +35,16 @@ class DataSyncSystem(BaseSystem):
         self._engine = engine
         self._node_id = config.node_id
         self._snapshots_dir = Path(config.shared_path) / constants.SYNC_SNAPSHOTS_DIR
-        self._orchestrator: Optional[Any] = None
+        self._orchestrator: Any | None = None
 
         # Registry of domain entities involved in synchronization
-        self._sync_registry: List[Type[SQLModel]] = [
-            Setting, WorkItem, TaskItem, Workplace, Role, User
+        self._sync_registry: list[type[SQLModel]] = [
+            Setting,
+            WorkItem,
+            TaskItem,
+            Workplace,
+            Role,
+            User,
         ]
 
     async def create_master_snapshot(self) -> Path:
@@ -50,11 +54,10 @@ class DataSyncSystem(BaseSystem):
             The absolute Path to the newly created snapshot file.
         """
         self._ensure_snapshots_dir_exists()
-        
+
         timestamp = datetime.datetime.now().isoformat().replace(":", "-")
         filename = (
-            f"{constants.SYNC_PREFIX_SNAP}{self._node_id}_"
-            f"{timestamp}{constants.SYNC_EXTENSION}"
+            f"{constants.SYNC_PREFIX_SNAP}{self._node_id}_{timestamp}{constants.SYNC_EXTENSION}"
         )
         target_path = self._snapshots_dir / filename
 
@@ -82,23 +85,23 @@ class DataSyncSystem(BaseSystem):
 
     def set_orchestrator(self, orchestrator: Any) -> None:
         """Inject the orchestrator to allow for delta-broadcasting.
-        
+
         Required to avoid circular dependencies during DI container boot.
         """
         self._orchestrator = orchestrator
 
     async def broadcast_entity_update(self, entity: SQLModel) -> None:
         """Leader-only: Broadcast a single entity change to all nodes via the File Bus.
-        
+
         Args:
             entity: The SQLModel instance that was modified.
         """
         if not self._orchestrator:
             logger.warning("DataSync: Orchestrator not set, cannot broadcast update.")
             return
-            
+
         from docuflow.domain.messages import CommandType
-        
+
         # We use UPSERT_USER as a generic placeholder or dynamic mapping for Iteration 3
         # In a full system, we'd map type(entity) to a specific command.
         data = entity.model_dump()
@@ -116,7 +119,7 @@ class DataSyncSystem(BaseSystem):
         """Create the shared snapshots folder if it is missing."""
         self._snapshots_dir.mkdir(parents=True, exist_ok=True)
 
-    async def _gather_registry_data(self) -> Dict[str, List[Dict[str, Any]]]:
+    async def _gather_registry_data(self) -> dict[str, list[dict[str, Any]]]:
         """Extract all registry-defined entities from the local database."""
 
         def _sync_extract():
@@ -130,7 +133,7 @@ class DataSyncSystem(BaseSystem):
 
         return await anyio.to_thread.run_sync(_sync_extract)
 
-    async def _write_snapshot_atomically(self, path: Path, data: Dict) -> None:
+    async def _write_snapshot_atomically(self, path: Path, data: dict) -> None:
         """Serialize data to JSON and write to the shared drive."""
 
         def _json_serial(obj):
@@ -141,7 +144,7 @@ class DataSyncSystem(BaseSystem):
         serialized_json = json.dumps(data, default=_json_serial, indent=2)
         await anyio.Path(path).write_text(serialized_json)
 
-    def _merge_snapshot_data(self, snapshot_data: Dict) -> None:
+    def _merge_snapshot_data(self, snapshot_data: dict) -> None:
         """Internal synchronous logic for database merging."""
         with Session(self._engine) as session:
             for entity_cls in self._sync_registry:
@@ -154,7 +157,7 @@ class DataSyncSystem(BaseSystem):
             session.commit()
 
     def _process_remote_row(
-        self, session: Session, entity_cls: Type[SQLModel], row_data: Dict
+        self, session: Session, entity_cls: type[SQLModel], row_data: dict
     ) -> None:
         """Process an individual remote record and resolve local conflicts."""
         # Restore datetime objects from ISO strings
@@ -166,10 +169,10 @@ class DataSyncSystem(BaseSystem):
                     pass
 
         remote_obj = entity_cls.model_validate(row_data)
-        
+
         pk_names = [column.name for column in entity_cls.__table__.primary_key]
         pk_values = tuple(getattr(remote_obj, pk) for pk in pk_names)
-        
+
         local_obj = session.get(entity_cls, pk_values)
 
         if not local_obj:
@@ -182,7 +185,7 @@ class DataSyncSystem(BaseSystem):
         """Determine if a remote object has a more recent update timestamp."""
         return remote_obj.updated_at > local_obj.updated_at
 
-    def _update_local_stale_record(self, local_obj: Any, row_data: Dict) -> None:
+    def _update_local_stale_record(self, local_obj: Any, row_data: dict) -> None:
         """Apply remote dictionary fields to an existing local object."""
         for key, value in row_data.items():
             setattr(local_obj, key, value)

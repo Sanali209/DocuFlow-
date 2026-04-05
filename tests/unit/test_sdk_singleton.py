@@ -1,4 +1,5 @@
 import pytest
+pytest.importorskip("dishka")
 
 from dishka import make_async_container
 from docuflow.infrastructure.config import Config

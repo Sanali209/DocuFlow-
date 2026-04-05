@@ -6,22 +6,19 @@ TDD подход:
 2. Потом код
 3. Рефакторинг
 """
-import pytest
+
 from datetime import datetime, timedelta
-from sqlmodel import Session, SQLModel, create_engine, select
+
+import pytest
+from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from docuflow.domain.entities.production import (
+    MaterialType,
     Project,
-    WorkItem,
-    WorkItemStatus,
-    WorkItemType,
     TaskItem,
     TaskItemStatus,
-    WorkLog,
-    WorkLogType,
-    WorkerBucketEntry,
-    MaterialType,
+    WorkItem,
 )
 from docuflow.features.task_board.system import TaskBoardSystem
 from docuflow.infrastructure.config import Config
@@ -58,7 +55,7 @@ def project_and_work_item_fixture(session: Session):
     project = Project(name="Test")
     session.add(project)
     session.commit()
-    
+
     work_item = WorkItem(
         folder_name="test",
         folder_path="/test",
@@ -67,7 +64,7 @@ def project_and_work_item_fixture(session: Session):
     session.add(work_item)
     session.commit()
     session.refresh(work_item)
-    
+
     return project, work_item
 
 
@@ -94,7 +91,7 @@ class TestTaskBoardSystemLockBatch:
     ):
         """Создаёт записи в корзине при блокировке батча."""
         _, work_item = project_and_work_item
-        
+
         tasks = [
             TaskItem(
                 file_name=f"task_{i}.gnc",
@@ -108,9 +105,9 @@ class TestTaskBoardSystemLockBatch:
         for task in tasks:
             session.add(task)
         session.commit()
-        
+
         entries = await system.lock_batch("test_batch", "LASER_1", "operator1")
-        
+
         assert len(entries) == 3
         assert all(e.node_id == "LASER_1" for e in entries)
         assert all(e.assigned_user == "operator1" for e in entries)
@@ -119,10 +116,16 @@ class TestTaskBoardSystemLockBatch:
 class TestTaskBoardSystemStartTask:
     """Тесты для метода start_task()."""
 
-    def test_start_task(self, system: TaskBoardSystem, project_and_work_item, material: MaterialType, session: Session):
+    def test_start_task(
+        self,
+        system: TaskBoardSystem,
+        project_and_work_item,
+        material: MaterialType,
+        session: Session,
+    ):
         """Начинает выполнение задачи."""
         _, work_item = project_and_work_item
-        
+
         task = TaskItem(
             file_name="task.gnc",
             file_path="/path/task.gnc",
@@ -132,16 +135,22 @@ class TestTaskBoardSystemStartTask:
         )
         session.add(task)
         session.commit()
-        
+
         result = system.start_task(task.id)
-        
+
         assert result.status == TaskItemStatus.IN_PROGRESS
         assert result.started_at is not None
 
-    def test_start_task_invalid_transition(self, system: TaskBoardSystem, project_and_work_item, material: MaterialType, session: Session):
+    def test_start_task_invalid_transition(
+        self,
+        system: TaskBoardSystem,
+        project_and_work_item,
+        material: MaterialType,
+        session: Session,
+    ):
         """Ошибка при недопустимом переходе."""
         _, work_item = project_and_work_item
-        
+
         task = TaskItem(
             file_name="task.gnc",
             file_path="/path/task.gnc",
@@ -151,7 +160,7 @@ class TestTaskBoardSystemStartTask:
         )
         session.add(task)
         session.commit()
-        
+
         with pytest.raises(ValueError, match="Invalid transition"):
             system.start_task(task.id)
 
@@ -159,10 +168,16 @@ class TestTaskBoardSystemStartTask:
 class TestTaskBoardSystemPauseTask:
     """Тесты для метода pause_task()."""
 
-    def test_pause_task(self, system: TaskBoardSystem, project_and_work_item, material: MaterialType, session: Session):
+    def test_pause_task(
+        self,
+        system: TaskBoardSystem,
+        project_and_work_item,
+        material: MaterialType,
+        session: Session,
+    ):
         """Ставит задачу на паузу."""
         _, work_item = project_and_work_item
-        
+
         task = TaskItem(
             file_name="task.gnc",
             file_path="/path/task.gnc",
@@ -172,19 +187,25 @@ class TestTaskBoardSystemPauseTask:
         )
         session.add(task)
         session.commit()
-        
+
         result = system.pause_task(task.id, reason="Перерыв на обед")
-        
+
         assert result.status == TaskItemStatus.ON_HOLD
 
 
 class TestTaskBoardSystemCompleteTask:
     """Тесты для метода complete_task()."""
 
-    def test_complete_task(self, system: TaskBoardSystem, project_and_work_item, material: MaterialType, session: Session):
+    def test_complete_task(
+        self,
+        system: TaskBoardSystem,
+        project_and_work_item,
+        material: MaterialType,
+        session: Session,
+    ):
         """Завершает задачу."""
         _, work_item = project_and_work_item
-        
+
         task = TaskItem(
             file_name="task.gnc",
             file_path="/path/task.gnc",
@@ -196,9 +217,9 @@ class TestTaskBoardSystemCompleteTask:
         )
         session.add(task)
         session.commit()
-        
+
         result = system.complete_task(task.id, sheets_done=5, qty_produced=50)
-        
+
         assert result.status == TaskItemStatus.DONE
         assert result.sheets_done == 5
         assert result.qty_produced == 50
@@ -213,7 +234,7 @@ class TestTaskBoardSystemCompleteTask:
     ):
         """Вычисляет actual_minutes при завершении."""
         _, work_item = project_and_work_item
-        
+
         started = datetime.now() - timedelta(minutes=90)
         task = TaskItem(
             file_name="task.gnc",
@@ -226,9 +247,9 @@ class TestTaskBoardSystemCompleteTask:
         )
         session.add(task)
         session.commit()
-        
+
         result = system.complete_task(task.id, sheets_done=5, qty_produced=50)
-        
+
         assert result.actual_minutes is not None
         assert result.actual_minutes >= 89  # ~90 минут
 
@@ -245,9 +266,9 @@ class TestTaskBoardSystemGetDrift:
             estimated_minutes=60,
             actual_minutes=90,
         )
-        
+
         drift = system.get_drift(task)
-        
+
         assert drift == 50.0  # 50% перерасход
 
     def test_get_drift_no_estimate(self, system: TaskBoardSystem):
@@ -259,19 +280,25 @@ class TestTaskBoardSystemGetDrift:
             estimated_minutes=None,
             actual_minutes=90,
         )
-        
+
         drift = system.get_drift(task)
-        
+
         assert drift == 0.0
 
 
 class TestTaskBoardSystemIncrementSheets:
     """Тесты для метода increment_sheets()."""
 
-    def test_increment_sheets(self, system: TaskBoardSystem, project_and_work_item, material: MaterialType, session: Session):
+    def test_increment_sheets(
+        self,
+        system: TaskBoardSystem,
+        project_and_work_item,
+        material: MaterialType,
+        session: Session,
+    ):
         """Увеличивает счётчик листов."""
         _, work_item = project_and_work_item
-        
+
         task = TaskItem(
             file_name="task.gnc",
             file_path="/path/task.gnc",
@@ -281,10 +308,10 @@ class TestTaskBoardSystemIncrementSheets:
         )
         session.add(task)
         session.commit()
-        
+
         result = system.increment_sheets(task.id)
-        
+
         assert result == 1
-        
+
         task_updated = session.get(TaskItem, task.id)
         assert task_updated.sheets_done == 1

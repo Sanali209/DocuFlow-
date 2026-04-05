@@ -1,7 +1,8 @@
-from typing import Optional
-from src.infrastructure.parsers.gnc_parser import GNCParser, GNCSheet
-from src.infrastructure.graphics.gnc_generator import GNCGenerator
 import os
+
+from src.infrastructure.graphics.gnc_generator import GNCGenerator
+from src.infrastructure.parsers.gnc_parser import GNCParser, GNCSheet
+
 
 class GncService:
     def __init__(self, output_dir: str = "static/gnc_output"):
@@ -16,16 +17,11 @@ class GncService:
     def save_gnc(self, sheet: GNCSheet, filename: str, overwrite: bool = True) -> dict:
         content = self.generator.generate(sheet)
         output_path = os.path.join(self.output_dir, filename)
-        
+
         if not overwrite and os.path.exists(output_path):
             raise FileExistsError("File already exists")
-        
-        with open(output_path, 'w', encoding='utf-8') as f:
+
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
-        
-        return {
-            "success": True,
-            "path": output_path,
-            "filename": filename,
-            "size": len(content)
-        }
+
+        return {"success": True, "path": output_path, "filename": filename, "size": len(content)}

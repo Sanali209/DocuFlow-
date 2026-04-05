@@ -1,6 +1,7 @@
+import io
 import os
 import zipfile
-import io
+
 
 def create_folder_zip(folder_path: str) -> io.BytesIO:
     """
@@ -11,8 +12,8 @@ def create_folder_zip(folder_path: str) -> io.BytesIO:
         raise FileNotFoundError(f"Folder not found: {folder_path}")
 
     zip_buffer = io.BytesIO()
-    
-    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -22,6 +23,6 @@ def create_folder_zip(folder_path: str) -> io.BytesIO:
                     zip_file.write(file_path, archive_name)
                 except Exception as e:
                     print(f"Error adding file {file_path} to zip: {e}")
-                
+
     zip_buffer.seek(0)
     return zip_buffer

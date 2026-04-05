@@ -1,10 +1,10 @@
-from typing import List, Dict
-from sqlalchemy.orm import Session
-from src.infrastructure.database.models import SettingDB, AssigneeDB, FilterPresetDB
+
+from src.infrastructure.database.models import AssigneeDB, SettingDB
 from src.infrastructure.database.repositories import SQLFilterPresetRepository
 
+
 class SettingsService:
-    def list_filter_presets(self) -> List[Dict]:
+    def list_filter_presets(self) -> list[dict]:
         db = self.db_factory()
         try:
             repo = SQLFilterPresetRepository(db)
@@ -42,6 +42,7 @@ class SettingsService:
 
     def set_rescan_interval(self, minutes: int) -> bool:
         return self.set_setting("sync_rescan_interval", str(minutes))
+
     def __init__(self, db_factory):
         self.db_factory = db_factory
 
@@ -76,7 +77,7 @@ class SettingsService:
         finally:
             db.close()
 
-    def list_assignees(self) -> List[Dict]:
+    def list_assignees(self) -> list[dict]:
         db = self.db_factory()
         try:
             assignees = db.query(AssigneeDB).all()

@@ -1,32 +1,32 @@
-import os
 import json
-import shutil
-from typing import List, Optional, Union, Dict, Any
-from datetime import datetime
 from pathlib import Path
+from typing import Any
+
 from loguru import logger
 from sqlmodel import Session, select
-from docuflow.domain.entities.production import ChatMessage, ChatMessageType
+
 from docuflow.application.base import BaseSystem
+from docuflow.domain.entities.production import ChatMessage, ChatMessageType
 from docuflow.infrastructure.config import Config
+
 
 class ChatSystem(BaseSystem):
     """
     Decentralized communication engine for the DocuFlow workshop.
-    
+
     Vertical Slice: features/chat/system.py
-    Principles: 
+    Principles:
     - Self-explaining code: Named constants and descriptive variables.
     - Code as documentation: Docstrings include usage examples.
     """
-    
+
     # Storage Directory within the cluster's shared path
     ATTACHMENTS_SUBDIR = "chat_attachments"
 
     def __init__(self, config: Config, db_session: Session, sdk: Any = None):
         """
         Initialize the communication engine.
-        
+
         Args:
             config: System configuration.
             db_session: SQLModel session for message persistence.
@@ -35,25 +35,27 @@ class ChatSystem(BaseSystem):
         super().__init__(config)
         self.db_session = db_session
         self.sdk = sdk
-        
+
         # Initialize root storage for chat files
         self.attachments_root = Path(config.shared_path) / self.ATTACHMENTS_SUBDIR
         self.attachments_root.mkdir(parents=True, exist_ok=True)
 
     # --- Core Messaging Ecosystem ---
 
-    def send_message(self, 
-                     author: str, 
-                     content: str, 
-                     message_type: ChatMessageType = ChatMessageType.MESSAGE,
-                     ref_project_id: Optional[int] = None,
-                     ref_work_item_id: Optional[int] = None,
-                     ref_task_item_id: Optional[int] = None,
-                     parent_message_id: Optional[int] = None,
-                     attachments: Optional[List[dict]] = None) -> ChatMessage:
+    def send_message(
+        self,
+        author: str,
+        content: str,
+        message_type: ChatMessageType = ChatMessageType.MESSAGE,
+        ref_project_id: int | None = None,
+        ref_work_item_id: int | None = None,
+        ref_task_item_id: int | None = None,
+        parent_message_id: int | None = None,
+        attachments: list[dict] | None = None,
+    ) -> ChatMessage:
         """
         Create and record a new message in the cluster database.
-        
+
         Example:
             chat.send_message(author="admin", content="Starting job X", ref_work_item_id=105)
         """
@@ -75,39 +77,53 @@ class ChatSystem(BaseSystem):
             ref_task_item_id=ref_task_item_id,
             parent_message_id=parent_message_id,
             attachments=json.dumps(attachments or []),
-            is_read=False
+            is_read=False,
         )
-        
+
         self.db_session.add(new_message)
-        self.db_session.flush() 
+        self.db_session.flush()
         self.db_session.refresh(new_message)
-        
+
         logger.info(f"Chat: Message {new_message.id} recorded for author '{author}'")
         return new_message
 
     def broadcast_order_request(self, work_item_id: int, content: str, author: str) -> ChatMessage:
         """Convenience: Broadcast a supply order request to the workshop channel."""
-        return self.send_message(author=author, content=content, message_type=ChatMessageType.ORDER, ref_work_item_id=work_item_id)
-        
-    def broadcast_incident_alert(self, task_item_id: int, description: str, author: str) -> ChatMessage:
+        return self.send_message(
+            author=author,
+            content=content,
+            message_type=ChatMessageType.ORDER,
+            ref_work_item_id=work_item_id,
+        )
+
+    def broadcast_incident_alert(
+        self, task_item_id: int, description: str, author: str
+    ) -> ChatMessage:
         """Convenience: Broadcast a priority failure alert for a specific task."""
-        return self.send_message(author=author, content=description, message_type=ChatMessageType.INCIDENT, ref_task_item_id=task_item_id)
+        return self.send_message(
+            author=author,
+            content=description,
+            message_type=ChatMessageType.INCIDENT,
+            ref_task_item_id=task_item_id,
+        )
 
     def reply(self, parent_id: int, author: str, content: str, **kwargs) -> ChatMessage:
         """
         Threaded reply convenience. Inherits project/task context from parent.
-        
+
         Example:
             chat.reply(parent_id=1, author="tech", content="Confirmed!")
         """
-        return self.send_message(author=author, content=content, parent_message_id=parent_id, **kwargs)
+        return self.send_message(
+            author=author, content=content, parent_message_id=parent_id, **kwargs
+        )
 
     # --- Discussion & Query Logic ---
 
-    def get_context_thread(self, ref_type: str, ref_id: int, limit: int = 100) -> List[ChatMessage]:
+    def get_context_thread(self, ref_type: str, ref_id: int, limit: int = 100) -> list[ChatMessage]:
         """
         Retrieve all messages linked to a specific workshop entity.
-        
+
         Args:
             ref_type: One of 'project', 'work_item', 'task_item'.
             ref_id: Database identity of the linked entity.
@@ -115,53 +131,59 @@ class ChatSystem(BaseSystem):
         FIELD_MAP = {
             "project": ChatMessage.ref_project_id,
             "work_item": ChatMessage.ref_work_item_id,
-            "task_item": ChatMessage.ref_task_item_id
+            "task_item": ChatMessage.ref_task_item_id,
         }
-        
+
         if ref_type not in FIELD_MAP:
-             raise ValueError(f"Unknown reference type mapping: {ref_type}")
-             
-        statement = select(ChatMessage) \
-            .where(FIELD_MAP[ref_type] == ref_id) \
-            .order_by(ChatMessage.created_at.asc()) \
+            raise ValueError(f"Unknown reference type mapping: {ref_type}")
+
+        statement = (
+            select(ChatMessage)
+            .where(FIELD_MAP[ref_type] == ref_id)
+            .order_by(ChatMessage.created_at.asc())
             .limit(limit)
-            
+        )
+
         return list(self.db_session.exec(statement).all())
 
-    def get_recursive_thread(self, root_message_id: int) -> List[ChatMessage]:
+    def get_recursive_thread(self, root_message_id: int) -> list[ChatMessage]:
         """
         Assembles all children of a message into a single linear discussion list.
         """
         root_msg = self.db_session.get(ChatMessage, root_message_id)
         if not root_msg:
             return []
-            
+
         results = [root_msg]
-        
+
         def _fetch_children(parent_id: int):
-            children_statement = select(ChatMessage) \
-                .where(ChatMessage.parent_message_id == parent_id) \
+            children_statement = (
+                select(ChatMessage)
+                .where(ChatMessage.parent_message_id == parent_id)
                 .order_by(ChatMessage.created_at.asc())
-            
+            )
+
             children = self.db_session.exec(children_statement).all()
             for child in children:
                 results.append(child)
                 _fetch_children(child.id)
-                
+
         _fetch_children(root_message_id)
         return results
 
-    def get_global_messages(self, limit: int = 100) -> List[ChatMessage]:
+    def get_global_messages(self, limit: int = 100) -> list[ChatMessage]:
         """
         Retrieves the most recent broadcast messages that are not linked to a project or task.
         """
-        statement = select(ChatMessage) \
-            .where(ChatMessage.ref_project_id == None) \
-            .where(ChatMessage.ref_work_item_id == None) \
-            .where(ChatMessage.ref_task_item_id == None) \
-            .order_by(ChatMessage.created_at.desc()) \
+        statement = (
+            select(ChatMessage)
+            .where(ChatMessage.ref_project_id == None)
+            .where(ChatMessage.ref_work_item_id == None)
+            .where(ChatMessage.ref_task_item_id == None)
+            .order_by(ChatMessage.created_at.desc())
             .limit(limit)
-            
+        )
+
         return list(self.db_session.exec(statement).all())
 
     # --- File Management Vertical Slice ---
@@ -173,7 +195,7 @@ class ChatSystem(BaseSystem):
         message_storage_path = self._prepare_message_dir(message_id)
         full_file_path = message_storage_path / filename
         full_file_path.write_bytes(content)
-        
+
         self._link_attachment_to_db(message_id, filename, full_file_path, len(content))
         return str(full_file_path)
 
@@ -183,22 +205,22 @@ class ChatSystem(BaseSystem):
         message_dir.mkdir(parents=True, exist_ok=True)
         return message_dir
 
-    def _link_attachment_to_db(self, message_id: int, filename: str, full_path: Path, size_bytes: int):
+    def _link_attachment_to_db(
+        self, message_id: int, filename: str, full_path: Path, size_bytes: int
+    ):
         """Internal: Update ChatMessage metadata with file pointer."""
         chat_msg = self.db_session.get(ChatMessage, message_id)
         if not chat_msg:
-             return
-             
+            return
+
         existing_attachments = json.loads(chat_msg.attachments or "[]")
         # Relative path for cross-node resolution via shared_path
         relative_storage_path = str(full_path.relative_to(self.attachments_root))
-        
-        existing_attachments.append({
-            "name": filename,
-            "path": relative_storage_path,
-            "size": size_bytes
-        })
-        
+
+        existing_attachments.append(
+            {"name": filename, "path": relative_storage_path, "size": size_bytes}
+        )
+
         chat_msg.attachments = json.dumps(existing_attachments)
         self.db_session.add(chat_msg)
         self.db_session.flush()

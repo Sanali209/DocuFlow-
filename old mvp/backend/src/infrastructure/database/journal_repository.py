@@ -1,8 +1,10 @@
+
 from sqlalchemy.orm import Session, subqueryload
-from typing import List, Optional
-from src.domain.models import JournalEntry, Attachment
 from src.domain.journal_interface import IJournalRepository
-from .models import JournalEntryDB, AttachmentDB
+from src.domain.models import Attachment, JournalEntry
+
+from .models import JournalEntryDB
+
 
 class SQLJournalRepository(IJournalRepository):
     def __init__(self, db: Session):
@@ -17,21 +19,36 @@ class SQLJournalRepository(IJournalRepository):
             author=db_entry.author,
             document_id=db_entry.document_id,
             created_at=db_entry.created_at,
-            attachments=[Attachment(
-                id=a.id,
-                file_path=a.file_path,
-                filename=a.filename,
-                media_type=a.media_type,
-                created_at=a.created_at
-            ) for a in db_entry.attachments]
+            attachments=[
+                Attachment(
+                    id=a.id,
+                    file_path=a.file_path,
+                    filename=a.filename,
+                    media_type=a.media_type,
+                    created_at=a.created_at,
+                )
+                for a in db_entry.attachments
+            ],
         )
 
-    def get_by_id(self, entry_id: int) -> Optional[JournalEntry]:
-        db_entry = self.db.query(JournalEntryDB).options(subqueryload(JournalEntryDB.attachments)).filter(JournalEntryDB.id == entry_id).first()
+    def get_by_id(self, entry_id: int) -> JournalEntry | None:
+        db_entry = (
+            self.db.query(JournalEntryDB)
+            .options(subqueryload(JournalEntryDB.attachments))
+            .filter(JournalEntryDB.id == entry_id)
+            .first()
+        )
         return self._to_domain(db_entry) if db_entry else None
 
-    def list(self, skip: int = 0, limit: int = 100) -> List[JournalEntry]:
-        db_entries = self.db.query(JournalEntryDB).options(subqueryload(JournalEntryDB.attachments)).order_by(JournalEntryDB.created_at.desc()).offset(skip).limit(limit).all()
+    def list(self, skip: int = 0, limit: int = 100) -> list[JournalEntry]:
+        db_entries = (
+            self.db.query(JournalEntryDB)
+            .options(subqueryload(JournalEntryDB.attachments))
+            .order_by(JournalEntryDB.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
         return [self._to_domain(e) for e in db_entries]
 
     def add(self, entity: JournalEntry) -> JournalEntry:
@@ -41,7 +58,7 @@ class SQLJournalRepository(IJournalRepository):
             status=entity.status,
             author=entity.author,
             document_id=entity.document_id,
-            created_at=entity.created_at
+            created_at=entity.created_at,
         )
         self.db.add(db_entry)
         self.db.commit()

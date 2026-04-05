@@ -1,45 +1,46 @@
-from typing import AsyncIterable
-from dishka import Provider, Scope, provide
-from sqlmodel import Session, create_engine
-from loguru import logger
+from collections.abc import AsyncIterable
 
-from docuflow.infrastructure.config import Config
-from docuflow.infrastructure.security import HMACSigner
-from docuflow.application.bus.orchestrator import P2POrchestrator
-from docuflow.infrastructure.bus import FileBusSystem
-from docuflow.infrastructure.coordination import CoordinationSystem
+from dishka import AsyncContainer, Provider, Scope, provide
+from loguru import logger
+from sqlalchemy import Engine
+from sqlmodel import Session, create_engine
+
 from docuflow.application.bus.dispatcher import SecureDispatcher
-from docuflow.infrastructure.sync import DataSyncSystem
-from docuflow.infrastructure.housekeeping import HousekeepingSystem
-from docuflow.sdk import SDK
-from dishka import AsyncContainer
+from docuflow.application.bus.orchestrator import P2POrchestrator
+from docuflow.features.admin.system import AdminSyncSystem, AdminSystem
 
 # Import Vertical Slice Systems
 from docuflow.features.auth.system import AuthSystem
-from docuflow.features.work_items.system import WorkItemSystem
-from docuflow.features.view_presets.system import ViewPresetSystem
-from docuflow.features.inventory.system import InventorySystem
-from docuflow.features.admin.system import AdminSystem, AdminSyncSystem
-from docuflow.features.folder_scanner.system import FolderScannerSystem
+from docuflow.features.chat.incidents import IncidentSystem
+from docuflow.features.chat.system import ChatSystem
+from docuflow.features.consumables.system import ConsumableSystem
 from docuflow.features.folder_scanner.mirror import NSMirrorService
 from docuflow.features.folder_scanner.settings import FolderScannerSettings
+from docuflow.features.folder_scanner.system import FolderScannerSystem
+from docuflow.features.inventory.system import InventorySystem
 from docuflow.features.notifications.system import NotificationService
-from docuflow.features.task_board.system import TaskBoardSystem
-
-from docuflow.features.projects.system import ProjectSystem
 from docuflow.features.parts.system import PartLibrarySystem
-from docuflow.features.consumables.system import ConsumableSystem
 from docuflow.features.production.system import ProductionSystem
-from docuflow.features.chat.system import ChatSystem
-from docuflow.features.chat.incidents import IncidentSystem
-from docuflow.features.reports.system import ReportSystem, ReportRegistry
-from sqlalchemy import Engine
+from docuflow.features.projects.system import ProjectSystem
+from docuflow.features.reports.system import ReportRegistry, ReportSystem
+from docuflow.features.task_board.system import TaskBoardSystem
+from docuflow.features.view_presets.system import ViewPresetSystem
+from docuflow.features.work_items.system import WorkItemSystem
+from docuflow.infrastructure.bus import FileBusSystem
+from docuflow.infrastructure.config import Config
+from docuflow.infrastructure.coordination import CoordinationSystem
+from docuflow.infrastructure.housekeeping import HousekeepingSystem
+from docuflow.infrastructure.security import HMACSigner
+from docuflow.infrastructure.sync import DataSyncSystem
+from docuflow.sdk import SDK
+
 
 class AppProvider(Provider):
     """Provides unified dependency injection for the DocuFlow Vertical Slice Architecture."""
+
     ...
     # (other methods)
-    
+
     @provide(scope=Scope.REQUEST)
     def get_projects_system(self, config: Config, session: Session) -> ProjectSystem:
         """Provide project management system."""
@@ -59,7 +60,7 @@ class AppProvider(Provider):
     def get_production_system(self, config: Config, session: Session, sdk: SDK) -> ProductionSystem:
         """Provide production and logistics system."""
         return ProductionSystem(config, session, sdk)
-    
+
     def __init__(self, config: Config):
         super().__init__()
         self.config = config
@@ -124,32 +125,37 @@ class AppProvider(Provider):
 
     @provide(scope=Scope.APP)
     def get_orchestrator(
-        self, 
-        config: Config, 
+        self,
+        config: Config,
         coordination: CoordinationSystem,
         bus: FileBusSystem,
         sync: DataSyncSystem,
         housekeeping: HousekeepingSystem,
         dispatcher: SecureDispatcher,
         signer: HMACSigner,
-        admin_sync: AdminSyncSystem
+        admin_sync: AdminSyncSystem,
     ) -> P2POrchestrator:
         """Provide P2P orchestrator for cluster coordination."""
         return P2POrchestrator(
-            config, 
-            coordination, 
-            bus, 
-            sync, 
-            housekeeping, 
-            dispatcher, 
-            signer,
-            admin_sync
+            config, coordination, bus, sync, housekeeping, dispatcher, signer, admin_sync
         )
 
     @provide(scope=Scope.APP)
     def get_sdk(self, container: AsyncContainer) -> SDK:
         """Provide SDK facade for application layer."""
-        return SDK(container)
+        # Cache SDK on the provider instance to guard against accidental
+        # multiple instantiations outside of Dishka's scope handling.
+        if hasattr(self, "_sdk") and self._sdk is not None:
+            return self._sdk
+        self._sdk = SDK(container)
+        # Lightweight logging for diagnostics (avoid heavy imports at module level)
+        try:
+            from loguru import logger
+
+            logger.debug(f"AppProvider: created SDK instance id={id(self._sdk)}")
+        except Exception:
+            pass
+        return self._sdk
 
     # --- Vertical Slice Feature Systems ---
     @provide(scope=Scope.REQUEST)
@@ -173,7 +179,9 @@ class AppProvider(Provider):
         return InventorySystem(config, session, sdk)
 
     @provide(scope=Scope.REQUEST)
-    def get_admin_system(self, session: Session, orchestrator: P2POrchestrator, signer: HMACSigner, config: Config) -> AdminSystem:
+    def get_admin_system(
+        self, session: Session, orchestrator: P2POrchestrator, signer: HMACSigner, config: Config
+    ) -> AdminSystem:
         """Provide admin system for cluster management."""
         return AdminSystem(session, orchestrator, signer, config)
 
@@ -198,9 +206,22 @@ class AppProvider(Provider):
         return FolderScannerSettings()
 
     @provide(scope=Scope.REQUEST)
-    def get_task_board(self, config: Config, session: Session, ns_mirror: NSMirrorService, inventory_system: InventorySystem, production_system: ProductionSystem) -> TaskBoardSystem:
+    def get_task_board(
+        self,
+        config: Config,
+        session: Session,
+        ns_mirror: NSMirrorService,
+        inventory_system: InventorySystem,
+        production_system: ProductionSystem,
+    ) -> TaskBoardSystem:
         """Provide task board management system."""
-        return TaskBoardSystem(config, session, ns_mirror=ns_mirror, inventory_system=inventory_system, production_system=production_system)
+        return TaskBoardSystem(
+            config,
+            session,
+            ns_mirror=ns_mirror,
+            inventory_system=inventory_system,
+            production_system=production_system,
+        )
 
     @provide(scope=Scope.REQUEST)
     def get_chat_system(self, config: Config, session: Session, sdk: SDK) -> ChatSystem:
@@ -208,7 +229,9 @@ class AppProvider(Provider):
         return ChatSystem(config, session, sdk)
 
     @provide(scope=Scope.REQUEST)
-    def get_incident_system(self, config: Config, session: Session, chat_system: ChatSystem) -> IncidentSystem:
+    def get_incident_system(
+        self, config: Config, session: Session, chat_system: ChatSystem
+    ) -> IncidentSystem:
         """Provide workshop incident tracking system."""
         return IncidentSystem(config, session, chat_system)
 
@@ -218,6 +241,8 @@ class AppProvider(Provider):
         return ReportRegistry()
 
     @provide(scope=Scope.REQUEST)
-    def get_report_system(self, config: Config, session: Session, registry: ReportRegistry) -> ReportSystem:
+    def get_report_system(
+        self, config: Config, session: Session, registry: ReportRegistry
+    ) -> ReportSystem:
         """Provide workshop reporting and analytics system."""
         return ReportSystem(config, session, registry)

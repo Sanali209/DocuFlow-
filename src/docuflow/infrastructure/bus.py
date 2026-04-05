@@ -2,7 +2,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import anyio
 from loguru import logger
@@ -69,6 +69,11 @@ class FileBusSystem(BaseSystem):
     async def on_startup(self) -> None:
         """Initialize the bus directory structure and start file monitoring."""
         self._ensure_directories_exist()
+        # Cleanup any stale staging files left from previous crashes or runs
+        try:
+            self._cleanup_temp_files()
+        except Exception:
+            logger.exception("FileBus: Failed during temp-file cleanup on startup")
         self._observer.schedule(self._handler, str(self._inbox), recursive=False)
         self._observer.start()
         logger.info(f"FileBus: Monitoring {self._inbox} for node {self._node_id}")
@@ -79,9 +84,7 @@ class FileBusSystem(BaseSystem):
         self._observer.join()
         logger.info("FileBus: Offline")
 
-    async def send_request(
-        self, target_id: str, command: str, data: Dict[str, Any]
-    ) -> str:
+    async def send_request(self, target_id: str, command: str, data: dict[str, Any]) -> str:
         """Atomically deposit a request message for a target node.
 
         Args:
@@ -102,7 +105,7 @@ class FileBusSystem(BaseSystem):
         return request_id
 
     async def send_response(
-        self, target_id: str, request_id: str, command: str, data: Dict[str, Any]
+        self, target_id: str, request_id: str, command: str, data: dict[str, Any]
     ) -> str:
         """Atomically deposit a response to an existing request.
 
@@ -123,9 +126,7 @@ class FileBusSystem(BaseSystem):
         await self._atomic_write(self._outbox, filename, payload)
         return request_id
 
-    async def poll_messages(
-        self, folder: str = constants.BUS_INBOX_DIR
-    ) -> List[Dict[str, Any]]:
+    async def poll_messages(self, folder: str = constants.BUS_INBOX_DIR) -> list[dict[str, Any]]:
         """Retrieve all finalized messages currently pending for this node.
 
         Args:
@@ -156,7 +157,7 @@ class FileBusSystem(BaseSystem):
         file_path = target_dir / filename
         await anyio.Path(file_path).unlink(missing_ok=True)
 
-    async def write_message(self, payload: Dict[str, Any]) -> str:
+    async def write_message(self, payload: dict[str, Any]) -> str:
         """Write a raw P2P envelope for orchestrator-level broadcasts.
 
         Returns:
@@ -185,9 +186,7 @@ class FileBusSystem(BaseSystem):
             f"{constants.BUS_DELIMITER}{unique_id}{constants.BUS_EXTENSION}"
         )
 
-    def _build_filename(
-        self, prefix: str, from_id: str, to_id: str, unique_id: str
-    ) -> str:
+    def _build_filename(self, prefix: str, from_id: str, to_id: str, unique_id: str) -> str:
         """Construct a protocol-compliant filename."""
         return (
             f"{prefix}{from_id}{constants.BUS_DELIMITER}"
@@ -195,8 +194,8 @@ class FileBusSystem(BaseSystem):
         )
 
     def _build_payload(
-        self, target_id: str, message_id: str, command: str, data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, target_id: str, message_id: str, command: str, data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Construct the standard JSON message structure."""
         return {
             "header": {
@@ -213,6 +212,47 @@ class FileBusSystem(BaseSystem):
         """Map a folder type string to an absolute path."""
         return self._inbox if folder_name == constants.BUS_INBOX_DIR else self._outbox
 
+    def _cleanup_temp_files(self, older_than_seconds: int | None = None) -> None:
+        """Remove TEMP_* files older than `older_than_seconds` from bus folders.
+
+        This is a best-effort cleanup invoked at startup to avoid littering the
+        shared bus with abandoned staging files that may confuse consumers.
+        """
+        if older_than_seconds is None:
+            # Prefer configured value from runtime Config, fall back to constant.
+            try:
+                older_than_seconds = int(self.config.bus_temp_cleanup_age_seconds)
+            except Exception:
+                older_than_seconds = constants.GC_STALE_BUS_AGE_SECONDS
+
+        now = time.time()
+        examined = 0
+        removed = 0
+        for folder in (self._inbox, self._outbox):
+            try:
+                if not folder.exists():
+                    continue
+                for entry in folder.iterdir():
+                    if not entry.is_file():
+                        continue
+                    name = entry.name
+                    if not name.startswith(constants.BUS_TEMP_PREFIX):
+                        continue
+                    examined += 1
+                    try:
+                        mtime = entry.stat().st_mtime
+                        age = now - mtime
+                        if age >= older_than_seconds:
+                            entry.unlink(missing_ok=True)
+                            removed += 1
+                            logger.warning(f"FileBus: Removed stale temp file: {entry}")
+                    except Exception:
+                        logger.exception(f"FileBus: Error checking/removing temp file {entry}")
+            except Exception:
+                logger.exception(f"FileBus: Failed to scan folder for temp files: {folder}")
+
+        logger.debug(f"FileBus: Temp cleanup examined={examined} removed={removed}")
+
     def _is_relevant_message(self, filename: str, folder_name: str) -> bool:
         """Determine if a file is a finalized message addressed to this node."""
         if not filename.endswith(constants.BUS_EXTENSION):
@@ -220,9 +260,8 @@ class FileBusSystem(BaseSystem):
         if filename.startswith(constants.BUS_TEMP_PREFIX):
             return False
 
-        if (
-            folder_name == constants.BUS_INBOX_DIR
-            and filename.startswith(constants.BUS_PREFIX_BROADCAST)
+        if folder_name == constants.BUS_INBOX_DIR and filename.startswith(
+            constants.BUS_PREFIX_BROADCAST
         ):
             return True
 
@@ -230,8 +269,7 @@ class FileBusSystem(BaseSystem):
         # Check if current node_id is in the 'TO' position
         # We look for _{node_id}_ to account for underscores in IDs
         is_addressed_to_me = (
-            f"{constants.BUS_DELIMITER}{self._node_id}{constants.BUS_DELIMITER}"
-            in filename
+            f"{constants.BUS_DELIMITER}{self._node_id}{constants.BUS_DELIMITER}" in filename
         )
 
         prefix = (
@@ -241,7 +279,7 @@ class FileBusSystem(BaseSystem):
         )
         return is_addressed_to_me and filename.startswith(prefix)
 
-    async def _try_read_message(self, file_path: Path) -> Optional[Dict[str, Any]]:
+    async def _try_read_message(self, file_path: Path) -> dict[str, Any] | None:
         """Attempt to read and parse a JSON message from disk."""
         try:
             content_bytes = await anyio.Path(file_path).read_bytes()
@@ -249,15 +287,35 @@ class FileBusSystem(BaseSystem):
         except (json.JSONDecodeError, OSError):
             return None
 
-    async def _atomic_write(
-        self, target_dir: Path, filename: str, payload: Dict[str, Any]
-    ) -> None:
+    async def _atomic_write(self, target_dir: Path, filename: str, payload: dict[str, Any]) -> None:
         """Perform a collision-safe write using temp files and atomic rename."""
         temp_path = target_dir / f"{constants.BUS_TEMP_PREFIX}{filename}"
         final_path = target_dir / filename
 
-        # 1. Write content to the staging (TEMP_) file
-        await anyio.Path(temp_path).write_text(json.dumps(payload, indent=2))
+        # 1. Write content to the staging (TEMP_) file using binary write,
+        #    flush and fsync to ensure data hits the underlying storage.
+        data = json.dumps(payload, indent=2).encode("utf-8")
 
-        # 2. Rename to finalized name (Atomic on Samba/NFS targets)
-        os.rename(temp_path, final_path)
+        try:
+            # Use a blocking file write here to be able to call flush/fsync.
+            with open(temp_path, "wb") as f:
+                f.write(data)
+                f.flush()
+                try:
+                    os.fsync(f.fileno())
+                except OSError:
+                    # fsync may fail on certain filesystems or permissions;
+                    # still attempt the atomic replace but log the condition.
+                    logger.debug(f"FileBus: os.fsync failed for {temp_path}")
+
+            # 2. Atomically replace (safer than rename across platforms)
+            os.replace(temp_path, final_path)
+            logger.debug(f"FileBus: Wrote message to {final_path}")
+        except Exception:
+            # Best-effort cleanup of temp file to avoid littering shared folder
+            try:
+                if temp_path.exists():
+                    os.remove(temp_path)
+            except OSError:
+                logger.exception(f"FileBus: Failed to remove temp file {temp_path}")
+            raise

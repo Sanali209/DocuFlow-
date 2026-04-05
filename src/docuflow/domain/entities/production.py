@@ -1,16 +1,19 @@
 import datetime
 from enum import Enum
-from typing import List, Optional
+
 from sqlmodel import Field, Relationship, UniqueConstraint
+
 from docuflow.domain.entities.base import BaseEntity
 
 # --- ENUMS ---
+
 
 class WorkItemType(str, Enum):
     SIDRA = "sidra"
     MIHTAV = "mihtav"
     REWORK = "rework"
     LASER = "laser"
+
 
 class WorkItemStatus(str, Enum):
     NEW = "new"
@@ -25,6 +28,7 @@ class WorkItemStatus(str, Enum):
     CANCELLED = "cancelled"
     ARCHIVED = "archived"
 
+
 class TaskItemStatus(str, Enum):
     PLANNED = "planned"
     IN_PROGRESS = "in_progress"
@@ -33,140 +37,156 @@ class TaskItemStatus(str, Enum):
     CANCELLED = "cancelled"
     BLOCKED = "blocked"
 
+
 # --- ENTITIES ---
+
 
 class Project(BaseEntity, table=True):
     """Container for high-level project grouping (e.g., 'SHLAV-2')."""
+
     name: str = Field(unique=True, index=True)
-    description: Optional[str] = None
+    description: str | None = None
     is_default: bool = Field(default=False)
-    deadline: Optional[datetime.datetime] = None
+    deadline: datetime.datetime | None = None
     status: str = Field(default="active")
-    
+
     # Relations
-    work_items: List["WorkItem"] = Relationship(back_populates="project")
+    work_items: list["WorkItem"] = Relationship(back_populates="project")
+
 
 class WorkItem(BaseEntity, table=True):
     """Represents a workshop order/folder (Symmetric Truth key: folder_name)."""
+
     project_id: int = Field(foreign_key="project.id", index=True)
     work_item_type: WorkItemType = Field(default=WorkItemType.SIDRA)
     status: WorkItemStatus = Field(default=WorkItemStatus.NEW)
-    
+
     folder_name: str = Field(unique=True, index=True)
     folder_path: str  # Relative path from scan root
-    
-    sidra_number: Optional[str] = None
-    sidra_step: Optional[str] = None
-    
+
+    sidra_number: str | None = None
+    sidra_step: str | None = None
+
     folder_found_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
-    doc_received_at: Optional[datetime.datetime] = None
-    started_at: Optional[datetime.datetime] = None
-    completed_at: Optional[datetime.datetime] = None
-    last_scanned_at: Optional[datetime.datetime] = None
+    doc_received_at: datetime.datetime | None = None
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
+    last_scanned_at: datetime.datetime | None = None
 
     # Relations
-    project: Optional[Project] = Relationship(back_populates="work_items")
-    tasks: List["TaskItem"] = Relationship(back_populates="work_item")
+    project: Project | None = Relationship(back_populates="work_items")
+    tasks: list["TaskItem"] = Relationship(back_populates="work_item")
+
 
 class TaskItem(BaseEntity, table=True):
     """Represents a single GNC file (cutting task)."""
+
     work_item_id: int = Field(foreign_key="workitem.id", index=True)
-    mat_type_id: Optional[int] = Field(default=None, foreign_key="materialtype.id")
-    
+    mat_type_id: int | None = Field(default=None, foreign_key="materialtype.id")
+
     status: TaskItemStatus = Field(default=TaskItemStatus.PLANNED)
     priority: int = Field(default=1)  # 0: Low, 1: Normal, 2: High
     is_urgent: bool = Field(default=False)
-    
+
     file_name: str
     file_path: str  # Relative path
-    file_hash: Optional[str] = None  # MD5 for change detection
-    
-    sheet_x: Optional[float] = None
-    sheet_y: Optional[float] = None
-    sheet_qty: Optional[int] = None
-    thickness: Optional[float] = None
-    gnc_date: Optional[datetime.datetime] = None
-    
+    file_hash: str | None = None  # MD5 for change detection
+
+    sheet_x: float | None = None
+    sheet_y: float | None = None
+    sheet_qty: int | None = None
+    thickness: float | None = None
+    gnc_date: datetime.datetime | None = None
+
     sheets_done: int = Field(default=0)
-    qty_produced: Optional[int] = None
-    
-    estimated_minutes: Optional[int] = None
-    actual_minutes: Optional[int] = None
-    
-    step_index: Optional[int] = None
-    batch_index: Optional[int] = None
-    batch_group_id: Optional[str] = None  # UUID для группировки в батчи
-    
-    assigned_to_node: Optional[str] = None
+    qty_produced: int | None = None
+
+    estimated_minutes: int | None = None
+    actual_minutes: int | None = None
+
+    step_index: int | None = None
+    batch_index: int | None = None
+    batch_group_id: str | None = None  # UUID для группировки в батчи
+
+    assigned_to_node: str | None = None
     scanned_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
-    started_at: Optional[datetime.datetime] = None
-    completed_at: Optional[datetime.datetime] = None
-    
-    block_reason: Optional[str] = None
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
+
+    block_reason: str | None = None
 
     # Relations
-    work_item: Optional[WorkItem] = Relationship(back_populates="tasks")
-    parts: List["TaskPart"] = Relationship(back_populates="task")
-    # Bidirectional link to physical pellets. 
+    work_item: WorkItem | None = Relationship(back_populates="tasks")
+    parts: list["TaskPart"] = Relationship(back_populates="task")
+    # Bidirectional link to physical pellets.
     # Named 'task_item' to avoid shadowing the 'task' keyword or internal variables.
-    production_units: List["ProductionUnit"] = Relationship(back_populates="task_item")
+    production_units: list["ProductionUnit"] = Relationship(back_populates="task_item")
+
 
 class TaskPart(BaseEntity, table=True):
     """Links parts from PartLibrary to a specific TaskItem (GNC)."""
+
     task_item_id: int = Field(foreign_key="taskitem.id", index=True)
     part_sku: str = Field(index=True)
     version: str = Field(default="A")
     qty: int = Field(default=1)
-    
+
     # We reference the specific library entry by ID (internal) or by SKU+Version (logical)
-    part_id: Optional[int] = Field(default=None, foreign_key="partlibrary.id")
+    part_id: int | None = Field(default=None, foreign_key="partlibrary.id")
 
     # Relations
-    task: Optional[TaskItem] = Relationship(back_populates="parts")
+    task: TaskItem | None = Relationship(back_populates="parts")
     part: "PartLibrary" = Relationship(back_populates="task_links")
+
 
 class PartLibrary(BaseEntity, table=True):
     """Global registry of unique physical parts."""
+
     __table_args__ = (UniqueConstraint("sku", "version"),)
-    
+
     sku: str = Field(index=True)
     version: str = Field(default="A", index=True)
-    mat_type_id: Optional[int] = Field(default=None, foreign_key="materialtype.id")
-    name: Optional[str] = None
-    
-    bbox_x: Optional[float] = None
-    bbox_y: Optional[float] = None
+    mat_type_id: int | None = Field(default=None, foreign_key="materialtype.id")
+    name: str | None = None
+
+    bbox_x: float | None = None
+    bbox_y: float | None = None
     contour_count: int = Field(default=0)
     corner_count: int = Field(default=0)
     hole_count: int = Field(default=0)
-    
-    weight_per_pcs: Optional[float] = None
-    svg_preview_path: Optional[str] = None
-    
+
+    weight_per_pcs: float | None = None
+    svg_preview_path: str | None = None
+
     first_seen_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
-    last_seen_at: Optional[datetime.datetime] = None
+    last_seen_at: datetime.datetime | None = None
 
     # Relations
-    task_links: List[TaskPart] = Relationship(back_populates="part")
-    templates: List["PartTemplate"] = Relationship(back_populates="part")
+    task_links: list[TaskPart] = Relationship(back_populates="part")
+    templates: list["PartTemplate"] = Relationship(back_populates="part")
+
 
 class PartTemplate(BaseEntity, table=True):
     """Stored warnings or templates associated with a specific part SKU."""
+
     part_sku: str = Field(foreign_key="partlibrary.sku", index=True)
     message: str
     severity: str = Field(default="info")  # info, warning, critical
-    created_by: Optional[str] = None
+    created_by: str | None = None
 
     # Relations
-    part: Optional[PartLibrary] = Relationship(back_populates="templates")
+    part: PartLibrary | None = Relationship(back_populates="templates")
+
 
 # --- MATERIALS (Block D) ---
+
 
 class MaterialFormFactor(str, Enum):
     SHEET = "sheet"
     TUBE = "tube"
     BAR = "bar"
     OTHER = "other"
+
 
 class MaterialStockStatus(str, Enum):
     AVAILABLE = "available"
@@ -175,16 +195,18 @@ class MaterialStockStatus(str, Enum):
     CONSUMED = "consumed"
     DEFECT = "defect"
 
+
 class MaterialType(BaseEntity, table=True):
     """Registry of material specifications and cutting parameters."""
+
     code: str = Field(unique=True, index=True)
     form_factor: MaterialFormFactor = Field(default=MaterialFormFactor.SHEET)
-    thickness: Optional[float] = None
-    nominal_x: Optional[float] = None
-    nominal_y: Optional[float] = None
-    weight_per_sheet: Optional[float] = None
+    thickness: float | None = None
+    nominal_x: float | None = None
+    nominal_y: float | None = None
+    weight_per_sheet: float | None = None
     primary_unit: str = Field(default="sheet")
-    
+
     # Time Estimation Parameters (Editable by Foreman)
     cut_speed_mm_per_min: float = Field(default=3000.0)
     pierce_time_sec: float = Field(default=3.0)
@@ -192,111 +214,132 @@ class MaterialType(BaseEntity, table=True):
     time_tolerance_pct: float = Field(default=15.0)
 
     # Relations
-    stock_items: List["MaterialStock"] = Relationship(back_populates="material_type")
+    stock_items: list["MaterialStock"] = Relationship(back_populates="material_type")
+
 
 class MaterialStock(BaseEntity, table=True):
     """Physical material packs/batches in inventory."""
+
     mat_type_id: int = Field(foreign_key="materialtype.id", index=True)
     status: MaterialStockStatus = Field(default=MaterialStockStatus.AVAILABLE)
-    batch_code: Optional[str] = None
+    batch_code: str | None = None
     quantity: float = Field(default=0.0)
-    quantity_kg: Optional[float] = None
-    location: Optional[str] = None
+    quantity_kg: float | None = None
+    location: str | None = None
 
     # Relations
-    material_type: Optional[MaterialType] = Relationship(back_populates="stock_items")
-    reservations: List["Reservation"] = Relationship(back_populates="stock_item")
-    audit_logs: List["MaterialAudit"] = Relationship(back_populates="stock_item")
+    material_type: MaterialType | None = Relationship(back_populates="stock_items")
+    reservations: list["Reservation"] = Relationship(back_populates="stock_item")
+    audit_logs: list["MaterialAudit"] = Relationship(back_populates="stock_item")
+
 
 class Reservation(BaseEntity, table=True):
     """Soft or hard reservation of material for a specific WorkItem."""
+
     stock_item_id: int = Field(foreign_key="materialstock.id")
     work_item_id: int = Field(foreign_key="workitem.id")
     qty_reserved: float
     reservation_type: str = Field(default="soft")  # soft | hard
 
     # Relations
-    stock_item: Optional[MaterialStock] = Relationship(back_populates="reservations")
+    stock_item: MaterialStock | None = Relationship(back_populates="reservations")
+
 
 class MaterialAudit(BaseEntity, table=True):
     """Traceable history of material movements."""
+
     stock_item_id: int = Field(foreign_key="materialstock.id", index=True)
     operation: str  # income | write_off | correction | defect | reorder
     qty_delta: float
-    qty_kg_delta: Optional[float] = None
-    reason: Optional[str] = None
-    ref_task_item_id: Optional[int] = Field(default=None, foreign_key="taskitem.id")
-    author: Optional[str] = None
-    node_id: Optional[str] = None
+    qty_kg_delta: float | None = None
+    reason: str | None = None
+    ref_task_item_id: int | None = Field(default=None, foreign_key="taskitem.id")
+    author: str | None = None
+    node_id: str | None = None
 
     # Relations
-    stock_item: Optional[MaterialStock] = Relationship(back_populates="audit_logs")
+    stock_item: MaterialStock | None = Relationship(back_populates="audit_logs")
+
 
 # --- CONSUMABLES (Block E) ---
 
+
 class Consumable(BaseEntity, table=True):
     """Workshop supplies (nozzles, lenses, tape, etc.)."""
+
     name: str = Field(unique=True, index=True)
     category: str = Field(default="nozzle")  # nozzle | lens | tape | gas | other
     unit: str = Field(default="pcs")
     quantity: float = Field(default=0.0)
     min_quantity: float = Field(default=0.0)
 
+
 class ConsumableLog(BaseEntity, table=True):
     """Usage and restocking history for consumables."""
+
     consumable_id: int = Field(foreign_key="consumable.id", index=True)
     operation: str  # use | restock | write_off
     qty_delta: float
-    ref_task_item_id: Optional[int] = Field(default=None, foreign_key="taskitem.id")
-    author: Optional[str] = None
-    note: Optional[str] = None
+    ref_task_item_id: int | None = Field(default=None, foreign_key="taskitem.id")
+    author: str | None = None
+    note: str | None = None
+
 
 # --- LOGISTICS (Block F) ---
 
+
 class StorageLocation(BaseEntity, table=True):
     """Physical storage place (e.g., 'A-02-3')."""
+
     code: str = Field(unique=True, index=True)
-    name: Optional[str] = None
+    name: str | None = None
     is_active: bool = Field(default=True)
-    
+
     # Relations - tracks units currently stored here
-    units: List["ProductionUnit"] = Relationship(back_populates="storage_location")
+    units: list["ProductionUnit"] = Relationship(back_populates="storage_location")
+
 
 class ProductionUnit(BaseEntity, table=True):
     """A pallet or container of finished parts."""
+
     label_id: str = Field(unique=True, index=True)  # Human-readable "YY-MM-Node-Seq"
-    task_item_id: Optional[int] = Field(default=None, foreign_key="taskitem.id")
-    storage_location_id: Optional[int] = Field(default=None, foreign_key="storagelocation.id")
-    
+    task_item_id: int | None = Field(default=None, foreign_key="taskitem.id")
+    storage_location_id: int | None = Field(default=None, foreign_key="storagelocation.id")
+
     qty_produced: int = Field(default=0)
     is_stock: bool = Field(default=False)
     is_pre_system: bool = Field(default=False)
-    stock_transferred_at: Optional[datetime.datetime] = None
-    
-    parent_label_id: Optional[str] = None  # Traceability for split operations
-    created_by: Optional[str] = None
-    
+    stock_transferred_at: datetime.datetime | None = None
+
+    parent_label_id: str | None = None  # Traceability for split operations
+    created_by: str | None = None
+
     # Relations: Explicitly defined for SQLModel attribute access.
-    # Note: Using '.task_item' instead of '.task' is mandatory to ensure clear 
+    # Note: Using '.task_item' instead of '.task' is mandatory to ensure clear
     # distinction from the generic 'TaskItem' class and local task variables.
-    task_item: Optional[TaskItem] = Relationship(back_populates="production_units")
-    storage_location: Optional[StorageLocation] = Relationship(back_populates="units")
+    task_item: TaskItem | None = Relationship(back_populates="production_units")
+    storage_location: StorageLocation | None = Relationship(back_populates="units")
+
 
 # --- BUCKET (Block G) ---
 
+
 class WorkerBucketEntry(BaseEntity, table=True):
     """A task assigned to a specific worker/node basket."""
+
     node_id: str = Field(index=True)
-    assigned_user: Optional[str] = None
+    assigned_user: str | None = None
     task_item_id: int = Field(foreign_key="taskitem.id", index=True)
-    batch_group_id: Optional[str] = None  # UUID for batched tasks
-    
+    batch_group_id: str | None = None  # UUID for batched tasks
+
     locked_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
-    handover_note: Optional[str] = None
-    handover_at: Optional[datetime.datetime] = None
-    handover_from: Optional[str] = None
+    handover_note: str | None = None
+    handover_at: datetime.datetime | None = None
+    handover_from: str | None = None
+
 
 # --- LOGS & COMMUNICATION (Block H) ---
+
 
 class WorkLogType(str, Enum):
     INFO = "info"
@@ -312,30 +355,35 @@ class WorkLogType(str, Enum):
     NS_MIRROR = "ns_mirror"
     MATERIAL_REMOVED = "material_removed"
 
+
 class WorkLog(BaseEntity, table=True):
     """Generic traceability log for work items and tasks."""
-    work_item_id: Optional[int] = Field(default=None, foreign_key="workitem.id", index=True)
-    task_item_id: Optional[int] = Field(default=None, foreign_key="taskitem.id", index=True)
+
+    work_item_id: int | None = Field(default=None, foreign_key="workitem.id", index=True)
+    task_item_id: int | None = Field(default=None, foreign_key="taskitem.id", index=True)
     log_type: WorkLogType = Field(default=WorkLogType.INFO)
-    author: Optional[str] = None
-    node_id: Optional[str] = None
+    author: str | None = None
+    node_id: str | None = None
     message: str
-    payload: Optional[str] = None  # JSON string
+    payload: str | None = None  # JSON string
+
 
 class IncidentLog(BaseEntity, table=True):
     """Detailed record of production incidents."""
-    task_item_id: Optional[int] = Field(default=None, foreign_key="taskitem.id")
-    work_item_id: Optional[int] = Field(default=None, foreign_key="workitem.id")
-    node_id: Optional[str] = None
+
+    task_item_id: int | None = Field(default=None, foreign_key="taskitem.id")
+    work_item_id: int | None = Field(default=None, foreign_key="workitem.id")
+    node_id: str | None = None
     incident_type: str
     description: str
     reported_by: str
     resolved: bool = Field(default=False)
-    resolved_by: Optional[str] = None
-    resolved_at: Optional[datetime.datetime] = None
-    resolution_note: Optional[str] = None
-    downtime_minutes: Optional[float] = None
-    attachments: Optional[str] = None  # JSON string (list of paths)
+    resolved_by: str | None = None
+    resolved_at: datetime.datetime | None = None
+    resolution_note: str | None = None
+    downtime_minutes: float | None = None
+    attachments: str | None = None  # JSON string (list of paths)
+
 
 class ChatMessageType(str, Enum):
     MESSAGE = "message"
@@ -347,48 +395,58 @@ class ChatMessageType(str, Enum):
     HANDOVER = "handover"
     REPORT = "report"
 
+
 class ChatMessage(BaseEntity, table=True):
     """Shared cluster chat message with context references."""
+
     author: str
     node_id: str
     message_type: ChatMessageType = Field(default=ChatMessageType.MESSAGE)
     content: str
-    
-    ref_project_id: Optional[int] = Field(default=None, foreign_key="project.id")
-    ref_work_item_id: Optional[int] = Field(default=None, foreign_key="workitem.id")
-    ref_task_item_id: Optional[int] = Field(default=None, foreign_key="taskitem.id")
-    
-    parent_message_id: Optional[int] = Field(default=None, foreign_key="chatmessage.id")
-    template_name: Optional[str] = None
-    attachments: Optional[str] = None  # JSON string
+
+    ref_project_id: int | None = Field(default=None, foreign_key="project.id")
+    ref_work_item_id: int | None = Field(default=None, foreign_key="workitem.id")
+    ref_task_item_id: int | None = Field(default=None, foreign_key="taskitem.id")
+
+    parent_message_id: int | None = Field(default=None, foreign_key="chatmessage.id")
+    template_name: str | None = None
+    attachments: str | None = None  # JSON string
     is_read: bool = Field(default=False)
+
 
 class Tag(BaseEntity, table=True):
     """Visual tags for grouping/flagging entities."""
+
     name: str = Field(unique=True)
-    color: Optional[str] = None
-    ref_project_id: Optional[int] = Field(default=None, foreign_key="project.id")
-    ref_work_item_id: Optional[int] = Field(default=None, foreign_key="workitem.id")
-    ref_task_item_id: Optional[int] = Field(default=None, foreign_key="taskitem.id")
+    color: str | None = None
+    ref_project_id: int | None = Field(default=None, foreign_key="project.id")
+    ref_work_item_id: int | None = Field(default=None, foreign_key="workitem.id")
+    ref_task_item_id: int | None = Field(default=None, foreign_key="taskitem.id")
+
 
 class ReportTemplate(BaseEntity, table=True):
     """Jinja2 HTML templates for the reporting system."""
+
     name: str
-    author: Optional[str] = None
+    author: str | None = None
     template_html: str
-    description: Optional[str] = None
-    last_used_at: Optional[datetime.datetime] = None
+    description: str | None = None
+    last_used_at: datetime.datetime | None = None
+
 
 class ViewPreset(BaseEntity, table=True):
     """UI configuration presets (Notion-style tabs)."""
+
     module: str
     owner: str  # username or "global"
     name: str
     preset_json: str  # JSON config
     is_default: bool = Field(default=False)
 
+
 class NotificationTemplate(BaseEntity, table=True):
     """Configurable notification texts."""
+
     key: str = Field(unique=True, index=True)
     text: str
     enabled: bool = Field(default=True)

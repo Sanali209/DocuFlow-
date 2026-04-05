@@ -3,9 +3,10 @@ StatusBadge — цветной бейдж для отображения стат
 
 Используется в таблицах, карточках и других views.
 """
-from nicegui import ui
-from docuflow.domain.entities.production import WorkItemStatus, TaskItemStatus
 
+from nicegui import ui
+
+from docuflow.domain.entities.production import TaskItemStatus, WorkItemStatus
 
 # Цветовая схема для статусов WorkItem
 WORK_ITEM_COLORS: dict[WorkItemStatus, str] = {
@@ -36,29 +37,29 @@ TASK_ITEM_COLORS: dict[TaskItemStatus, str] = {
 class StatusBadge:
     """
     Цветной бейдж для отображения статуса.
-    
+
     Props:
         status: WorkItemStatus | TaskItemStatus — статус для отображения
         size: str — размер ("sm", "md", "lg")
     """
-    
+
     def __init__(self, status: WorkItemStatus | TaskItemStatus, size: str = "md"):
         self.status = status
         self.size = size
-    
+
     def render(self) -> ui.badge:
         """Рендерит бейдж с цветом и текстом."""
         color = self._get_color()
         label = self._get_label()
-        
+
         size_classes = {
             "sm": "text-xs px-1.5 py-0.5",
             "md": "text-sm px-2 py-1",
             "lg": "text-base px-3 py-1.5",
         }
-        
-        return ui.badge(label).props(f'color={color} {size_classes.get(self.size, "")}')
-    
+
+        return ui.badge(label).props(f"color={color} {size_classes.get(self.size, '')}")
+
     def _get_color(self) -> str:
         """Возвращает цвет для статуса."""
         if isinstance(self.status, WorkItemStatus):
@@ -66,7 +67,7 @@ class StatusBadge:
         elif isinstance(self.status, TaskItemStatus):
             return TASK_ITEM_COLORS.get(self.status, "gray")
         return "gray"
-    
+
     def _get_label(self) -> str:
         """Возвращает текстовую метку для статуса."""
         labels = {

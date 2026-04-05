@@ -9,13 +9,13 @@
 - StockAlert — предупреждение о запасах
 """
 
+from .batch_engine import BatchEngine, BatchGroup, BatchRule, StockAlert
 from .system import TaskBoardSystem
-from .batch_engine import BatchEngine, BatchRule, BatchGroup, StockAlert
 
 __all__ = [
-    "TaskBoardSystem",
     "BatchEngine",
-    "BatchRule",
     "BatchGroup",
+    "BatchRule",
     "StockAlert",
+    "TaskBoardSystem",
 ]

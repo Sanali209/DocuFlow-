@@ -6,15 +6,16 @@ TDD подход:
 2. Потом код
 3. Рефакторинг
 """
+
 import pytest
-from sqlmodel import Session, SQLModel, create_engine, select
+from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from docuflow.domain.entities.production import (
     MaterialType,
+    Project,
     TaskItem,
     WorkItem,
-    Project,
 )
 from docuflow.features.task_board.batch_engine import BatchEngine, BatchRule
 
@@ -69,9 +70,9 @@ class TestBatchEngineCompute:
             )
             for i in range(3)
         ]
-        
+
         groups = engine.compute(tasks, BatchRule())
-        
+
         assert len(groups) == 1
         assert len(groups[0].tasks) == 3
         assert groups[0].mat_type_id == material.id
@@ -83,7 +84,7 @@ class TestBatchEngineCompute:
         session.add(mat1)
         session.add(mat2)
         session.commit()
-        
+
         tasks = [
             TaskItem(
                 file_name="task_1.gnc",
@@ -102,9 +103,9 @@ class TestBatchEngineCompute:
                 sheet_y=1000,
             ),
         ]
-        
+
         groups = engine.compute(tasks, BatchRule())
-        
+
         assert len(groups) == 2
 
     def test_tasks_sorted_by_step_batch_index(self, engine: BatchEngine, material: MaterialType):
@@ -141,9 +142,9 @@ class TestBatchEngineCompute:
                 batch_index=2,
             ),
         ]
-        
+
         groups = engine.compute(tasks, BatchRule())
-        
+
         assert len(groups) == 1
         steps = [(t.step_index, t.batch_index) for t in groups[0].tasks]
         assert steps == [(1, 1), (1, 2), (2, 1)]
@@ -151,7 +152,7 @@ class TestBatchEngineCompute:
     def test_empty_tasks(self, engine: BatchEngine):
         """Пустой список задач → пустой список батчей."""
         groups = engine.compute([], BatchRule())
-        
+
         assert len(groups) == 0
 
     def test_max_batch_size(self, engine: BatchEngine, material: MaterialType):
@@ -167,9 +168,9 @@ class TestBatchEngineCompute:
             )
             for i in range(5)
         ]
-        
+
         groups = engine.compute(tasks, BatchRule(max_batch_size=2))
-        
+
         assert len(groups) == 1
         assert len(groups[0].tasks) == 2
 
@@ -183,7 +184,7 @@ class TestBatchEngineApplyBatches:
         project = Project(name="Test")
         session.add(project)
         session.commit()
-        
+
         work_item = WorkItem(
             folder_name="test",
             folder_path="/test",
@@ -191,7 +192,7 @@ class TestBatchEngineApplyBatches:
         )
         session.add(work_item)
         session.commit()
-        
+
         task = TaskItem(
             file_name="task.gnc",
             file_path="/path/task.gnc",
@@ -203,11 +204,11 @@ class TestBatchEngineApplyBatches:
         )
         session.add(task)
         session.commit()
-        
+
         # Группируем и применяем
         groups = engine.compute([task], BatchRule())
         engine.apply_batches(groups, session)
-        
+
         # Проверяем, что batch_group_id установлен
         task_updated = session.get(TaskItem, task.id)
         assert task_updated.batch_group_id is not None
@@ -221,7 +222,7 @@ class TestBatchEngineMoveTask:
         project = Project(name="Test")
         session.add(project)
         session.commit()
-        
+
         work_item = WorkItem(
             folder_name="test",
             folder_path="/test",
@@ -229,7 +230,7 @@ class TestBatchEngineMoveTask:
         )
         session.add(work_item)
         session.commit()
-        
+
         task = TaskItem(
             file_name="task.gnc",
             file_path="/path/task.gnc",
@@ -242,9 +243,9 @@ class TestBatchEngineMoveTask:
         )
         session.add(task)
         session.commit()
-        
+
         result = engine.move_task(task.id, "new_batch", session)
-        
+
         assert result.batch_group_id == "new_batch"
 
     def test_move_task_not_found(self, engine: BatchEngine, session: Session):
@@ -261,7 +262,7 @@ class TestBatchEngineCreateBatch:
         project = Project(name="Test")
         session.add(project)
         session.commit()
-        
+
         work_item = WorkItem(
             folder_name="test",
             folder_path="/test",
@@ -269,7 +270,7 @@ class TestBatchEngineCreateBatch:
         )
         session.add(work_item)
         session.commit()
-        
+
         tasks = []
         for i in range(3):
             task = TaskItem(
@@ -284,9 +285,9 @@ class TestBatchEngineCreateBatch:
             session.add(task)
             session.commit()
             tasks.append(task)
-        
+
         batch_id = engine.create_batch([t.id for t in tasks], session)
-        
+
         # Проверяем, что все задачи получили batch_group_id
         for task in tasks:
             task_updated = session.get(TaskItem, task.id)
@@ -301,7 +302,7 @@ class TestBatchEngineSplitBatch:
         project = Project(name="Test")
         session.add(project)
         session.commit()
-        
+
         work_item = WorkItem(
             folder_name="test",
             folder_path="/test",
@@ -309,7 +310,7 @@ class TestBatchEngineSplitBatch:
         )
         session.add(work_item)
         session.commit()
-        
+
         tasks = []
         for i in range(3):
             task = TaskItem(
@@ -325,18 +326,14 @@ class TestBatchEngineSplitBatch:
             session.add(task)
             session.commit()
             tasks.append(task)
-        
-        new_batch_id = engine.split_batch(
-            "original_batch",
-            [tasks[0].id, tasks[1].id],
-            session
-        )
-        
+
+        new_batch_id = engine.split_batch("original_batch", [tasks[0].id, tasks[1].id], session)
+
         # Проверяем, что задачи разделены
         task0 = session.get(TaskItem, tasks[0].id)
         task1 = session.get(TaskItem, tasks[1].id)
         task2 = session.get(TaskItem, tasks[2].id)
-        
+
         assert task0.batch_group_id == new_batch_id
         assert task1.batch_group_id == new_batch_id
         assert task2.batch_group_id == "original_batch"

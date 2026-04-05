@@ -11,18 +11,18 @@
 """
 
 from .system import (
-    WorkItemSystem,
-    WorkItemStatus,
-    WorkItemType,
     WorkItemFilters,
+    WorkItemStatus,
+    WorkItemSystem,
+    WorkItemType,
 )
-from .view import WorkItemsView, WorkItemCard
+from .view import WorkItemCard, WorkItemsView
 
 __all__ = [
-    "WorkItemSystem",
-    "WorkItemsView",
     "WorkItemCard",
-    "WorkItemStatus",
-    "WorkItemType",
     "WorkItemFilters",
+    "WorkItemStatus",
+    "WorkItemSystem",
+    "WorkItemType",
+    "WorkItemsView",
 ]

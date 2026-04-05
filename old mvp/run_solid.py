@@ -1,10 +1,12 @@
 import os
 import shutil
-import uvicorn
-import webbrowser
 import subprocess
 import sys
+import webbrowser
 from threading import Timer
+
+import uvicorn
+
 
 def run_command(command, cwd=None, shell=True):
     print(f"Running: {command}")
@@ -13,6 +15,7 @@ def run_command(command, cwd=None, shell=True):
     except subprocess.CalledProcessError as e:
         print(f"Error running command: {e}")
         sys.exit(1)
+
 
 def build_frontend():
     print("\n--- Building Frontend ---")
@@ -29,6 +32,7 @@ def build_frontend():
     # Standardize VITE_API_URL for the built frontend
     os.environ["VITE_API_URL"] = "/api"
     run_command("npm run build", cwd=frontend_dir)
+
 
 def deploy_frontend():
     """
@@ -60,7 +64,7 @@ def deploy_frontend():
     for item in os.listdir(frontend_dist):
         s = os.path.join(frontend_dist, item)
         d = os.path.join(static_dir, item)
-        
+
         if os.path.isdir(s):
             # For directories like 'assets', strict copy
             if os.path.exists(d):
@@ -73,20 +77,22 @@ def deploy_frontend():
     print("Frontend deployed successfully.")
     return True
 
+
 def open_browser():
     webbrowser.open("http://localhost:8000")
+
 
 if __name__ == "__main__":
     build_frontend()
     if deploy_frontend():
         print("Starting Solid Server (FastAPI + Svelte)...")
         print("Listening on http://localhost:8000")
-        
+
         # Open browser after a short delay
         Timer(1.5, open_browser).start()
-        
+
         # Add backend to sys.path so 'src' is importable as a top-level package
         sys.path.insert(0, os.path.join(os.getcwd(), "backend"))
-        
+
         # Run Uvicorn with the refactored Pro API
         uvicorn.run("src.api.main:app", host="0.0.0.0", port=8000, reload=True)

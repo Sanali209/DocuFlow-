@@ -1,13 +1,14 @@
-import os
 from pathlib import Path
+
 from nicegui import ui
+
 
 class DocumentationPortal:
     """Provides an integrated, decentralized support portal for DocuFlow nodes.
-    
+
     Serves operational manuals and setup guides directly from the feature slice.
     """
-    
+
     def __init__(self):
         self._docs_path = Path(__file__).parent / "content"
         self._docs_path.mkdir(exist_ok=True)
@@ -44,23 +45,33 @@ Your sidebar will dynamicall update based on your **Role** and the **Workplace**
 
     def build_portal(self):
         """Constructing the interactive documentation reader."""
-        ui.label('Support Portal & Documentation').classes('text-3xl font-bold text-white mb-6')
-        
-        with ui.row().classes('w-full gap-8'):
+        ui.label("Support Portal & Documentation").classes("text-3xl font-bold text-white mb-6")
+
+        with ui.row().classes("w-full gap-8"):
             # Sidebar TOC
-            with ui.column().classes('w-[300px] glass-card p-6 h-[600px] overflow-y-auto'):
-                ui.label('OPERATIONAL MANUALS').classes('text-[10px] tracking-widest text-slate-500 font-bold mb-4')
-                
+            with ui.column().classes("w-[300px] glass-card p-6 h-[600px] overflow-y-auto"):
+                ui.label("OPERATIONAL MANUALS").classes(
+                    "text-[10px] tracking-widest text-slate-500 font-bold mb-4"
+                )
+
                 def load_doc(name):
                     content.clear()
                     doc_file = self._docs_path / f"{name}.md"
                     if doc_file.exists():
                         with content:
-                            ui.markdown(doc_file.read_text()).classes('text-slate-300 prose prose-invert max-w-none')
+                            ui.markdown(doc_file.read_text()).classes(
+                                "text-slate-300 prose prose-invert max-w-none"
+                            )
 
-                ui.button('System Administration', on_click=lambda: load_doc('admin_guide')).classes('w-full text-sm normal-case justify-start').props('flat color=slate-300')
-                ui.button('Warehouse Operations', on_click=lambda: load_doc('user_guide')).classes('w-full text-sm normal-case justify-start').props('flat color=slate-300')
+                ui.button(
+                    "System Administration", on_click=lambda: load_doc("admin_guide")
+                ).classes("w-full text-sm normal-case justify-start").props("flat color=slate-300")
+                ui.button("Warehouse Operations", on_click=lambda: load_doc("user_guide")).classes(
+                    "w-full text-sm normal-case justify-start"
+                ).props("flat color=slate-300")
 
             # Content Viewer
-            content = ui.column().classes('flex-1 glass-card p-10 h-[600px] shadow-2xl overflow-y-auto bg-slate-900/10')
-            load_doc('admin_guide') # Default
+            content = ui.column().classes(
+                "flex-1 glass-card p-10 h-[600px] shadow-2xl overflow-y-auto bg-slate-900/10"
+            )
+            load_doc("admin_guide")  # Default

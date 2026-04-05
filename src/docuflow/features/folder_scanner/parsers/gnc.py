@@ -1,68 +1,77 @@
+import datetime
 import re
 from pathlib import Path
-from typing import List, Optional, Tuple
-import datetime
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 from docuflow.domain.entities.production import MaterialType
 
+
 class ContourCommand(BaseModel):
     """Single G-code command within a contour."""
+
     type: str = "G01"  # G00, G01, G02, G03, etc.
-    x: Optional[float] = None
-    y: Optional[float] = None
-    i: Optional[float] = None
-    j: Optional[float] = None
+    x: float | None = None
+    y: float | None = None
+    i: float | None = None
+    j: float | None = None
+
 
 class Contour(BaseModel):
     """Collection of commands forming a single continuous path."""
-    commands: List[ContourCommand] = []
+
+    commands: list[ContourCommand] = []
+
 
 class GncPartData(BaseModel):
     """Data for a single part found within a GNC file."""
+
     sku: str
     version: str = "A"
     qty: int = 1
-    contours: List[Contour] = []
+    contours: list[Contour] = []
+
 
 class GncSheet(BaseModel):
     """Result of parsing a GNC nesting file."""
-    sheet_x: Optional[float] = None
-    sheet_y: Optional[float] = None
-    thickness: Optional[float] = None
-    sheet_qty: Optional[int] = None
-    gnc_date: Optional[datetime.datetime] = None
-    mat_code: Optional[str] = None
-    
+
+    sheet_x: float | None = None
+    sheet_y: float | None = None
+    thickness: float | None = None
+    sheet_qty: int | None = None
+    gnc_date: datetime.datetime | None = None
+    mat_code: str | None = None
+
     # Metrics for duration estimation
     cut_length_mm: float = 0.0
     idle_length_mm: float = 0.0
     total_contours: int = 0
-    
-    parts: List[GncPartData] = []
+
+    parts: list[GncPartData] = []
+
 
 class GncParser:
     """
     Parses GNC (G-code) files to extract production metadata.
     Adapted from legacy DocuFlow MVP with enhanced SKU extraction and time estimation.
     """
-    
+
     # Regex patterns
-    RE_SHEET = re.compile(r'\(\*SHEET\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(\d+)', re.IGNORECASE)
-    RE_MATERIAL = re.compile(r'\(Material[:=](.*?)\)', re.IGNORECASE)
-    RE_PART_NAME = re.compile(r'\(PART NAME:(.*?)\)', re.IGNORECASE)
-    RE_DATE = re.compile(r'\(DATE\s+(.*?)\)', re.IGNORECASE)
-    RE_CONTOUR = re.compile(r'\(={4,}\s*CONTOUR\s+(\d+)\s+={4,}\)', re.IGNORECASE)
-    
+    RE_SHEET = re.compile(r"\(\*SHEET\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+(\d+)", re.IGNORECASE)
+    RE_MATERIAL = re.compile(r"\(Material[:=](.*?)\)", re.IGNORECASE)
+    RE_PART_NAME = re.compile(r"\(PART NAME:(.*?)\)", re.IGNORECASE)
+    RE_DATE = re.compile(r"\(DATE\s+(.*?)\)", re.IGNORECASE)
+    RE_CONTOUR = re.compile(r"\(={4,}\s*CONTOUR\s+(\d+)\s+={4,}\)", re.IGNORECASE)
+
     # G-code patterns
-    RE_G00 = re.compile(r'G00|G0\s', re.IGNORECASE)
-    RE_G01_3 = re.compile(r'G(0[123]|[123])', re.IGNORECASE)
-    RE_COORD = re.compile(r'([XY])([+-]?\d*\.?\d+)', re.IGNORECASE)
+    RE_G00 = re.compile(r"G00|G0\s", re.IGNORECASE)
+    RE_G01_3 = re.compile(r"G(0[123]|[123])", re.IGNORECASE)
+    RE_COORD = re.compile(r"([XY])([+-]?\d*\.?\d+)", re.IGNORECASE)
 
     def parse(self, file_path: Path) -> GncSheet:
         """
-        Reads and parses a GNC file. 
-        Returns GncSheet object with extracted data. 
+        Reads and parses a GNC file.
+        Returns GncSheet object with extracted data.
         Does not raise on parsing errors (graceful fallback).
         """
         sheet = GncSheet()
@@ -72,12 +81,12 @@ class GncParser:
             return sheet
 
         lines = content.splitlines()
-        
+
         last_x, last_y = 0.0, 0.0
         is_laser_on = False
-        
-        current_part: Optional[GncPartData] = None
-        current_contour: Optional[Contour] = None
+
+        current_part: GncPartData | None = None
+        current_contour: Contour | None = None
 
         for line in lines:
             line = line.strip()
@@ -122,7 +131,7 @@ class GncParser:
                 if not found:
                     current_part = GncPartData(sku=sku, version=version)
                     sheet.parts.append(current_part)
-                
+
                 # Reset current contour for new part section
                 current_contour = None
 
@@ -136,10 +145,11 @@ class GncParser:
             # 4. G-Code Path Calculation & Command Collection
             # Find coordinates
             coords = self.RE_COORD.findall(line)
-            
+
             # Identify command type
             cmd_type = "MODAL"
-            if self.RE_G00.search(line): cmd_type = "G00"
+            if self.RE_G00.search(line):
+                cmd_type = "G00"
             elif self.RE_G01_3.search(line):
                 m_cmd = self.RE_G01_3.search(line)
                 cmd_val = m_cmd.group(1)
@@ -148,40 +158,48 @@ class GncParser:
             if coords or cmd_type != "MODAL":
                 new_x, new_y = last_x, last_y
                 new_i, new_j = None, None
-                
+
                 # Extract I/J if present (for arcs)
-                m_i = re.search(r'I([+-]?\d*\.?\d+)', line, re.I)
-                m_j = re.search(r'J([+-]?\d*\.?\d+)', line, re.I)
-                if m_i: new_i = float(m_i.group(1))
-                if m_j: new_j = float(m_j.group(1))
+                m_i = re.search(r"I([+-]?\d*\.?\d+)", line, re.I)
+                m_j = re.search(r"J([+-]?\d*\.?\d+)", line, re.I)
+                if m_i:
+                    new_i = float(m_i.group(1))
+                if m_j:
+                    new_j = float(m_j.group(1))
 
                 for axis, val in coords:
-                    if axis.upper() == 'X': new_x = float(val)
-                    if axis.upper() == 'Y': new_y = float(val)
-                
-                dist = ((new_x - last_x)**2 + (new_y - last_y)**2)**0.5
-                
+                    if axis.upper() == "X":
+                        new_x = float(val)
+                    if axis.upper() == "Y":
+                        new_y = float(val)
+
+                dist = ((new_x - last_x) ** 2 + (new_y - last_y) ** 2) ** 0.5
+
                 # Logic for metrics
-                is_idle = (cmd_type == "G00")
-                is_cut = (cmd_type in ["G01", "G02", "G03"])
-                
-                if "LASER_ON" in line: is_laser_on = True
-                if "LASER_OFF" in line: is_laser_on = False
-                
+                is_idle = cmd_type == "G00"
+                is_cut = cmd_type in ["G01", "G02", "G03"]
+
+                if "LASER_ON" in line:
+                    is_laser_on = True
+                if "LASER_OFF" in line:
+                    is_laser_on = False
+
                 if is_idle:
                     sheet.idle_length_mm += dist
                 elif is_cut or is_laser_on:
                     sheet.cut_length_mm += dist
-                
+
                 # Store command if we are within a contour
                 if current_contour is not None:
-                    current_contour.commands.append(ContourCommand(
-                        type=cmd_type,
-                        x=new_x if 'X' in line.upper() else None,
-                        y=new_y if 'Y' in line.upper() else None,
-                        i=new_i,
-                        j=new_j
-                    ))
+                    current_contour.commands.append(
+                        ContourCommand(
+                            type=cmd_type,
+                            x=new_x if "X" in line.upper() else None,
+                            y=new_y if "Y" in line.upper() else None,
+                            i=new_i,
+                            j=new_j,
+                        )
+                    )
 
                 last_x, last_y = new_x, new_y
 
@@ -190,7 +208,7 @@ class GncParser:
         return sheet
 
     @staticmethod
-    def extract_sku(raw: str) -> Tuple[str, str]:
+    def extract_sku(raw: str) -> tuple[str, str]:
         """
         Extracts Base SKU and Version from raw string.
         Logic:
@@ -200,20 +218,20 @@ class GncParser:
         """
         # Strip path and extension
         name = raw.strip().split("\\")[-1]
-        name = re.sub(r'\.\w+$', '', name).strip()
-        
+        name = re.sub(r"\.\w+$", "", name).strip()
+
         parts = name.split("-")
-        
+
         # 1. Pop trailing meaningless digit (nesting ordinal)
         if len(parts) > 1 and parts[-1].isdigit():
             parts.pop()
-        
+
         # 2. Extract Version (last remaining segment)
         if len(parts) > 1:
             version = parts.pop()
             sku = "-".join(parts)
             return sku, version
-            
+
         return name, "A"
 
     def estimate_time(self, sheet: GncSheet, mat_type: MaterialType) -> int:
@@ -225,10 +243,10 @@ class GncParser:
         pierce_sec = sheet.total_contours * mat_type.pierce_time_sec
         cut_sec = (sheet.cut_length_mm / mat_type.cut_speed_mm_per_min) * 60
         idle_sec = (sheet.idle_length_mm / mat_type.idle_speed_mm_per_min) * 60
-        
+
         total_sec = (pierce_sec + cut_sec + idle_sec) * (sheet.sheet_qty or 1)
-        
+
         # Apply tolerance and convert to minutes
         total_min = (total_sec / 60) * (1 + mat_type.time_tolerance_pct / 100)
-        
+
         return max(1, int(total_min))

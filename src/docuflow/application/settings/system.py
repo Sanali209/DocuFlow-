@@ -13,7 +13,8 @@ class SettingsSystem(BaseSystem):
     """Runtime settings implementation.
     Fetches hot configuration directly from SQLite.
     """
-    def __init__(self, config: 'Config', session: Session):
+
+    def __init__(self, config: "Config", session: Session):
         super().__init__(config)
         self._session = session
 

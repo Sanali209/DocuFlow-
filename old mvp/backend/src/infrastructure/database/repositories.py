@@ -1,12 +1,40 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+import builtins
 import json
 import os
-from typing import List, Optional
 from datetime import date
-from src.domain.models import Document, Tag, Attachment, Task, Part, DocumentType, DocumentStatus, TaskStatus, FilterPreset, Material, JournalEntry, Assignee
+
+from sqlalchemy import desc, func
+from sqlalchemy.orm import Session
 from src.domain.interfaces import IDocumentRepository, ITaskRepository
-from .models import DocumentDB, TagDB, AttachmentDB, TaskDB, PartDB, MaterialDB, StockItemDB, JournalEntryDB, AuditLogDB, FilterPresetDB, AssigneeDB
+from src.domain.models import (
+    Assignee,
+    Attachment,
+    Document,
+    DocumentStatus,
+    DocumentType,
+    FilterPreset,
+    JournalEntry,
+    Material,
+    Part,
+    Tag,
+    Task,
+    TaskStatus,
+)
+
+from .models import (
+    AssigneeDB,
+    AttachmentDB,
+    AuditLogDB,
+    DocumentDB,
+    FilterPresetDB,
+    JournalEntryDB,
+    MaterialDB,
+    PartDB,
+    StockItemDB,
+    TagDB,
+    TaskDB,
+)
+
 
 class SQLDocumentRepository(IDocumentRepository):
     def __init__(self, db: Session):
@@ -24,66 +52,82 @@ class SQLDocumentRepository(IDocumentRepository):
             author=db_doc.author,
             done_date=db_doc.done_date,
             tags=[Tag(id=t.id, name=t.name) for t in db_doc.tags],
-            attachments=[Attachment(
-                id=a.id, 
-                document_id=a.document_id,
-                file_path=a.file_path,
-                filename=a.filename,
-                media_type=a.media_type,
-                created_at=a.created_at
-            ) for a in db_doc.attachments],
-            tasks=[Task(
-                id=t.id,
-                document_id=t.document_id,
-                material_id=t.material_id,
-                name=t.name,
-                status=t.status.lower() if t.status else TaskStatus.PLANNED,
-                # assignee=t.assignee, # REMOVED
-                assignees=[Assignee(id=a.id, name=a.name) for a in t.assignees],
-                gnc_file_path=t.gnc_file_path,
-                parts=[Part(id=p.id, name=p.name, registration_number=p.registration_number) for p in t.parts]
-            ) for t in db_doc.tasks],
-            journal_entries=[JournalEntry(
-                id=j.id,
-                text=j.text,
-                type=j.type.lower() if j.type else "info",
-                status=j.status.lower() if j.status else "pending",
-                author=j.author,
-                document_id=j.document_id,
-                created_at=j.created_at,
-                attachments=[Attachment(
+            attachments=[
+                Attachment(
                     id=a.id,
                     document_id=a.document_id,
-                    journal_entry_id=a.journal_entry_id,
                     file_path=a.file_path,
                     filename=a.filename,
                     media_type=a.media_type,
-                    created_at=a.created_at
-                ) for a in j.attachments]
-            ) for j in db_doc.journal_entries]
+                    created_at=a.created_at,
+                )
+                for a in db_doc.attachments
+            ],
+            tasks=[
+                Task(
+                    id=t.id,
+                    document_id=t.document_id,
+                    material_id=t.material_id,
+                    name=t.name,
+                    status=t.status.lower() if t.status else TaskStatus.PLANNED,
+                    # assignee=t.assignee, # REMOVED
+                    assignees=[Assignee(id=a.id, name=a.name) for a in t.assignees],
+                    gnc_file_path=t.gnc_file_path,
+                    parts=[
+                        Part(id=p.id, name=p.name, registration_number=p.registration_number)
+                        for p in t.parts
+                    ],
+                )
+                for t in db_doc.tasks
+            ],
+            journal_entries=[
+                JournalEntry(
+                    id=j.id,
+                    text=j.text,
+                    type=j.type.lower() if j.type else "info",
+                    status=j.status.lower() if j.status else "pending",
+                    author=j.author,
+                    document_id=j.document_id,
+                    created_at=j.created_at,
+                    attachments=[
+                        Attachment(
+                            id=a.id,
+                            document_id=a.document_id,
+                            journal_entry_id=a.journal_entry_id,
+                            file_path=a.file_path,
+                            filename=a.filename,
+                            media_type=a.media_type,
+                            created_at=a.created_at,
+                        )
+                        for a in j.attachments
+                    ],
+                )
+                for j in db_doc.journal_entries
+            ],
         )
 
-    def get_by_id(self, document_id: int) -> Optional[Document]:
+    def get_by_id(self, document_id: int) -> Document | None:
         db_doc = self.db.query(DocumentDB).filter(DocumentDB.id == document_id).first()
         return self._to_domain(db_doc) if db_doc else None
 
-    def list(self, 
-             skip: int = 0, 
-             limit: int = 100, 
-             search: str = None, 
-             type: str = None, 
-             status: str = None, 
-             tag: str = None, 
-             assignee: str = None,
-             material_id: int = None,
-             part_search: str = None,
-             sort_by: str = "registration_date",
-             sort_order: str = "desc",
-             start_date: date = None, 
-             end_date: date = None,
-             date_field: str = "registration_date"
-             ) -> List[Document]:
-        
+    def list(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        search: str = None,
+        type: str = None,
+        status: str = None,
+        tag: str = None,
+        assignee: str = None,
+        material_id: int = None,
+        part_search: str = None,
+        sort_by: str = "registration_date",
+        sort_order: str = "desc",
+        start_date: date = None,
+        end_date: date = None,
+        date_field: str = "registration_date",
+    ) -> list[Document]:
+
         query = self.db.query(DocumentDB)
 
         # Joins for filtering
@@ -98,31 +142,31 @@ class SQLDocumentRepository(IDocumentRepository):
         if search:
             search_term = f"%{search}%"
             query = query.filter(
-                (DocumentDB.name.ilike(search_term)) | 
-                (DocumentDB.description.ilike(search_term))
+                (DocumentDB.name.ilike(search_term)) | (DocumentDB.description.ilike(search_term))
             )
-        
+
         if type:
             query = query.filter(DocumentDB.type == type)
         if status:
             query = query.filter(DocumentDB.status == status)
-        
+
         if tag:
             query = query.filter(TagDB.name.ilike(f"%{tag}%"))
-            
+
         if assignee:
             from .models import AssigneeDB
+
             # We already joined TaskDB above if assignee is present
             # query = query.join(DocumentDB.tasks) # Done in line 92
             # Now join assignees
             query = query.join(TaskDB.assignees).filter(AssigneeDB.name.ilike(f"%{assignee}%"))
-            
+
         # Material filter (checking tasks)
         if material_id:
-             query = query.filter(TaskDB.material_id == material_id)
-             
+            query = query.filter(TaskDB.material_id == material_id)
+
         if part_search:
-             query = query.filter(PartDB.name.ilike(f"%{part_search}%"))
+            query = query.filter(PartDB.name.ilike(f"%{part_search}%"))
 
         # Date Filtering
         if start_date or end_date:
@@ -155,7 +199,7 @@ class SQLDocumentRepository(IDocumentRepository):
             registration_date=document.registration_date,
             content=document.content,
             author=document.author,
-            done_date=document.done_date
+            done_date=document.done_date,
         )
         self.db.add(db_doc)
         self.db.commit()
@@ -166,7 +210,7 @@ class SQLDocumentRepository(IDocumentRepository):
         db_doc = self.db.query(DocumentDB).filter(DocumentDB.id == document.id).first()
         if not db_doc:
             raise ValueError(f"Document with id {document.id} not found")
-        
+
         db_doc.name = document.name
         db_doc.description = document.description
         db_doc.type = document.type.lower() if document.type else db_doc.type
@@ -174,7 +218,7 @@ class SQLDocumentRepository(IDocumentRepository):
         db_doc.content = document.content
         db_doc.author = document.author
         db_doc.done_date = document.done_date
-        
+
         # Update tags
         if document.tags is not None:
             # Clear existing relation
@@ -186,7 +230,7 @@ class SQLDocumentRepository(IDocumentRepository):
                     db_tag = TagDB(name=tag.name)
                     self.db.add(db_tag)
                 db_doc.tags.append(db_tag)
-        
+
         self.db.commit()
         self.db.refresh(db_doc)
         return self._to_domain(db_doc)
@@ -202,16 +246,29 @@ class SQLDocumentRepository(IDocumentRepository):
     def get_dashboard_stats(self) -> dict:
         # Document Stats
         total_docs = self.db.query(DocumentDB).count()
-        doc_stats = self.db.query(func.lower(DocumentDB.status), func.count(DocumentDB.id)).group_by(func.lower(DocumentDB.status)).all()
+        doc_stats = (
+            self.db.query(func.lower(DocumentDB.status), func.count(DocumentDB.id))
+            .group_by(func.lower(DocumentDB.status))
+            .all()
+        )
         doc_by_status = {status: count for status, count in doc_stats}
-        
+
         # Task Stats
         total_tasks = self.db.query(TaskDB).count()
-        task_stats = self.db.query(func.lower(TaskDB.status), func.count(TaskDB.id)).group_by(func.lower(TaskDB.status)).all()
+        task_stats = (
+            self.db.query(func.lower(TaskDB.status), func.count(TaskDB.id))
+            .group_by(func.lower(TaskDB.status))
+            .all()
+        )
         task_by_status = {status: count for status, count in task_stats}
-        
-        from .models import AssigneeDB
-        assignee_stats = self.db.query(AssigneeDB.name, func.count(TaskDB.id)).join(TaskDB.assignees).group_by(AssigneeDB.name).all()
+
+
+        assignee_stats = (
+            self.db.query(AssigneeDB.name, func.count(TaskDB.id))
+            .join(TaskDB.assignees)
+            .group_by(AssigneeDB.name)
+            .all()
+        )
         task_by_assignee = {name: count for name, count in assignee_stats}
 
         # Inventory Stats
@@ -219,11 +276,15 @@ class SQLDocumentRepository(IDocumentRepository):
         total_materials = self.db.query(MaterialDB).count()
         stock_metrics = self.db.query(
             func.sum(StockItemDB.quantity).label("total_qty"),
-            func.sum(StockItemDB.reserved).label("total_res")
+            func.sum(StockItemDB.reserved).label("total_res"),
         ).first()
 
         # Journal Summary (Normalizing types)
-        journal_stats = self.db.query(func.lower(JournalEntryDB.type), func.count(JournalEntryDB.id)).group_by(func.lower(JournalEntryDB.type)).all()
+        journal_stats = (
+            self.db.query(func.lower(JournalEntryDB.type), func.count(JournalEntryDB.id))
+            .group_by(func.lower(JournalEntryDB.type))
+            .all()
+        )
         journal_summary = {t: count for t, count in journal_stats}
 
         # Recent Activity (Last 10 Audit Logs)
@@ -234,29 +295,26 @@ class SQLDocumentRepository(IDocumentRepository):
                 "action": log.action_type,
                 "entity": log.entity_type,
                 "entity_id": log.entity_id,
-                "timestamp": log.timestamp.isoformat() if log.timestamp else None
+                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
             }
             for log in recent_logs
         ]
-        
+
         return {
-            "document_stats": {
-                "total": total_docs,
-                "by_status": doc_by_status
-            },
+            "document_stats": {"total": total_docs, "by_status": doc_by_status},
             "task_stats": {
                 "total": total_tasks,
                 "by_status": task_by_status,
-                "by_assignee": task_by_assignee
+                "by_assignee": task_by_assignee,
             },
             "inventory": {
                 "total_parts": total_parts,
                 "total_materials": total_materials,
                 "total_quantity": stock_metrics.total_qty or 0 if stock_metrics else 0,
-                "total_reserved": stock_metrics.total_res or 0 if stock_metrics else 0
+                "total_reserved": stock_metrics.total_res or 0 if stock_metrics else 0,
             },
             "journal_summary": journal_summary,
-            "recent_activity": recent_activity
+            "recent_activity": recent_activity,
         }
 
     def delete_attachment(self, attachment_id: int) -> bool:
@@ -267,39 +325,35 @@ class SQLDocumentRepository(IDocumentRepository):
             return True
         return False
 
-    def get_attachment(self, attachment_id: int) -> Optional[dict]:
+    def get_attachment(self, attachment_id: int) -> dict | None:
         db_att = self.db.query(AttachmentDB).filter(AttachmentDB.id == attachment_id).first()
         if db_att:
             return {
                 "id": db_att.id,
                 "document_id": db_att.document_id,
                 "file_path": db_att.file_path,
-                "filename": db_att.filename
+                "filename": db_att.filename,
             }
         return None
 
-    def create_order(self, name: str, items: List[dict]) -> Document:
-        db_doc = DocumentDB(
-            name=name,
-            type=DocumentType.ORDER,
-            status=DocumentStatus.IN_PROGRESS
-        )
+    def create_order(self, name: str, items: builtins.list[dict]) -> Document:
+        db_doc = DocumentDB(name=name, type=DocumentType.ORDER, status=DocumentStatus.IN_PROGRESS)
         self.db.add(db_doc)
         self.db.flush()
-        
+
         for item in items:
             db_task = TaskDB(
                 document_id=db_doc.id,
                 name=f"Produce Part ID: {item['id']}",
-                status=TaskStatus.PLANNED
+                status=TaskStatus.PLANNED,
             )
             self.db.add(db_task)
-            
+
         self.db.commit()
         self.db.refresh(db_doc)
         return self._to_domain(db_doc)
 
-    def list_tags(self) -> List[Tag]:
+    def list_tags(self) -> builtins.list[Tag]:
         db_tags = self.db.query(TagDB).all()
         return [Tag(id=t.id, name=t.name) for t in db_tags]
 
@@ -309,10 +363,12 @@ class SQLDocumentRepository(IDocumentRepository):
             name=data["name"],
             type=DocumentType.ORDER,
             status=DocumentStatus.IN_PROGRESS,
-            content=json.dumps(data.get("project_data")) if data.get("project_data") else json.dumps({"original_document_id": data.get("original_document_id")})
+            content=json.dumps(data.get("project_data"))
+            if data.get("project_data")
+            else json.dumps({"original_document_id": data.get("original_document_id")}),
         )
         self.db.add(db_doc)
-        self.db.flush() # Get ID
+        self.db.flush()  # Get ID
 
         # Create Tasks (Sheets) and Attachments
         for sheet_item in data.get("sheets_processing", []):
@@ -321,16 +377,16 @@ class SQLDocumentRepository(IDocumentRepository):
                 document_id=db_doc.id,
                 name=sheet_item["name"],
                 status=TaskStatus.PLANNED,
-                gnc_file_path=sheet_item["file_path"]
+                gnc_file_path=sheet_item["file_path"],
             )
             self.db.add(db_task)
-            
+
             # Create Attachment for the GNC file
             db_att = AttachmentDB(
                 document_id=db_doc.id,
                 filename=os.path.basename(sheet_item["file_path"]),
                 file_path=sheet_item["file_path"],
-                media_type="application/x-gnc" # or text/plain
+                media_type="application/x-gnc",  # or text/plain
             )
             self.db.add(db_att)
 
@@ -338,12 +394,14 @@ class SQLDocumentRepository(IDocumentRepository):
         self.db.refresh(db_doc)
         return self._to_domain(db_doc)
 
+
 class SQLTaskRepository(ITaskRepository):
     def __init__(self, db: Session):
         self.db = db
 
     def _to_domain(self, db_task: TaskDB) -> Task:
         from src.domain.models import Assignee
+
         return Task(
             id=db_task.id,
             document_id=db_task.document_id,
@@ -353,21 +411,29 @@ class SQLTaskRepository(ITaskRepository):
             # assignee=db_task.assignee, # REMOVED
             assignees=[Assignee(id=a.id, name=a.name) for a in db_task.assignees],
             gnc_file_path=db_task.gnc_file_path,
-            material=Material(id=db_task.material.id, name=db_task.material.name) if db_task.material else None,
-            parts=[Part(id=p.id, name=p.name, registration_number=p.registration_number) for p in db_task.parts]
+            material=Material(id=db_task.material.id, name=db_task.material.name)
+            if db_task.material
+            else None,
+            parts=[
+                Part(id=p.id, name=p.name, registration_number=p.registration_number)
+                for p in db_task.parts
+            ],
         )
 
-    def get_by_id(self, task_id: int) -> Optional[Task]:
+    def get_by_id(self, task_id: int) -> Task | None:
         db_task = self.db.query(TaskDB).filter(TaskDB.id == task_id).first()
         return self._to_domain(db_task) if db_task else None
 
-    def list(self, skip: int = 0, limit: int = 100, filters: dict = None) -> List[Task]:
+    def list(self, skip: int = 0, limit: int = 100, filters: dict = None) -> list[Task]:
         query = self.db.query(TaskDB)
         if filters:
             if filters.get("assignee"):
-                 # Filter by assignee name via join
-                 from src.infrastructure.database.models import AssigneeDB
-                 query = query.join(TaskDB.assignees).filter(AssigneeDB.name.ilike(f"%{filters['assignee']}%"))
+                # Filter by assignee name via join
+                from src.infrastructure.database.models import AssigneeDB
+
+                query = query.join(TaskDB.assignees).filter(
+                    AssigneeDB.name.ilike(f"%{filters['assignee']}%")
+                )
             if filters.get("status"):
                 query = query.filter(TaskDB.status == filters["status"])
         db_tasks = query.offset(skip).limit(limit).all()
@@ -375,15 +441,16 @@ class SQLTaskRepository(ITaskRepository):
 
     def add(self, task: Task) -> Task:
         from src.infrastructure.database.models import AssigneeDB
+
         db_task = TaskDB(
             document_id=task.document_id,
             material_id=task.material_id,
             name=task.name,
             status=(task.status or TaskStatus.PLANNED).lower(),
             # assignee=task.assignee, # REMOVED
-            gnc_file_path=task.gnc_file_path
+            gnc_file_path=task.gnc_file_path,
         )
-        
+
         # Add assignees
         if task.assignees:
             for asg in task.assignees:
@@ -398,16 +465,17 @@ class SQLTaskRepository(ITaskRepository):
 
     def update(self, task: Task) -> Task:
         from src.infrastructure.database.models import AssigneeDB
+
         db_task = self.db.query(TaskDB).filter(TaskDB.id == task.id).first()
         if not db_task:
             raise ValueError(f"Task with id {task.id} not found")
-        
+
         db_task.name = task.name
         db_task.status = task.status.lower() if task.status else db_task.status
         # db_task.assignee = task.assignee # REMOVED
         db_task.gnc_file_path = task.gnc_file_path
         db_task.material_id = task.material_id
-        
+
         # Update assignees
         if task.assignees is not None:
             # Clear existing
@@ -416,7 +484,7 @@ class SQLTaskRepository(ITaskRepository):
                 db_asg = self.db.query(AssigneeDB).filter(AssigneeDB.id == asg.id).first()
                 if db_asg:
                     db_task.assignees.append(db_asg)
-        
+
         self.db.commit()
         self.db.refresh(db_task)
         return self._to_domain(db_task)
@@ -429,22 +497,19 @@ class SQLTaskRepository(ITaskRepository):
             return True
         return False
 
-    def get_tasks_by_document_id(self, document_id: int) -> List[Task]:
+    def get_tasks_by_document_id(self, document_id: int) -> builtins.list[Task]:
         db_tasks = self.db.query(TaskDB).filter(TaskDB.document_id == document_id).all()
         return [self._to_domain(t) for t in db_tasks]
+
 
 class SQLFilterPresetRepository:
     def __init__(self, db: Session):
         self.db = db
 
     def _to_domain(self, db_preset: FilterPresetDB) -> FilterPreset:
-        return FilterPreset(
-            id=db_preset.id,
-            name=db_preset.name,
-            config=db_preset.config
-        )
+        return FilterPreset(id=db_preset.id, name=db_preset.name, config=db_preset.config)
 
-    def list(self) -> List[FilterPreset]:
+    def list(self) -> list[FilterPreset]:
         db_presets = self.db.query(FilterPresetDB).all()
         return [self._to_domain(p) for p in db_presets]
 

@@ -1,7 +1,6 @@
 import os
 import time
 from pathlib import Path
-from typing import List
 
 import anyio
 from loguru import logger
@@ -65,9 +64,7 @@ class HousekeepingSystem(BaseSystem):
             logger.info(f"Housekeeping: Cleaned up {deleted_count} stale bus messages")
         return deleted_count
 
-    async def rotate_snapshots(
-        self, keep_count: int = constants.GC_MAX_SNAPSHOTS_TO_KEEP
-    ) -> int:
+    async def rotate_snapshots(self, keep_count: int = constants.GC_MAX_SNAPSHOTS_TO_KEEP) -> int:
         """Keep only the most recent N snapshots to prevent storage exhaustion.
 
         Args:
@@ -107,7 +104,7 @@ class HousekeepingSystem(BaseSystem):
         """Determine if a file's modification time exceeds the allowed age."""
         if file_path.is_dir():
             return False
-            
+
         try:
             mtime = os.path.getmtime(file_path)
             return (now - mtime) > max_age
