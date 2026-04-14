@@ -1,4 +1,5 @@
 import pytest
+
 pytest.importorskip("passlib")
 from sqlmodel import Session, SQLModel, create_engine
 

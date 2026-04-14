@@ -7,6 +7,8 @@ TaskBoardSystem — операционное сердце для операто�
 
 import datetime
 import json
+from collections.abc import Generator
+from contextlib import contextmanager
 from typing import Any
 
 from loguru import logger
@@ -14,8 +16,6 @@ from sqlmodel import Session, select
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import (
-    ChatMessage,
-    ChatMessageType,
     TaskItem,
     TaskItemStatus,
     WorkerBucketEntry,
@@ -24,64 +24,52 @@ from docuflow.domain.entities.production import (
     WorkLog,
     WorkLogType,
 )
-from docuflow.infrastructure.config import Config
-
-# Правила допустимых переходов статусов TaskItem
-ALLOWED_TRANSITIONS: dict[TaskItemStatus, list[TaskItemStatus]] = {
-    TaskItemStatus.PLANNED: [TaskItemStatus.IN_PROGRESS, TaskItemStatus.CANCELLED],
-    TaskItemStatus.IN_PROGRESS: [
-        TaskItemStatus.ON_HOLD,
-        TaskItemStatus.DONE,
-        TaskItemStatus.BLOCKED,
-        TaskItemStatus.CANCELLED,
-    ],
-    TaskItemStatus.ON_HOLD: [TaskItemStatus.IN_PROGRESS, TaskItemStatus.CANCELLED],
-    TaskItemStatus.BLOCKED: [TaskItemStatus.IN_PROGRESS, TaskItemStatus.CANCELLED],
-}
-
-
 from docuflow.features.inventory.system import InventorySystem
 from docuflow.features.production.system import ProductionSystem
+from docuflow.infrastructure.config import Config
 
 
 class TaskBoardSystem(BaseSystem):
     """
-    Система управления задачами операторов.
-
-    Vertical Slice: features/task_board/system.py
-
-    Основные операции:
-    - WorkerBucket: lock_batch, unlock_batch, get_bucket, handover
-    - TaskItem lifecycle: start_task, pause_task, resume_task, block_task, complete_task
-    - Трекинг: increment_sheets, get_drift
+    TaskBoardSystem — операционное сердце для оператора.
+    Управляет жизненным циклом задач на конкретном узле.
     """
 
     def __init__(
         self,
         config: Config,
-        db_session: Session,
+        db_engine: Any,
+        session: Session = None,
         ns_mirror=None,
         inventory_system: InventorySystem = None,
         production_system: ProductionSystem = None,
         sdk: Any = None,
     ):
-        """
-        Initialize the TaskBoard management engine.
-
-        Args:
-            config: System configuration.
-            db_session: SQLModel session for database persistence.
-            ns_mirror: Optional service for Nesting Software integration.
-            inventory_system: Optional engine for material write-offs.
-            production_system: Optional engine for pallet/unit registration.
-            sdk: Optional facade for cross-system requests.
-        """
-        super().__init__(config)
-        self.db_session = db_session
+        super().__init__(config, session)
+        self.db_engine = db_engine
         self.ns_mirror = ns_mirror
         self.inventory_system = inventory_system
         self.production_system = production_system
         self.sdk = sdk
+
+    @contextmanager
+    def get_db_session(self) -> Generator[Session, None, None]:
+        """
+        Provides a session for database operations.
+        """
+        if self.session:
+            yield self.session
+        else:
+            with Session(self.db_engine) as session:
+                yield session
+                session.commit()
+
+    def _sync(self, session: Session):
+        """Internal helper to flush or commit based on session ownership."""
+        if self.session:
+            session.flush()
+        else:
+            session.commit()
 
     async def lock_batch(
         self,
@@ -90,342 +78,334 @@ class TaskBoardSystem(BaseSystem):
         operator: str,
     ) -> list[WorkerBucketEntry]:
         """
-        Assigns a production batch to a specific operator on a workshop node.
-
-        Example:
-            entries = await system.lock_batch(
-                batch_group_id="BATCH-001",
-                node_id="NODE-1",
-                operator="operator_name"
-            )
+        Marks a group of tasks as 'PLANNED' and assigns them to a specific node/worker.
         """
-        task_items = self._get_batch_tasks(batch_group_id)
-        bucket_entries = []
-
-        for task_item in task_items:
-            bucket_entry = WorkerBucketEntry(
-                node_id=node_id,
-                assigned_user=operator,
-                task_item_id=task_item.id,
-                batch_group_id=batch_group_id,
-                locked_at=datetime.datetime.now(),
+        with self.get_db_session() as session:
+            task_items = list(
+                session.exec(
+                    select(TaskItem).where(TaskItem.batch_group_id == batch_group_id)
+                ).all()
             )
-            self.db_session.add(bucket_entry)
+            bucket_entries = []
 
-            task_item.assigned_to_node = node_id
-            task_item.status = TaskItemStatus.PLANNED
-            self.db_session.add(task_item)
+            for task_item in task_items:
+                bucket_entry = WorkerBucketEntry(
+                    node_id=node_id,
+                    assigned_user=operator,
+                    task_item_id=task_item.id,
+                    batch_group_id=batch_group_id,
+                    locked_at=datetime.datetime.now(),
+                )
+                session.add(bucket_entry)
 
-            bucket_entries.append(bucket_entry)
+                task_item.assigned_to_node = node_id
+                task_item.status = TaskItemStatus.PLANNED
+                session.add(task_item)
+                bucket_entries.append(bucket_entry)
 
-        self.db_session.commit()
-
-        # Notify integration services
-        if self.ns_mirror:
-            for bucket_entry in bucket_entries:
-                await self.ns_mirror.on_bucket_add(bucket_entry)
-
-        return bucket_entries
-
-    async def unlock_batch(self, batch_group_id: str, node_id: str) -> None:
-        """
-        Releases a production batch from a workshop node, returning tasks to the global pool.
-        """
-        bucket_entries = self.db_session.exec(
-            select(WorkerBucketEntry).where(
-                WorkerBucketEntry.batch_group_id == batch_group_id,
-                WorkerBucketEntry.node_id == node_id,
+            # Audit trail
+            log = WorkLog(
+                log_type=WorkLogType.INFO,
+                message=f"Batch {batch_group_id} locked by {operator} on {node_id}",
+                node_id=self.config.node_id,
             )
-        ).all()
+            session.add(log)
+            self._sync(session)
 
-        for bucket_entry in bucket_entries:
-            task_item = self.db_session.get(TaskItem, bucket_entry.task_item_id)
-            if task_item and task_item.status == TaskItemStatus.PLANNED:
-                task_item.status = TaskItemStatus.NEW
-                self.db_session.add(task_item)
+            # Notify integration services
+            if self.ns_mirror:
+                for bucket_entry in bucket_entries:
+                    await self.ns_mirror.on_bucket_add(bucket_entry)
 
-            self.db_session.delete(bucket_entry)
-
-        self.db_session.commit()
-
-        if self.ns_mirror:
-            for bucket_entry in bucket_entries:
-                await self.ns_mirror.on_bucket_remove(bucket_entry)
+            return bucket_entries
 
     def get_bucket(self, node_id: str) -> list[WorkerBucketEntry]:
-        """
-        Retrieves the list of batches currently assigned to a workshop node.
-        """
-        return list(
-            self.db_session.exec(
-                select(WorkerBucketEntry).where(WorkerBucketEntry.node_id == node_id)
-            ).all()
-        )
-
-    def handover(self, node_id: str, receiving_operator: str, note: str) -> None:
-        """
-        Transfers all batches from the current operator to a new one (Shift Handover).
-
-        Example:
-            system.handover(node_id="NODE-1", receiving_operator="night_shift_user", note="Completed laser cuts")
-        """
-        bucket_entries = self.get_bucket(node_id)
-
-        for bucket_entry in bucket_entries:
-            bucket_entry.handover_note = note
-            bucket_entry.handover_from = bucket_entry.assigned_user
-            bucket_entry.handover_at = datetime.datetime.now()
-            bucket_entry.assigned_user = receiving_operator
-            self.db_session.add(bucket_entry)
-
-        # Create a broadcast handover message
-        if bucket_entries:
-            chat_message = ChatMessage(
-                author=bucket_entries[0].assigned_user,
-                node_id=node_id,
-                message_type=ChatMessageType.HANDOVER,
-                content=f"Shift handover to {receiving_operator}. {note}",
+        with self.get_db_session() as session:
+            return list(
+                session.exec(
+                    select(WorkerBucketEntry).where(WorkerBucketEntry.node_id == node_id)
+                ).all()
             )
-            self.db_session.add(chat_message)
-
-        self.db_session.commit()
 
     def start_task(self, task_id: int) -> TaskItem:
-        """
-        Moves a task into active production (IN_PROGRESS).
-        """
-        task_item = self._validate_transition(task_id, TaskItemStatus.IN_PROGRESS)
-
-        task_item.status = TaskItemStatus.IN_PROGRESS
-        task_item.started_at = datetime.datetime.now()
-
-        self._audit_task_event(task_item, WorkLogType.STATUS_CHANGE, "Task started")
-
-        self.db_session.add(task_item)
-        self.db_session.commit()
-        self.db_session.refresh(task_item)
-
-        return task_item
+        with self.get_db_session() as session:
+            task_item = self._validate_transition(task_id, TaskItemStatus.IN_PROGRESS, session)
+            task_item.status = TaskItemStatus.IN_PROGRESS
+            task_item.started_at = datetime.datetime.now()
+            self._audit_task_event(
+                task_item, WorkLogType.STATUS_CHANGE, "Task started", session=session
+            )
+            session.add(task_item)
+            self._sync(session)
+            session.refresh(task_item)
+            return task_item
 
     def pause_task(self, task_id: int, reason: str) -> TaskItem:
-        """
-        Suspends task execution (ON_HOLD).
-        """
-        task_item = self._validate_transition(task_id, TaskItemStatus.ON_HOLD)
-        task_item.status = TaskItemStatus.ON_HOLD
-
-        self._audit_task_event(task_item, WorkLogType.ON_HOLD, reason, payload={"reason": reason})
-
-        self.db_session.add(task_item)
-        self.db_session.commit()
-        self.db_session.refresh(task_item)
-        return task_item
+        with self.get_db_session() as session:
+            task_item = self._validate_transition(task_id, TaskItemStatus.ON_HOLD, session)
+            task_item.status = TaskItemStatus.ON_HOLD
+            task_item.block_reason = reason
+            self._audit_task_event(
+                task_item, WorkLogType.ON_HOLD, f"Paused: {reason}", session=session
+            )
+            session.add(task_item)
+            self._sync(session)
+            session.refresh(task_item)
+            return task_item
 
     def resume_task(self, task_id: int) -> TaskItem:
-        """
-        Resumes a suspended task.
-        """
-        task_item = self._validate_transition(task_id, TaskItemStatus.IN_PROGRESS)
-        task_item.status = TaskItemStatus.IN_PROGRESS
-
-        self._audit_task_event(task_item, WorkLogType.STATUS_CHANGE, "Task resumed")
-
-        self.db_session.add(task_item)
-        self.db_session.commit()
-        self.db_session.refresh(task_item)
-        return task_item
-
-    def block_task(self, task_id: int, reason: str) -> TaskItem:
-        """
-        Блокирует задачу.
-
-        Args:
-            task_id: ID задачи
-            reason: Причина блокировки
-
-        Returns:
-            TaskItem — обновлённая задача
-        """
-        task = self._validate_transition(task_id, TaskItemStatus.BLOCKED)
-
-        task.status = TaskItemStatus.BLOCKED
-        task.block_reason = reason
-
-        self._log(task, WorkLogType.BLOCKED, reason)
-
-        self.session.add(task)
-        self.session.commit()
-        self.session.refresh(task)
-
-        return task
+        with self.get_db_session() as session:
+            task_item = self._validate_transition(task_id, TaskItemStatus.IN_PROGRESS, session)
+            task_item.status = TaskItemStatus.IN_PROGRESS
+            self._audit_task_event(
+                task_item, WorkLogType.STATUS_CHANGE, "Task resumed", session=session
+            )
+            session.add(task_item)
+            self._sync(session)
+            session.refresh(task_item)
+            return task_item
 
     def complete_task(
         self, task_id: int, sheets_done: int, qty_produced: int, create_pallet: bool = False
     ) -> TaskItem:
-        """
-        Finalizes task production, calculates performance metrics, and triggers material write-offs.
+        with self.get_db_session() as session:
+            task_item = self._validate_transition(task_id, TaskItemStatus.DONE, session)
 
-        Example:
-            completed_task = system.complete_task(
-                task_id=10,
-                sheets_done=5,
-                qty_produced=50,
-                create_pallet=True
-            )
-        """
-        task_item = self._validate_transition(task_id, TaskItemStatus.DONE)
-
-        task_item.status = TaskItemStatus.DONE
-        task_item.sheets_done = sheets_done
-        task_item.qty_produced = qty_produced
-        task_item.completed_at = datetime.datetime.now()
-
-        # Calculate performance metrics
-        if task_item.started_at:
-            total_duration_sec = (task_item.completed_at - task_item.started_at).total_seconds()
-            total_minutes = total_duration_sec / 60.0
-
-            # Deduct pauses from timeline
-            pause_logs = self.db_session.exec(
-                select(WorkLog).where(
-                    WorkLog.task_item_id == task_item.id,
-                    WorkLog.log_type == WorkLogType.ON_HOLD,
+            # Validation: Prevent accidental over-entry (e.g. 100 instead of 10)
+            planned = task_item.sheet_qty or 0
+            if sheets_done > (planned * 1.2) and planned > 0:
+                raise ValueError(
+                    f"Количество листов ({sheets_done}) значительно превышает план ({planned}). Проверьте ввод."
                 )
-            ).all()
 
-            pause_minutes = 0.0
-            for log in pause_logs:
+            if qty_produced < 0:
+                raise ValueError("Количество произведенных деталей не может быть отрицательным.")
+
+            task_item.status = TaskItemStatus.DONE
+            task_item.completed_at = datetime.datetime.now()
+            task_item.sheets_done = sheets_done
+            task_item.qty_produced = qty_produced
+
+            # Calculate actual time
+            if task_item.started_at:
+                delta = task_item.completed_at - task_item.started_at
+                task_item.actual_minutes = int(delta.total_seconds() / 60)
+
+            self._audit_task_event(
+                task_item, WorkLogType.STATUS_CHANGE, "Task completed", session=session
+            )
+
+            # Material write-off
+            if self.inventory_system:
                 try:
-                    payload = json.loads(log.payload or "{}")
-                    pause_minutes += float(payload.get("duration_min", 0.0))
-                except (json.JSONDecodeError, TypeError):
-                    pass
+                    self.inventory_system.perform_write_off(
+                        task_item, sheets_used=sheets_done, author="operator"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to perform material write-off for task {task_item.id}: {e}"
+                    )
 
-            task_item.actual_minutes = int(max(0, total_minutes - pause_minutes))
+            # Automated unit registration
+            if create_pallet and self.production_system:
+                try:
+                    self.production_system.register_finished_pallet(
+                        task_item_id=task_item.id,
+                        quantity=qty_produced,
+                        author_name="operator",
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to register production output for task {task_item.id}: {e}"
+                    )
 
-        self._audit_task_event(task_item, WorkLogType.STATUS_CHANGE, "Task completed")
+            session.add(task_item)
+            self._sync(session)
+            session.refresh(task_item)
 
-        # Automated material write-off
-        if self.inventory_system and task_item.mat_type_id and task_item.sheets_done:
-            try:
-                self.inventory_system.perform_write_off(
-                    task_item_id=task_item.id,
-                    mat_type_id=task_item.mat_type_id,
-                    qty=float(task_item.sheets_done),
-                )
-            except Exception as e:
-                logger.error(f"Failed to perform material write-off for task {task_item.id}: {e}")
+            # Auto-close WorkItem if all tasks are finished
+            self._check_and_auto_close_work_item(task_item.work_item_id, session)
 
-        # Automated unit registration
-        if create_pallet and self.production_system:
-            try:
-                self.production_system.register_finished_pallet(
-                    task_item_id=task_item.id, quantity=qty_produced or 1, author_name="operator"
-                )
-            except Exception as e:
-                logger.error(f"Failed to register production unit for task {task_item.id}: {e}")
+            return task_item
 
-        # Check grouping completion
-        self._check_batch_completion(task_item.work_item_id)
-
-        self.db_session.add(task_item)
-        self.db_session.commit()
-        self.db_session.refresh(task_item)
-
-        return task_item
-
-    def increment_sheets(self, task_id: int) -> int:
-        """
-        Increments the counter for processed sheets on a specific task.
-        """
-        task_item = self.db_session.get(TaskItem, task_id)
-        if task_item is None:
-            raise ValueError(f"Task {task_id} not found")
-
-        task_item.sheets_done += 1
-        self.db_session.add(task_item)
-        self.db_session.commit()
-
-        return task_item.sheets_done
-
-    def get_drift(self, task_item: TaskItem) -> float:
-        """
-        Calculates the percentage deviation between estimated and actual production time.
-        """
-        if not task_item.estimated_minutes or not task_item.actual_minutes:
-            return 0.0
-
-        return (
-            (task_item.actual_minutes - task_item.estimated_minutes)
-            / task_item.estimated_minutes
-            * 100
+    def _check_and_auto_close_work_item(self, work_item_id: int, session: Session) -> None:
+        """Checks if all tasks for a work item are completed and closes it if so."""
+        all_tasks = list(
+            session.exec(select(TaskItem).where(TaskItem.work_item_id == work_item_id)).all()
         )
 
-    def _get_batch_tasks(self, batch_group_id: str) -> list[TaskItem]:
-        """
-        Retrieves all task items associated with a specific production batch.
-        """
-        return list(
-            self.db_session.exec(
-                select(TaskItem).where(TaskItem.batch_group_id == batch_group_id)
-            ).all()
-        )
-
-    def _validate_transition(self, task_id: int, new_status: TaskItemStatus) -> TaskItem:
-        """
-        Validates whether a production status change is allowed under current workflow rules.
-        """
-        task_item = self.db_session.get(TaskItem, task_id)
-        if task_item is None:
-            raise ValueError(f"Task ID {task_id} not found")
-
-        current_status = TaskItemStatus(task_item.status)
-        allowed = ALLOWED_TRANSITIONS.get(current_status, [])
-
-        if new_status not in allowed:
-            raise ValueError(
-                f"Invalid transition for Task {task_id}: {current_status.value} -> {new_status.value}. "
-                f"Valid options: {[s.value for s in allowed]}"
-            )
-
-        return task_item
-
-    def _check_batch_completion(self, work_item_id: int) -> None:
-        """
-        Audits if all tasks within a WorkItem (Order Batch) are completed, then promotes the WorkItem status.
-        """
-        work_item = self.db_session.get(WorkItem, work_item_id)
-        if work_item is None:
+        if not all_tasks:
             return
 
-        # Aggregate all tasks for this order
-        task_items = self.db_session.exec(
-            select(TaskItem).where(TaskItem.work_item_id == work_item_id)
-        ).all()
+        if all(t.status in [TaskItemStatus.DONE, TaskItemStatus.CANCELLED] for t in all_tasks):
+            work_item = session.get(WorkItem, work_item_id)
+            if work_item and work_item.status != WorkItemStatus.DONE:
+                work_item.status = WorkItemStatus.DONE
+                work_item.completed_at = datetime.datetime.now()
+                session.add(work_item)
 
-        # Transition to DONE only if all items reach terminal state
-        if all(item.status == TaskItemStatus.DONE for item in task_items):
-            work_item.status = WorkItemStatus.DONE.value
-            work_item.completed_at = datetime.datetime.now()
-            self.db_session.add(work_item)
+                # Audit the auto-close
+                self._audit_task_event(
+                    all_tasks[0],
+                    WorkLogType.INFO,
+                    "Наряд автоматически закрыт (все задачи завершены)",
+                    session=session,
+                )
+                self._sync(session)
+                logger.info(f"WorkItem {work_item_id} auto-closed.")
+
+    def block_task(self, task_id: int, reason: str) -> TaskItem:
+        with self.get_db_session() as session:
+            task_item = self._validate_transition(task_id, TaskItemStatus.BLOCKED, session)
+            task_item.status = TaskItemStatus.BLOCKED
+            task_item.block_reason = reason
+            self._audit_task_event(
+                task_item, WorkLogType.BLOCKED, f"Blocked: {reason}", session=session
+            )
+            session.add(task_item)
+            self._sync(session)
+            session.refresh(task_item)
+            return task_item
+
+    def report_material_incident(self, task_id: int, reason: str) -> None:
+        """Регистрирует инцидент по материалу и уведомляет чат."""
+        with self.get_db_session() as session:
+            task = session.get(TaskItem, task_id)
+            if not task:
+                return
+
+            # 1. Запись в аудит наряда
+            message = f"[MATERIAL_INCIDENT] {reason}"
+            self._audit_task_event(
+                task,
+                WorkLogType.ON_HOLD,
+                message,
+                payload={"incident": True, "reason": reason},
+                session=session,
+            )
+
+            # 2. Логгирование и фиксация
+            self._sync(session)
+            logger.warning(f"Material incident reported for task {task_id}: {reason}")
+
+    async def assign_task_to_node(
+        self,
+        task_id: int,
+        node_id: str,
+        operator: str,
+    ) -> WorkerBucketEntry:
+        """Назначает одиночную задачу на конкретный узел."""
+        with self.get_db_session() as session:
+            task = session.get(TaskItem, task_id)
+            if not task:
+                raise ValueError(f"Task {task_id} not found")
+
+            # Создаем уникальный ID батча для этой задачи (сингл-батч)
+            import uuid
+
+            single_batch_id = str(uuid.uuid4())
+
+            bucket_entry = WorkerBucketEntry(
+                node_id=node_id,
+                assigned_user=operator,
+                task_item_id=task.id,
+                batch_group_id=single_batch_id,
+                locked_at=datetime.datetime.now(),
+            )
+            session.add(bucket_entry)
+
+            task.assigned_to_node = node_id
+            task.batch_group_id = single_batch_id
+            task.status = TaskItemStatus.PLANNED
+            session.add(task)
+
+            self._sync(session)
+
+            if self.ns_mirror:
+                await self.ns_mirror.on_bucket_add(bucket_entry)
+
+            return bucket_entry
+
+    def get_matching_unassigned_tasks(self, mat_type_id: int, thickness: float) -> list[TaskItem]:
+        """Ищет неназначенные задачи с таким же материалом и толщиной."""
+        with self.get_db_session() as session:
+            statement = select(TaskItem).where(
+                TaskItem.assigned_to_node.is_(None),
+                TaskItem.mat_type_id == mat_type_id,
+                TaskItem.thickness == thickness,
+                TaskItem.status.in_([TaskItemStatus.NEW, TaskItemStatus.PLANNED]),
+            )
+            return list(session.exec(statement).all())
+
+    def handover(self, node_id: str, to_operator: str, note: str) -> None:
+        """Передает смену новому оператору, оставляя заметку."""
+        with self.get_db_session() as session:
+            bucket_entries = session.exec(
+                select(WorkerBucketEntry).where(WorkerBucketEntry.node_id == node_id)
+            ).all()
+
+            for entry in bucket_entries:
+                entry.handover_from = entry.assigned_user
+                entry.assigned_user = to_operator
+                entry.handover_note = note
+                entry.handover_at = datetime.datetime.now()
+                session.add(entry)
+
+            self._sync(session)
+            logger.info(f"Handover on {node_id} to {to_operator}: {note}")
+
+    def increment_sheets(self, task_id: int) -> int:
+        """Увеличивает счетчик порезанных листов."""
+        with self.get_db_session() as session:
+            task = session.get(TaskItem, task_id)
+            if not task:
+                raise ValueError(f"Task {task_id} not found")
+            task.sheets_done += 1
+            session.add(task)
+            self._sync(session)
+            session.refresh(task)
+            return task.sheets_done
+
+    def get_drift(self, task: TaskItem) -> float:
+        """Calculates percentage drift from estimated time."""
+        if not task.estimated_minutes or not task.actual_minutes:
+            return 0.0
+        return (task.actual_minutes - task.estimated_minutes) / task.estimated_minutes * 100
+
+    def _validate_transition(
+        self, task_id: int, target_status: TaskItemStatus, session: Session
+    ) -> TaskItem:
+        """Проверяет корректность перехода статуса (TDD)."""
+        task = session.get(TaskItem, task_id)
+        if not task:
+            raise ValueError(f"Task {task_id} not found")
+
+        # Enforce transition rules
+        current = task.status
+        if target_status == TaskItemStatus.IN_PROGRESS and current == TaskItemStatus.DONE:
+            raise ValueError(f"Invalid transition from {current} to {target_status}")
+
+        return task
 
     def _audit_task_event(
         self,
-        task_item: TaskItem,
+        task: TaskItem,
         log_type: WorkLogType,
         message: str,
         payload: dict | None = None,
-    ) -> None:
-        """
-        Creates a persistent audit trail for workshop operations in the WorkLog repository.
-        """
+        session: Session = None,
+    ):
+        """Создает запись в WorkLog."""
+        target_session = session or self.session
         work_log = WorkLog(
-            task_item_id=task_item.id,
-            work_item_id=task_item.work_item_id,
+            work_item_id=task.work_item_id,
+            task_item_id=task.id,
             log_type=log_type.value,
             message=message,
             payload=json.dumps(payload) if payload else None,
             created_at=datetime.datetime.now(),
             node_id=self.config.node_id,
         )
-        self.db_session.add(work_log)
+        target_session.add(work_log)
+        if not session and not self.session:
+            target_session.commit()

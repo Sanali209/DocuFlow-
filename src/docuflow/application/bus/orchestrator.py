@@ -39,13 +39,13 @@ class P2POrchestrator(BaseSystem):
     def __init__(
         self,
         config: Config,
-        coordination: "CoordinationSystem",
-        bus: "FileBusSystem",
-        sync: "DataSyncSystem",
-        housekeeping: "HousekeepingSystem",
-        dispatcher: "SecureDispatcher",
-        signer: "HMACSigner",
-        admin_sync: "AdminSyncSystem",
+        coordination: "CoordinationSystem" = None,  # type: ignore[assignment]
+        bus: "FileBusSystem" = None,  # type: ignore[assignment]
+        sync: "DataSyncSystem" = None,  # type: ignore[assignment]
+        housekeeping: "HousekeepingSystem" = None,  # type: ignore[assignment]
+        dispatcher: "SecureDispatcher" = None,  # type: ignore[assignment]
+        signer: "HMACSigner" = None,  # type: ignore[assignment]
+        admin_sync: "AdminSyncSystem" = None,  # type: ignore[assignment]
     ):
         """Initialize the orchestrator with its required infrastructure systems."""
         super().__init__(config)
@@ -56,6 +56,9 @@ class P2POrchestrator(BaseSystem):
         self._dispatcher = dispatcher
         self._signer = signer
         self._admin_sync = admin_sync
+
+        if self._admin_sync and self._dispatcher:
+            self._admin_sync.register_handlers(self._dispatcher)
 
         self._cancel_scope: anyio.CancelScope | None = None
         self._is_running: bool = False
@@ -86,16 +89,18 @@ class P2POrchestrator(BaseSystem):
         self._cancel_scope = anyio.CancelScope()
 
         # 0. Bootstrapping sub-systems
-        await self._coordination.on_startup()
-        if hasattr(self._bus, "on_startup"):
+        if self._coordination and hasattr(self._coordination, "on_startup"):
+            await self._coordination.on_startup()
+        if self._bus and hasattr(self._bus, "on_startup"):
             await self._bus.on_startup()
-        if hasattr(self._sync, "on_startup"):
+        if self._sync and hasattr(self._sync, "on_startup"):
             await self._sync.on_startup()
-        if hasattr(self._housekeeping, "on_startup"):
+        if self._housekeeping and hasattr(self._housekeeping, "on_startup"):
             await self._housekeeping.on_startup()
 
         # 1. Register P2P handlers
-        self._admin_sync.register_handlers(self._dispatcher)
+        if self._admin_sync and self._dispatcher:
+            self._admin_sync.register_handlers(self._dispatcher)
 
         # Note: In a pure AnyIO environment, background tasks should be
         # spawned into a TaskGroup managed by the top-level lifespan.

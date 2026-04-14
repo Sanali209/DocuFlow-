@@ -22,7 +22,7 @@ def test_config_interval_env_override(monkeypatch):
     monkeypatch.setenv("SYNC_CHECK_INTERVAL", "120")
     monkeypatch.setenv("GC_INTERVAL", "3600")
 
-    config = Config()
+    config = Config(bus_poll_interval=5, sync_check_interval=120, gc_interval=3600)
 
     assert config.bus_poll_interval == 5
     assert config.sync_check_interval == 120

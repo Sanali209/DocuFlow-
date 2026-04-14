@@ -1,10 +1,13 @@
 from pathlib import Path
+
 import pytest
 
 # Skip tests that require large data samples if the data_sample directory is not present
 repo_root = Path(__file__).parent.parent.parent
 if not (repo_root / "data_sample").exists():
-    pytest.skip("data_sample not available; skipping GNC/SVG generator tests", allow_module_level=True)
+    pytest.skip(
+        "data_sample not available; skipping GNC/SVG generator tests", allow_module_level=True
+    )
 
 from docuflow.features.folder_scanner.parsers.gnc import GncParser
 from docuflow.features.folder_scanner.parsers.svg_gen import PartPreviewGenerator

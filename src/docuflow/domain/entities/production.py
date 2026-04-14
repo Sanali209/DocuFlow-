@@ -377,6 +377,9 @@ class IncidentLog(BaseEntity, table=True):
     incident_type: str
     description: str
     reported_by: str
+    assigned_group: str | None = Field(
+        default=None, index=True
+    )  # Maintenance, Supply, Foreman, etc.
     resolved: bool = Field(default=False)
     resolved_by: str | None = None
     resolved_at: datetime.datetime | None = None

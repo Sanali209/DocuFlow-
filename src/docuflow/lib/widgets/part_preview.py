@@ -1,9 +1,12 @@
 import os
+from typing import Any
 
 from nicegui import ui
 
+from docuflow.lib.base_widget import BaseDocuWidget
 
-class PartPreview:
+
+class PartPreview(BaseDocuWidget):
     """
     A reusable widget for safe SVG preview rendering.
 
@@ -13,7 +16,8 @@ class PartPreview:
     - consistent sizing for grids and modals.
     """
 
-    def __init__(self, svg_path: str = None, size: str = "120px"):
+    def __init__(self, svg_path: str = None, size: str = "120px", system_provider: Any = None):
+        super().__init__(system_provider)
         self.svg_path = svg_path
         self.size = size
 

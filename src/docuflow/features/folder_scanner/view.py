@@ -5,10 +5,30 @@ from nicegui import ui
 from sqlalchemy import Engine
 from sqlmodel import Session
 
+from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.folder_scanner.system import FolderScannerSystem
 from docuflow.infrastructure.config import Config
 from docuflow.lib.widgets.ns_mirror_status import NSMirrorStatus
 from docuflow.lib.widgets.scan_log_panel import ScanLogPanel
+
+
+def register_scanner_view():
+    """Register the scanner view in the global registry."""
+    from sqlalchemy import Engine
+
+    from docuflow.sdk import SDK
+
+    ViewRegistry.register(
+        ViewInfo(
+            name="scanner",
+            label="Scanner",
+            icon="scanner",
+            render_fn=folder_scanner_view,
+            dependencies=[SDK, Config, Engine],
+            is_async=True,
+        )
+    )
+
 
 if TYPE_CHECKING:
     from docuflow.sdk import SDK
@@ -135,7 +155,7 @@ async def folder_scanner_view(sdk: "SDK", config: Config, engine: Engine):
                     "text-xs font-bold text-slate-500 uppercase tracking-widest mb-4"
                 )
                 mirror_status = NSMirrorStatus(engine, config.node_id)
-                mirror_status.build()
+                mirror_status.render()
 
             # Scan Settings Snippet - READ FROM DATABASE
             with ui.card().classes(
@@ -201,4 +221,4 @@ async def folder_scanner_view(sdk: "SDK", config: Config, engine: Engine):
                 "text-lg font-medium text-slate-400 ml-2 mb-2"
             )
             log_panel = ScanLogPanel(engine)
-            log_panel.build()
+            log_panel.render()

@@ -23,17 +23,16 @@ class ChatSystem(BaseSystem):
     # Storage Directory within the cluster's shared path
     ATTACHMENTS_SUBDIR = "chat_attachments"
 
-    def __init__(self, config: Config, db_session: Session, sdk: Any = None):
+    def __init__(self, config: Config, session: Session, sdk: Any = None):
         """
         Initialize the communication engine.
 
         Args:
             config: System configuration.
-            db_session: SQLModel session for message persistence.
+            session: SQLModel session for message persistence.
             sdk: Optional SDK facade.
         """
-        super().__init__(config)
-        self.db_session = db_session
+        super().__init__(config, session)
         self.sdk = sdk
 
         # Initialize root storage for chat files
@@ -42,7 +41,7 @@ class ChatSystem(BaseSystem):
 
     # --- Core Messaging Ecosystem ---
 
-    def send_message(
+    async def send_message(
         self,
         author: str,
         content: str,
@@ -54,14 +53,11 @@ class ChatSystem(BaseSystem):
         attachments: list[dict] | None = None,
     ) -> ChatMessage:
         """
-        Create and record a new message in the cluster database.
-
-        Example:
-            chat.send_message(author="admin", content="Starting job X", ref_work_item_id=105)
+        Create and record a new message, then broadcast to peers via FileBus.
         """
         # Perform context inheritance if replying to a thread
         if parent_message_id and not any([ref_project_id, ref_work_item_id, ref_task_item_id]):
-            parent_msg = self.db_session.get(ChatMessage, parent_message_id)
+            parent_msg = self.session.get(ChatMessage, parent_message_id)
             if parent_msg:
                 ref_project_id = parent_msg.ref_project_id
                 ref_work_item_id = parent_msg.ref_work_item_id
@@ -80,41 +76,60 @@ class ChatSystem(BaseSystem):
             is_read=False,
         )
 
-        self.db_session.add(new_message)
-        self.db_session.flush()
-        self.db_session.refresh(new_message)
+        self.session.add(new_message)
+        self.session.commit()  # Ensure data is committed
+        self.session.refresh(new_message)
 
-        logger.info(f"Chat: Message {new_message.id} recorded for author '{author}'")
+        # P2P Notification via FileBus
+        if self.sdk:
+            try:
+                from docuflow.infrastructure.bus import FileBusSystem
+
+                bus = await self.sdk.resolve_system_by_type(FileBusSystem)
+                await bus.broadcast_message(
+                    {
+                        "action": "CHAT_MESSAGE_NEW",
+                        "id": new_message.id,
+                        "author": author,
+                        "type": message_type.value,
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Chat: Failed to broadcast P2P notification: {e}")
+
+        logger.info(f"Chat: Message {new_message.id} recorded and broadcasted")
         return new_message
 
-    def broadcast_order_request(self, work_item_id: int, content: str, author: str) -> ChatMessage:
+    async def broadcast_order_request(
+        self, work_item_id: int, content: str, author: str
+    ) -> ChatMessage:
         """Convenience: Broadcast a supply order request to the workshop channel."""
-        return self.send_message(
+        return await self.send_message(
             author=author,
             content=content,
             message_type=ChatMessageType.ORDER,
             ref_work_item_id=work_item_id,
         )
 
-    def broadcast_incident_alert(
+    async def broadcast_incident_alert(
         self, task_item_id: int, description: str, author: str
     ) -> ChatMessage:
         """Convenience: Broadcast a priority failure alert for a specific task."""
-        return self.send_message(
+        return await self.send_message(
             author=author,
             content=description,
             message_type=ChatMessageType.INCIDENT,
             ref_task_item_id=task_item_id,
         )
 
-    def reply(self, parent_id: int, author: str, content: str, **kwargs) -> ChatMessage:
+    async def reply(self, parent_id: int, author: str, content: str, **kwargs) -> ChatMessage:
         """
         Threaded reply convenience. Inherits project/task context from parent.
 
         Example:
             chat.reply(parent_id=1, author="tech", content="Confirmed!")
         """
-        return self.send_message(
+        return await self.send_message(
             author=author, content=content, parent_message_id=parent_id, **kwargs
         )
 
@@ -144,13 +159,13 @@ class ChatSystem(BaseSystem):
             .limit(limit)
         )
 
-        return list(self.db_session.exec(statement).all())
+        return list(self.session.exec(statement).all())
 
     def get_recursive_thread(self, root_message_id: int) -> list[ChatMessage]:
         """
         Assembles all children of a message into a single linear discussion list.
         """
-        root_msg = self.db_session.get(ChatMessage, root_message_id)
+        root_msg = self.session.get(ChatMessage, root_message_id)
         if not root_msg:
             return []
 
@@ -163,7 +178,7 @@ class ChatSystem(BaseSystem):
                 .order_by(ChatMessage.created_at.asc())
             )
 
-            children = self.db_session.exec(children_statement).all()
+            children = self.session.exec(children_statement).all()
             for child in children:
                 results.append(child)
                 _fetch_children(child.id)
@@ -184,7 +199,7 @@ class ChatSystem(BaseSystem):
             .limit(limit)
         )
 
-        return list(self.db_session.exec(statement).all())
+        return list(self.session.exec(statement).all())
 
     # --- File Management Vertical Slice ---
 
@@ -209,7 +224,7 @@ class ChatSystem(BaseSystem):
         self, message_id: int, filename: str, full_path: Path, size_bytes: int
     ):
         """Internal: Update ChatMessage metadata with file pointer."""
-        chat_msg = self.db_session.get(ChatMessage, message_id)
+        chat_msg = self.session.get(ChatMessage, message_id)
         if not chat_msg:
             return
 
@@ -222,8 +237,8 @@ class ChatSystem(BaseSystem):
         )
 
         chat_msg.attachments = json.dumps(existing_attachments)
-        self.db_session.add(chat_msg)
-        self.db_session.flush()
+        self.session.add(chat_msg)
+        self.session.flush()
 
     def get_physical_path(self, relative_attachment_path: str) -> Path:
         """Resolve a metadata path string to a real Local Path for downloading."""

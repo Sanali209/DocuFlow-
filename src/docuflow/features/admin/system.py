@@ -26,10 +26,21 @@ class AdminSystem:
     Refactored to use constructor-based Session injection (Phase C).
     """
 
-    def __init__(self, session: Session, orchestrator: P2POrchestrator, signer: HMACSigner, config):
-        self.session = session
-        self._orchestrator = orchestrator
-        self._signer = signer
+    def __init__(
+        self,
+        session: Session | None = None,
+        orchestrator: P2POrchestrator | None = None,
+        signer: HMACSigner | None = None,
+        config: Any | None = None,
+        engine: Engine | None = None,
+    ):
+        if session is None and engine is not None:
+            self.session = Session(engine)
+        else:
+            self.session = session  # type: ignore[assignment]
+
+        self._orchestrator = orchestrator  # type: ignore[assignment]
+        self._signer = signer  # type: ignore[assignment]
         self._config = config
 
     def _is_admin(self, name: str) -> bool:
@@ -37,7 +48,7 @@ class AdminSystem:
         n = name.strip().lower()
         return n == "admin" or n == "админ"
 
-    async def get_cluster_nodes(self) -> list[dict[str, Any]]:
+    def get_cluster_nodes(self) -> list[dict[str, Any]]:
         """Aggregating the health status of all nodes in the decentralized cluster."""
         heartbeats_path = Path(self._config.shared_path) / constants.COORDINATOR_HEARTBEATS_DIR
         nodes = []
@@ -57,6 +68,11 @@ class AdminSystem:
                 continue
 
         return sorted(nodes, key=lambda x: x["node_id"])
+
+    def get_workplace_by_node_id(self, node_id: str) -> Workplace | None:
+        """Retrieve the workplace configuration for a specific node."""
+        statement = select(Workplace).where(Workplace.node_id == node_id)
+        return self.session.exec(statement).first()
 
     def force_global_step_down(self):
         """Administrative command to trigger an immediate cluster-wide re-election."""
@@ -309,9 +325,15 @@ class AdminSyncSystem:
         dispatcher.register_handler(CommandType("UPSERT_USER"), self.handle_upsert_user)
         dispatcher.register_handler(CommandType("DELETE_USER"), self.handle_delete_user)
         dispatcher.register_handler(CommandType("UPSERT_WORKPLACE"), self.handle_upsert_workplace)
+        dispatcher.register_handler(CommandType("FORCE_STEP_DOWN"), self.handle_force_step_down)
 
     def _is_admin(self, name: str) -> bool:
         return name.strip().lower() == "admin"
+
+    def handle_force_step_down(self, data: dict[str, Any]):
+        # This is a special command handled by orchestrator logic, 
+        # but registered here for consistency.
+        logger.warning("Sync [ADMIN]: Received FORCE_STEP_DOWN command")
 
     def handle_upsert_role(self, data: dict[str, Any]):
         role_name = data.get("name")

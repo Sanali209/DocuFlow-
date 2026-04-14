@@ -34,9 +34,9 @@ def session_fixture():
 
 
 @pytest.fixture(name="engine")
-def engine_fixture():
+def engine_fixture(session: Session):
     """Создаёт экземпляр BatchEngine."""
-    return BatchEngine()
+    return BatchEngine(session)
 
 
 @pytest.fixture(name="material")

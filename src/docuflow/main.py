@@ -6,23 +6,14 @@ from dishka.integrations.fastapi import FastapiProvider, setup_dishka
 from fastapi import FastAPI
 from loguru import logger
 from nicegui import ui
-from sqlmodel import Session
 
 from docuflow.features.admin.system import AdminSystem
-from docuflow.features.admin.view import admin_view
 from docuflow.features.auth.system import AuthSystem
 from docuflow.features.auth.view import login_view
 
 # Import Vertical Slice Features
-from docuflow.features.core.layout import MainLayout, get_current_user, theme_setup
-from docuflow.features.dashboard.view import dashboard_view
-from docuflow.features.docs.portal import DocumentationPortal
-from docuflow.features.folder_scanner.view import folder_scanner_view
-from docuflow.features.inventory.system import InventorySystem
-from docuflow.features.inventory.view import warehouse_view
-from docuflow.features.view_presets.system import ViewPresetSystem
-from docuflow.features.work_items.system import WorkItemSystem
-from docuflow.features.work_items.view import WorkItemsView
+from docuflow.features.core.layout import MainLayout, SessionContext, get_current_user, theme_setup
+from docuflow.features.core.search import SearchSystem
 from docuflow.infrastructure.config import Config
 from docuflow.infrastructure.di import AppProvider
 from docuflow.sdk import SDK
@@ -34,14 +25,18 @@ _fastapi_provider = FastapiProvider()
 _container = make_async_container(_app_provider, _fastapi_provider)
 
 
+# --- GLOBAL SYSTEM PROVIDER (To fix NameError across scopes) ---
+async def system_provider(system_type):
+    """Helper to resolve a system from a fresh request container."""
+    async with _container() as req:
+        return await req.get(system_type)
+
+
 @asynccontextmanager
 async def lifespan(fastapi_app: FastAPI):
     """Manage SDK and P2P lifecycle."""
     from sqlalchemy import Engine
     from sqlmodel import SQLModel
-
-    # Ensure all models are loaded for DDL generation
-    from docuflow.sdk import SDK
 
     try:
         # 1. Initialize Database Schema
@@ -49,42 +44,72 @@ async def lifespan(fastapi_app: FastAPI):
             engine = await request_container.get(Engine)
             SQLModel.metadata.create_all(engine)
 
-            # 2. Resolve SDK (Ensuring it exists for all runners)
+            # 2. Resolve SDK
             sdk_instance = await request_container.get(SDK)
             fastapi_app.state.sdk = sdk_instance
 
-        # 3. Initialize SettingsRegistry with AdminSystem
+        # 3. Initialize SettingsRegistry
         async with _container() as request_container:
             from docuflow.domain.settings import registry
 
             admin_system = await request_container.get(AdminSystem)
             registry.init(admin_system)
-            logger.info("SettingsRegistry initialized with AdminSystem.")
+            logger.info("SettingsRegistry initialized.")
 
-        # 4. Bootstrap P2P and Identity
-        # Resolve SDK from the container (app-scoped) and ensure identity
-        sdk_instance = await request_container.get(SDK)
-        fastapi_app.state.sdk = sdk_instance
-        # Sanity check: resolving from the app container should return the same SDK
-        try:
-            sdk_from_app = await _container.get(SDK)
-            if sdk_from_app is not sdk_instance:
-                logger.warning("SDK identity mismatch between request resolution and app container")
-        except Exception:
-            # If resolution from top-level container fails, continue with resolved instance
-            logger.debug("Could not resolve SDK from top-level container for identity check")
-
+        # 4. Bootstrap P2P
+        sdk_instance = await _container.get(SDK)
         await sdk_instance.on_startup()
+
         async with _container() as request_container:
             auth_system = await request_container.get(AuthSystem)
             auth_system.bootstrap_admin()
             logger.info("Admin bootstrap check complete.")
+
     except Exception:
         traceback.print_exc()
         raise
     yield
     await sdk_instance.on_shutdown()
 
+
+from docuflow.features.core.views import ViewRegistry
+
+
+def register_all_views():
+    from docuflow.features.admin.view import register_admin_view
+    from docuflow.features.analytics.view import register_analytics_view
+    from docuflow.features.chat.incident_view import register_incidents_view
+    from docuflow.features.chat.view import register_chat_view
+    from docuflow.features.consumables.view import register_consumables_view
+    from docuflow.features.dashboard.view import register_dashboard_view
+    from docuflow.features.docs.portal import register_docs_view
+    from docuflow.features.folder_scanner.view import register_scanner_view
+    from docuflow.features.inventory.view import register_warehouse_view
+    from docuflow.features.parts.view import register_parts_view
+    from docuflow.features.production.view import register_production_view
+    from docuflow.features.projects.view import register_projects_view
+    from docuflow.features.reports.view import register_reports_view
+    from docuflow.features.task_board.view import register_task_board_view
+    from docuflow.features.work_items.view import register_work_items_view
+
+    register_dashboard_view()
+    register_warehouse_view()
+    register_work_items_view()
+    register_admin_view()
+    register_task_board_view()
+    register_scanner_view()
+    register_parts_view()
+    register_consumables_view()
+    register_chat_view()
+    register_incidents_view()
+    register_reports_view()
+    register_analytics_view()
+    register_production_view()
+    register_projects_view()
+    register_docs_view()
+
+
+register_all_views()
 
 # 2. FASTAPI INSTANCE
 app = FastAPI(lifespan=lifespan)
@@ -97,7 +122,8 @@ async def login_page():
     theme_setup()
     async with _container() as request_container:
         auth_system = await request_container.get(AuthSystem)
-        login_view(auth_system)
+        admin_system = await request_container.get(AdminSystem)
+        login_view(auth_system, admin_system, _config.node_id)
 
 
 @ui.page("/")
@@ -107,118 +133,89 @@ async def index_page():
         return ui.navigate.to("/login")
 
     theme_setup()
-    layout = MainLayout(title="DocuFlow Portal", config=_config)
 
-    async def switch_view(view_name: str):
+    async with _container() as request_container:
+        search_system = await request_container.get(SearchSystem)
+        layout = MainLayout(
+            title="DocuFlow Portal",
+            config=_config,
+            search_system=search_system,
+            system_provider=system_provider,
+        )
+
+    async def switch_view(view_name: str, **kwargs):
+        # 0. Prevent Timer Zombies & State Leaks
+        layout.clear_timers()
         content_area.clear()
+
+        # 1. Persist Navigation State (Deep Link Survival)
+        SessionContext.set("active_view", view_name)
+        if "filter_work_item" in kwargs:
+            SessionContext.set("active_filter_work_item", kwargs["filter_work_item"])
+        else:
+            SessionContext.clear("active_filter_work_item")
+
         with content_area:
+            view_info = ViewRegistry.get_view(view_name)
+            if not view_info:
+                ui.label(f"View '{view_name}' not found.").classes("text-red-500 p-8")
+                return
+
             async with _container() as request_container:
-                if view_name == "dashboard":
-                    admin_system = await request_container.get(AdminSystem)
-                    from docuflow.application.bus.orchestrator import P2POrchestrator
+                # 1. Resolve Dependencies
+                resolved_deps = []
+                for dep_type in view_info.dependencies:
+                    resolved_deps.append(await request_container.get(dep_type))
 
-                    orchestrator = await request_container.get(P2POrchestrator)
-                    await dashboard_view(orchestrator, admin_system)
-                elif view_name == "warehouse":
-                    inventory_system = await request_container.get(InventorySystem)
-                    await warehouse_view(inventory_system)
-                elif view_name == "admin":
-                    admin_system = await request_container.get(AdminSystem)
-                    await admin_view(admin_system)
-                elif view_name == "work_items":
-                    work_item_system = await request_container.get(WorkItemSystem)
-                    preset_system = await request_container.get(ViewPresetSystem)
-                    view = WorkItemsView(
-                        system=work_item_system,
-                        preset_system=preset_system,
-                        user=user.get("username", "admin"),
-                    )
-                    view.render()
+                # 2. Add extra parameters
+                if view_info.pass_user:
+                    resolved_deps.append(user.get("username", "admin"))
+                if view_info.pass_switch_view:
+                    resolved_deps.append(switch_view)
+                if view_info.pass_system_provider:
+                    resolved_deps.append(system_provider)
+
+                # --- NEW: Pass Layout for Timer Management ---
+                # We dynamically inject the layout if the view signature or info requires it.
+                # For simplicity, we'll check if it's one of the known "heavy" views.
+                if view_name in ["dashboard", "warehouse", "admin", "chat", "incidents"]:
+                    resolved_deps.append(layout)
+
+                # 3. Special handling for kwargs in some views
+                if view_name == "work_items" and "filter_text" in kwargs:
+                    # For classes that we instantiate and then call render()
+                    view_instance = view_info.render_fn(*resolved_deps)
+                    view_instance.active_filters.search_text = kwargs["filter_text"]
+                    view_instance.render()
                 elif view_name == "task_board":
-                    from docuflow.features.task_board.system import TaskBoardSystem
-                    from docuflow.features.task_board.view import TaskBoardView
-
-                    task_board_system = await request_container.get(TaskBoardSystem)
-                    preset_system = await request_container.get(ViewPresetSystem)
-                    session = await request_container.get(Session)
-                    view = TaskBoardView(
-                        session=session,
-                        system=task_board_system,
-                        preset_system=preset_system,
-                        user=user.get("username", "admin"),
+                    # For TaskBoardView we need filter_work_item_id
+                    view_instance = view_info.render_fn(
+                        *resolved_deps, filter_work_item_id=kwargs.get("filter_work_item")
                     )
-                    view.render()
-                elif view_name == "scanner":
-                    from sqlalchemy import Engine
-
-                    engine = await request_container.get(Engine)
-                    sdk = await request_container.get(SDK)
-                    await folder_scanner_view(sdk, _config, engine)
-                elif view_name == "parts":
-                    from docuflow.features.parts.system import PartLibrarySystem
-                    from docuflow.features.parts.view import PartLibraryView
-
-                    parts_system = await request_container.get(PartLibrarySystem)
-                    view = PartLibraryView(parts_system)
-                    await view.render()
-                elif view_name == "consumables":
-                    from docuflow.features.consumables.system import ConsumableSystem
-                    from docuflow.features.consumables.view import ConsumableView
-
-                    consumable_system = await request_container.get(ConsumableSystem)
-                    view = ConsumableView(consumable_system)
-                    await view.render()
-                elif view_name == "chat":
-                    from docuflow.features.chat.system import ChatSystem
-                    from docuflow.features.chat.view import ChatView
-
-                    chat_system = await request_container.get(ChatSystem)
-                    view = ChatView(chat_system)
-                    await view.render_portal()
-                elif view_name == "incidents":
-                    from docuflow.features.chat.incident_view import IncidentView
-                    from docuflow.features.chat.incidents import IncidentSystem
-
-                    incident_system = await request_container.get(IncidentSystem)
-                    view = IncidentView(incident_system)
-                    await view.render_dashboard()
-                elif view_name == "reports":
-                    from docuflow.features.reports.system import ReportSystem
-                    from docuflow.features.reports.view import ReportsView
-
-                    report_system = await request_container.get(ReportSystem)
-                    view = ReportsView(report_system)
-                    await view.render_portal()
-                elif view_name == "analytics":
-                    from docuflow.features.analytics.view import analytics_view
-
-                    session = await request_container.get(Session)
-                    await analytics_view(session)
-                elif view_name == "production":
-                    from docuflow.features.production.system import ProductionSystem
-                    from docuflow.features.production.view import production_view
-
-                    prod_system = await request_container.get(ProductionSystem)
-                    await production_view(prod_system, current_user=user.get("username", "admin"))
-                elif view_name == "projects":
-                    from docuflow.features.projects.system import ProjectSystem
-                    from docuflow.features.projects.view import ProjectManagementView
-
-                    project_system = await request_container.get(ProjectSystem)
-                    work_item_system = await request_container.get(WorkItemSystem)
-                    view = ProjectManagementView(
-                        project_system=project_system, work_item_system=work_item_system
-                    )
-                    view.render()
-                elif view_name == "docs":
-                    portal = DocumentationPortal()
-                    portal.build_portal()
+                    view_instance.render()
+                else:
+                    # 4. Normal render
+                    if view_info.is_async:
+                        res = await view_info.render_fn(*resolved_deps)
+                        if hasattr(res, "render"):
+                            await res.render()
+                    else:
+                        res = view_info.render_fn(*resolved_deps)
+                        if hasattr(res, "render"):
+                            res.render()
 
     # Shared Layout Build
     content_area = layout.build(switch_view)
 
-    # Initial View
-    await switch_view("dashboard")
+    # Initial View (Restore from SessionContext if available)
+    saved_view = SessionContext.get("active_view", "dashboard")
+    saved_filter = SessionContext.get("active_filter_work_item")
+
+    init_kwargs = {}
+    if saved_filter:
+        init_kwargs["filter_work_item"] = saved_filter
+
+    await switch_view(saved_view, **init_kwargs)
 
 
 # 6. INTEGRATION & CONFIG
@@ -226,8 +223,26 @@ ui.run_with(app, title="DocuFlow Portal", storage_secret="docuflow_nicegui_shh")
 
 if __name__ in {"__main__", "__mp_main__"}:
     import os
+    import subprocess
 
     import uvicorn
 
     port = int(os.getenv("DOCUFLOW_PORT", "8082"))
+
+    # --- PORT KILLER LOGIC ---
+    try:
+        result = subprocess.run(
+            ["netstat", "-ano", "-p", "TCP"], capture_output=True, text=True, encoding="cp866"
+        )
+        for line in result.stdout.split("\n"):
+            if f":{port}" in line and "LISTENING" in line:
+                parts = line.split()
+                if len(parts) >= 5:
+                    pid = parts[-1]
+                    if pid != str(os.getpid()):
+                        logger.info(f"Port {port} is busy. Killing PID {pid}...")
+                        subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
+    except Exception as e:
+        logger.warning(f"Port killer error: {e}")
+
     uvicorn.run("docuflow.main:app", host="0.0.0.0", port=port, reload=False)

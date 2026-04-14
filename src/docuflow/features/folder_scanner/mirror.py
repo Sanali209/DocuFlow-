@@ -169,7 +169,7 @@ class NSMirrorService(BaseSystem):
 
     def _calculate_md5(self, path: Path) -> str:
         """Calculate MD5 checksum for file deduplication and change detection.
-        
+
         Note: MD5 is used here only for fast file comparison and deduplication,
         not for cryptographic security. For this use case, MD5 is acceptable.
         """

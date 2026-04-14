@@ -51,25 +51,16 @@ class AuthSystem(BaseSystem):
 
         return user
 
-    def bootstrap_admin(self, default_password: str | None = None) -> User | None:
+    def get_or_create_admin(self, default_password: str | None = "admin") -> User:
         """
         Ensures at least one administrative user exists in the cluster.
         Symmetry: Every node must be able to bootstrap an initial admin if empty.
-        
+
         Args:
-            default_password: Admin password. If None, reads from DOCUFLOW_ADMIN_PASSWORD env var.
+            default_password: Admin password. Default is 'admin'.
         """
-        import os
-
-        from loguru import logger
-
-        if default_password is None:
-            default_password = os.getenv("DOCUFLOW_ADMIN_PASSWORD")
-            if not default_password:
-                logger.warning("DOCUFLOW_ADMIN_PASSWORD not set, skipping admin bootstrap")
-                return None
         # 1. Check if the administrative role exists
-        admin_role_name = "Админ"
+        admin_role_name = "Admin"
         role_statement = select(Role).where(Role.name == admin_role_name)
         admin_role = self.db_session.exec(role_statement).first()
 
@@ -82,20 +73,23 @@ class AuthSystem(BaseSystem):
             self.db_session.commit()
             self.db_session.refresh(admin_role)
 
-        # 2. Check if any user is registered
-        user_statement = select(User)
-        existing_user = self.db_session.exec(user_statement).first()
+        # 2. Check if admin user is registered
+        user_statement = select(User).where(User.username == "admin")
+        admin_user = self.db_session.exec(user_statement).first()
 
-        if not existing_user:
+        if not admin_user:
             admin_user = User(
                 username="admin",
-                password_hash=self.hash_password(default_password),
+                password_hash=self.hash_password(default_password or "admin"),
                 role_id=admin_role.id,
                 allowed_workplaces="[]",
             )
             self.db_session.add(admin_user)
             self.db_session.commit()
             self.db_session.refresh(admin_user)
-            return admin_user
 
-        return None
+        return admin_user
+
+    def bootstrap_admin(self, default_password: str | None = None) -> User | None:
+        """Legacy alias for get_or_create_admin."""
+        return self.get_or_create_admin(default_password)

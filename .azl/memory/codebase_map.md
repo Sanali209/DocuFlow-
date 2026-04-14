@@ -1,0 +1,1519 @@
+# CODEBASE MAP
+> Auto-generated 2026-04-14 05:13 UTC. Run 'Scan Repository' to refresh.
+
+## Module: scripts — scripts/
+
+### scripts/
+- **check_settings.py** [17 LOC]
+- **diagnose_scanner.py** [145 LOC]
+  - `fn check_database_settings` (:19)
+  - `fn check_coordination_lock` (:77)
+  - `fn check_heartbeats` (:109)
+  - `fn main` (:142)
+- **port_killer.py** [181 LOC]
+  - `fn get_all_processes` (:10)
+  - `fn get_listening_ports` (:30)
+  - `fn get_process_name` (:53)
+  - `fn kill_process` (:72)
+  - `class PortKillerApp` (:84)
+  - `fn main` (:214)
+  - `fn __init__` (:85)
+  - `fn refresh` (:133)
+  - `fn _update_tree` (:155)
+  - `fn search_port` (:170)
+  - `fn kill_selected` (:186)
+  - `fn auto_refresh` (:208)
+- **reset_cluster.py** [45 LOC]
+  - `fn kill_on_port` (:5)
+  - `fn reset_heartbeats` (:22)
+  - `fn reset_databases` (:35)
+- **seed_test_data.py** [113 LOC]
+  - `fn seed` (:25)
+- **sim_operator.py** [67 LOC]
+- **test_sqlite_wal.py** [40 LOC]
+  - `fn check_wal` (:9)
+  - `fn main` (:27)
+- **test_startup.py** [53 LOC]
+- **verify_guards.py** [52 LOC]
+
+## Module: src — src/
+
+### src/docuflow/
+- **__init__.py** 
+- **main.py** [201 LOC]
+  - `fn register_all_views` (:78)
+- **sdk.py** ⚠️ [158 LOC]
+  - `class SDK` (:18)
+  - `fn __init__` (:37)
+  - `fn config` (:45)
+  - `fn orchestrator` (:52)
+  - `fn projects` (:92)
+  - `fn parts` (:99)
+  - `fn consumables` (:106)
+  - `fn production` (:113)
+
+### src/docuflow/application/
+- **__init__.py** 
+- **base.py** [38 LOC]
+  - `class BaseSystem` (:6)
+  - `fn __init__` (:17)
+  - `fn config` (:22)
+  - `fn db_session` (:27)
+  - `fn db_session` (:36)
+  - `fn set_session` (:40)
+
+### src/docuflow/application/bus/
+- **__init__.py** 
+- **dispatcher.py** [74 LOC]
+  - `class SecureDispatcher` (:15)
+  - `fn __init__` (:22)
+  - `fn register_handler` (:36)
+  - `fn dispatch` (:46)
+- **orchestrator.py** ⚠️ [195 LOC]
+  - `class P2POrchestrator` (:20)
+  - `fn __init__` (:39)
+  - `fn is_running` (:70)
+  - `fn is_leader` (:75)
+
+### src/docuflow/application/settings/
+- **__init__.py** 
+
+### src/docuflow/domain/
+- **__init__.py** 
+- **messages.py** [42 LOC]
+  - `class CommandType` (:7)
+  - `class P2PPayload` (:25)
+  - `class P2PMessage` (:32)
+  - `fn to_signable_content` (:45)
+- **settings.py** [77 LOC]
+  - `class BaseModuleSettings` (:7)
+  - `class SettingsRegistry` (:25)
+  - `fn __new__` (:39)
+  - `fn init` (:44)
+  - `fn register` (:50)
+  - `fn get_schema` (:54)
+  - `fn get_all_modules` (:58)
+  - `fn get_fields_by_scope` (:62)
+  - `fn get_module_settings` (:76)
+  - `fn update_module_setting` (:82)
+  - `fn get_settings_object` (:87)
+
+### src/docuflow/domain/entities/
+- **__init__.py** 
+- **base.py** [10 LOC]
+  - `class BaseEntity` (:6)
+- **identity.py** [58 LOC]
+  - `class Workplace` (:9)
+  - `class Role` (:28)
+  - `class User` (:49)
+  - `class NodeSetting` (:72)
+  - `fn modules_list` (:20)
+  - `fn permissions_list` (:41)
+  - `fn workplace_ids` (:64)
+- **production.py** [326 LOC]
+  - `class WorkItemType` (:11)
+  - `class WorkItemStatus` (:18)
+  - `class TaskItemStatus` (:32)
+  - `class Project` (:44)
+  - `class WorkItem` (:57)
+  - `class TaskItem` (:81)
+  - `class TaskPart` (:126)
+  - `class PartLibrary` (:142)
+  - `class PartTemplate` (:169)
+  - `class MaterialFormFactor` (:184)
+  - `class MaterialStockStatus` (:191)
+  - `class MaterialType` (:199)
+
+### src/docuflow/features/
+- **__init__.py** 
+
+### src/docuflow/features/admin/
+- **__init__.py** 
+- **system.py** [355 LOC]
+  - `class AdminSystem` (:22)
+  - `class AdminSyncSystem` (:310)
+  - `fn __init__` (:29)
+  - `fn _is_admin` (:46)
+  - `fn get_cluster_nodes` (:51)
+  - `fn get_workplace_by_node_id` (:72)
+  - `fn force_global_step_down` (:77)
+  - `fn get_all_workplaces` (:84)
+  - `fn upsert_workplace` (:87)
+  - `fn get_all_users` (:114)
+  - `fn get_all_roles` (:121)
+  - `fn create_user` (:124)
+- **view.py** ⚠️ [589 LOC]
+  - `fn register_admin_view` (:11)
+  - `fn _create` (:323)
+  - `fn _del` (:361)
+  - `fn update_text` (:266)
+  - `fn update_toggle` (:282)
+  - `fn _load_roles` (:462)
+
+### src/docuflow/features/analytics/
+- **view.py** [141 LOC]
+  - `fn register_analytics_view` (:8)
+
+### src/docuflow/features/auth/
+- **__init__.py** 
+- **system.py** ⚠️ [75 LOC]
+  - `class AuthSystem` (:11)
+  - `fn __init__` (:19)
+  - `fn hash_password` (:31)
+  - `fn verify_password` (:35)
+  - `fn get_or_create_admin` (:54)
+  - `fn bootstrap_admin` (:93)
+- **view.py** [66 LOC]
+  - `fn login_view` (:10)
+
+### src/docuflow/features/chat/
+- **incident_view.py** [315 LOC]
+  - `fn register_incidents_view` (:10)
+  - `class IncidentView` (:34)
+  - `fn __init__` (:52)
+  - `fn _render_group_tabs` (:103)
+  - `fn _render_header_section` (:116)
+  - `fn get_active_failures` (:209)
+  - `fn get_summary_stats` (:213)
+  - `fn open_reporting_dialog` (:218)
+  - `fn _render_active_incident_card` (:250)
+  - `fn open_resolution_dialog` (:312)
+  - `fn open_reporting_dialog` (:342)
+- **incidents.py** [208 LOC]
+  - `class IncidentSystem` (:20)
+  - `fn __init__` (:37)
+  - `fn assign_incident` (:81)
+  - `fn _audit_resolution` (:150)
+  - `fn get_summary_stats` (:165)
+  - `fn get_active_failures` (:178)
+  - `fn get_recent_history` (:187)
+  - `fn _query_historical_log` (:229)
+- **system.py** [203 LOC]
+  - `class ChatSystem` (:13)
+  - `fn __init__` (:26)
+  - `fn get_context_thread` (:138)
+  - `fn get_recursive_thread` (:164)
+  - `fn get_global_messages` (:189)
+  - `fn attach_file` (:206)
+  - `fn _prepare_message_dir` (:217)
+  - `fn _link_attachment_to_db` (:223)
+  - `fn get_physical_path` (:243)
+  - `fn _fetch_children` (:174)
+- **view.py** [241 LOC]
+  - `fn register_chat_view` (:12)
+  - `class ChatView` (:34)
+  - `fn __init__` (:52)
+  - `fn _build_navigation_sidebar` (:97)
+  - `fn _render_channel_link` (:113)
+  - `fn _build_chat_header` (:129)
+  - `fn _build_footer_input` (:138)
+  - `fn _query_messages_for_channel` (:174)
+  - `fn _render_message_bubble` (:191)
+  - `fn open_incident_dialog` (:253)
+
+### src/docuflow/features/consumables/
+- **system.py** [166 LOC]
+  - `class ConsumableSystem` (:16)
+  - `fn __init__` (:26)
+  - `fn create_consumable` (:40)
+  - `fn list_consumables` (:55)
+  - `fn get_consumable_by_name` (:67)
+  - `fn restock` (:75)
+  - `fn use_consumable` (:107)
+  - `fn perform_write_off` (:145)
+  - `fn get_movement_history` (:170)
+  - `fn _broadcast_critical_alert` (:182)
+- **view.py** [233 LOC]
+  - `fn register_consumables_view` (:8)
+  - `class ConsumableView` (:28)
+  - `fn __init__` (:38)
+  - `fn _render_status_table` (:79)
+  - `fn refresh_table` (:145)
+  - `fn open_op_dialog` (:200)
+  - `fn create_dialog` (:236)
+  - `fn refresh_all` (:265)
+
+### src/docuflow/features/core/
+- **__init__.py** 
+- **layout.py** [302 LOC]
+  - `fn check_access` (:11)
+  - `fn get_active_ui_modules` (:28)
+  - `fn get_current_user` (:47)
+  - `fn double_filter_check` (:52)
+  - `fn theme_setup` (:78)
+  - `class SessionContext` (:126)
+  - `class MainLayout` (:142)
+  - `fn set` (:130)
+  - `fn get` (:134)
+  - `fn clear` (:138)
+  - `fn __init__` (:148)
+  - `fn register_timer` (:156)
+- **search.py** [89 LOC]
+  - `class SearchResult` (:14)
+  - `class SearchSystem` (:26)
+  - `fn __init__` (:32)
+- **views.py** [29 LOC]
+  - `class ViewInfo` (:7)
+  - `class ViewRegistry` (:23)
+  - `fn register` (:29)
+  - `fn get_view` (:33)
+  - `fn get_all_views` (:37)
+
+### src/docuflow/features/dashboard/
+- **__init__.py** 
+- **view.py** [109 LOC]
+  - `fn register_dashboard_view` (:14)
+
+### src/docuflow/features/docs/
+- **__init__.py** 
+- **portal.py** [75 LOC]
+  - `fn register_docs_view` (:8)
+  - `fn docs_view_wrapper` (:21)
+  - `class DocumentationPortal` (:26)
+  - `fn __init__` (:32)
+  - `fn _ensure_default_docs` (:37)
+  - `fn build_portal` (:66)
+  - `fn load_doc` (:77)
+
+### src/docuflow/features/folder_scanner/
+- **mirror.py** [168 LOC]
+  - `class NSMirrorService` (:26)
+  - `fn __init__` (:34)
+  - `fn _resolve_source_path` (:146)
+  - `fn _calculate_md5` (:170)
+  - `fn _log_event` (:182)
+  - `fn _do_copy` (:135)
+- **settings.py** [45 LOC]
+  - `class FolderScannerSettings` (:6)
+- **system.py** [380 LOC]
+  - `class FolderScannerSystem` (:36)
+  - `fn __init__` (:49)
+  - `fn get_status` (:72)
+  - `fn is_running` (:85)
+  - `fn get_ingestion_status` (:89)
+  - `fn get_settings` (:103)
+  - `fn fetch_scanner_settings` (:107)
+  - `fn _admin` (:117)
+  - `fn scan_now` (:121)
+  - `fn _scan_all` (:125)
+  - `fn _is_master` (:135)
+  - `fn trigger_manual_ingestion` (:142)
+- **view.py** [198 LOC]
+  - `fn register_scanner_view` (:15)
+
+### src/docuflow/features/folder_scanner/parsers/
+- **__init__.py** 
+- **folder.py** [53 LOC]
+  - `class FolderMeta` (:12)
+  - `class FolderNameParser` (:22)
+  - `fn parse` (:33)
+- **gnc.py** [199 LOC]
+  - `class ContourCommand` (:10)
+  - `class Contour` (:20)
+  - `class GncPartData` (:26)
+  - `class GncSheet` (:35)
+  - `class GncParser` (:53)
+  - `fn parse` (:71)
+  - `fn extract_sku` (:211)
+  - `fn estimate_time` (:237)
+- **svg_gen.py** [42 LOC]
+  - `class PartPreviewGenerator` (:10)
+  - `fn __init__` (:16)
+  - `fn generate` (:25)
+- **task_file.py** [48 LOC]
+  - `class TaskFileMeta` (:7)
+  - `class TaskFileParser` (:15)
+  - `fn is_variant` (:24)
+  - `fn parse_task_filename` (:49)
+
+### src/docuflow/features/inventory/
+- **__init__.py** 
+- **settings.py** [9 LOC]
+  - `class InventorySettings` (:4)
+- **system.py** [290 LOC]
+  - `class InventorySystem` (:23)
+  - `fn __init__` (:33)
+  - `fn get_material_catalog` (:47)
+  - `fn create_material_definition` (:56)
+  - `fn receive_material_batch` (:78)
+  - `fn record_inventory_correction` (:112)
+  - `fn create_reservation` (:143)
+  - `fn perform_write_off` (:171)
+  - `fn request_material_reorder` (:226)
+  - `fn resolve_supply_request` (:260)
+  - `fn get_stock_snapshot_query` (:280)
+  - `fn get_usage_audit_log` (:298)
+- **view.py** [441 LOC]
+  - `fn register_warehouse_view` (:16)
+  - `fn render_supply_requests` (:51)
+
+### src/docuflow/features/notifications/
+- **system.py** [79 LOC]
+  - `class NotificationService` (:13)
+  - `fn __init__` (:18)
+  - `fn seed_defaults` (:77)
+
+### src/docuflow/features/parts/
+- **system.py** [150 LOC]
+  - `class PartLibrarySystem` (:18)
+  - `fn __init__` (:28)
+  - `fn synchronize_part_definition` (:35)
+  - `fn retrieve_part_specification` (:66)
+  - `fn search_part_library` (:75)
+  - `fn find_parts_by_geometric_similarity` (:91)
+  - `fn trace_work_items_for_sku` (:115)
+  - `fn trace_pallets_for_sku` (:129)
+  - `fn create_part_template` (:145)
+  - `fn list_part_templates` (:162)
+  - `fn remove_part_template` (:169)
+- **view.py** [241 LOC]
+  - `fn register_parts_view` (:9)
+  - `class PartLibraryView` (:29)
+  - `fn __init__` (:39)
+  - `fn open_part_details` (:117)
+  - `fn _stat_row` (:168)
+  - `fn _render_work_items` (:173)
+  - `fn _render_pallets` (:190)
+  - `fn _render_templates` (:207)
+  - `fn add_template_dialog` (:238)
+  - `fn open_geo_search` (:262)
+  - `fn _show_search_results` (:278)
+
+### src/docuflow/features/production/
+- **system.py** [186 LOC]
+  - `class ProductionSystem` (:11)
+  - `fn __init__` (:20)
+  - `fn create_unique_pallet_label` (:24)
+  - `fn register_finished_pallet` (:46)
+  - `fn mark_as_shipped` (:96)
+  - `fn get_recent_production_units` (:120)
+  - `fn split_production_unit` (:127)
+  - `fn merge_production_units` (:175)
+- **view.py** [162 LOC]
+  - `fn register_production_view` (:9)
+  - `fn refresh_grid` (:86)
+
+### src/docuflow/features/projects/
+- **system.py** [73 LOC]
+  - `class ProjectSystem` (:10)
+  - `fn __init__` (:20)
+  - `fn get_all_active_projects` (:24)
+  - `fn register_new_project` (:30)
+  - `fn reassign_production_group` (:43)
+  - `fn resolve_default_workshop_project` (:75)
+- **view.py** [144 LOC]
+  - `fn register_projects_view` (:8)
+  - `fn projects_view_wrapper` (:21)
+  - `class ProjectManagementView` (:26)
+  - `fn __init__` (:33)
+  - `fn render` (:38)
+  - `fn _refresh_projects` (:67)
+  - `fn _select_project` (:89)
+  - `fn _add_project` (:94)
+  - `fn _refresh_work_items` (:105)
+  - `fn _reassign_item` (:144)
+
+### src/docuflow/features/reports/
+- **system.py** [255 LOC]
+  - `class BlockParam` (:16)
+  - `class ReportDataBlock` (:25)
+  - `class ReportRegistry` (:34)
+  - `class BlockProxy` (:57)
+  - `class ReportSystem` (:86)
+  - `fn __init__` (:40)
+  - `fn register` (:43)
+  - `fn get_block` (:48)
+  - `fn available_blocks` (:52)
+  - `fn __init__` (:65)
+  - `fn __getattr__` (:72)
+  - `fn __init__` (:101)
+- **view.py** [153 LOC]
+  - `fn register_reports_view` (:13)
+  - `class ReportsView` (:33)
+  - `fn __init__` (:52)
+  - `fn _render_header` (:97)
+  - `fn _build_template_picker` (:114)
+  - `fn _build_parameter_inputs` (:130)
+
+### src/docuflow/features/task_board/
+- **__init__.py** [18 LOC]
+- **batch_engine.py** [206 LOC]
+  - `class BatchRule` (:22)
+  - `class BatchGroup` (:38)
+  - `class StockAlert` (:49)
+  - `class BatchEngine` (:56)
+  - `fn __init__` (:69)
+  - `fn compute` (:72)
+  - `fn apply_batches` (:119)
+  - `fn check_stock_alerts` (:135)
+  - `fn move_task` (:173)
+  - `fn create_batch` (:202)
+  - `fn split_batch` (:235)
+  - `fn key_fn` (:89)
+- **system.py** [355 LOC]
+  - `class TaskBoardSystem` (:32)
+  - `fn __init__` (:38)
+  - `fn get_db_session` (:56)
+  - `fn _sync` (:67)
+  - `fn get_bucket` (:122)
+  - `fn start_task` (:130)
+  - `fn pause_task` (:143)
+  - `fn resume_task` (:156)
+  - `fn complete_task` (:168)
+  - `fn _check_and_auto_close_work_item` (:231)
+  - `fn block_task` (:257)
+  - `fn report_material_incident` (:270)
+- **view.py** [455 LOC]
+  - `fn register_task_board_view` (:26)
+  - `class TaskBoardView` (:43)
+  - `fn __init__` (:59)
+  - `fn render` (:82)
+  - `fn _render_role_switcher` (:93)
+  - `fn _clear_filter` (:109)
+  - `fn _switch_role` (:114)
+  - `fn _render_operator_view` (:121)
+  - `fn _show_handover_dialog` (:142)
+  - `fn _execute_handover` (:165)
+  - `fn _render_node_selector` (:176)
+  - `fn _select_node` (:188)
+
+### src/docuflow/features/view_presets/
+- **__init__.py** [9 LOC]
+- **system.py** [160 LOC]
+  - `class ViewPresetSystem` (:19)
+  - `fn __init__` (:33)
+  - `fn create` (:44)
+  - `fn list` (:79)
+  - `fn get_active` (:97)
+  - `fn set_active` (:123)
+  - `fn delete` (:166)
+  - `fn get_preset_json` (:193)
+
+### src/docuflow/features/work_items/
+- **__init__.py** [25 LOC]
+- **system.py** [198 LOC]
+  - `class WorkItemFilters` (:18)
+  - `class WorkItemSystem` (:31)
+  - `fn __init__` (:65)
+  - `fn create_work_item` (:79)
+  - `fn retrieve_work_item` (:116)
+  - `fn list_work_items_by_filter` (:125)
+  - `fn update_work_item_metadata` (:160)
+  - `fn register_document` (:178)
+  - `fn update_status` (:198)
+  - `fn _audit_status_change` (:233)
+- **view.py** [182 LOC]
+  - `fn register_work_items_view` (:24)
+  - `class WorkItemsView` (:40)
+  - `fn __init__` (:51)
+  - `fn render` (:67)
+  - `fn _render_filter_bar` (:74)
+  - `fn _render_preset_tabs` (:99)
+  - `fn _render_table` (:111)
+  - `fn _item_to_row` (:153)
+  - `fn _on_row_click` (:169)
+  - `fn _show_card` (:175)
+  - `fn _update_filters` (:185)
+  - `fn _apply_preset` (:199)
+
+### src/docuflow/infrastructure/
+- **__init__.py** 
+- **bus.py** [266 LOC]
+  - `class InboxHandler` (:17)
+  - `class FileBusSystem` (:46)
+  - `fn __init__` (:27)
+  - `fn on_created` (:30)
+  - `fn _is_valid_new_message` (:39)
+  - `fn __init__` (:58)
+  - `fn _ensure_directories_exist` (:173)
+  - `fn _generate_unique_id` (:178)
+  - `fn _build_broadcast_filename` (:182)
+  - `fn _build_filename` (:189)
+  - `fn _build_payload` (:196)
+  - `fn _resolve_folder_path` (:211)
+- **config.py** [60 LOC]
+  - `class Config` (:6)
+  - `fn bus_path` (:53)
+  - `fn snapshots_path` (:64)
+- **constants.py** [40 LOC]
+- **coordination.py** [174 LOC]
+  - `class CoordinationSystem` (:14)
+  - `fn __init__` (:27)
+  - `fn is_leader` (:40)
+  - `fn node_id` (:45)
+  - `fn _is_self_owned` (:156)
+  - `fn _is_lock_stale` (:160)
+- **di.py** ⚠️ [242 LOC]
+  - `class AppProvider` (:39)
+  - `fn get_search_system` (:46)
+  - `fn get_projects_system` (:51)
+  - `fn get_parts_system` (:56)
+  - `fn get_consumable_system` (:61)
+  - `fn get_production_system` (:66)
+  - `fn __init__` (:70)
+  - `fn get_config` (:75)
+  - `fn get_signer` (:80)
+  - `fn get_engine` (:85)
+  - `fn get_coordination` (:132)
+  - `fn get_bus` (:137)
+- **housekeeping.py** [95 LOC]
+  - `class HousekeepingSystem` (:13)
+  - `fn __init__` (:28)
+  - `fn _is_stale_file` (:103)
+- **logging.py** [11 LOC]
+  - `fn setup_logging` (:5)
+- **security.py** [40 LOC]
+  - `class HMACSigner` (:5)
+  - `fn __init__` (:21)
+  - `fn sign` (:29)
+  - `fn verify` (:40)
+- **sync.py** [148 LOC]
+  - `class DataSyncSystem` (:17)
+  - `fn __init__` (:32)
+  - `fn set_orchestrator` (:85)
+  - `fn _ensure_snapshots_dir_exists` (:117)
+  - `fn _merge_snapshot_data` (:146)
+  - `fn _process_remote_row` (:158)
+  - `fn _is_remote_newer` (:183)
+  - `fn _update_local_stale_record` (:187)
+  - `fn _sync_extract` (:124)
+  - `fn _json_serial` (:138)
+
+### src/docuflow/infrastructure/graphics/
+- **svg_generator.py** [174 LOC]
+  - `class SVGGenerator` (:7)
+  - `fn calculate_bounds` (:13)
+  - `fn generate_thumbnail` (:53)
+  - `fn tx` (:103)
+  - `fn ty` (:106)
+  - `fn normalize_angle` (:163)
+
+### src/docuflow/lib/
+- **base_widget.py** [35 LOC]
+  - `class BaseDocuWidget` (:11)
+  - `fn __init__` (:17)
+  - `fn safe_action` (:26)
+
+### src/docuflow/lib/widgets/
+- **__init__.py** [33 LOC]
+- **activity_stream.py** [49 LOC]
+  - `class ActivityStream` (:8)
+  - `fn __init__` (:11)
+  - `fn render` (:16)
+- **batch_card.py** [308 LOC]
+  - `class BatchCard` (:15)
+  - `class TaskItemRow` (:281)
+  - `fn __init__` (:34)
+  - `fn render` (:62)
+  - `fn _render_optimization_monitor` (:121)
+  - `fn _show_matching_suggestions` (:159)
+  - `fn _request_material` (:223)
+  - `fn _render_batch_stock_alert` (:251)
+  - `fn _get_material_type` (:266)
+  - `fn _render_drift_badge` (:273)
+  - `fn __init__` (:286)
+  - `fn render` (:304)
+- **bucket_panel.py** [174 LOC]
+  - `class BucketPanel` (:21)
+  - `fn __init__` (:33)
+  - `fn render` (:48)
+  - `fn _render_batch_card` (:89)
+  - `fn _render_empty_bucket` (:127)
+  - `fn _group_by_batch` (:134)
+  - `fn _calculate_batch_drift` (:153)
+  - `fn _on_start_task` (:165)
+  - `fn _on_pause_task` (:175)
+  - `fn _on_resume_task` (:186)
+  - `fn _on_complete_task` (:196)
+  - `fn _on_block_task` (:207)
+- **bucket_panel_dialogs.py** [153 LOC]
+  - `class PauseDialog` (:14)
+  - `class CompleteDialog` (:79)
+  - `class BlockDialog` (:147)
+  - `fn __init__` (:17)
+  - `fn render` (:29)
+  - `fn _confirm` (:56)
+  - `fn __init__` (:82)
+  - `fn render` (:95)
+  - `fn _confirm` (:132)
+  - `fn __init__` (:150)
+  - `fn render` (:162)
+  - `fn _confirm` (:181)
+- **explorer_button.py** [66 LOC]
+  - `class ExplorerButton` (:16)
+  - `fn __init__` (:27)
+  - `fn render` (:39)
+  - `fn _open_explorer` (:47)
+  - `fn _show_fallback_dialog` (:56)
+  - `fn _copy_to_clipboard` (:78)
+- **file_changed_alert.py** [27 LOC]
+  - `class FileChangedAlert` (:10)
+  - `fn __init__` (:20)
+  - `fn render` (:25)
+- **ns_mirror_status.py** ⚠️ [55 LOC]
+  - `class NSMirrorStatus` (:11)
+  - `fn __init__` (:16)
+  - `fn render` (:21)
+  - `fn refresh` (:36)
+- **part_preview.py** [38 LOC]
+  - `class PartPreview` (:9)
+  - `fn __init__` (:19)
+  - `fn render` (:24)
+  - `fn _render_placeholder` (:40)
+- **scan_log_panel.py** ⚠️ [76 LOC]
+  - `class ScanLogPanel` (:11)
+  - `fn __init__` (:16)
+  - `fn render` (:22)
+  - `fn refresh` (:38)
+  - `fn _render_log_item` (:59)
+  - `fn _get_log_color` (:81)
+- **status_badge.py** [84 LOC]
+  - `class StatusBadge` (:40)
+  - `fn __init__` (:50)
+  - `fn render` (:57)
+  - `fn _get_color` (:70)
+  - `fn _get_label` (:78)
+- **work_item_card.py** [211 LOC]
+  - `class WorkItemCard` (:22)
+  - `fn __init__` (:34)
+  - `fn render` (:48)
+  - `fn _info_item` (:144)
+  - `fn _render_tasks_table` (:153)
+  - `fn _render_work_log` (:200)
+  - `fn _go_to_task_board` (:222)
+  - `fn _register_document` (:232)
+  - `fn _block_work_item` (:242)
+
+## Module: _archive — _archive/
+
+### _archive/old mvp/backend/
+- **__init__.py** 
+- **debug_db.py** [26 LOC]
+- **debug_path.py** [24 LOC]
+  - `fn check_path` (:11)
+
+### _archive/old mvp/backend/alembic/
+- **env.py** [59 LOC]
+  - `fn run_migrations_offline` (:34)
+  - `fn run_migrations_online` (:58)
+
+### _archive/old mvp/backend/alembic/versions/
+- **382e15c63da2_initial_migration_with_refactored_models.py** [251 LOC]
+  - `fn upgrade` (:21)
+  - `fn downgrade` (:225)
+
+### _archive/old mvp/backend/src/
+- **__init__.py** 
+
+### _archive/old mvp/backend/src/api/
+- **__init__.py** 
+- **auth.py** [9 LOC]
+  - `fn get_current_role` (:7)
+  - `fn verify_admin` (:11)
+- **database.py** [14 LOC]
+  - `fn set_sqlite_pragma` (:15)
+- **dependencies.py** [41 LOC]
+  - `fn get_db` (:20)
+  - `fn get_settings_service` (:28)
+  - `fn get_document_service` (:32)
+  - `fn get_journal_service` (:37)
+  - `fn get_inventory_service` (:42)
+  - `fn get_production_service` (:49)
+  - `fn get_gnc_service` (:55)
+- **main.py** [62 LOC]
+  - `fn setup_sync` (:24)
+- **middleware.py** [26 LOC]
+  - `class AuditMiddleware` (:8)
+
+### _archive/old mvp/backend/src/api/routers/
+- **audit.py** [14 LOC]
+  - `fn get_audit_service` (:11)
+  - `fn read_audit_logs` (:17)
+- **documents.py** [160 LOC]
+  - `fn list_tags` (:13)
+  - `fn create_document` (:18)
+  - `fn create_order` (:23)
+  - `fn read_documents` (:32)
+  - `fn read_document` (:70)
+  - `fn update_document` (:78)
+  - `fn delete_document` (:90)
+  - `fn get_dashboard_stats` (:115)
+  - `fn download_document_zip` (:120)
+  - `fn delete_attachment` (:135)
+  - `fn open_document_folder` (:157)
+- **gnc.py** [70 LOC]
+- **inventory.py** [140 LOC]
+  - `fn list_materials` (:14)
+  - `fn create_material` (:19)
+  - `fn update_material` (:24)
+  - `fn delete_material` (:33)
+  - `fn list_parts` (:41)
+  - `fn get_part` (:64)
+  - `fn create_part` (:72)
+  - `fn update_part` (:77)
+  - `fn delete_part` (:85)
+  - `fn get_part_gnc` (:92)
+  - `fn list_stock` (:114)
+  - `fn create_stock_item` (:119)
+- **journal.py** [18 LOC]
+  - `fn read_journal` (:10)
+  - `fn create_journal` (:17)
+  - `fn delete_journal` (:22)
+- **production.py** [51 LOC]
+  - `fn save_as_new_order` (:10)
+  - `fn list_jobs` (:15)
+  - `fn get_job` (:31)
+  - `fn create_job` (:39)
+  - `fn update_job` (:44)
+  - `fn update_job_status` (:53)
+  - `fn delete_job` (:63)
+- **settings.py** [150 LOC]
+  - `class SettingUpdate` (:11)
+  - `class DatabaseConfig` (:16)
+  - `fn get_setting` (:21)
+  - `fn update_setting` (:27)
+  - `fn get_database_config` (:35)
+  - `fn update_database_config` (:44)
+  - `fn config_check` (:57)
+  - `fn test_path` (:121)
+  - `fn list_assignees` (:134)
+  - `fn create_assignee` (:139)
+  - `fn update_assignee` (:149)
+  - `fn delete_assignee` (:161)
+
+### _archive/old mvp/backend/src/application/
+- **__init__.py** 
+
+### _archive/old mvp/backend/src/application/services/
+- **__init__.py** 
+- **audit_service.py** [24 LOC]
+  - `class AuditService` (:4)
+  - `fn __init__` (:5)
+  - `fn list_logs` (:8)
+- **document_service.py** [150 LOC]
+  - `class DocumentService` (:8)
+  - `fn __init__` (:9)
+  - `fn get_document` (:12)
+  - `fn list_documents` (:16)
+  - `fn create_document` (:50)
+  - `fn update_document` (:54)
+  - `fn delete_document` (:57)
+  - `fn create_order` (:60)
+  - `fn save_as_new_order` (:63)
+  - `fn list_tags` (:116)
+  - `fn get_dashboard_stats` (:119)
+  - `fn delete_attachment` (:122)
+- **gnc_service.py** [19 LOC]
+  - `class GncService` (:7)
+  - `fn __init__` (:8)
+  - `fn parse_gnc` (:14)
+  - `fn save_gnc` (:17)
+- **inventory_service.py** [53 LOC]
+  - `class InventoryService` (:5)
+  - `fn __init__` (:6)
+  - `fn list_materials` (:17)
+  - `fn create_material` (:20)
+  - `fn update_material` (:23)
+  - `fn delete_material` (:26)
+  - `fn list_parts` (:30)
+  - `fn get_part` (:33)
+  - `fn create_part` (:36)
+  - `fn update_part` (:39)
+  - `fn delete_part` (:42)
+  - `fn list_stock` (:46)
+- **journal_service.py** [13 LOC]
+  - `class JournalService` (:5)
+  - `fn __init__` (:6)
+  - `fn get_entry` (:9)
+  - `fn list_entries` (:12)
+  - `fn create_entry` (:15)
+  - `fn delete_entry` (:18)
+- **production_service.py** [42 LOC]
+  - `class ProductionService` (:7)
+  - `fn __init__` (:8)
+  - `fn list_jobs` (:12)
+  - `fn get_job` (:15)
+  - `fn create_job` (:18)
+  - `fn update_job` (:21)
+  - `fn delete_job` (:24)
+  - `fn update_job_status` (:27)
+  - `fn get_order_tasks` (:34)
+  - `fn save_nesting` (:37)
+  - `fn get_nesting_project` (:45)
+  - `fn save_as_new_order` (:54)
+- **settings_service.py** [106 LOC]
+  - `class SettingsService` (:5)
+  - `fn list_filter_presets` (:6)
+  - `fn create_filter_preset` (:15)
+  - `fn delete_filter_preset` (:26)
+  - `fn get_rescan_interval` (:34)
+  - `fn set_rescan_interval` (:42)
+  - `fn __init__` (:45)
+  - `fn get_mihtav_path` (:48)
+  - `fn get_sidra_path` (:51)
+  - `fn get_setting` (:54)
+  - `fn set_setting` (:62)
+  - `fn list_assignees` (:79)
+
+### _archive/old mvp/backend/src/application/services/sync/
+- **manager.py** [48 LOC]
+  - `class SyncManager` (:9)
+  - `fn __init__` (:10)
+  - `fn start` (:17)
+  - `fn stop` (:26)
+  - `fn _run_loop` (:33)
+  - `fn trigger_sync` (:47)
+  - `fn _sync_cycle` (:51)
+- **order_scanner.py** [88 LOC]
+  - `class OrderScanner` (:12)
+  - `fn __init__` (:13)
+  - `fn scan_and_process` (:17)
+  - `fn _process_root` (:28)
+  - `fn _process_order_folder` (:45)
+- **processor.py** [139 LOC]
+  - `class SyncProcessor` (:16)
+  - `fn __init__` (:17)
+  - `fn process_file` (:40)
+  - `fn _update_part_library` (:105)
+  - `fn _process_tasks` (:148)
+- **scanner.py** [67 LOC]
+  - `class DirectoryScanner` (:9)
+  - `fn __init__` (:10)
+  - `fn scan` (:15)
+  - `fn _get_base_files` (:50)
+  - `fn _should_skip_file` (:59)
+  - `fn _scan_directory` (:68)
+
+### _archive/old mvp/backend/src/domain/
+- **__init__.py** 
+- **interfaces.py** [83 LOC]
+  - `class IDocumentRepository` (:8)
+  - `class IPartRepository` (:70)
+  - `class ITaskRepository` (:84)
+  - `fn get_by_id` (:10)
+  - `fn list` (:14)
+  - `fn add` (:34)
+  - `fn update` (:38)
+  - `fn delete` (:42)
+  - `fn get_dashboard_stats` (:46)
+  - `fn delete_attachment` (:50)
+  - `fn get_attachment` (:54)
+  - `fn create_order` (:58)
+- **journal_interface.py** [15 LOC]
+  - `class IJournalRepository` (:6)
+  - `fn get_by_id` (:8)
+  - `fn list` (:12)
+  - `fn add` (:16)
+  - `fn delete` (:20)
+- **material_interface.py** [63 LOC]
+  - `class IMaterialRepository` (:7)
+  - `class IPartRepository` (:29)
+  - `class IStockRepository` (:51)
+  - `fn list` (:9)
+  - `fn get_by_id` (:13)
+  - `fn add` (:17)
+  - `fn update` (:21)
+  - `fn delete` (:25)
+  - `fn list` (:31)
+  - `fn get_by_id` (:35)
+  - `fn add` (:39)
+  - `fn update` (:43)
+- **models.py** [112 LOC]
+  - `class DocumentType` (:7)
+  - `class DocumentStatus` (:15)
+  - `class TaskStatus` (:21)
+  - `class JournalEntryType` (:27)
+  - `class JournalEntryStatus` (:33)
+  - `class DomainModel` (:38)
+  - `class Tag` (:42)
+  - `class Attachment` (:47)
+  - `class JournalEntry` (:57)
+  - `class Material` (:68)
+  - `class Assignee` (:73)
+  - `class Part` (:78)
+
+### _archive/old mvp/backend/src/infrastructure/
+- **__init__.py** 
+- **config.py** [39 LOC]
+  - `fn get_config_path` (:7)
+  - `fn load_config` (:13)
+  - `fn save_config` (:25)
+  - `fn get_db_path` (:38)
+  - `fn get_db_url` (:43)
+- **zip_util.py** [23 LOC]
+  - `fn create_folder_zip` (:6)
+
+### _archive/old mvp/backend/src/infrastructure/database/
+- **__init__.py** 
+- **audit_repository.py** [24 LOC]
+  - `class SQLAuditRepository` (:6)
+  - `fn __init__` (:7)
+  - `fn create_log` (:10)
+- **journal_repository.py** [65 LOC]
+  - `class SQLJournalRepository` (:8)
+  - `fn __init__` (:9)
+  - `fn _to_domain` (:12)
+  - `fn get_by_id` (:33)
+  - `fn list` (:42)
+  - `fn add` (:53)
+  - `fn delete` (:67)
+- **material_repository.py** [239 LOC]
+  - `class SQLMaterialRepository` (:10)
+  - `class SQLPartRepository` (:45)
+  - `class SQLStockRepository` (:124)
+  - `fn __init__` (:11)
+  - `fn list` (:14)
+  - `fn get_by_id` (:17)
+  - `fn add` (:21)
+  - `fn update` (:28)
+  - `fn delete` (:36)
+  - `fn __init__` (:46)
+  - `fn _to_domain` (:49)
+  - `fn list` (:62)
+- **models.py** [161 LOC]
+  - `class TagDB` (:29)
+  - `class AttachmentDB` (:36)
+  - `class MaterialDB` (:48)
+  - `class DocumentDB` (:57)
+  - `class TaskPartDB` (:76)
+  - `class TaskDB` (:92)
+  - `class PartDB` (:110)
+  - `class SettingDB` (:125)
+  - `class JournalEntryDB` (:131)
+  - `class StockItemDB` (:145)
+  - `class ReservationDB` (:158)
+  - `class ConsumptionDB` (:167)
+- **repositories.py** [461 LOC]
+  - `class SQLDocumentRepository` (:39)
+  - `class SQLTaskRepository` (:397)
+  - `class SQLFilterPresetRepository` (:504)
+  - `fn __init__` (:40)
+  - `fn _to_domain` (:43)
+  - `fn get_by_id` (:109)
+  - `fn list` (:113)
+  - `fn add` (:193)
+  - `fn update` (:209)
+  - `fn delete` (:238)
+  - `fn get_dashboard_stats` (:246)
+  - `fn delete_attachment` (:319)
+
+### _archive/old mvp/backend/src/infrastructure/graphics/
+- **gnc_generator.py** [118 LOC]
+  - `class GNCGenerator` (:6)
+  - `fn __init__` (:7)
+  - `fn _apply_offsets` (:12)
+  - `fn _renumber_line` (:48)
+  - `fn generate` (:77)
+  - `fn replace_coord` (:21)
+- **svg_generator.py** [177 LOC]
+  - `class SVGGenerator` (:6)
+  - `fn calculate_bounds` (:12)
+  - `fn generate_thumbnail` (:52)
+  - `fn tx` (:101)
+  - `fn ty` (:104)
+  - `fn normalize_angle` (:174)
+
+### _archive/old mvp/backend/src/infrastructure/parsers/
+- **gnc_parser.py** [318 LOC]
+  - `class GNCCommand` (:8)
+  - `class GNCContour` (:20)
+  - `class GNCPart` (:32)
+  - `class GNCSheet` (:44)
+  - `class GNCParser` (:67)
+  - `fn __init__` (:68)
+  - `fn parse` (:71)
+  - `fn _post_process` (:343)
+
+### _archive/old mvp/backend/tests/
+- **refactor_smoke_test.py** [64 LOC]
+  - `fn test_backend_refactor` (:20)
+- **test_gnc_fidelity.py** [178 LOC]
+  - `fn test_gnc_multi_part_nesting` (:12)
+  - `fn test_gnc_sidra_roundtrip` (:162)
+
+### _archive/old mvp/
+- **entry_solid.py** [26 LOC]
+  - `fn resource_path` (:9)
+  - `fn open_browser` (:20)
+- **run_solid.py** [75 LOC]
+  - `fn run_command` (:11)
+  - `fn build_frontend` (:20)
+  - `fn deploy_frontend` (:37)
+  - `fn open_browser` (:81)
+
+### _archive/old mvp/frontend/src/lib/
+- **appState.svelte.js** [60 LOC]
+  - `fn setUserRole` (:19)
+  - `fn setConfigStatus` (:26)
+  - `fn setMenuActions` (:31)
+  - `fn clearMenuActions` (:35)
+  - `fn addToTray` (:41)
+  - `fn existing` (:42)
+  - `fn removeFromTray` (:51)
+  - `fn updateTrayQuantity` (:55)
+  - `fn item` (:56)
+  - `fn clearTray` (:65)
+  - `fn toggleTray` (:69)
+
+### _archive/old mvp/frontend/src/lib/services/
+- **documentService.js** [103 LOC]
+  - `class DocumentService` (:12)
+  - `fn getHeaders` (:4)
+  - `fn filteredParams` (:18)
+- **gncService.js** [66 LOC]
+  - `class GncService` (:11)
+  - `fn getHeaders` (:3)
+  - `fn error` (:25)
+  - `fn error` (:42)
+  - `fn lines` (:64)
+- **inventoryService.js** [137 LOC]
+  - `class InventoryService` (:11)
+  - `fn getHeaders` (:3)
+- **journalService.js** [46 LOC]
+  - `class JournalService` (:11)
+  - `fn getHeaders` (:3)
+- **productionService.js** [94 LOC]
+  - `class ProductionService` (:11)
+  - `fn getHeaders` (:3)
+- **settingService.js** [98 LOC]
+  - `class SettingService` (:11)
+  - `fn getHeaders` (:3)
+  - `fn error` (:31)
+
+### _archive/old mvp/frontend/src/lib/stores/
+- **appState.svelte.js** [17 LOC]
+  - `fn id` (:8)
+- **services.js** [15 LOC]
+
+### _archive/old mvp/frontend/src/lib/types/
+- **gnc.ts** [37 LOC]
+
+### _archive/old mvp/frontend/src/lib/workers/
+- **NestingWorker.js** [415 LOC]
+  - `fn normalizedPoly` (:78)
+  - `fn newPartId` (:103)
+  - `fn normalizedPoly` (:142)
+  - `fn newPartId` (:160)
+  - `fn analyzedParts` (:197)
+  - `fn weldAndCloseContours` (:223)
+  - `fn getPid` (:248)
+  - `fn rotatePolygon` (:337)
+  - `fn sin` (:341)
+  - `fn getPolygonBounds` (:348)
+  - `fn dist` (:360)
+  - `fn findPlacement` (:364)
+
+### _archive/old mvp/frontend/src/
+- **main.js** [26 LOC]
+- **routes.js** [21 LOC]
+
+### _archive/old mvp/frontend/
+- **svelte.config.js** [7 LOC]
+- **vite.config.js** [6 LOC]
+
+### _archive/old mvp/static/assets/
+- **index-Du4985a5.js** [70 LOC]
+  - `class extends` (:1)
+  - `class Ua` (:1)
+  - `class Pl` (:1)
+  - `class Gn` (:1)
+  - `class Yn` (:2)
+  - `class Eo` (:2)
+  - `class qo` (:2)
+  - `class jo` (:2)
+  - `class Ao` (:2)
+  - `class Po` (:2)
+  - `class No` (:2)
+  - `class Pn` (:29)
+- **NestingWorker-D-7XhhTZ.js** [1 LOC]
+  - `fn E` (:1)
+  - `fn S` (:1)
+  - `fn i` (:1)
+  - `fn C` (:1)
+  - `fn h` (:1)
+  - `fn A` (:1)
+  - `fn N` (:1)
+  - `fn W` (:1)
+  - `fn O` (:1)
+  - `fn R` (:1)
+  - `fn _` (:1)
+  - `fn b` (:1)
+
+## Test Suite — tests/
+
+### tests/
+- **__init__.py** 
+- **conftest.py** [11 LOC]
+  - `fn ui_context` (:5)
+- **helpers.py** [28 LOC]
+- **test_admin_security.py** [39 LOC]
+  - `fn test_admin_role_delete_protection` (:7)
+  - `fn test_admin_role_upsert_protection` (:31)
+- **test_code_quality.py** [145 LOC]
+  - `fn _get_python_files` (:11)
+  - `fn _extract_numbers_from_source` (:16)
+  - `fn _extract_strings_from_source` (:31)
+  - `class TestNoMagicNumbersInSystem` (:56)
+  - `class TestNoMagicNumbersInConfig` (:92)
+  - `class TestNoMagicStringsInParsers` (:112)
+  - `class TestAllMethodsHaveDocstrings` (:132)
+  - `fn test_no_magic_number_5_for_sleep` (:59)
+  - `fn test_no_magic_number_4096_for_md5` (:68)
+  - `fn test_no_magic_string_general` (:82)
+  - `fn test_no_magic_number_45_for_timeout` (:95)
+  - `fn test_no_magic_string_rework` (:115)
+- **test_config.py** [23 LOC]
+  - `fn test_config_defaults` (:5)
+  - `fn test_config_env_override` (:14)
+  - `fn test_bus_path_derivation` (:28)
+- **test_config_intervals.py** [21 LOC]
+  - `fn test_config_has_p2p_intervals` (:4)
+  - `fn test_config_interval_env_override` (:19)
+- **test_coordination.py** [60 LOC]
+  - `fn sync_config` (:12)
+- **test_e2e_cluster_sync.py** [67 LOC]
+- **test_e2e_hubs.py** [29 LOC]
+- **test_file_bus.py** [77 LOC]
+  - `fn bus_config` (:12)
+- **test_folder_scanner_integration.py** [164 LOC]
+  - `fn mock_config` (:14)
+  - `fn mock_sdk` (:23)
+  - `fn mock_engine` (:31)
+  - `fn mock_admin_system` (:43)
+  - `fn scanner_system` (:83)
+  - `fn test_get_settings_from_db` (:140)
+  - `fn test_get_settings_without_admin` (:164)
+  - `fn test_get_status` (:179)
+- **test_housekeeping.py** [45 LOC]
+  - `fn gc_setup` (:11)
+- **test_identity_models.py** [45 LOC]
+  - `fn test_identity_models_creation` (:8)
+  - `fn test_role_default_values` (:49)
+  - `fn test_workplace_index` (:55)
+- **test_inventory_integration.py** [17 LOC]
+  - `fn test_inventory_settings_registration` (:4)
+- **test_main.py** ⚠️ [16 LOC]
+  - `fn test_api_endpoints` (:10)
+- **test_scanner_diagnosis.py** [539 LOC]
+  - `class TestScannerDiagnosis` (:24)
+  - `fn real_db_engine` (:28)
+  - `fn mock_config` (:37)
+  - `fn mock_sdk_master` (:45)
+  - `fn mock_sdk_slave` (:70)
+  - `fn mock_sdk_no_orchestrator` (:89)
+  - `fn admin_with_settings` (:104)
+  - `fn admin_without_settings` (:140)
+  - `fn test_diagnosis_settings_read_from_db` (:220)
+  - `fn test_diagnosis_settings_defaults_when_no_admin` (:240)
+  - `fn test_diagnosis_settings_defaults_when_not_in_db` (:264)
+  - `fn test_bug1_admin_system_must_be_injected` (:521)
+- **test_security_hmac.py** [33 LOC]
+  - `fn test_hmac_signer_generates_valid_signature` (:7)
+  - `fn test_hmac_signer_rejects_tampered_payload` (:22)
+  - `fn test_hmac_signer_rejects_wrong_signature` (:36)
+  - `fn test_hmac_signer_handles_empty_secret` (:44)
+- **test_settings_registry.py** [22 LOC]
+  - `class MockSettings` (:6)
+  - `fn test_registry_registration` (:11)
+  - `fn test_scope_introspection` (:21)
+- **test_settings_repository.py** [80 LOC]
+  - `class TestModuleSettings` (:11)
+  - `fn fresh_registry` (:19)
+  - `fn mock_admin_system` (:27)
+  - `fn test_registry_register_and_get_schema` (:34)
+  - `fn test_registry_get_fields_by_scope` (:48)
+  - `fn test_registry_get_module_settings_without_admin` (:61)
+  - `fn test_registry_get_module_settings_with_admin` (:69)
+  - `fn test_registry_update_module_setting` (:81)
+  - `fn test_registry_get_settings_object` (:94)
+  - `fn test_registry_get_settings_object_without_admin` (:106)
+  - `fn test_registry_get_settings_object_unknown_module` (:114)
+- **test_sync.py** [83 LOC]
+  - `fn sync_setup` (:17)
+
+### tests/application/
+- **test_access_logic.py** [44 LOC]
+  - `fn admin_role` (:10)
+  - `fn operator_role` (:15)
+  - `fn laser_workplace` (:20)
+  - `fn test_admin_access_allowed_everywhere` (:29)
+  - `fn test_operator_access_restricted_by_workplace` (:38)
+  - `fn test_ui_module_intersection` (:52)
+- **test_auth_logic.py** [53 LOC]
+  - `fn config_fixture` (:10)
+  - `fn session_fixture` (:14)
+  - `fn test_password_hashing` (:22)
+  - `fn test_admin_bootstrapping` (:33)
+- **test_dispatcher_routing.py** [68 LOC]
+  - `fn signer` (:13)
+  - `fn config` (:18)
+  - `fn test_dispatcher_accepts_valid_signed_message` (:22)
+  - `fn test_dispatcher_rejects_invalidly_signed_message` (:48)
+  - `fn test_dispatcher_detects_replay_attack` (:70)
+  - `fn create_msg` (:74)
+- **test_inventory_system.py** [33 LOC]
+  - `fn config_fixture` (:9)
+  - `fn session_fixture` (:14)
+  - `fn test_material_creation` (:22)
+  - `fn test_absolute_stock_update` (:33)
+- **test_orchestrator_errors.py** [40 LOC]
+- **test_orchestrator_lifecycle.py** [62 LOC]
+
+### tests/e2e/
+- **test_projects_portal.py** [57 LOC]
+  - `fn test_root_redirects_or_shows_login` (:7)
+
+### tests/integration/
+- **test_concurrent_writers.py** [21 LOC]
+- **test_ui_backend_contract.py** [51 LOC]
+  - `fn session_fixture` (:11)
+  - `fn config_fixture` (:18)
+  - `class TestUIBackendContract` (:22)
+  - `fn test_work_item_system_contract` (:29)
+  - `fn test_task_board_system_contract` (:38)
+  - `fn test_batch_engine_contract` (:59)
+- **test_ux_features.py** [72 LOC]
+  - `fn test_db` (:12)
+
+### tests/smoke/
+- **test_infrastructure_baseline.py** [56 LOC]
+  - `fn mock_config` (:13)
+- **test_workshop_pipeline.py** [90 LOC]
+  - `fn db_session_fixture` (:16)
+  - `fn config_fixture` (:24)
+
+### tests/ui/
+- **test_admin_view.py** [44 LOC]
+- **test_configuration_tab.py** [90 LOC]
+- **test_folder_scanner_view.py** [55 LOC]
+- **test_full_ui_coverage.py** [182 LOC]
+  - `fn mock_session` (:28)
+  - `fn system_provider` (:39)
+- **test_new_features.py** [88 LOC]
+  - `fn mock_wi_system` (:14)
+  - `fn mock_task_system` (:31)
+  - `fn system_provider` (:38)
+
+### tests/unit/domain/
+- **test_folder_name_parser.py** [40 LOC]
+  - `fn test_parse_sidra_standard` (:7)
+  - `fn test_parse_sidra_case_insensitive` (:17)
+  - `fn test_parse_rework_detection` (:25)
+  - `fn test_parse_mihtav_fallback` (:35)
+  - `fn test_parse_sidra_invalid_date_fallback` (:46)
+- **test_gnc_parser.py** [76 LOC]
+  - `fn test_extract_sku_revised_logic` (:10)
+  - `fn test_parse_real_gnc_file` (:31)
+  - `fn test_estimate_time_logic` (:60)
+  - `fn test_graceful_fallback` (:85)
+- **test_production_entities.py** [51 LOC]
+  - `fn test_work_item_status_pending_cuts` (:12)
+  - `fn test_task_item_relative_path` (:18)
+  - `fn test_production_unit_pre_system` (:32)
+  - `fn test_material_type_time_params` (:41)
+  - `fn test_chat_message_tree` (:49)
+- **test_task_file_parser.py** [35 LOC]
+  - `fn test_is_variant_aut_file` (:6)
+  - `fn test_is_variant_dsp_file` (:16)
+  - `fn test_is_variant_main_gnc` (:22)
+  - `fn test_is_variant_other_files` (:29)
+  - `fn test_parse_step_batch_index` (:35)
+  - `fn test_parse_filename_fallback` (:43)
+
+### tests/unit/features/
+- **test_admin_workplaces.py** [32 LOC]
+- **test_auto_close_workitem.py** [51 LOC]
+- **test_batch_engine.py** [283 LOC]
+  - `fn session_fixture` (:24)
+  - `fn engine_fixture` (:37)
+  - `fn material_fixture` (:43)
+  - `class TestBatchEngineCompute` (:57)
+  - `class TestBatchEngineApplyBatches` (:178)
+  - `class TestBatchEngineMoveTask` (:217)
+  - `class TestBatchEngineCreateBatch` (:257)
+  - `class TestBatchEngineSplitBatch` (:297)
+  - `fn test_single_material_one_batch` (:60)
+  - `fn test_different_materials_separate_batches` (:80)
+  - `fn test_tasks_sorted_by_step_batch_index` (:111)
+  - `fn test_empty_tasks` (:152)
+- **test_chat_system.py** [93 LOC]
+  - `fn engine` (:13)
+  - `fn session_fixture` (:20)
+  - `fn chat_system` (:26)
+- **test_consumable_system.py** [68 LOC]
+  - `fn engine` (:13)
+  - `fn session_fixture` (:20)
+  - `fn consumable_system` (:26)
+  - `fn test_create_consumable` (:31)
+  - `fn test_use_reduces_quantity_and_logs` (:38)
+  - `fn test_critical_alert_triggers_chat` (:53)
+  - `fn test_list_critical_filter` (:68)
+  - `fn test_write_off` (:84)
+- **test_folder_scanner.py** [137 LOC]
+  - `fn mock_sdk` (:23)
+  - `fn engine` (:65)
+  - `fn scanner` (:82)
+- **test_incident_system.py** [71 LOC]
+  - `fn engine` (:13)
+  - `fn session_fixture` (:20)
+  - `fn chat_system` (:26)
+  - `fn incident_system` (:32)
+- **test_inventory_system_unit.py** ⚠️ [90 LOC]
+  - `fn engine` (:23)
+  - `fn mock_sdk_fixture` (:30)
+  - `fn config_fixture` (:39)
+  - `fn session_fixture` (:45)
+  - `fn inventory_system_fixture` (:52)
+  - `fn test_seed_and_get_material_catalog` (:57)
+  - `fn test_perform_write_off_handles_negative_stock` (:68)
+- **test_material_system.py** [96 LOC]
+  - `fn engine` (:16)
+  - `fn session_fixture` (:23)
+  - `fn inventory_system` (:29)
+  - `fn test_create_material_definition` (:34)
+  - `fn test_receive_material_batch_creates_audit` (:44)
+  - `fn test_hard_reservation_locks_status` (:61)
+  - `fn test_perform_write_off_with_reservation` (:73)
+  - `fn test_record_inventory_correction` (:98)
+  - `fn test_request_reorder_triggers_chat` (:115)
+- **test_negative_stock_prevention.py** [41 LOC]
+  - `fn test_negative_stock_prevention` (:14)
+- **test_notifications_and_view.py** [70 LOC]
+  - `fn engine` (:13)
+- **test_ns_mirror.py** [133 LOC]
+  - `fn session` (:21)
+  - `fn mock_sdk` (:31)
+  - `fn service` (:60)
+- **test_part_library_system.py** [93 LOC]
+  - `fn engine` (:17)
+  - `fn session_fixture` (:24)
+  - `fn parts_system` (:30)
+  - `fn test_upsert_part_idempotency` (:35)
+  - `fn test_find_by_bbox_tolerance` (:49)
+  - `fn test_inverse_traceability` (:61)
+  - `fn test_part_templates_crud` (:109)
+- **test_phase_c.py** [80 LOC]
+  - `fn test_config` (:15)
+  - `fn mock_session` (:20)
+  - `fn mock_orchestrator` (:25)
+  - `fn mock_signer` (:30)
+  - `class TestPhaseCRefactoring` (:34)
+  - `fn test_admin_system_initialization` (:37)
+  - `fn test_notification_service_initialization` (:51)
+  - `fn test_admin_sync_system_uses_engine` (:81)
+  - `class TestProvider` (:96)
+  - `fn get_str` (:98)
+- **test_production_system.py** [130 LOC]
+  - `fn engine` (:19)
+  - `fn config_fixture` (:26)
+  - `fn session_fixture` (:32)
+  - `fn project_system_fixture` (:39)
+  - `fn production_system_fixture` (:45)
+  - `fn test_label_id_generation` (:50)
+  - `fn test_create_production_unit` (:58)
+  - `fn test_split_pallet` (:92)
+  - `fn test_merge_pallets` (:128)
+- **test_project_system.py** [68 LOC]
+  - `fn engine` (:16)
+  - `fn config_fixture` (:23)
+  - `fn session_fixture` (:29)
+  - `fn project_system_fixture` (:36)
+  - `fn test_ensure_default_project` (:41)
+  - `fn test_create_and_list_projects` (:54)
+  - `fn test_reassign_work_item` (:66)
+- **test_report_system.py** [82 LOC]
+  - `fn engine` (:16)
+  - `fn session_fixture` (:25)
+  - `fn registry` (:31)
+  - `fn report_system` (:36)
+  - `fn test_registry_registration` (:41)
+  - `fn test_generate_html_with_blocks` (:59)
+  - `fn test_generate_html_with_params` (:80)
+  - `fn dummy_query` (:42)
+- **test_task_board_system.py** [271 LOC]
+  - `fn engine_fixture` (:28)
+  - `fn session_fixture` (:40)
+  - `fn config_fixture` (:47)
+  - `fn system_fixture` (:53)
+  - `fn project_and_work_item_fixture` (:59)
+  - `fn material_fixture` (:78)
+  - `class TestTaskBoardSystemLockBatch` (:87)
+  - `class TestTaskBoardSystemStartTask` (:125)
+  - `class TestTaskBoardSystemPauseTask` (:179)
+  - `class TestTaskBoardSystemCompleteTask` (:209)
+  - `class TestTaskBoardSystemGetDrift` (:274)
+  - `class TestTaskBoardSystemIncrementSheets` (:306)
+- **test_view_preset_system.py** [271 LOC]
+  - `fn session_fixture` (:22)
+  - `fn config_fixture` (:35)
+  - `fn system_fixture` (:41)
+  - `class TestViewPresetSystemCreate` (:46)
+  - `class TestViewPresetSystemList` (:97)
+  - `class TestViewPresetSystemGetActive` (:149)
+  - `class TestViewPresetSystemSetActive` (:198)
+  - `class TestViewPresetSystemDelete` (:256)
+  - `class TestViewPresetSystemGetPresetJson` (:317)
+  - `fn test_create_preset` (:49)
+  - `fn test_create_global_preset` (:73)
+  - `fn test_create_default_preset` (:84)
+- **test_work_item_system.py** [109 LOC]
+  - `fn session_fixture` (:15)
+  - `fn config_fixture` (:25)
+  - `fn system_fixture` (:30)
+  - `fn default_project_fixture` (:35)
+  - `class TestWorkItemSystemCreate` (:43)
+  - `class TestWorkItemSystemRetrieve` (:76)
+  - `class TestWorkItemSystemList` (:96)
+  - `class TestWorkItemSystemLifecycle` (:111)
+  - `fn test_create_work_item` (:46)
+  - `fn test_create_work_item_with_project_id` (:60)
+  - `fn test_retrieve_work_item` (:79)
+  - `fn test_retrieve_nonexistent_raises` (:90)
+
+### tests/unit/infrastructure/
+- **test_file_bus_atomic_write.py** [55 LOC]
+  - `fn fake_fsync` (:43)
+  - `fn fake_replace` (:46)
+  - `fn raise_replace` (:67)
+
+### tests/unit/lib/
+- **test_widgets.py** [83 LOC]
+  - `class TestStatusBadge` (:16)
+  - `class TestExplorerButton` (:63)
+  - `class TestFileChangedAlert` (:98)
+  - `fn test_render_work_item_status` (:19)
+  - `fn test_render_task_item_status` (:26)
+  - `fn test_render_with_size` (:33)
+  - `fn test_get_color_work_item` (:40)
+  - `fn test_get_color_task_item` (:47)
+  - `fn test_get_label` (:54)
+  - `fn test_render` (:66)
+  - `fn test_render_with_custom_label` (:73)
+  - `fn test_open_explorer` (:81)
+
+### tests/unit/
+- **test_atomic_write.py** [32 LOC]
+- **test_sdk_singleton.py** [20 LOC]
+- **test_svg_generator.py** [62 LOC]
+  - `fn test_gnc_parser_collects_contours` (:16)
+  - `fn test_generate_thumbnail_real_file` (:39)
+  - `fn test_generate_graceful_fallback` (:71)
+- **test_temp_cleanup.py** [27 LOC]
+  - `fn touch` (:9)
+  - `fn test_cleanup_temp_files_removes_stale` (:17)
+
+## Danger Zones ⚠️
+> Файлы изменённые в последних 5 коммитах:
+
+- `docs/Review/fix_plan_tdd_phases.md`
+- `docs/Review/phase1_completion_report.md`
+- `src/docuflow/application/auth.py`
+- `src/docuflow/application/bus/orchestrator.py`
+- `src/docuflow/features/admin/view.py`
+- `src/docuflow/features/auth/system.py`
+- `src/docuflow/infrastructure/di.py`
+- `src/docuflow/lib/widgets/ns_mirror_status.py`
+- `src/docuflow/lib/widgets/scan_log_panel.py`
+- `src/docuflow/sdk.py`
+- `tests/test_main.py`
+- `tests/unit/features/test_inventory_system_unit.py`

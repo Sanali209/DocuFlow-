@@ -1,9 +1,34 @@
+from collections.abc import Callable
+from typing import Any
 
 from nicegui import ui
 from sqlmodel import select
 
 from docuflow.domain.entities.production import ChatMessage, ChatMessageType
 from docuflow.features.chat.system import ChatSystem
+from docuflow.features.core.views import ViewInfo, ViewRegistry
+
+
+def register_chat_view():
+    """Register the chat portal view."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="chat",
+            label="Chat",
+            icon="chat",
+            render_fn=chat_view_wrapper,
+            dependencies=[ChatSystem],
+            pass_user=True,
+            pass_system_provider=True,
+            is_async=True,
+        )
+    )
+
+
+async def chat_view_wrapper(system: ChatSystem, user: str, system_provider: Callable, layout: Any):
+    """Wrapper to instantiate and render the ChatView."""
+    view = ChatView(system, current_user=user, system_provider=system_provider, layout=layout)
+    await view.render_portal()
 
 
 class ChatView:
@@ -24,8 +49,17 @@ class ChatView:
         "label_header": "text-[10px] font-bold text-slate-500 uppercase tracking-widest",
     }
 
-    def __init__(self, chat_system: ChatSystem):
+    def __init__(
+        self,
+        chat_system: ChatSystem,
+        current_user: str = "operator",
+        system_provider: Callable = None,
+        layout: Any = None,
+    ):
         self.chat_system = chat_system
+        self.current_user = current_user
+        self.system_provider = system_provider
+        self.layout = layout
         self.message_feed_container = None
         self.active_channel = "global"  # global thread by default
         self.user_input_area = None
@@ -51,6 +85,12 @@ class ChatView:
                 with ui.scroll_area().classes("flex-grow w-full px-8 py-4"):
                     self.message_feed_container = ui.column().classes("w-full gap-4 pb-24")
                     await self.refresh_discussion_feed()
+
+                    # Live update loop (registered with layout)
+                    if self.layout:
+                        self.layout.register_timer(ui.timer(5.0, self.refresh_discussion_feed))
+                    else:
+                        ui.timer(5.0, self.refresh_discussion_feed)
 
                 self._build_footer_input()
 
@@ -197,8 +237,10 @@ class ChatView:
         # Default mapping for quick entry from specific channels
         TYPE_MAP = {"order": ChatMessageType.ORDER, "incident": ChatMessageType.INCIDENT}
 
-        self.chat_system.send(
-            author="operator",
+        # H2 FIX: Fresh system for action
+        fresh_system = await self.system_provider(ChatSystem)
+        await fresh_system.send_message(
+            author=self.current_user,
             content=content,
             message_type=TYPE_MAP.get(self.active_channel, ChatMessageType.MESSAGE),
         )
@@ -229,7 +271,7 @@ class ChatView:
                 # Refactored incident system call
                 from docuflow.features.chat.incidents import IncidentSystem
 
-                incident_sys = await self.chat_system.sdk.request_container.get(IncidentSystem)
+                incident_sys = await self.system_provider(IncidentSystem)
                 incident_sys.report_incident(
                     incident_sys.TYPE_BREAKDOWN,
                     description.value,

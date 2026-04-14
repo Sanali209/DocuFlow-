@@ -4,12 +4,15 @@
 Smoke тесты — проверяют, что виджеты рендерятся без ошибок.
 """
 
+import pytest
+pytest.importorskip("nicegui")
 from unittest.mock import MagicMock, patch
 
 from docuflow.domain.entities.production import TaskItemStatus, WorkItemStatus
 from docuflow.lib.widgets import ExplorerButton, FileChangedAlert, StatusBadge
 
 
+@pytest.mark.usefixtures("ui_context")
 class TestStatusBadge:
     """Тесты для StatusBadge."""
 
@@ -56,6 +59,7 @@ class TestStatusBadge:
         assert label == "Зарегистрирован"
 
 
+@pytest.mark.usefixtures("ui_context")
 class TestExplorerButton:
     """Тесты для ExplorerButton."""
 
@@ -90,6 +94,7 @@ class TestExplorerButton:
         button._open_explorer()
 
 
+@pytest.mark.usefixtures("ui_context")
 class TestFileChangedAlert:
     """Тесты для FileChangedAlert."""
 

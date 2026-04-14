@@ -1,23 +1,35 @@
+import json
+
 from nicegui import app as nicegui_app
 from nicegui import ui
 
+from docuflow.features.admin.system import AdminSystem
 from docuflow.features.auth.system import AuthSystem
 
 
-def login_view(auth_system: AuthSystem):
+def login_view(auth_system: AuthSystem, admin_system: AdminSystem, node_id: str):
     """Providing the centralized, glassmorphic login screen for the DocuFlow node."""
 
     async def try_login():
         user = await auth_system.authenticate_user(username.value, password.value)
         if user:
-            # Storing session info
+            # 1. Retrieve Workplace capabilities for this node
+            workplace_modules = []
+            workplace = admin_system.get_workplace_by_node_id(node_id)
+            if workplace:
+                try:
+                    workplace_modules = json.loads(workplace.allowed_modules)
+                except (json.JSONDecodeError, TypeError):
+                    workplace_modules = []
+
+            # 2. Storing session info
             nicegui_app.storage.user.update(
                 {
                     "user": {
                         "username": user.username,
                         "role": user.role.name if user.role else "Worker",
                         "permissions": user.role.permissions_list if user.role else [],
-                        "workplace_modules": [],  # This will be populated from Workplace during logic
+                        "workplace_modules": workplace_modules,
                     }
                 }
             )

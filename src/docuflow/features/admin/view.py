@@ -1,8 +1,27 @@
 import logging
+from collections.abc import Callable
+from typing import Any
 
 from nicegui import ui
 
 from docuflow.features.admin.system import AdminSystem
+from docuflow.features.core.views import ViewInfo, ViewRegistry
+
+
+def register_admin_view():
+    """Register the admin view in the global registry."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="admin",
+            label="Admin",
+            icon="settings",
+            render_fn=admin_view,
+            dependencies=[AdminSystem],
+            pass_system_provider=True,
+            is_async=True,
+        )
+    )
+
 
 logger = logging.getLogger("docuflow.admin.view")
 
@@ -14,9 +33,10 @@ logger = logging.getLogger("docuflow.admin.view")
 
 
 @ui.refreshable
-def render_user_registry(admin_system: AdminSystem) -> None:
+async def render_user_registry(system_provider: Callable) -> None:
     """Renders the Identity Registry list. Module-level for stable WebSocket slot."""
     try:
+        admin_system = await system_provider(AdminSystem)
         users = admin_system.get_all_users()
         logger.debug(f"AdminView [USERS]: fetched count={len(users)}")
 
@@ -44,8 +64,9 @@ def render_user_registry(admin_system: AdminSystem) -> None:
                     if not is_root_admin:
 
                         async def _remove(un=u.username):
-                            admin_system.delete_user(un)
-                            render_user_registry.refresh(admin_system)  # H3 FIX
+                            fresh_system = await system_provider(AdminSystem)
+                            fresh_system.delete_user(un)
+                            await render_user_registry.refresh(system_provider)  # H3 FIX
                             ui.notify(f"User {un} deleted", color="warning")
 
                         ui.button(icon="delete", color="red", on_click=_remove).props("flat dense")
@@ -56,7 +77,7 @@ def render_user_registry(admin_system: AdminSystem) -> None:
 
 
 @ui.refreshable
-def render_role_matrix(admin_system: AdminSystem) -> None:
+async def render_role_matrix(system_provider: Callable) -> None:
     """Renders the Permission Matrix. Module-level for stable WebSocket slot."""
     MODULES = [
         "bucket",
@@ -74,6 +95,7 @@ def render_role_matrix(admin_system: AdminSystem) -> None:
         "admin",
     ]
     try:
+        admin_system = await system_provider(AdminSystem)
         roles = admin_system.get_all_roles()
         logger.debug(f"AdminView [ROLES]: fetched count={len(roles)}")
 
@@ -97,8 +119,9 @@ def render_role_matrix(admin_system: AdminSystem) -> None:
                         if not is_admin_role:
 
                             async def _del_role(rn=r.name):
-                                admin_system.delete_role(rn)
-                                render_role_matrix.refresh(admin_system)  # H3 FIX
+                                fresh_system = await system_provider(AdminSystem)
+                                fresh_system.delete_role(rn)
+                                await render_role_matrix.refresh(system_provider)  # H3 FIX
                                 ui.notify(f"Role {rn} deleted", color="warning")
 
                             ui.button(icon="delete", color="red", on_click=_del_role).props(
@@ -124,8 +147,10 @@ def render_role_matrix(admin_system: AdminSystem) -> None:
                                     remaining.append(f"{m}:read")
                                 elif mp and "read" in mp:
                                     remaining.append(f"{m}:full")
-                                admin_system.upsert_role(r_obj.name, remaining)
-                                render_role_matrix.refresh(admin_system)  # H3 FIX
+
+                                fresh_system = await system_provider(AdminSystem)
+                                fresh_system.upsert_role(r_obj.name, remaining)
+                                await render_role_matrix.refresh(system_provider)  # H3 FIX
 
                             color = (
                                 "emerald"
@@ -145,8 +170,8 @@ def render_role_matrix(admin_system: AdminSystem) -> None:
 
 
 @ui.refreshable
-def render_settings_form(
-    admin_system: AdminSystem,
+async def render_settings_form(
+    system_provider: Callable,
     module: str,
     node_id: str | None,
     node_rows: list[dict],
@@ -154,6 +179,8 @@ def render_settings_form(
     """Renders the dynamic settings form. Module-level for stable WebSocket slot."""
     try:
         from docuflow.domain.settings import registry
+
+        admin_system = await system_provider(AdminSystem)
 
         # DEBUG: Log all registered modules
         all_modules = registry.get_all_modules()
@@ -216,12 +243,13 @@ def render_settings_form(
 
 
 @ui.refreshable
-def render_notifications_form(admin_system: AdminSystem) -> None:
+async def render_notifications_form(system_provider: Callable) -> None:
     from sqlmodel import select
 
     from docuflow.domain.entities.production import NotificationTemplate
 
     try:
+        admin_system = await system_provider(AdminSystem)
         tmpls = admin_system.session.exec(select(NotificationTemplate)).all()
         if not tmpls:
             ui.label("No Notification Templates defined.").classes("text-slate-500 italic p-4")
@@ -262,12 +290,13 @@ def render_notifications_form(admin_system: AdminSystem) -> None:
 
 
 @ui.refreshable
-def render_presets_form(admin_system: AdminSystem) -> None:
+async def render_presets_form(system_provider: Callable) -> None:
     from sqlmodel import select
 
     from docuflow.domain.entities.production import ViewPreset
 
     try:
+        admin_system = await system_provider(AdminSystem)
         # Only global presets
         presets = admin_system.session.exec(
             select(ViewPreset).where(ViewPreset.owner == "global")
@@ -344,7 +373,7 @@ def render_presets_form(admin_system: AdminSystem) -> None:
 # ────────────────────────────────────────────────────────────────
 
 
-async def admin_view(admin_system: AdminSystem) -> None:
+async def admin_view(admin_system: AdminSystem, system_provider: Callable, layout: Any) -> None:
     """Cluster Control Plane — tabbed admin dashboard."""
     logger.debug("AdminView: build started")
 
@@ -358,6 +387,7 @@ async def admin_view(admin_system: AdminSystem) -> None:
         t_conf = ui.tab("CONFIGURATION", icon="tune")
         t_notif = ui.tab("NOTIFICATIONS", icon="notifications")
         t_preset = ui.tab("PRESETS", icon="view_list")
+        t_audit = ui.tab("SYSTEM LOG", icon="history")
 
     # H1 FIX: declare health_grid BEFORE tab_panels so CONF tab can reference it safely
     health_grid_ref: list[ui.table] = []  # mutable container avoids NameError
@@ -384,21 +414,27 @@ async def admin_view(admin_system: AdminSystem) -> None:
 
             async def _refresh_health():
                 try:
-                    nodes = await admin_system.get_cluster_nodes()
+                    fresh_system = await system_provider(AdminSystem)
+                    nodes = await fresh_system.get_cluster_nodes()
                     hg.rows[:] = nodes
                     hg.update()
                 except Exception as exc:
                     logger.error(f"Health refresh failed: {exc}")
 
             # H4 FIX: don't await during page build — defer to avoid WS latency
-            ui.timer(0.5, _refresh_health, once=True)
-            ui.timer(5.0, _refresh_health)
+            layout.register_timer(ui.timer(0.5, _refresh_health, once=True))
+            layout.register_timer(ui.timer(5.0, _refresh_health))
+
+            async def force_step_down_action():
+                fresh_system = await system_provider(AdminSystem)
+                fresh_system.force_global_step_down()
+                ui.notify("Step down command broadcasted", color="warning")
 
             ui.button(
                 "EMERGENCY STEP DOWN",
                 icon="warning",
                 color="red",
-                on_click=lambda: admin_system.force_global_step_down(),
+                on_click=force_step_down_action,
             ).classes("mt-12 rounded-xl px-8")
 
         # ── USERS ──────────────────────────────────────────────
@@ -454,7 +490,7 @@ async def admin_view(admin_system: AdminSystem) -> None:
                     "rounded-xl px-6 py-2 vibrant-btn"
                 )
 
-            render_user_registry(admin_system)
+            await render_user_registry(system_provider)
 
         # ── ROLES ──────────────────────────────────────────────
         with ui.tab_panel(t_roles):
@@ -470,9 +506,10 @@ async def admin_view(admin_system: AdminSystem) -> None:
 
                         async def _create_role():
                             if r_name.value:
-                                admin_system.upsert_role(r_name.value, [])
+                                fresh_system = await system_provider(AdminSystem)
+                                fresh_system.upsert_role(r_name.value, [])
                                 role_dialog.close()
-                                render_role_matrix.refresh(admin_system)  # H3 FIX
+                                await render_role_matrix.refresh(system_provider)  # H3 FIX
                                 ui.notify(f"Role {r_name.value} created", color="positive")
 
                         ui.button("INITIALIZE ROLE", on_click=_create_role).classes(
@@ -483,7 +520,7 @@ async def admin_view(admin_system: AdminSystem) -> None:
                     "rounded-xl px-6 py-2 vibrant-btn"
                 )
 
-            render_role_matrix(admin_system)
+            await render_role_matrix(system_provider)
 
         # ── BINDINGS ───────────────────────────────────────────
         with ui.tab_panel(t_bind):
@@ -569,7 +606,8 @@ async def admin_view(admin_system: AdminSystem) -> None:
                 async def _load_conf_nodes():
                     """Load cluster nodes for CONFIGURATION tab independently."""
                     try:
-                        nodes = await admin_system.get_cluster_nodes()
+                        fresh_system = await system_provider(AdminSystem)
+                        nodes = await fresh_system.get_cluster_nodes()
                         node_options = {None: "Global"}
                         for n in nodes:
                             node_options[n["node_id"]] = (
@@ -581,29 +619,88 @@ async def admin_view(admin_system: AdminSystem) -> None:
                         logger.error(f"Config nodes load failed: {e}")
 
                 # Load nodes after page build
-                ui.timer(0.5, _load_conf_nodes, once=True)
+                layout.register_timer(ui.timer(0.5, _load_conf_nodes, once=True))
 
-                def _refresh_settings():
+                async def _refresh_settings():
                     node_id = target_node.value
                     scope = "global" if node_id is None else "local"
                     logger.debug(
                         f"Config refresh: module={mod_select.value}, scope={scope}, node={node_id}"
                     )
-                    render_settings_form.refresh(admin_system, mod_select.value, node_id, [])
+                    await render_settings_form.refresh(
+                        system_provider, mod_select.value, node_id, []
+                    )
 
                 mod_select.on_value_change(lambda: _refresh_settings())
                 target_node.on_value_change(lambda: _refresh_settings())
 
                 # Initial render with first module and Global scope
-                render_settings_form(admin_system, modules[0], None, [])
+                await render_settings_form(system_provider, modules[0], None, [])
 
         # ── NOTIFICATIONS ──────────────────────────────────────
         with ui.tab_panel(t_notif):
             ui.label("Notification Templates").classes("text-xl font-bold text-indigo-400 mb-2")
-            render_notifications_form(admin_system)
+            await render_notifications_form(system_provider)
 
         # ── PRESETS ────────────────────────────────────────────
         with ui.tab_panel(t_preset):
-            render_presets_form(admin_system)
+            await render_presets_form(system_provider)
+
+        # ── SYSTEM LOG (Visual Audit) ──────────────────────────
+        with ui.tab_panel(t_audit):
+            ui.label("Global Cluster Event Stream").classes(
+                "text-xl font-bold text-indigo-400 mb-6"
+            )
+            await render_system_audit(system_provider)
+            # Auto-refresh every 10 seconds
+            layout.register_timer(
+                ui.timer(10.0, lambda: render_system_audit.refresh(system_provider))
+            )
 
     logger.debug("AdminView: build complete")
+
+
+@ui.refreshable
+async def render_system_audit(system_provider: Callable) -> None:
+    """Renders a global timeline of system events."""
+    from sqlmodel import select
+
+    from docuflow.domain.entities.production import WorkLog
+
+    try:
+        fresh_system = await system_provider(AdminSystem)
+        logs = fresh_system.session.exec(
+            select(WorkLog).order_by(WorkLog.created_at.desc()).limit(100)
+        ).all()
+
+        if not logs:
+            ui.label("No events recorded yet.").classes("text-slate-500 italic p-4")
+            return
+
+        with ui.column().classes("w-full gap-2"):
+            for log in logs:
+                with ui.row().classes(
+                    "w-full items-start gap-4 p-4 bg-white/5 rounded-xl border border-white/5 hover:border-indigo-500/20 transition-all"
+                ):
+                    # Time and Type
+                    with ui.column().classes("w-24 gap-0"):
+                        ui.label(log.created_at.strftime("%H:%M")).classes("text-white font-bold")
+                        ui.label(log.created_at.strftime("%d.%m.%y")).classes(
+                            "text-[10px] text-slate-500"
+                        )
+                        ui.badge(log.log_type).props("color=indigo-900 size=xs").classes("mt-1")
+
+                    # Content
+                    with ui.column().classes("flex-grow gap-1"):
+                        ui.label(log.message).classes("text-slate-200 text-sm")
+                        if log.payload and len(log.payload) > 2:
+                            ui.label(log.payload).classes("text-[9px] text-slate-600 font-mono")
+
+                    # Author and Node
+                    with ui.column().classes("items-end w-32 gap-0"):
+                        if log.author:
+                            ui.label(log.author).classes("text-xs text-indigo-400 font-bold")
+                        ui.label(log.node_id or "system").classes("text-[10px] text-slate-500")
+
+    except Exception as e:
+        ui.label(f"Audit Log Error: {e}").classes("text-red-400")

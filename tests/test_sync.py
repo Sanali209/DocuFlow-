@@ -3,10 +3,12 @@ from datetime import datetime, timedelta
 import pytest
 from sqlmodel import Session, create_engine
 
-import pytest
-pytest.skip("Order model removed or refactored; test disabled until updated", allow_module_level=True)
-from docuflow.domain.entities.production import Order
+pytest.skip(
+    "Order model removed or refactored; test disabled until updated", allow_module_level=True
+)
 from docuflow.domain.entities.settings import Setting
+
+from docuflow.domain.entities.production import Order
 from docuflow.infrastructure.config import Config
 from docuflow.infrastructure.sync import DataSyncSystem
 

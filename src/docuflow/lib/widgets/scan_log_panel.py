@@ -1,21 +1,26 @@
+from typing import Any
+
 from nicegui import ui
 from sqlalchemy import Engine
 from sqlmodel import Session, desc, select
 
 from docuflow.domain.entities.production import WorkLog, WorkLogType
+from docuflow.lib.base_widget import BaseDocuWidget
 
 
-class ScanLogPanel:
+class ScanLogPanel(BaseDocuWidget):
     """
     Reactive log panel for displaying the last N production events.
     """
 
-    def __init__(self, engine: Engine, limit: int = 50):
+    def __init__(self, engine: Engine, limit: int = 50, system_provider: Any = None):
+        super().__init__(system_provider)
         self.engine = engine
         self.limit = limit
         self.container = None
 
-    def build(self):
+    def render(self):
+        """Рендерит панель лога."""
         with ui.column().classes(
             "w-full gap-2 p-4 bg-slate-900/40 rounded-2xl border border-white/5"
         ) as self.container:
@@ -32,7 +37,8 @@ class ScanLogPanel:
 
     def refresh(self):
         """Fetch and render the latest logs."""
-        try:
+
+        async def do_refresh():
             with Session(self.engine) as session:
                 logs = session.exec(
                     select(WorkLog).order_by(desc(WorkLog.created_at)).limit(self.limit)
@@ -46,10 +52,9 @@ class ScanLogPanel:
                         )
                     for log in logs:
                         self._render_log_item(log)
-        except Exception as e:
-            # Silent fail for UI polling to avoid spamming alerts
-            import logging
-            logging.getLogger(__name__).debug(f"Scan log panel refresh failed: {e}")
+
+        # Silent refresh for background polling
+        ui.timer(0, do_refresh, once=True)
 
     def _render_log_item(self, log: WorkLog):
         """Render a single log entry with a badge."""

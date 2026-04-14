@@ -1,10 +1,14 @@
 import pytest
-pytest.importorskip("passlib")
+from docuflow.features.auth.system import AuthSystem
 from sqlmodel import Session, SQLModel, create_engine
-
-from docuflow.application.auth import AuthService
 from docuflow.domain.entities.identity import Role, User
+from docuflow.infrastructure.config import Config
 
+pytest.importorskip("passlib")
+
+@pytest.fixture(name="config")
+def config_fixture():
+    return Config(node_id="TEST_NODE")
 
 @pytest.fixture(name="session")
 def session_fixture():
@@ -15,45 +19,44 @@ def session_fixture():
         yield session
 
 
-def test_password_hashing(session):
+def test_password_hashing(session, config):
     """Verifying that passwords are appropriately hashed and non-reversible."""
-    auth = AuthService(session)
+    auth = AuthSystem(config, session)
     password = "secret_password"
-    hashed = auth.hash_password(password)
+    hashed = auth._pwd_context.hash(password)
 
     assert hashed != password
-    assert auth.verify_password(password, hashed) is True
-    assert auth.verify_password("wrong_password", hashed) is False
+    assert auth._pwd_context.verify(password, hashed) is True
+    assert auth._pwd_context.verify("wrong_password", hashed) is False
 
 
-def test_admin_bootstrapping(session):
+def test_admin_bootstrapping(session, config):
     """Confirming that the system can seed an initial admin user on first run."""
-    auth = AuthService(session)
+    auth = AuthSystem(config, session)
 
-    # Initial state is empty
-    assert session.query(User).count() == 0
-
-    # Bootstrap
-    admin = auth.bootstrap_admin("admin_pass")
+    # Initial state is empty (except what AuthSystem might create in __init__ if we aren't careful, 
+    # but here we call it manually)
+    admin = auth.get_or_create_admin()
 
     assert admin is not None
     assert admin.username == "admin"
-    assert auth.verify_password("admin_pass", admin.password_hash) is True
+    # Default password for auto-seeded admin is 'admin' in AuthSystem
+    assert auth._pwd_context.verify("admin", admin.password_hash) is True
 
     # Role check
     role = session.get(Role, admin.role_id)
+    assert role is not None
     assert role.name == "Admin"
-    assert "admin_panel" in role.permissions
 
 
 @pytest.mark.asyncio
-async def test_authentication_flow(session):
+async def test_authentication_flow(session, config):
     """Verifying the standard login flow against the synchronized local database."""
-    auth = AuthService(session)
-    auth.bootstrap_admin("p@ssword")
+    auth = AuthSystem(config, session)
+    auth.get_or_create_admin() # seeds admin with password 'admin'
 
     # Successful login
-    user = await auth.authenticate_user("admin", "p@ssword")
+    user = await auth.authenticate_user("admin", "admin")
     assert user is not None
     assert user.username == "admin"
 

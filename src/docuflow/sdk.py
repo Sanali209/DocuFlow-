@@ -194,4 +194,5 @@ class SDK:
             except Exception as e:
                 # Orchestrator shutdown failure - log but continue cleanup
                 from loguru import logger
+
                 logger.error(f"SDK: Orchestrator shutdown failed: {e}")

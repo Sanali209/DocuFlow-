@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from docuflow.infrastructure.config import Config
 from docuflow.infrastructure.bus import FileBusSystem
+from docuflow.infrastructure.config import Config
 
 
 @pytest.mark.anyio
@@ -44,4 +44,3 @@ async def test_atomic_write_overwrite(tmp_path):
     assert final.exists()
     data = json.loads(final.read_text(encoding="utf-8"))
     assert data["body"]["x"] == 2
-

@@ -24,15 +24,21 @@ from docuflow.features.task_board.system import TaskBoardSystem
 from docuflow.infrastructure.config import Config
 
 
-@pytest.fixture(name="session")
-def session_fixture():
-    """Создаёт in-memory SQLite сессию для тестов."""
+@pytest.fixture(name="engine")
+def engine_fixture():
+    """Создаёт in-memory SQLite engine для тестов."""
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
     SQLModel.metadata.create_all(engine)
+    return engine
+
+
+@pytest.fixture(name="session")
+def session_fixture(engine):
+    """Создаёт in-memory SQLite сессию для тестов."""
     with Session(engine) as session:
         yield session
 
@@ -44,9 +50,9 @@ def config_fixture():
 
 
 @pytest.fixture(name="system")
-def system_fixture(config: Config, session: Session):
+def system_fixture(config: Config, session: Session, engine):
     """Creates a TaskBoardSystem instance."""
-    return TaskBoardSystem(config=config, db_session=session)
+    return TaskBoardSystem(config=config, db_engine=engine, session=session)
 
 
 @pytest.fixture(name="project_and_work_item")
@@ -107,10 +113,13 @@ class TestTaskBoardSystemLockBatch:
         session.commit()
 
         entries = await system.lock_batch("test_batch", "LASER_1", "operator1")
+        session.commit()  # Sync session after system call
 
         assert len(entries) == 3
-        assert all(e.node_id == "LASER_1" for e in entries)
-        assert all(e.assigned_user == "operator1" for e in entries)
+        for e in entries:
+            session.refresh(e)
+            assert e.node_id == "LASER_1"
+            assert e.assigned_user == "operator1"
 
 
 class TestTaskBoardSystemStartTask:
@@ -137,6 +146,8 @@ class TestTaskBoardSystemStartTask:
         session.commit()
 
         result = system.start_task(task.id)
+        session.commit()
+        session.refresh(result)
 
         assert result.status == TaskItemStatus.IN_PROGRESS
         assert result.started_at is not None
@@ -189,6 +200,8 @@ class TestTaskBoardSystemPauseTask:
         session.commit()
 
         result = system.pause_task(task.id, reason="Перерыв на обед")
+        session.commit()
+        session.refresh(result)
 
         assert result.status == TaskItemStatus.ON_HOLD
 
@@ -219,6 +232,8 @@ class TestTaskBoardSystemCompleteTask:
         session.commit()
 
         result = system.complete_task(task.id, sheets_done=5, qty_produced=50)
+        session.commit()
+        session.refresh(result)
 
         assert result.status == TaskItemStatus.DONE
         assert result.sheets_done == 5
@@ -249,6 +264,8 @@ class TestTaskBoardSystemCompleteTask:
         session.commit()
 
         result = system.complete_task(task.id, sheets_done=5, qty_produced=50)
+        session.commit()
+        session.refresh(result)
 
         assert result.actual_minutes is not None
         assert result.actual_minutes >= 89  # ~90 минут
@@ -310,6 +327,7 @@ class TestTaskBoardSystemIncrementSheets:
         session.commit()
 
         result = system.increment_sheets(task.id)
+        session.commit()
 
         assert result == 1
 

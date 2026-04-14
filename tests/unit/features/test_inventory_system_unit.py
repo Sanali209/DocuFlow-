@@ -1,5 +1,8 @@
 import pytest
-pytest.skip("Duplicate inventory test in application; skipping unit duplicate.", allow_module_level=True)
+
+pytest.skip(
+    "Duplicate inventory test in application; skipping unit duplicate.", allow_module_level=True
+)
 from unittest.mock import AsyncMock, MagicMock
 
 from sqlmodel import Session, SQLModel, create_engine, select

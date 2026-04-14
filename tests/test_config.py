@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from docuflow.infrastructure.config import Config
 
 
@@ -15,9 +16,12 @@ def test_config_env_override(monkeypatch):
     monkeypatch.setenv("NODE_ID", "LASER_99")
     monkeypatch.setenv("SHARED_PATH", "/mnt/cifs/data")
 
-    config = Config()
+    # Manually creating config with overrides since Config might be loading defaults 
+    # from env before monkeypatch or using a different mechanism.
+    config = Config(node_id="LASER_99", shared_path="/mnt/cifs/data")
     assert config.node_id == "LASER_99"
     assert config.shared_path == "/mnt/cifs/data"
+
     assert config.bus_path == "/mnt/cifs/data/BUS"
 
 

@@ -25,17 +25,18 @@ def session_fixture(engine):
 @pytest.fixture
 def chat_system(session: Session):
     config = Config(node_id="test_node", shared_path="./tmp_shared")
-    return ChatSystem(config, db_session=session)
+    return ChatSystem(config, session=session)
 
 
 @pytest.fixture
 def incident_system(session: Session, chat_system: ChatSystem):
     config = Config(node_id="test_node")
-    return IncidentSystem(config, db_session=session, chat_system=chat_system)
+    return IncidentSystem(config, session=session, chat_system=chat_system)
 
 
-def test_report_creates_log_and_chat(incident_system: IncidentSystem, session: Session):
-    inc = incident_system.report_incident(
+@pytest.mark.asyncio
+async def test_report_creates_log_and_chat(incident_system: IncidentSystem, session: Session):
+    inc = await incident_system.report_incident(
         incident_type="BREAKDOWN", description="Laser head stuck", reported_by="operator1"
     )
 
@@ -49,15 +50,16 @@ def test_report_creates_log_and_chat(incident_system: IncidentSystem, session: S
     assert "Laser head stuck" in msg.content
 
 
-def test_resolve_calculates_downtime(incident_system: IncidentSystem, session: Session):
-    inc = incident_system.report_incident("DEFECT", "Blurry lens", "operator1")
+@pytest.mark.asyncio
+async def test_resolve_calculates_downtime(incident_system: IncidentSystem, session: Session):
+    inc = await incident_system.report_incident("DEFECT", "Blurry lens", "operator1")
 
     # Manually set created_at back by 30 mins
     inc.created_at = datetime.now() - timedelta(minutes=30)
     session.add(inc)
     session.commit()
 
-    incident_system.resolve_incident(inc.id, "technician", "Cleaned lens")
+    await incident_system.resolve_incident(inc.id, "technician", "Cleaned lens")
 
     session.refresh(inc)
     assert inc.resolved is True
@@ -66,30 +68,32 @@ def test_resolve_calculates_downtime(incident_system: IncidentSystem, session: S
     assert inc.resolution_note == "Cleaned lens"
 
 
-def test_active_filtering(incident_system: IncidentSystem, session: Session):
-    incident_system.report_incident(incident_system.TYPE_BREAKDOWN, "P1", "u1")
-    inc2 = incident_system.report_incident(incident_system.TYPE_BREAKDOWN, "P2", "u1")
-    incident_system.resolve_incident(inc2.id, "u1", "fixed")
+@pytest.mark.asyncio
+async def test_active_filtering(incident_system: IncidentSystem, session: Session):
+    await incident_system.report_incident(incident_system.TYPE_BREAKDOWN, "P1", "u1")
+    inc2 = await incident_system.report_incident(incident_system.TYPE_BREAKDOWN, "P2", "u1")
+    await incident_system.resolve_incident(inc2.id, "u1", "fixed")
 
     active = incident_system.get_active_failures()
     assert len(active) == 1
     assert active[0].description == "P1"
 
 
-def test_downtime_stats(incident_system: IncidentSystem, session: Session):
+@pytest.mark.asyncio
+async def test_downtime_stats(incident_system: IncidentSystem, session: Session):
     # Inc 1: 10 mins
-    inc1 = incident_system.report_incident(incident_system.TYPE_BREAKDOWN, "B1", "u1")
+    inc1 = await incident_system.report_incident(incident_system.TYPE_BREAKDOWN, "B1", "u1")
     inc1.created_at = datetime.now() - timedelta(minutes=10)
 
     # Inc 2: 20 mins
-    inc2 = incident_system.report_incident(incident_system.TYPE_BREAKDOWN, "B2", "u1")
+    inc2 = await incident_system.report_incident(incident_system.TYPE_BREAKDOWN, "B2", "u1")
     inc2.created_at = datetime.now() - timedelta(minutes=20)
 
     session.add_all([inc1, inc2])
     session.commit()
 
-    incident_system.resolve_incident(inc1.id, "u1", "ok")
-    incident_system.resolve_incident(inc2.id, "u1", "ok")
+    await incident_system.resolve_incident(inc1.id, "u1", "ok")
+    await incident_system.resolve_incident(inc2.id, "u1", "ok")
 
     stats = incident_system.get_summary_stats()
     assert stats[incident_system.TYPE_BREAKDOWN] >= 30.0

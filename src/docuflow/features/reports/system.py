@@ -134,10 +134,7 @@ class ReportSystem(BaseSystem):
             "node_id": self._config.node_id,
         }
 
-        env = Environment(
-            loader=BaseLoader(),
-            autoescape=select_autoescape(['html', 'xml'])
-        )
+        env = Environment(loader=BaseLoader(), autoescape=select_autoescape(["html", "xml"]))
         jinja_template = env.from_string(report_template.template_html)
         return jinja_template.render(**rendering_context)
 
@@ -178,7 +175,7 @@ class ReportSystem(BaseSystem):
                 default_template = self._get_factory_template(name)
                 if default_template:
                     self.db_session.add(default_template)
-        self.db_session.flush()
+        self.db_session.commit()
 
     def _get_factory_template(self, name: str) -> ReportTemplate | None:
         """Retrieves built-in HTML layouts for initial deployment."""
@@ -187,7 +184,17 @@ class ReportSystem(BaseSystem):
                 name=self.TEMPLATE_SHIFT_SUMMARY,
                 description="Daily production, downtime, and material audit summary.",
                 template_html=self._get_shift_summary_html(),
-            )
+            ),
+            self.TEMPLATE_MATERIAL_AUDIT: ReportTemplate(
+                name=self.TEMPLATE_MATERIAL_AUDIT,
+                description="Complete history of material movements and write-offs.",
+                template_html=self._get_material_audit_html(),
+            ),
+            self.TEMPLATE_INCIDENT_LOG: ReportTemplate(
+                name=self.TEMPLATE_INCIDENT_LOG,
+                description="Detailed log of all workshop failures and resolutions.",
+                template_html=self._get_incident_log_html(),
+            ),
         }
         return TEMPLATES.get(name)
 
@@ -225,4 +232,69 @@ class ReportSystem(BaseSystem):
             </div>
             {% endfor %}
         </div>
+        """
+
+    def _get_material_audit_html(self) -> str:
+        """HTML template for material traceability reports."""
+        return """
+        <style>
+            body { font-family: 'Inter', sans-serif; color: #334155; padding: 40px; }
+            h1 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+            th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+            th { background: #f8fafc; color: #64748b; text-transform: uppercase; }
+            .delta-neg { color: #dc2626; font-weight: bold; }
+            .delta-pos { color: #16a34a; font-weight: bold; }
+        </style>
+        <h1>MATERIAL AUDIT LOG</h1>
+        <p>Node: {{ node_id }} | Period: {{ params.date_from }} - {{ params.date_to }}</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Operation</th>
+                    <th>Delta</th>
+                    <th>Author</th>
+                    <th>Reason / Context</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in blocks.material_usage_audit(limit=100) %}
+                <tr>
+                    <td>{{ item.date }}</td>
+                    <td>{{ item.operation.upper() }}</td>
+                    <td class="{{ 'delta-neg' if item.delta < 0 else 'delta-pos' }}">
+                        {{ item.delta }}
+                    </td>
+                    <td>{{ item.author }}</td>
+                    <td>{{ item.reason or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        """
+
+    def _get_incident_log_html(self) -> str:
+        """HTML template for the historical incident report."""
+        return """
+        <style>
+            body { font-family: 'Inter', sans-serif; color: #334155; padding: 40px; }
+            h1 { color: #991b1b; border-bottom: 2px solid #fee2e2; padding-bottom: 10px; }
+            .incident-card { border: 1px solid #fca5a5; background: #fff1f2; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+            .meta { font-size: 11px; color: #b91c1c; font-weight: bold; margin-bottom: 5px; }
+            .desc { font-size: 14px; margin-bottom: 10px; }
+            .res { border-top: 1px solid #fecaca; padding-top: 8px; font-size: 12px; color: #15803d; }
+        </style>
+        <h1>WORKSHOP INCIDENT LOG</h1>
+        {% for incident in blocks.incident_log(limit=50) %}
+        <div class="incident-card">
+            <div class="meta">{{ incident.type }} | Reported by: {{ incident.by }}</div>
+            <div class="desc">{{ incident.desc }}</div>
+            {% if incident.resolved %}
+            <div class="res">✓ Resolved: {{ incident.res_note }}</div>
+            {% else %}
+            <div class="res" style="color: #dc2626;">⚠ UNRESOLVED</div>
+            {% endif %}
+        </div>
+        {% endfor %}
         """

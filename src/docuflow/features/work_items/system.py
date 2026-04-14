@@ -62,9 +62,8 @@ class WorkItemSystem(BaseSystem):
         WorkItemStatus.DONE: [WorkItemStatus.ARCHIVED],
     }
 
-    def __init__(self, config: Config, db_session: Session, sdk: Any = None):
-        super().__init__(config)
-        self.db_session = db_session
+    def __init__(self, config: Config, session: Session, sdk: Any = None):
+        super().__init__(config, session)
         self.sdk = sdk
 
     async def on_startup(self) -> None:
@@ -82,7 +81,7 @@ class WorkItemSystem(BaseSystem):
         folder_name: str,
         item_type: WorkItemType,
         project_id: int | None = None,
-        **metadata,
+        **metadata: Any,
     ) -> WorkItem:
         """
         Registers a new production order into the workshop tracking system.
@@ -98,9 +97,9 @@ class WorkItemSystem(BaseSystem):
 
         work_item = WorkItem(
             folder_name=folder_name,
-            work_item_type=item_type.value,
+            work_item_type=item_type,
             project_id=target_project_id,
-            status=WorkItemStatus.NEW.value,
+            status=WorkItemStatus.NEW,
             **metadata,
         )
 
@@ -135,12 +134,10 @@ class WorkItemSystem(BaseSystem):
         statement = select(WorkItem)
 
         if criteria.status:
-            statement = statement.where(WorkItem.status.in_([s.value for s in criteria.status]))
+            statement = statement.where(WorkItem.status.in_(criteria.status))  # type: ignore[attr-defined]
 
         if criteria.type:
-            statement = statement.where(
-                WorkItem.work_item_type.in_([t.value for t in criteria.type])
-            )
+            statement = statement.where(WorkItem.work_item_type.in_(criteria.type))  # type: ignore[attr-defined]
 
         if criteria.project_id is not None:
             statement = statement.where(WorkItem.project_id == criteria.project_id)
@@ -150,16 +147,17 @@ class WorkItemSystem(BaseSystem):
 
         if criteria.search_text:
             search_pattern = f"%{criteria.search_text}%"
+            # Using casting to Any to bypass Mypy column attribute errors or using the class attribute
             statement = statement.where(
-                WorkItem.folder_name.ilike(search_pattern)
-                | WorkItem.sidra_number.ilike(search_pattern)
+                WorkItem.folder_name.ilike(search_pattern)  # type: ignore[attr-defined]
+                | WorkItem.sidra_number.ilike(search_pattern)  # type: ignore[union-attr]
             )
 
         # Execution with pagination
         statement = statement.offset(criteria.offset).limit(criteria.limit)
         return list(self.db_session.exec(statement).all())
 
-    def update_work_item_metadata(self, work_item_id: int, **updates) -> WorkItem:
+    def update_work_item_metadata(self, work_item_id: int, **updates: Any) -> WorkItem:
         """
         Updates descriptive fields of an existing production order.
         """
@@ -177,19 +175,19 @@ class WorkItemSystem(BaseSystem):
 
     # --- Production Lifecycle Logic ---
 
-    def register_physical_document(self, work_item_id: int, author: str) -> WorkItem:
+    def register_document(self, work_item_id: int, author: str) -> WorkItem:
         """
         Notes the arrival of physical paperwork at the workshop station.
 
         Example:
-            system.register_physical_document(work_item_id=5, author="John Doe")
+            system.register_document(work_item_id=5, author="John Doe")
         """
         work_item = self.retrieve_work_item(work_item_id)
         work_item.doc_received_at = datetime.datetime.now()
 
         # Automatic state progression upon paper arrival
-        if work_item.status in (WorkItemStatus.NEW.value, WorkItemStatus.PENDING_CUTS.value):
-            work_item.status = WorkItemStatus.REGISTERED.value
+        if work_item.status in (WorkItemStatus.NEW, WorkItemStatus.PENDING_CUTS):
+            work_item.status = WorkItemStatus.REGISTERED
 
         self._audit_status_change(work_item, f"Physical document registered by {author}")
 
@@ -197,7 +195,7 @@ class WorkItemSystem(BaseSystem):
         self.db_session.flush()
         return work_item
 
-    def update_production_status(
+    def update_status(
         self, work_item_id: int, new_status: WorkItemStatus, reason_note: str | None = None
     ) -> WorkItem:
         """
@@ -205,10 +203,10 @@ class WorkItemSystem(BaseSystem):
         Enforces VALID_TRANSITIONS rules.
 
         Example:
-            items.update_production_status(id=1, new_status=WorkItemStatus.IN_PROGRESS)
+            items.update_status(id=1, new_status=WorkItemStatus.IN_PROGRESS)
         """
         work_item = self.retrieve_work_item(work_item_id)
-        current_status = WorkItemStatus(work_item.status)
+        current_status = work_item.status
 
         # Validation of transition integrity
         allowed_destinations = self.VALID_TRANSITIONS.get(current_status, [])
@@ -217,7 +215,7 @@ class WorkItemSystem(BaseSystem):
                 f"Illegal transition: {current_status.value} -> {new_status.value}. Check workflow rules."
             )
 
-        work_item.status = new_status.value
+        work_item.status = new_status
 
         log_message = f"Status progression: {current_status.value} -> {new_status.value}"
         if reason_note:
@@ -238,7 +236,7 @@ class WorkItemSystem(BaseSystem):
         """
         audit_entry = WorkLog(
             work_item_id=work_item.id,
-            log_type=WorkLogType.STATUS_CHANGE.value,
+            log_type=WorkLogType.STATUS_CHANGE,
             message=message,
             created_at=datetime.datetime.now(),
             node_id=self.config.node_id,

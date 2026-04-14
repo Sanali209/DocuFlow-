@@ -6,7 +6,28 @@ from nicegui import ui
 from sqlmodel import select
 
 from docuflow.domain.entities.production import ReportTemplate
+from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.reports.system import ReportSystem
+
+
+def register_reports_view():
+    """Register the reports dashboard view."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="reports",
+            label="Reports",
+            icon="assessment",
+            render_fn=reports_view_wrapper,
+            dependencies=[ReportSystem],
+            is_async=True,
+        )
+    )
+
+
+async def reports_view_wrapper(system: ReportSystem):
+    """Wrapper to instantiate and render the ReportsView."""
+    view = ReportsView(system)
+    await view.render_portal()
 
 
 class ReportsView:

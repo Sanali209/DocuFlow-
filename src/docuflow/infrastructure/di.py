@@ -2,7 +2,7 @@ from collections.abc import AsyncIterable
 
 from dishka import AsyncContainer, Provider, Scope, provide
 from loguru import logger
-from sqlalchemy import Engine
+from sqlalchemy import Engine, event
 from sqlmodel import Session, create_engine
 
 from docuflow.application.bus.dispatcher import SecureDispatcher
@@ -14,6 +14,7 @@ from docuflow.features.auth.system import AuthSystem
 from docuflow.features.chat.incidents import IncidentSystem
 from docuflow.features.chat.system import ChatSystem
 from docuflow.features.consumables.system import ConsumableSystem
+from docuflow.features.core.search import SearchSystem
 from docuflow.features.folder_scanner.mirror import NSMirrorService
 from docuflow.features.folder_scanner.settings import FolderScannerSettings
 from docuflow.features.folder_scanner.system import FolderScannerSystem
@@ -40,6 +41,11 @@ class AppProvider(Provider):
 
     ...
     # (other methods)
+
+    @provide(scope=Scope.REQUEST)
+    def get_search_system(self, session: Session) -> SearchSystem:
+        """Provide global search system."""
+        return SearchSystem(session)
 
     @provide(scope=Scope.REQUEST)
     def get_projects_system(self, config: Config, session: Session) -> ProjectSystem:
@@ -77,11 +83,40 @@ class AppProvider(Provider):
 
     @provide(scope=Scope.APP)
     def get_engine(self, config: Config) -> Engine:
-        """Provide SQLAlchemy engine for node-specific database."""
+        """Provide SQLAlchemy engine for node-specific database with SQLite optimizations.
+
+        Performance Tuning:
+        - journal_mode=WAL: Allows concurrent readers and a single writer.
+        - synchronous=NORMAL: Reduces disk I/O while maintaining safety in WAL mode.
+        - busy_timeout=30000: Wait up to 30s for locked database.
+        """
         db_file = f"{config.node_id}.db"
         sqlite_url = f"sqlite:///{db_file}"
         logger.info(f"Identity [{config.node_id}]: Initialized local database at {sqlite_url}")
-        return create_engine(sqlite_url, connect_args={"check_same_thread": False})
+
+        engine = create_engine(
+            sqlite_url,
+            connect_args={
+                "check_same_thread": False,
+                "timeout": 30,  # 30 seconds busy timeout
+            },
+        )
+
+        @event.listens_for(engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            """Apply performance-tuning PRAGMAs to each new SQLite connection."""
+            cursor = dbapi_connection.cursor()
+            try:
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.execute("PRAGMA cache_size=-64000")  # 64MB cache
+            except Exception as e:
+                logger.warning(f"Failed to set SQLite pragmas: {e}")
+            finally:
+                cursor.close()
+
+        return engine
 
     @provide(scope=Scope.REQUEST)
     async def get_session(self, engine: Engine) -> AsyncIterable[Session]:
@@ -156,6 +191,7 @@ class AppProvider(Provider):
         except Exception as e:
             # Loguru import failed - continue without debug logging
             import sys
+
             print(f"Warning: SDK debug logging unavailable: {e}", file=sys.stderr)
         return self._sdk
 

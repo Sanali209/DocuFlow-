@@ -28,7 +28,7 @@ def config_fixture():
 
 @pytest.fixture(name="system")
 def system_fixture(config: Config, session: Session):
-    return WorkItemSystem(config=config, db_session=session)
+    return WorkItemSystem(config=config, session=session)
 
 
 @pytest.fixture(name="default_project")
@@ -115,7 +115,7 @@ class TestWorkItemSystemLifecycle:
         wi = system.create_work_item(
             folder_name="SIDRA-DOC", folder_path="p", item_type=WorkItemType.SIDRA
         )
-        result = system.register_physical_document(wi.id, author="foreman1")
+        result = system.register_document(wi.id, author="foreman1")
 
         assert result.status == WorkItemStatus.REGISTERED.value
         assert result.doc_received_at is not None
@@ -126,11 +126,11 @@ class TestWorkItemSystemLifecycle:
         )
 
         # NEW -> REGISTERED
-        system.update_production_status(wi.id, new_status=WorkItemStatus.REGISTERED)
+        system.update_status(wi.id, new_status=WorkItemStatus.REGISTERED)
         assert wi.status == WorkItemStatus.REGISTERED.value
 
         # REGISTERED -> IN_PROGRESS
-        system.update_production_status(wi.id, new_status=WorkItemStatus.IN_PROGRESS)
+        system.update_status(wi.id, new_status=WorkItemStatus.IN_PROGRESS)
         assert wi.status == WorkItemStatus.IN_PROGRESS.value
 
     def test_invalid_transition_raises(self, system: WorkItemSystem, default_project: Project):
@@ -139,4 +139,4 @@ class TestWorkItemSystemLifecycle:
         )
         # NEW -> DONE is illegal
         with pytest.raises(ValueError):
-            system.update_production_status(wi.id, new_status=WorkItemStatus.DONE)
+            system.update_status(wi.id, new_status=WorkItemStatus.DONE)

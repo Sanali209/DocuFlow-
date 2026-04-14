@@ -28,7 +28,7 @@ def session_fixture(engine):
 @pytest.fixture
 def inventory_system(session: Session):
     config = Config(node_id="test_node")
-    return InventorySystem(config, db_session=session)
+    return InventorySystem(config, session)
 
 
 def test_create_material_definition(inventory_system: InventorySystem, session: Session):

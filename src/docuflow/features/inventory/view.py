@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Any
+
 from nicegui import ui
 from sqlmodel import select
 
@@ -6,10 +9,26 @@ from docuflow.domain.entities.production import (
     MaterialStock,
     MaterialType,
 )
+from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.inventory.system import InventorySystem
 
 
-async def warehouse_view(inventory_system: InventorySystem):
+def register_warehouse_view():
+    """Register the warehouse view in the global registry."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="warehouse",
+            label="Warehouse",
+            icon="inventory_2",
+            render_fn=warehouse_view,
+            dependencies=[InventorySystem],
+            pass_system_provider=True,
+            is_async=True,
+        )
+    )
+
+
+async def warehouse_view(inventory_system: InventorySystem, system_provider: Callable, layout: Any):
     """Provides the decentralized material stock management grid.
 
     Vertical Slice: features/inventory/view.py
@@ -21,14 +40,84 @@ async def warehouse_view(inventory_system: InventorySystem):
         with ui.tabs().classes("w-full text-indigo-400") as tabs:
             catalog_tab = ui.tab("КАТАЛОГ")
             stock_tab = ui.tab("ОСТАТКИ")
+            supply_tab = ui.tab("ОЧЕРЕДЬ ПОДАЧИ")
             audit_tab = ui.tab("ИСТОРИЯ")
 
         with ui.tab_panels(tabs, value=catalog_tab).classes("w-full bg-transparent"):
+            # --- TAB: SUPPLY QUEUE (Live Requests) ---
+            with ui.tab_panel(supply_tab):
+
+                @ui.refreshable
+                def render_supply_requests():
+                    import datetime
+
+                    from docuflow.domain.entities.production import WorkLog
+
+                    # Ищем последние логи с пометкой [LOGISTICS_REQUEST] за последние 12 часов
+                    since = datetime.datetime.now() - datetime.timedelta(hours=12)
+                    stmt = (
+                        select(WorkLog)
+                        .where(
+                            WorkLog.message.contains("[LOGISTICS_REQUEST]"),
+                            WorkLog.created_at >= since,
+                        )
+                        .order_by(WorkLog.created_at.desc())
+                    )
+
+                    requests = inventory_system.session.exec(stmt).all()
+
+                    if not requests:
+                        with ui.card().classes("w-full p-8 text-center glass-card"):
+                            ui.icon("check_circle", color="emerald").classes("text-6xl mb-4")
+                            ui.label("Все накормлены. Активных запросов нет.").classes(
+                                "text-xl text-gray-400"
+                            )
+                    else:
+                        with ui.grid(columns=3).classes("w-full gap-4"):
+                            for req in requests:
+                                with ui.card().classes(
+                                    "glass-card p-4 border-l-4 border-orange-500"
+                                ):
+                                    with ui.row().classes(
+                                        "items-center justify-between w-full mb-2"
+                                    ):
+                                        ui.label(req.created_at.strftime("%H:%M")).classes(
+                                            "text-xs text-indigo-300"
+                                        )
+                                        ui.badge("СРОЧНО").props("color=orange")
+
+                                    ui.label(
+                                        req.message.replace("[LOGISTICS_REQUEST]", "").strip()
+                                    ).classes("text-sm font-bold text-white mb-4")
+
+                                    with ui.row().classes("w-full justify-end"):
+                                        ui.button(
+                                            "ПОДАНО",
+                                            on_click=lambda r=req: handle_supply_fulfillment(r),
+                                        ).classes("bg-emerald-600 text-white rounded-lg")
+
+                    # Safe self-perpetuating refresh tied to Layout lifecycle
+                    layout.register_timer(ui.timer(15.0, render_supply_requests.refresh, once=True))
+
+                async def handle_supply_fulfillment(request_log):
+                    try:
+                        # H2 FIX: Always resolve a fresh system for actions to avoid DetachedInstanceError
+                        fresh_system = await system_provider(InventorySystem)
+                        fresh_system.resolve_supply_request(request_log.id, "warehouse_op")
+                        ui.notify(f"Запрос {request_log.id} выполнен", type="positive")
+                        render_supply_requests.refresh()
+                    except Exception as e:
+                        ui.notify(f"Ошибка выполнения запроса: {e}", type="negative")
+
+                render_supply_requests()
+
             # --- TAB: CATALOG (Material Types) ---
             with ui.tab_panel(catalog_tab):
 
-                def refresh_catalog():
-                    types = inventory_system.get_material_catalog()
+                async def refresh_catalog():
+                    # H2 FIX: Fresh session for background/late refresh
+                    fresh_system = await system_provider(InventorySystem)
+                    types = fresh_system.get_material_catalog()
                     catalog_grid.rows[:] = [t.model_dump() for t in types]
                     catalog_grid.update()
 
@@ -105,19 +194,18 @@ async def warehouse_view(inventory_system: InventorySystem):
                         target_id = ui.number().classes("hidden")  # Hidden state
 
                         async def save_settings():
-                            # Time params are fields on the database model. We need to update directly since inventory_system has no specific update_time_params method yet.
-                            material = inventory_system.db_session.get(
-                                MaterialType, target_id.value
-                            )
+                            # H2 FIX: Fresh session for DB update
+                            fresh_system = await system_provider(InventorySystem)
+                            material = fresh_system.db_session.get(MaterialType, target_id.value)
                             if material:
                                 material.cut_speed_mm_per_min = v_cut.value
                                 material.pierce_time_sec = t_pierce.value
                                 material.idle_speed_mm_per_min = v_idle.value
                                 material.time_tolerance_pct = drift_limit.value
-                                inventory_system.db_session.add(material)
-                                inventory_system.db_session.commit()
+                                fresh_system.db_session.add(material)
+                                fresh_system.db_session.commit()
                                 settings_dialog.close()
-                                refresh_catalog()
+                                await refresh_catalog()
                                 ui.notify("Параметры обновлены", color="positive")
 
                         ui.button("Сохранить", on_click=save_settings).classes(
@@ -153,7 +241,8 @@ async def warehouse_view(inventory_system: InventorySystem):
                         reorder_mat_id = ui.number().classes("hidden")
 
                         async def submit_reorder():
-                            inventory_system.request_material_reorder(
+                            fresh_system = await system_provider(InventorySystem)
+                            fresh_system.request_material_reorder(
                                 reorder_mat_id.value,
                                 reorder_qty.value,
                                 str(reorder_note.value),
@@ -171,7 +260,7 @@ async def warehouse_view(inventory_system: InventorySystem):
                     lambda e: (reorder_mat_id.set_value(e.args["id"]), reorder_dialog.open()),
                 )
 
-                refresh_catalog()
+                ui.timer(0.1, refresh_catalog, once=True)
 
                 # --- Create Material Dialog ---
                 with ui.dialog().classes("glass-card p-6") as create_mat_dialog:
@@ -206,7 +295,8 @@ async def warehouse_view(inventory_system: InventorySystem):
 
                         async def handle_create_mat():
                             if mat_code.value and mat_thk.value:
-                                inventory_system.create_material_definition(
+                                fresh_system = await system_provider(InventorySystem)
+                                fresh_system.create_material_definition(
                                     code=mat_code.value,
                                     thickness=mat_thk.value,
                                     primary_unit=mat_unit.value,
@@ -218,7 +308,7 @@ async def warehouse_view(inventory_system: InventorySystem):
                                     time_tolerance_pct=15.0,
                                 )
                                 create_mat_dialog.close()
-                                refresh_catalog()
+                                await refresh_catalog()
                                 ui.notify(f"Материал {mat_code.value} добавлен", color="positive")
 
                         ui.button("ЗАРЕГИСТРИРОВАТЬ", on_click=handle_create_mat).classes(
@@ -233,9 +323,10 @@ async def warehouse_view(inventory_system: InventorySystem):
             # --- TAB: STOCK (Batches) ---
             with ui.tab_panel(stock_tab):
 
-                def refresh_stock():
+                async def refresh_stock():
+                    fresh_system = await system_provider(InventorySystem)
                     stmt = select(MaterialStock)
-                    batches = inventory_system.db_session.exec(stmt).all()
+                    batches = fresh_system.db_session.exec(stmt).all()
                     stock_grid.rows[:] = [
                         {
                             **b.model_dump(),
@@ -275,9 +366,14 @@ async def warehouse_view(inventory_system: InventorySystem):
                 with ui.dialog().classes("glass-card p-6") as income_dialog:
                     with ui.column().classes("w-[400px] gap-4"):
                         ui.label("Приход материала").classes("text-xl font-bold text-green-400")
+
+                        # Load catalog for selector
+                        catalog_opts = {
+                            m.id: m.code for m in inventory_system.get_material_catalog()
+                        }
                         mat_selector = (
                             ui.select(
-                                {m.id: m.code for m in inventory_system.get_material_catalog()},
+                                catalog_opts,
                                 label="Выбрать марку",
                             )
                             .classes("w-full")
@@ -298,14 +394,15 @@ async def warehouse_view(inventory_system: InventorySystem):
                         )
 
                         async def handle_income():
-                            inventory_system.receive_material_batch(
+                            fresh_system = await system_provider(InventorySystem)
+                            fresh_system.receive_material_batch(
                                 mat_selector.value,
                                 qty_income.value,
                                 batch_input.value,
                                 loc_input.value,
                             )
                             income_dialog.close()
-                            refresh_stock()
+                            await refresh_stock()
                             ui.notify("Склад обновлён", color="green")
 
                         ui.button("ПРИНЯТЬ", on_click=handle_income).classes(
@@ -327,14 +424,15 @@ async def warehouse_view(inventory_system: InventorySystem):
                         corr_stock_id = ui.number().classes("hidden")
 
                         async def apply_correction():
-                            inventory_system.record_inventory_correction(
+                            fresh_system = await system_provider(InventorySystem)
+                            fresh_system.record_inventory_correction(
                                 corr_stock_id.value,
                                 actual_qty.value,
                                 corr_reason.value,
                                 author="system",
                             )
                             correct_dialog.close()
-                            refresh_stock()
+                            await refresh_stock()
                             ui.notify("Инвентаризация проведена", color="yellow")
 
                         ui.button("КОРРЕКТИРОВАТЬ", on_click=apply_correction).classes(
@@ -355,16 +453,17 @@ async def warehouse_view(inventory_system: InventorySystem):
                         "vibrant-btn text-white rounded-xl h-12 px-6"
                     )
 
-                refresh_stock()
+                ui.timer(0.1, refresh_stock, once=True)
 
             # --- TAB: AUDIT (History) ---
             with ui.tab_panel(audit_tab):
 
-                def refresh_audit():
+                async def refresh_audit():
+                    fresh_system = await system_provider(InventorySystem)
                     stmt = (
                         select(MaterialAudit).order_by(MaterialAudit.created_at.desc()).limit(100)
                     )
-                    logs = inventory_system.session.exec(stmt).all()
+                    logs = fresh_system.session.exec(stmt).all()
                     audit_grid.rows[:] = [l.model_dump() for l in logs]
                     audit_grid.update()
 
@@ -395,4 +494,4 @@ async def warehouse_view(inventory_system: InventorySystem):
                     "w-full glass-card text-white"
                 )
 
-                refresh_audit()
+                ui.timer(0.1, refresh_audit, once=True)

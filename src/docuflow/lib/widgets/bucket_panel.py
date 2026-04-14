@@ -4,17 +4,21 @@ BucketPanel — корзина оператора с батчами.
 Отображает все батчи, назначенные оператору на узле.
 """
 
+from typing import Any
+
 from nicegui import ui
 from sqlmodel import Session
 
 from docuflow.domain.entities.production import (
     TaskItem,
+    TaskItemStatus,
     WorkerBucketEntry,
 )
 from docuflow.features.task_board.system import TaskBoardSystem
+from docuflow.lib.base_widget import BaseDocuWidget
 
 
-class BucketPanel:
+class BucketPanel(BaseDocuWidget):
     """
     Панель корзины оператора.
 
@@ -23,6 +27,7 @@ class BucketPanel:
         system: TaskBoardSystem — система управления задачами
         node_id: str — ID узла (лазера)
         user: str — текущий пользователь
+        system_provider: Any — провайдер для получения свежих систем
     """
 
     def __init__(
@@ -31,14 +36,17 @@ class BucketPanel:
         system: TaskBoardSystem,
         node_id: str,
         user: str,
+        system_provider: Any = None,
     ):
+        super().__init__(system_provider)
         self.session = session
         self.system = system
         self.node_id = node_id
         self.user = user
 
+    @ui.refreshable
     def render(self) -> None:
-        """Рендерит панель корзины."""
+        """Рендерит панель корзины с разделением на очереди."""
         bucket_entries = self.system.get_bucket(self.node_id)
 
         if not bucket_entries:
@@ -48,29 +56,73 @@ class BucketPanel:
         # Группируем по batch_group_id
         batches = self._group_by_batch(bucket_entries)
 
-        with ui.column().classes("w-full"):
-            # Заголовок
-            with ui.row().classes("items-center justify-between mb-4"):
-                ui.label(f"📥 Корзина: {self.user} @ {self.node_id}").classes("text-h6")
-                ui.label(f"{len(batches)} батчей").classes("text-gray-500")
+        # Разделяем на Активные (есть хоть одна задача IN_PROGRESS) и Предстоящие
+        active_batches = {}
+        upcoming_batches = {}
 
-        # Карточки батчей
-        for batch_group_id, tasks in batches.items():
-            drift = self._calculate_batch_drift(tasks)
+        for bid, tasks in batches.items():
+            if any(t.status == TaskItemStatus.IN_PROGRESS for t in tasks):
+                active_batches[bid] = tasks
+            else:
+                upcoming_batches[bid] = tasks
 
-            # Lazy import
-            from .batch_card import BatchCard
+        with ui.column().classes("w-full gap-6"):
+            # --- SECTION: ACTIVE ---
+            if active_batches:
+                ui.label("🔥 В РАБОТЕ СЕЙЧАС").classes(
+                    "text-xs font-black text-orange-500 tracking-widest"
+                )
+                for bid, tasks in active_batches.items():
+                    self._render_batch_card(bid, tasks, is_active=True)
 
-            BatchCard(
-                batch_group_id=batch_group_id,
-                tasks=tasks,
-                drift_percent=drift,
-                on_start=self._on_start_task,
-                on_pause=self._on_pause_task,
-                on_resume=self._on_resume_task,
-                on_complete=self._on_complete_task,
-                on_block=self._on_block_task,
-            ).render()
+            # --- SECTION: UPCOMING ---
+            if upcoming_batches:
+                with ui.row().classes("items-center gap-2 mt-4"):
+                    ui.label("⏳ ОЧЕРЕДЬ НА ПОДГОТОВКУ").classes(
+                        "text-xs font-black text-slate-500 tracking-widest"
+                    )
+                    ui.badge(str(len(upcoming_batches))).props("color=slate-700 size=xs")
+
+                for bid, tasks in upcoming_batches.items():
+                    self._render_batch_card(bid, tasks, is_active=False)
+
+    def _render_batch_card(
+        self, batch_group_id: str, tasks: list[TaskItem], is_active: bool = False
+    ) -> None:
+        """Вспомогательный метод для рендера карточки батча."""
+        drift = self._calculate_batch_drift(tasks)
+
+        # Lazy import
+        from .batch_card import BatchCard
+
+        with ui.column().classes("w-full relative"):
+            # Добавляем визуальный акцент для активного батча
+            card_classes = (
+                "border-l-8 border-orange-500 shadow-xl scale-[1.02]" if is_active else ""
+            )
+
+            with ui.div().classes(card_classes):
+                BatchCard(
+                    batch_group_id=batch_group_id,
+                    tasks=tasks,
+                    drift_percent=drift,
+                    session=self.session,
+                    node_id=self.node_id,
+                    user=self.user,
+                    system_provider=self.system_provider,
+                    on_start=self._on_start_task,
+                    on_pause=self._on_pause_task,
+                    on_resume=self._on_resume_task,
+                    on_complete=self._on_complete_task,
+                    on_block=self._on_block_task,
+                ).render()
+
+            # Если батч не активен, даем возможность "поднять" его (приоритет)
+            if not is_active and len(tasks) > 0:
+                with ui.row().classes("absolute -top-3 right-4"):
+                    ui.button(
+                        icon="expand_less", on_click=lambda: ui.notify("Приоритет повышен")
+                    ).props("round flat size=sm color=slate-400 bg-white shadow-sm")
 
     def _render_empty_bucket(self) -> None:
         """Рендерит пустую корзину."""
@@ -112,155 +164,53 @@ class BucketPanel:
 
     def _on_start_task(self, task_id: int) -> None:
         """Обработчик кнопки 'Начать'."""
-        self.system.start_task(task_id)
-        ui.notify("Задача начата", type="positive")
-        ui.run_javascript("location.reload()")
+
+        async def do_start():
+            system = await self.get_system(TaskBoardSystem)
+            system.start_task(task_id)
+            self.render.refresh()
+
+        self.safe_action(do_start, "Задача начата")
 
     def _on_pause_task(self, task_id: int) -> None:
         """Обработчик кнопки 'Пауза' — открывает диалог причины."""
-        PauseDialog(task_id, self.system).render()
+        from .bucket_panel_dialogs import PauseDialog
+
+        PauseDialog(
+            task_id,
+            self.system,
+            on_success=self.render.refresh,
+            system_provider=self.system_provider,
+        ).render()
 
     def _on_resume_task(self, task_id: int) -> None:
         """Обработчик кнопки 'Возобновить'."""
-        self.system.resume_task(task_id)
-        ui.notify("Задача возобновлена", type="positive")
-        ui.run_javascript("location.reload()")
+
+        async def do_resume():
+            system = await self.get_system(TaskBoardSystem)
+            system.resume_task(task_id)
+            self.render.refresh()
+
+        self.safe_action(do_resume, "Задача возобновлена")
 
     def _on_complete_task(self, task_id: int) -> None:
         """Обработчик кнопки 'Завершить' — открывает диалог."""
-        CompleteDialog(task_id, self.system).render()
+        from .bucket_panel_dialogs import CompleteDialog
+
+        CompleteDialog(
+            task_id,
+            self.system,
+            on_success=self.render.refresh,
+            system_provider=self.system_provider,
+        ).render()
 
     def _on_block_task(self, task_id: int) -> None:
         """Обработчик кнопки 'Заблокировать' — открывает диалог причины."""
-        BlockDialog(task_id, self.system).render()
+        from .bucket_panel_dialogs import BlockDialog
 
-
-class PauseDialog:
-    """Диалог ввода причины паузы."""
-
-    def __init__(self, task_id: int, system: TaskBoardSystem):
-        self.task_id = task_id
-        self.system = system
-
-    def render(self) -> None:
-        """Рендерит диалог."""
-        with ui.dialog() as dialog, ui.card().classes("w-96 p-4"):
-            ui.label("⏸ Пауза задачи").classes("text-h6 mb-4")
-
-            reason = ui.textarea(
-                label="Причина паузы",
-                placeholder="Укажите причину...",
-            ).classes("w-full mb-4")
-
-            with ui.row().classes("justify-end gap-2"):
-                ui.button("Отмена", on_click=dialog.close).props("flat")
-                ui.button(
-                    "Подтвердить",
-                    on_click=lambda: self._confirm(reason.value, dialog),
-                ).props("color=orange")
-
-        dialog.open()
-
-    def _confirm(self, reason: str, dialog) -> None:
-        """Подтверждает паузу."""
-        if not reason:
-            ui.notify("Укажите причину паузы", type="warning")
-            return
-
-        self.system.pause_task(self.task_id, reason)
-        ui.notify("Задача поставлена на паузу", type="warning")
-        dialog.close()
-        ui.run_javascript("location.reload()")
-
-
-class CompleteDialog:
-    """Диалог завершения задачи."""
-
-    def __init__(self, task_id: int, system: TaskBoardSystem):
-        self.task_id = task_id
-        self.system = system
-        self.task = system.session.get(TaskItem, task_id)
-
-    def render(self) -> None:
-        """Рендерит диалог."""
-        with ui.dialog() as dialog, ui.card().classes("w-96 p-4"):
-            ui.label("✅ Завершить задачу").classes("text-h6 mb-4")
-
-            if self.task:
-                ui.label(f"Файл: {self.task.file_name}").classes("mb-2")
-                ui.label(f"План: {self.task.sheet_qty} листов").classes("mb-4")
-
-            sheets_done = ui.number(
-                "Листов порезано",
-                value=self.task.sheet_qty if self.task else 0,
-                min=0,
-            ).classes("w-full mb-4")
-
-            qty_produced = ui.number(
-                "Деталей произведено",
-                value=0,
-                min=0,
-            ).classes("w-full mb-4")
-
-            create_pallet = ui.checkbox("Создать поддон (паллету)").classes("mb-4")
-
-            with ui.row().classes("justify-end gap-2"):
-                ui.button("Отмена", on_click=dialog.close).props("flat")
-                ui.button(
-                    "Завершить",
-                    on_click=lambda: self._confirm(
-                        int(sheets_done.value or 0),
-                        int(qty_produced.value or 0),
-                        create_pallet.value,
-                        dialog,
-                    ),
-                ).props("color=green")
-
-        dialog.open()
-
-    def _confirm(self, sheets_done: int, qty_produced: int, create_pallet: bool, dialog) -> None:
-        """Подтверждает завершение."""
-        self.system.complete_task(
-            self.task_id, sheets_done, qty_produced, create_pallet=create_pallet
-        )
-        ui.notify("Задача завершена", type="positive")
-        dialog.close()
-        ui.run_javascript("location.reload()")
-
-
-class BlockDialog:
-    """Диалог блокировки задачи."""
-
-    def __init__(self, task_id: int, system: TaskBoardSystem):
-        self.task_id = task_id
-        self.system = system
-
-    def render(self) -> None:
-        """Рендерит диалог."""
-        with ui.dialog() as dialog, ui.card().classes("w-96 p-4"):
-            ui.label("🔒 Блокировка задачи").classes("text-h6 mb-4")
-
-            reason = ui.textarea(
-                label="Причина блокировки",
-                placeholder="Укажите причину...",
-            ).classes("w-full mb-4")
-
-            with ui.row().classes("justify-end gap-2"):
-                ui.button("Отмена", on_click=dialog.close).props("flat")
-                ui.button(
-                    "Заблокировать",
-                    on_click=lambda: self._confirm(reason.value, dialog),
-                ).props("color=red")
-
-        dialog.open()
-
-    def _confirm(self, reason: str, dialog) -> None:
-        """Подтверждает блокировку."""
-        if not reason:
-            ui.notify("Укажите причину блокировки", type="warning")
-            return
-
-        self.system.block_task(self.task_id, reason)
-        ui.notify("Задача заблокирована", type="warning")
-        dialog.close()
-        ui.run_javascript("location.reload()")
+        BlockDialog(
+            task_id,
+            self.system,
+            on_success=self.render.refresh,
+            system_provider=self.system_provider,
+        ).render()

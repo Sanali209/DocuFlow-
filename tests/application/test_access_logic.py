@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from docuflow.application.access import check_access, get_active_ui_modules
+from docuflow.features.core.layout import check_access, get_active_ui_modules
 from docuflow.domain.entities.identity import Role, User, Workplace
 
 

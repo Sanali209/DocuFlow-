@@ -17,9 +17,8 @@ class ProductionSystem(BaseSystem):
     - Code as Documentation: Methods are self-describing and documented with examples.
     """
 
-    def __init__(self, config: Config, db_session: Session, sdk: Any = None):
-        super().__init__(config)
-        self.db_session = db_session
+    def __init__(self, config: Config, session: Session, sdk: Any = None):
+        super().__init__(config, session)
         self.sdk = sdk
 
     def create_unique_pallet_label(self, sequence_number: int | None = None) -> str:
@@ -35,7 +34,7 @@ class ProductionSystem(BaseSystem):
 
         if sequence_number is None:
             # Atomic fetch of the next sequence number for this month/node
-            count = self.db_session.exec(
+            count = self.session.exec(
                 select(func.count(ProductionUnit.id)).where(
                     ProductionUnit.label_id.startswith(f"{now.strftime('%y-%m')}")
                 )
@@ -57,7 +56,7 @@ class ProductionSystem(BaseSystem):
         Example:
             pallet = system.register_finished_pallet(task_item_id=50, quantity=100, storage_id=1)
         """
-        db = self.db_session
+        db = self.session
         unique_label = self.create_unique_pallet_label()
 
         pallet_unit = ProductionUnit(
@@ -94,12 +93,36 @@ class ProductionSystem(BaseSystem):
 
         return pallet_unit
 
+    def mark_as_shipped(self, pallet_id: int, author: str) -> ProductionUnit:
+        """Marks a pallet as shipped/dispatched from the workshop."""
+        db = self.session
+        pallet = db.get(ProductionUnit, pallet_id)
+        if not pallet:
+            raise ValueError(f"Pallet {pallet_id} not found")
+
+        pallet.is_stock = False
+        pallet.stock_transferred_at = datetime.datetime.now()
+        db.add(pallet)
+
+        # Log shipment
+        log_entry = WorkLog(
+            work_item_id=pallet.task_item.work_item_id if pallet.task_item else 0,
+            task_item_id=pallet.task_item_id,
+            log_type=WorkLogType.INFO.value,
+            message=f"Pallet SHIPPED: {pallet.label_id}",
+            author=author,
+            node_id=self.config.node_id,
+        )
+        db.add(log_entry)
+        db.flush()
+        return pallet
+
     def get_recent_production_units(self, limit: int = 50) -> list[ProductionUnit]:
         """
         Lists recently registered production units for dashboard monitoring.
         """
         statement = select(ProductionUnit).order_by(ProductionUnit.id.desc()).limit(limit)
-        return list(self.db_session.exec(statement).all())
+        return list(self.session.exec(statement).all())
 
     def split_production_unit(
         self, original_pallet_id: int, move_quantity: int, author: str
@@ -110,7 +133,7 @@ class ProductionSystem(BaseSystem):
         Example:
             new_pallet = system.split_production_unit(original_pallet_id=1, move_quantity=50)
         """
-        db = self.db_session
+        db = self.session
         source_pallet = db.get(ProductionUnit, original_pallet_id)
         if not source_pallet:
             raise ValueError(f"Source pallet {original_pallet_id} not found")
@@ -135,7 +158,6 @@ class ProductionSystem(BaseSystem):
         db.add(secondary_unit)
 
         # 3. Log traceability trail
-        # Note: Using .task_item to avoid confusion with internal 'task' variables.
         log_entry = WorkLog(
             work_item_id=source_pallet.task_item.work_item_id if source_pallet.task_item else 0,
             task_item_id=source_pallet.task_item_id,
@@ -159,7 +181,7 @@ class ProductionSystem(BaseSystem):
         Example:
             system.merge_production_units(source_pallet_ids=[1, 2], target_pallet_id=3)
         """
-        db = self.db_session
+        db = self.session
         target_pallet = db.get(ProductionUnit, target_pallet_id)
         if not target_pallet:
             raise ValueError(f"Target pallet {target_pallet_id} not found")
@@ -187,7 +209,6 @@ class ProductionSystem(BaseSystem):
         db.add(target_pallet)
 
         # Log consolidation
-        # Note: Using .task_item for explicit relationship access.
         log_entry = WorkLog(
             work_item_id=target_pallet.task_item.work_item_id if target_pallet.task_item else 0,
             task_item_id=target_pallet.task_item_id,

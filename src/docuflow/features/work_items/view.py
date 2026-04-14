@@ -5,6 +5,8 @@ WorkItemsView — главный экран бригадира.
 логом и кнопками действий.
 """
 
+from typing import Any
+
 from nicegui import ui
 
 from docuflow.domain.entities.production import (
@@ -12,10 +14,27 @@ from docuflow.domain.entities.production import (
     WorkItemStatus,
     WorkItemType,
 )
+from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.view_presets.system import ViewPresetSystem
 from docuflow.features.work_items.system import WorkItemFilters, WorkItemSystem
 from docuflow.lib.widgets import StatusBadge
 from docuflow.lib.widgets.work_item_card import WorkItemCard
+
+
+def register_work_items_view():
+    """Register the work items view in the global registry."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="work_items",
+            label="Work Items",
+            icon="work",
+            render_fn=WorkItemsView,
+            dependencies=[WorkItemSystem, ViewPresetSystem],
+            pass_user=True,
+            pass_switch_view=True,
+            pass_system_provider=True,
+        )
+    )
 
 
 class WorkItemsView:
@@ -26,6 +45,7 @@ class WorkItemsView:
         system: WorkItemSystem — система управления нарядами
         preset_system: ViewPresetSystem — система пресетов
         user: str — текущий пользователь
+        on_navigate: callable — функция переключения экранов
     """
 
     def __init__(
@@ -33,12 +53,17 @@ class WorkItemsView:
         system: WorkItemSystem,
         preset_system: ViewPresetSystem,
         user: str = "admin",
+        on_navigate: Any = None,
+        system_provider: Any = None,
     ):
         self.system = system
         self.preset_system = preset_system
         self.user = user
+        self.on_navigate = on_navigate
+        self.system_provider = system_provider
         self.active_filters = WorkItemFilters()
 
+    @ui.refreshable
     def render(self) -> None:
         """Рендерит основной view."""
         with ui.column().classes("w-full p-4"):
@@ -82,6 +107,7 @@ class WorkItemsView:
 
         tabs.on("change", lambda e: self._apply_preset(e.value))
 
+    @ui.refreshable
     def _render_table(self) -> None:
         """Рендерит таблицу нарядов."""
         items = self.system.list_work_items_by_filter(self.active_filters)
@@ -148,14 +174,27 @@ class WorkItemsView:
 
     def _show_card(self, work_item: WorkItem) -> None:
         """Показывает карточку наряда используя глобальный виджет."""
-        WorkItemCard(work_item, self.system, self.user).render()
+        WorkItemCard(
+            work_item,
+            self.system,
+            self.user,
+            on_navigate=self.on_navigate,
+            system_provider=self.system_provider,
+        ).render()
 
     def _update_filters(self, **kwargs) -> None:
-        """Обновляет фильтры и обновляет таблицу (логика обновления в NiceGUI)."""
+        """Обновляет фильтры и обновляет таблицу."""
         for key, value in kwargs.items():
             if hasattr(self.active_filters, key):
-                setattr(self.active_filters, key, value)
-        # ui.update() or notify parent to refresh
+                # Convert string values from UI back to Enums if needed
+                if key == "status" and value:
+                    setattr(self.active_filters, key, [WorkItemStatus(v) for v in value])
+                elif key == "type" and value:
+                    setattr(self.active_filters, key, [WorkItemType(v) for v in value])
+                else:
+                    setattr(self.active_filters, key, value)
+
+        self._render_table.refresh()
 
     def _apply_preset(self, preset_name: str) -> None:
         """Применяет пресет."""

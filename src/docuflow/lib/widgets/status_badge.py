@@ -4,9 +4,12 @@ StatusBadge — цветной бейдж для отображения стат
 Используется в таблицах, карточках и других views.
 """
 
+from typing import Any
+
 from nicegui import ui
 
 from docuflow.domain.entities.production import TaskItemStatus, WorkItemStatus
+from docuflow.lib.base_widget import BaseDocuWidget
 
 # Цветовая схема для статусов WorkItem
 WORK_ITEM_COLORS: dict[WorkItemStatus, str] = {
@@ -34,16 +37,20 @@ TASK_ITEM_COLORS: dict[TaskItemStatus, str] = {
 }
 
 
-class StatusBadge:
+class StatusBadge(BaseDocuWidget):
     """
     Цветной бейдж для отображения статуса.
 
     Props:
         status: WorkItemStatus | TaskItemStatus — статус для отображения
         size: str — размер ("sm", "md", "lg")
+        system_provider: Any — провайдер систем (опционально)
     """
 
-    def __init__(self, status: WorkItemStatus | TaskItemStatus, size: str = "md"):
+    def __init__(
+        self, status: WorkItemStatus | TaskItemStatus, size: str = "md", system_provider: Any = None
+    ):
+        super().__init__(system_provider)
         self.status = status
         self.size = size
 

@@ -2,11 +2,35 @@ from nicegui import ui
 from sqlmodel import select
 
 from docuflow.domain.entities.production import ProductionUnit
+from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.production.system import ProductionSystem
+
+
+def register_production_view():
+    """Register the production management view."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="production",
+            label="Production",
+            icon="precision_manufacturing",
+            render_fn=production_view,
+            dependencies=[ProductionSystem],
+            pass_user=True,
+            is_async=True,
+        )
+    )
 
 
 async def production_view(system: ProductionSystem, current_user: str = "operator") -> None:
     """Provides the UI for managing production pallets (ProductionUnit)."""
+
+    async def handle_shipment(pallet_row):
+        try:
+            system.mark_as_shipped(pallet_row["id"], current_user)
+            ui.notify(f"Паллета {pallet_row['label_id']} отгружена", type="positive")
+            refresh_grid()
+        except Exception as e:
+            ui.notify(f"Ошибка отгрузки: {e}", type="negative")
 
     with ui.column().classes("w-full h-full p-4 gap-4"):
         ui.label("Управление Паллетами (Склад готовой продукции)").classes(
@@ -34,6 +58,7 @@ async def production_view(system: ProductionSystem, current_user: str = "operato
                 "align": "center",
             },
             {"name": "created_by", "label": "Создал", "field": "created_by", "align": "center"},
+            {"name": "status", "label": "Статус", "field": "status", "align": "center"},
             {"name": "actions", "label": "", "field": "id", "align": "right"},
         ]
 
@@ -41,9 +66,18 @@ async def production_view(system: ProductionSystem, current_user: str = "operato
             "w-full glass-card text-white"
         )
         grid.add_slot(
+            "body-cell-status",
+            """
+            <q-td :props="props">
+                <q-badge :color="props.row.status_color" :label="props.row.status_label" />
+            </q-td>
+        """,
+        )
+        grid.add_slot(
             "body-cell-actions",
             """
             <q-td :props="props">
+                <q-btn flat round dense color="indigo" icon="local_shipping" @click="$parent.$emit('ship', props.row)" v-if="props.row.can_ship" />
                 <q-btn flat round dense color="orange" icon="call_split" @click="$parent.$emit('split', props.row)" />
             </q-td>
         """,
@@ -67,12 +101,16 @@ async def production_view(system: ProductionSystem, current_user: str = "operato
                     "qty_produced": u.qty_produced,
                     "parent_label_id": u.parent_label_id or "-",
                     "created_by": u.created_by,
+                    "status_label": "НА СКЛАДЕ" if u.is_stock else "ОТГРУЖЕНО",
+                    "status_color": "emerald" if u.is_stock else "slate-500",
+                    "can_ship": u.is_stock,
                 }
                 for u in units
             ]
             grid.update()
 
         search_term.on_value_change(refresh_grid)
+        grid.on("ship", lambda e: handle_shipment(e.args))
 
         # Split Dialog
         with ui.dialog().classes("glass-card p-6") as split_dlg:

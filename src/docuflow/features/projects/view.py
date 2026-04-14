@@ -1,7 +1,26 @@
 from nicegui import ui
 
+from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.projects.system import ProjectSystem
 from docuflow.features.work_items.system import WorkItemFilters, WorkItemSystem
+
+
+def register_projects_view():
+    """Register the projects management view."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="projects",
+            label="Projects",
+            icon="topic",
+            render_fn=projects_view_wrapper,
+            dependencies=[ProjectSystem, WorkItemSystem],
+        )
+    )
+
+
+def projects_view_wrapper(project_system: ProjectSystem, wi_system: WorkItemSystem):
+    """Wrapper to instantiate and render the ProjectManagementView."""
+    ProjectManagementView(project_system, wi_system).render()
 
 
 class ProjectManagementView:
@@ -134,7 +153,9 @@ class ProjectManagementView:
         except Exception:
             # If resolution fails, fall back to legacy value but log/notify
             default_id = 1
-            ui.notify("Не удалось определить проект Default; используется fallback ID=1", type="warning")
+            ui.notify(
+                "Не удалось определить проект Default; используется fallback ID=1", type="warning"
+            )
 
         if self.selected_project_id == default_id:
             ui.notify("Наряд уже находится в проекте Default", type="warning")

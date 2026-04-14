@@ -7,6 +7,7 @@ BatchEngine — автоматическая группировка TaskItem п�
 
 import itertools
 from dataclasses import dataclass, field
+from typing import Any
 from uuid import UUID, uuid4
 
 from sqlmodel import Session, select
@@ -85,7 +86,7 @@ class BatchEngine:
         if not tasks:
             return []
 
-        def key_fn(t: TaskItem) -> tuple:
+        def key_fn(t: TaskItem) -> tuple[Any, ...]:
             return tuple(getattr(t, field, None) for field in rule.group_by)
 
         # Сортировка по ключу группировки
@@ -200,23 +201,33 @@ class BatchEngine:
 
     def create_batch(self, task_ids: list[int], session: Session | None = None) -> str:
         """
-        Создаёт новый батч для списка задач.
-
-        Args:
-            task_ids: Список ID задач
-            session: SQLModel сессия (необязательно)
-
-        Returns:
-            str — ID нового батча
+        Создаёт новый батч для списка задач с валидацией материала.
         """
         session = session or self.session
-        new_batch_id = str(uuid4())
 
-        for task_id in task_ids:
-            task = session.get(TaskItem, task_id)
-            if task:
-                task.batch_group_id = new_batch_id
-                session.add(task)
+        # Validation: Check if all tasks have the same material and thickness
+        loaded_tasks: list[TaskItem] = []
+        for tid in task_ids:
+            task = session.get(TaskItem, tid)
+            if task is None:
+                raise ValueError(f"Задача с ID {tid} не найдена")
+            loaded_tasks.append(task)
+
+        if not loaded_tasks:
+            raise ValueError("Список задач пуст")
+
+        mat_ids = {t.mat_type_id for t in loaded_tasks}
+        if len(mat_ids) > 1:
+            raise ValueError("Нельзя объединять в один батч задачи с разными материалами")
+
+        thicknesses = {t.thickness for t in loaded_tasks}
+        if len(thicknesses) > 1:
+            raise ValueError("Нельзя объединять в один батч задачи с разной толщиной")
+
+        new_batch_id = str(uuid4())
+        for task in loaded_tasks:
+            task.batch_group_id = new_batch_id
+            session.add(task)
 
         session.commit()
         return new_batch_id

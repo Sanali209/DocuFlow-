@@ -1,8 +1,28 @@
-
 from nicegui import ui
 
 from docuflow.domain.entities.production import Consumable
 from docuflow.features.consumables.system import ConsumableSystem
+from docuflow.features.core.views import ViewInfo, ViewRegistry
+
+
+def register_consumables_view():
+    """Register the consumables management view."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="consumables",
+            label="Consumables",
+            icon="inventory",
+            render_fn=consumables_view_wrapper,
+            dependencies=[ConsumableSystem],
+            is_async=True,
+        )
+    )
+
+
+async def consumables_view_wrapper(system: ConsumableSystem):
+    """Wrapper to instantiate and render the ConsumableView."""
+    view = ConsumableView(system)
+    await view.render()
 
 
 class ConsumableView:

@@ -33,7 +33,6 @@ def mock_engine(tmp_path):
     from sqlalchemy import create_engine
     from sqlmodel import SQLModel
 
-
     db_path = tmp_path / "test.db"
     engine = create_engine(f"sqlite:///{db_path}")
     SQLModel.metadata.create_all(engine)
@@ -180,17 +179,18 @@ def test_get_settings_without_admin(mock_config, mock_sdk, mock_engine):
 def test_get_status(scanner_system):
     """Test that get_status() returns correct data."""
     # Setup
-    scanner_system._running = True
-    scanner_system._last_scan_time = datetime(2026, 4, 3, 6, 0, 0)
-    scanner_system._files_found = 42
+    scanner_system._is_active_polling = True
+    scanner_system._last_successful_scan = datetime(2026, 4, 3, 6, 0, 0)
+    scanner_system._items_discovered_count = 42
 
     # Execute
     status = scanner_system.get_status()
 
     # Verify
     assert status["is_running"] is True
-    assert status["last_scan_time"] == datetime(2026, 4, 3, 6, 0, 0)
+    assert status["last_scan_at"] == datetime(2026, 4, 3, 6, 0, 0)
     assert status["files_found"] == 42
+
     assert status["is_master"] is True
 
 

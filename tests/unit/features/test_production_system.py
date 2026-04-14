@@ -44,7 +44,7 @@ def project_system_fixture(config: Config, session: Session):
 @pytest.fixture(name="production_system")
 def production_system_fixture(config: Config, session: Session):
     """Создаёт экземпляр ProductionSystem."""
-    return ProductionSystem(config=config, db_session=session)
+    return ProductionSystem(config=config, session=session)
 
 
 def test_label_id_generation(production_system):

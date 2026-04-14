@@ -21,18 +21,22 @@ async def test_orchestrator_failure_propagation():
 
     coordination = MagicMock()
     coordination.run_coordination_loop = AsyncMock()
+    coordination.on_startup = AsyncMock()
     coordination.is_leader = True
 
     bus = MagicMock()
     bus.poll_messages = AsyncMock(return_value=[])
+    bus.on_startup = AsyncMock()
 
     sync = MagicMock()
     # This will trigger the failure in the maintenance worker
     sync.create_master_snapshot = AsyncMock(side_effect=RuntimeError("Simulated Sync Failure"))
+    sync.on_startup = AsyncMock()
 
     housekeeping = MagicMock()
     housekeeping.purge_stale_messages = AsyncMock()
     housekeeping.rotate_snapshots = AsyncMock()
+    housekeeping.on_startup = AsyncMock()
 
     orchestrator = P2POrchestrator(config, coordination, bus, sync, housekeeping)
 

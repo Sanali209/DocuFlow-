@@ -8,9 +8,8 @@ from loguru import logger
 from sqlmodel import Session, SQLModel, select
 
 from docuflow.application.base import BaseSystem
-from docuflow.domain.entities.identity import Role, User, Workplace
+from docuflow.domain.entities.identity import NodeSetting, Role, User, Workplace
 from docuflow.domain.entities.production import TaskItem, WorkItem
-from docuflow.domain.entities.settings import Setting
 from docuflow.infrastructure import constants
 from docuflow.infrastructure.config import Config
 
@@ -39,7 +38,7 @@ class DataSyncSystem(BaseSystem):
 
         # Registry of domain entities involved in synchronization
         self._sync_registry: list[type[SQLModel]] = [
-            Setting,
+            NodeSetting,
             WorkItem,
             TaskItem,
             Workplace,

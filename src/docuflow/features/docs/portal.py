@@ -2,6 +2,26 @@ from pathlib import Path
 
 from nicegui import ui
 
+from docuflow.features.core.views import ViewInfo, ViewRegistry
+
+
+def register_docs_view():
+    """Register the documentation portal view."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="docs",
+            label="Documentation",
+            icon="menu_book",
+            render_fn=docs_view_wrapper,
+            dependencies=[],
+        )
+    )
+
+
+def docs_view_wrapper():
+    """Wrapper to instantiate and render the DocumentationPortal."""
+    DocumentationPortal().build_portal()
+
 
 class DocumentationPortal:
     """Provides an integrated, decentralized support portal for DocuFlow nodes.

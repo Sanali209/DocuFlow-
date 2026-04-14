@@ -1,7 +1,47 @@
+import json
 from collections.abc import Callable
+from typing import Any, Set
 
 from nicegui import app as nicegui_app
 from nicegui import ui
+
+from docuflow.domain.entities.identity import User, Workplace
+
+
+def check_access(user: User, workplace: Workplace) -> bool:
+    """Determine if a specific user is authorized to operate a given workplace."""
+    if not user.role:
+        return False
+
+    # 1. Admin bypass
+    if user.role.name.lower() in ["admin", "админ"]:
+        return True
+
+    # 2. Check if workplace.id is in user's allowed_workplaces
+    try:
+        allowed_ids = user.workplace_ids
+        return workplace.id in allowed_ids
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        return False
+
+
+def get_active_ui_modules(user: User, workplace: Workplace) -> Set[str]:
+    """Calculate the intersection of user permissions and workplace capabilities."""
+    if not user.role:
+        return set()
+
+    wp_mods = set(workplace.modules_list)
+
+    # Admins see everything available on the node
+    if user.role.name.lower() in ["admin", "админ"]:
+        return wp_mods
+
+    # Intersection of Role permissions and Workplace modules
+    try:
+        user_perms = set(user.role.permissions_list)
+        return user_perms.intersection(wp_mods)
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        return set()
 
 
 def get_current_user() -> dict | None:
@@ -74,8 +114,29 @@ def theme_setup():
                 border-left: 4px solid #6366f1;
                 color: #fff !important;
             }
+            .omnibar-input .q-field__control {
+                background: rgba(255, 255, 255, 0.05) !important;
+                border-radius: 99px !important;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
         </style>
     """)
+
+
+class SessionContext:
+    """Управляет глобальным состоянием интерфейса в рамках сессии пользователя."""
+
+    @staticmethod
+    def set(key: str, value: Any) -> None:
+        nicegui_app.storage.user[f"ctx_{key}"] = value
+
+    @staticmethod
+    def get(key: str, default: Any = None) -> Any:
+        return nicegui_app.storage.user.get(f"ctx_{key}", default)
+
+    @staticmethod
+    def clear(key: str) -> None:
+        nicegui_app.storage.user.pop(f"ctx_{key}", None)
 
 
 class MainLayout:
@@ -84,10 +145,28 @@ class MainLayout:
     Ensures consistent aesthetics (color matching) and decentralized authorization.
     """
 
-    def __init__(self, title: str, config):
+    def __init__(self, title: str, config, search_system: Any = None, system_provider: Any = None):
         self.title = title
         self._config = config
+        self.search_system = search_system
+        self.system_provider = system_provider
         self.content = None
+        self._active_timers: list[ui.timer] = []
+
+    def register_timer(self, timer: ui.timer) -> ui.timer:
+        """Track a timer for the current view session."""
+        self._active_timers.append(timer)
+        return timer
+
+    def clear_timers(self):
+        """Deactivate all timers registered for the current view session."""
+        for t in self._active_timers:
+            try:
+                t.active = False
+                t.deactivate()
+            except Exception:
+                pass
+        self._active_timers.clear()
 
     def build(self, switch_view_fn: Callable):
         """Constructing the unified shell with matched sidebar and header backgrounds."""
@@ -102,6 +181,10 @@ class MainLayout:
             with ui.row().classes("items-center gap-3"):
                 ui.icon("waves", size="32px", color="primary").classes("animate-pulse")
                 ui.label("DocuFlow").classes("text-2xl font-bold tracking-tight")
+
+            # --- OMNIBAR (Global Search) ---
+            if self.search_system:
+                self._render_omnibar(switch_view_fn)
 
             with ui.row().classes("items-center gap-6"):
                 with ui.row().classes(
@@ -176,3 +259,111 @@ class MainLayout:
             "w-full min-h-screen pt-28 px-10 pb-12 gap-8 bg-[#020617]"
         )
         return self.content
+
+    def _render_omnibar(self, switch_view_fn: Callable) -> None:
+        """Рендерит Omnibar — строку глобального поиска."""
+        with ui.row().classes("items-center w-[400px] relative"):
+            search_input = (
+                ui.input(placeholder="Поиск по нарядам, деталям, паллетам...")
+                .props('rounded outlined dense dark prefix="search"')
+                .classes("w-full omnibar-input")
+            )
+
+            results_menu = ui.menu().props("no-parent-event fit")
+
+            async def handle_search(e):
+                query = e.value
+                if not query or len(query) < 2:
+                    results_menu.close()
+                    return
+
+                results = await self.search_system.search(query)
+                if not results:
+                    results_menu.clear()
+                    with results_menu:
+                        ui.item("Ничего не найдено").classes("text-gray-500 italic")
+                    results_menu.open()
+                    return
+
+                results_menu.clear()
+                with results_menu:
+                    for res in results:
+                        with ui.item(
+                            on_click=lambda r=res: self._on_search_select(
+                                r, switch_view_fn, results_menu
+                            )
+                        ):
+                            with ui.section().props("side"):
+                                ui.icon(res.icon, color="primary")
+                            with ui.section():
+                                ui.item_label(res.title).classes("font-bold")
+                                ui.item_label(res.subtitle).props("caption")
+
+                            # --- QUICK ACTION: PULL TO NODE ---
+                            if res.type == "work_item":
+                                with ui.section().props("side"):
+                                    ui.button(
+                                        icon="install_desktop",
+                                        on_click=lambda r=res: self._pull_to_current_node(
+                                            r, switch_view_fn
+                                        ),
+                                    ).props("flat round color=orange-400").classes("ml-2")
+                                    ui.tooltip(f"Забрать на узел {self._config.node_id}")
+
+                results_menu.open()
+
+            search_input.on("update:model-value", handle_search)
+
+    async def _pull_to_current_node(self, result, switch_view_fn: Callable) -> None:
+        """Быстрое назначение наряда на текущий физический узел."""
+        try:
+            ui.notify(
+                f"Наряд {result.title} передан на узел {self._config.node_id}", type="warning"
+            )
+            switch_view_fn("task_board", filter_work_item=result.id)
+        except Exception as e:
+            ui.notify(f"Ошибка захвата: {e}", type="negative")
+
+    def _on_search_select(self, result, switch_view_fn, menu) -> None:
+        """Обработка выбора результата поиска с сохранением контекста и авто-открытием."""
+        menu.close()
+
+        # Сохраняем контекст в сессию
+        if result.type == "work_item":
+            SessionContext.set("active_work_item_id", result.id)
+            SessionContext.set("last_search_query", result.title)
+
+            # --- AUTO-OPEN WORK ITEM CARD ---
+            async def auto_open():
+                from docuflow.domain.entities.production import WorkItem
+                from docuflow.features.work_items.system import WorkItemSystem
+                from docuflow.lib.widgets.work_item_card import WorkItemCard
+
+                system = (
+                    await self.system_provider(WorkItemSystem) if self.system_provider else None
+                )
+                if system:
+                    work_item = system.db_session.get(WorkItem, result.id)
+                    if work_item:
+                        user_data = get_current_user()
+                        WorkItemCard(
+                            work_item,
+                            system,
+                            user_data.get("username", "admin") if user_data else "admin",
+                            on_navigate=switch_view_fn,
+                            system_provider=self.system_provider,
+                        ).render()
+
+            ui.timer(0.1, auto_open, once=True)
+
+        elif result.type == "pallet":
+            SessionContext.set("active_pallet_id", result.id)
+
+        ui.notify(f"Результат: {result.title}", type="info")
+
+        # Передаем параметры в роутер
+        payload = {}
+        if result.type == "work_item":
+            payload["filter_work_item"] = result.id
+
+        switch_view_fn(result.view_name, **payload)

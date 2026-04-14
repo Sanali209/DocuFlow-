@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
 nicegui = pytest.importorskip("nicegui")
 if not hasattr(nicegui, "testing") or not hasattr(nicegui.testing, "user_simulation"):
     pytest.skip("requires nicegui.testing.user_simulation", allow_module_level=True)

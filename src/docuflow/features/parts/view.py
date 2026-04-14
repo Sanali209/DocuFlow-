@@ -1,8 +1,29 @@
 from nicegui import ui
 
 from docuflow.domain.entities.production import PartLibrary, PartTemplate
+from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.parts.system import PartLibrarySystem
-from docuflow.lib.widgets.part_preview import PartPreviewWidget
+from docuflow.lib.widgets.part_preview import PartPreview
+
+
+def register_parts_view():
+    """Register the parts library view."""
+    ViewRegistry.register(
+        ViewInfo(
+            name="parts",
+            label="Parts",
+            icon="extension",
+            render_fn=parts_view_wrapper,
+            dependencies=[PartLibrarySystem],
+            is_async=True,
+        )
+    )
+
+
+async def parts_view_wrapper(parts_system: PartLibrarySystem):
+    """Wrapper to instantiate and render the PartLibraryView."""
+    view = PartLibraryView(parts_system)
+    await view.render()
 
 
 class PartLibraryView:
@@ -23,6 +44,7 @@ class PartLibraryView:
         self.bbox_x_min = 0
         self.bbox_x_max = 2000
 
+    @ui.refreshable
     async def render(self):
         """Render the part library dashboard."""
         with ui.column().classes("w-full gap-6 p-4"):
@@ -35,28 +57,27 @@ class PartLibraryView:
                     )
 
                 with ui.row().classes("gap-4 items-center"):
-                    ui.input(placeholder="Поиск по SKU...", on_change=self.refresh_grid).bind_value(
-                        self, "search_query"
-                    ).classes("w-64 bg-zinc-900 border-zinc-800")
+                    ui.input(
+                        placeholder="Поиск по SKU...", on_change=self.render.refresh
+                    ).bind_value(self, "search_query").classes("w-64 bg-zinc-900 border-zinc-800")
 
                     ui.button("Гео-поиск", icon="straighten", on_click=self.open_geo_search).props(
                         "flat color=primary"
                     )
 
-                    ui.button(icon="refresh", on_click=self.refresh_grid).props("flat")
+                    ui.button(icon="refresh", on_click=self.render.refresh).props("flat")
 
             # --- Main Content (Grid) ---
             self.grid = ui.grid(columns=6).classes("w-full gap-4")
-            await self.refresh_grid()
+            await self._build_parts_grid()
 
-    async def refresh_grid(self):
-        """Reload the parts grid."""
-        if not self.grid:
-            return
-        self.grid.clear()
+            # Auto-refresh every 15 seconds
+            ui.timer(15.0, self.render.refresh, once=True)
 
+    async def _build_parts_grid(self):
+        """Internal helper to build the grid content."""
         parts = self.parts_system.list_parts(
-            sku_filter=self.search_query if len(self.search_query) > 2 else None, limit=50
+            sku_filter=self.search_query if len(self.search_query) >= 2 else None, limit=50
         )
 
         if not parts:
@@ -76,7 +97,7 @@ class PartLibraryView:
                     .on("click", lambda p=part: self.open_part_details(p))
                 ):
                     # SVG Thumbnail
-                    PartPreviewWidget(part.svg_path).render()
+                    PartPreview(part.svg_preview_path).render()
 
                     # SKU & Metrics
                     with ui.column().classes("mt-2 gap-0"):
@@ -115,7 +136,7 @@ class PartLibraryView:
             with ui.row().classes("w-full p-6 gap-8"):
                 # Left: Large Preview & Stats
                 with ui.column().classes("w-1/3 gap-4"):
-                    PartPreviewWidget(part.svg_path, size="280px").render()
+                    PartPreview(part.svg_preview_path, size="280px").render()
 
                     with ui.card().classes("w-full bg-zinc-900/50 border-zinc-800 p-4"):
                         ui.label("Метрики").classes(

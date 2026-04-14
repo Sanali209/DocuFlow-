@@ -1,11 +1,9 @@
 import os
 import time
 
-import pytest
-
-from docuflow.infrastructure.config import Config
 from docuflow.infrastructure import constants
 from docuflow.infrastructure.bus import FileBusSystem
+from docuflow.infrastructure.config import Config
 
 
 def touch(path, older_by_seconds: int = 0):
@@ -37,4 +35,3 @@ def test_cleanup_temp_files_removes_stale(tmp_path):
 
     assert not fname_old.exists()
     assert fname_new.exists()
-
