@@ -94,8 +94,7 @@ async def dashboard_view(
     with ui.row().classes("w-full gap-6 mt-6"):
         # Left Column: Live Activity Stream
         with ui.column().classes("flex-[2] p-6 rounded-2xl glass-card min-h-[400px]"):
-            activity_stream = ActivityStream(db_engine, system_provider)
-            activity_stream.render()
+            ActivityStream.render(ActivityStream(db_engine, system_provider))
 
         # Right Column: Cluster State & Leader
         with ui.column().classes("flex-1 gap-6"):

@@ -527,6 +527,7 @@ async def admin_view(admin_system: AdminSystem, system_provider: Callable, layou
             ui.label("Hardware Node Bindings").classes("text-xl font-bold text-indigo-400 mb-6")
             try:
                 workplaces = admin_system.get_all_workplaces()
+                logger.info(f"Bindings tab: get_all_workplaces() returned {len(workplaces)} workplaces")
                 if not workplaces:
                     ui.label("No workplaces configured.").classes("text-slate-500 italic p-4")
                 for w in workplaces:
@@ -669,8 +670,9 @@ async def render_system_audit(system_provider: Callable) -> None:
 
     try:
         fresh_system = await system_provider(AdminSystem)
+        from sqlmodel import desc
         logs = fresh_system.session.exec(
-            select(WorkLog).order_by(WorkLog.created_at.desc()).limit(100)
+            select(WorkLog).order_by(desc(WorkLog.created_at)).limit(100)
         ).all()
 
         if not logs:

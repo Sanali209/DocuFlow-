@@ -1,6 +1,6 @@
 """Centralized registry for all DocuFlow infrastructure constants.
 
-This module houses all 'magic' strings, numbers, and protocol literals
+This module houses all 'magic' strings, numbers, and protocol literals 
 to ensure a self-documenting and maintainable codebase.
 
 Examples:
