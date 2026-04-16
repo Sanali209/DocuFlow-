@@ -91,12 +91,12 @@ class CoordinationSystem(BaseSystem):
         try:
             # Atomic write for status files
             temp_path = heartbeat_file.with_suffix(".tmp")
-            logger.debug(
+            logger.trace(
                 f"Coordination [{self._node_id}]: Writing heartbeat {payload['timestamp']} to {temp_path}"
             )
             await anyio.Path(temp_path).write_text(json.dumps(payload, indent=2))
             os.replace(temp_path, heartbeat_file)
-            logger.debug(
+            logger.trace(
                 f"Coordination [{self._node_id}]: Heartbeat published (leader={self._is_leader})"
             )
         except OSError as error:

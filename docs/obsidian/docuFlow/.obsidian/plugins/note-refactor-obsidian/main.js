@@ -6351,8 +6351,8 @@ var NRDoc = /** @class */ (function () {
         if (this.settings.includeFirstLineAsNoteHeading) {
             //Replaces any non-word characters whitespace leading the first line to enforce consistent heading format from setting
             var headingBaseline = firstLine.replace(HEADING_REGEX, '');
-            //Adds formatted heading into content array as first item. 
-            //Trimming allows for an empty heading format. 
+            //Adds formatted heading into content array as first item.
+            //Trimming allows for an empty heading format.
             contentArr.unshift("".concat(this.settings.headingFormat, " ").concat(headingBaseline).trim());
         }
         else if (!this.settings.excludeFirstLineInNote || contentOnly) {

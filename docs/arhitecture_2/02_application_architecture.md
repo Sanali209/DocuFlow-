@@ -66,7 +66,7 @@ src/docuflow/
 │   │   ├── system.py               # PartLibrarySystem: upsert, find_by_bbox±tol, обратный поиск
 │   │   └── view.py                 # Таблица + SVG превью + PartTemplate + bbox range slider
 │   │
-│   ├── material_stock/             # 🏭 Фаза 3
+│   ├── inventory/                 # 🏭 Фаза 3
 │   │   ├── system.py               # MaterialSystem + аудит + резервирование
 │   │   └── view.py                 # Типы (с time params) + остатки + аудит-лента
 │   │
@@ -287,11 +287,11 @@ background loop (check_interval=60s, copy_timeout=30s):
     IF not local_file.exists():
       copy(network_file → local_file, timeout=30s)
       WorkLog(NS_MIRROR, "Скопирован в NS")
-    
+
     ELIF md5(network_file) != md5(local_file):
       WorkLog(FILE_CHANGED, "Сетевой файл изменился!")
       alert_operator(dialog: "Обновить NS / Оставить / Напомнить позже")
-  
+
   ON entry removed from bucket:
     delete(local_file)
     WorkLog(NS_MIRROR, "Удалён из NS")
@@ -433,7 +433,7 @@ class FolderScannerSettings(BaseModuleSettings):
     mihtav_scan_path: str = Field(default="", json_schema_extra={"scope": "local"})
     other_scan_path: str = Field(default="", json_schema_extra={"scope": "local"})
     poll_interval_seconds: int = Field(default=300, json_schema_extra={"scope": "local"})
-    
+
     # GLOBAL — синхронизируются через P2P
     enabled: bool = Field(default=True, json_schema_extra={"scope": "global"})
     default_project_name: str = Field(default="Default", json_schema_extra={"scope": "global"})

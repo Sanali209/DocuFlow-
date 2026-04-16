@@ -146,16 +146,8 @@ class ProjectManagementView:
             ui.notify("Сначала выберите целевой проект в левой колонке", type="negative")
             return
 
-        # Use ProjectSystem to determine the Default project id instead of hardcoded '1'
-        try:
-            default_project = self.project_system.resolve_default_workshop_project()
-            default_id = default_project.id
-        except Exception:
-            # If resolution fails, fall back to legacy value but log/notify
-            default_id = 1
-            ui.notify(
-                "Не удалось определить проект Default; используется fallback ID=1", type="warning"
-            )
+        default_project = self.project_system.resolve_default_workshop_project()
+        default_id = default_project.id
 
         if self.selected_project_id == default_id:
             ui.notify("Наряд уже находится в проекте Default", type="warning")

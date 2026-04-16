@@ -6,6 +6,7 @@ BatchCard — карточка батча для отображения в ко�
 
 from typing import Any
 
+from loguru import logger
 from nicegui import ui
 
 from docuflow.domain.entities.production import TaskItem, TaskItemStatus, WorkLog, WorkLogType
@@ -37,7 +38,7 @@ class BatchCard(BaseDocuWidget):
         tasks: list[TaskItem],
         drift_percent: float = 0.0,
         session=None,
-        node_id: str = "LASER_1",
+        node_id: str | None = None,
         user: str = "admin",
         system_provider: Any = None,
         on_start=None,
@@ -85,22 +86,22 @@ class BatchCard(BaseDocuWidget):
                 with ui.row().classes("items-center gap-2"):
                     # Task Magnet (Suggestions)
                     ui.button(icon="auto_awesome", on_click=self._show_matching_suggestions).props(
-                        "flat round color=indigo-400 size=sm"
+                        "flat round color=teal-400 size=sm"
                     )
-                    ui.tooltip("Найти задачи с таким же материалом")
+                    ui.tooltip("Find tasks with same material")
 
                     # Logistics Request Button
                     ui.button(icon="local_shipping", on_click=self._request_material).props(
                         "flat round color=orange-400 size=sm"
-                    ).classes("animate-bounce")
-                    ui.tooltip("Запросить подачу металла со склада")
+                    )
+                    ui.tooltip("Request material from warehouse")
 
                     self._render_drift_badge()
 
             # Статистика
-            with ui.row().classes("gap-4 mb-4 text-gray-600"):
-                ui.label(f"Листов: {completed_sheets}/{total_sheets}")
-                ui.label(f"⏱ {estimated_minutes} мин")
+            with ui.row().classes("gap-4 mb-4 text-gray-300"):
+                ui.label(f"Листов: {completed_sheets}/{total_sheets}").classes("text-gray-300")
+                ui.label(f"⏱ {estimated_minutes} мин").classes("text-gray-300")
 
             # Прогресс-бар
             progress = completed_sheets / total_sheets if total_sheets > 0 else 0
@@ -140,18 +141,18 @@ class BatchCard(BaseDocuWidget):
                 if matches:
                     with container:
                         with ui.row().classes(
-                            "w-full items-center justify-between bg-indigo-900/20 p-2 mb-2 rounded border border-indigo-500/30 animate-pulse"
+                            "w-full items-center justify-between bg-teal-900/20 p-2 mb-2 rounded border border-teal-500/30"
                         ):
                             with ui.row().classes("items-center gap-2"):
-                                ui.icon("auto_awesome", color="indigo-400")
+                                ui.icon("auto_awesome", color="teal-400")
                                 ui.label(
-                                    f"Оптимизация: в очереди еще {len(matches)} задач под этот металл"
-                                ).classes("text-xs font-bold text-indigo-300")
-                            ui.button("ЗАБРАТЬ", on_click=self._show_matching_suggestions).props(
-                                "size=xs color=indigo unelevated rounded"
+                                    f"Optimisation: {len(matches)} tasks in queue for this metal"
+                                ).classes("text-xs font-bold text-teal-300")
+                            ui.button("CLAIM", on_click=self._show_matching_suggestions).props(
+                                "size=xs color=teal unelevated rounded"
                             )
             except Exception:
-                pass  # Silent fail for background check
+                logger.debug("Batch optimization check failed, ignoring")
 
         monitor_container = ui.column().classes("w-full")
         ui.timer(0.5, lambda: check_and_render(monitor_container), once=True)
@@ -180,7 +181,7 @@ class BatchCard(BaseDocuWidget):
                     ui.label("🧲 Подходящие задачи").classes("text-h6 mb-2")
                     ui.label(
                         "Эти задачи используют такой же материал. Вы можете забрать их себе."
-                    ).classes("text-sm text-gray-500 mb-4")
+                    ).classes("text-sm text-slate-400 mb-4")
 
                     with ui.column().classes("w-full gap-2"):
                         for task in matches:
@@ -188,9 +189,11 @@ class BatchCard(BaseDocuWidget):
                                 "w-full items-center justify-between p-2 bg-gray-50 rounded border border-gray-100"
                             ):
                                 with ui.column().classes("gap-0"):
-                                    ui.label(task.file_name).classes("font-bold text-sm")
+                                    ui.label(task.file_name).classes(
+                                        "font-bold text-sm text-gray-200"
+                                    )
                                     ui.label(f"Листов: {task.sheet_qty}").classes(
-                                        "text-[10px] text-gray-400"
+                                        "text-[10px] text-slate-400"
                                     )
 
                                 ui.button(
@@ -310,14 +313,14 @@ class TaskItemRow:
             StatusBadge(self.task.status, size="sm").render()
 
             with ui.column().classes("flex-grow truncate gap-0"):
-                ui.label(self.task.file_name).classes("truncate font-medium")
+                ui.label(self.task.file_name).classes("truncate font-medium text-gray-200")
                 if self.session:
                     self._render_task_stock_alert()
 
             progress = self.task.sheets_done / (self.task.sheet_qty or 1)
             ui.linear_progress(value=progress).props("stripe").classes("w-32")
             ui.label(f"{self.task.sheets_done}/{self.task.sheet_qty}").classes(
-                "text-sm text-gray-600"
+                "text-sm text-gray-300"
             )
             self._render_action_buttons()
 

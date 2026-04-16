@@ -93,3 +93,23 @@ class AuthSystem(BaseSystem):
     def bootstrap_admin(self, default_password: str | None = None) -> User | None:
         """Legacy alias for get_or_create_admin."""
         return self.get_or_create_admin(default_password)
+
+    def ensure_default_workplace(self) -> None:
+        """Creates a default Workplace (LASER_1) if none exists."""
+        from loguru import logger
+
+        from docuflow.domain.entities.identity import Workplace
+
+        existing = self.db_session.exec(
+            select(Workplace).where(Workplace.node_id == "LASER_1")
+        ).first()
+
+        if not existing:
+            workplace = Workplace(
+                node_id="LASER_1",
+                name="Лазер 1",
+                allowed_modules="",
+            )
+            self.db_session.add(workplace)
+            self.db_session.commit()
+            logger.info("Created default workplace: LASER_1")

@@ -50,32 +50,24 @@ async def analytics_view(session: Session) -> None:
                     count_drift += 1
             avg_drift = round(total_drift / count_drift, 1) if count_drift > 0 else 0.0
 
-            completion_rate = round(
-                (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0, 1
-            )
+            round((completed_tasks / total_tasks * 100) if total_tasks > 0 else 0, 1)
         except Exception as e:
             ui.label(f"Failed to load metrics: {e}").classes("text-red-400")
             return
 
         with ui.row().classes("w-full gap-6"):
             # Metric Card 1
-            with ui.column().classes("flex-1 p-6 rounded-2xl glass-card relative overflow-hidden"):
-                ui.element("div").classes(
-                    "absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"
-                )
+            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
                 ui.label("TOTAL WORK ITEMS").classes(
-                    "text-slate-500 font-bold text-xs tracking-tighter"
+                    "text-slate-400 font-bold text-xs tracking-tighter"
                 )
-                ui.label(str(total_work_items)).classes("text-blue-400 text-4xl font-black mt-2")
+                ui.label(str(total_work_items)).classes("text-cyan-400 text-4xl font-black mt-2")
 
             # Metric Card 2 (DRIFT)
             drift_color = "emerald" if avg_drift <= 5 else "orange" if avg_drift <= 20 else "red"
-            with ui.column().classes("flex-1 p-6 rounded-2xl glass-card relative overflow-hidden"):
-                ui.element("div").classes(
-                    f"absolute top-0 right-0 w-32 h-32 bg-{drift_color}-500/10 rounded-full blur-3xl"
-                )
+            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
                 ui.label("AVG PRODUCTION DRIFT").classes(
-                    "text-slate-500 font-bold text-xs tracking-tighter"
+                    "text-slate-400 font-bold text-xs tracking-tighter"
                 )
                 ui.label(f"{'+' if avg_drift > 0 else ''}{avg_drift}%").classes(
                     f"text-{drift_color}-400 text-4xl font-black mt-2"
@@ -85,12 +77,9 @@ async def analytics_view(session: Session) -> None:
                 )
 
             # Metric Card 3
-            with ui.column().classes("flex-1 p-6 rounded-2xl glass-card relative overflow-hidden"):
-                ui.element("div").classes(
-                    "absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl"
-                )
+            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
                 ui.label("TOTAL FINISHED PARTS").classes(
-                    "text-slate-500 font-bold text-xs tracking-tighter"
+                    "text-slate-400 font-bold text-xs tracking-tighter"
                 )
                 ui.label(str(total_parts_produced)).classes(
                     "text-orange-400 text-4xl font-black mt-2"
@@ -100,7 +89,7 @@ async def analytics_view(session: Session) -> None:
         # --- CHARTS SECTION ---
         with ui.row().classes("w-full gap-6 mt-6"):
             # Chart 1: Status Distribution
-            with ui.column().classes("flex-1 p-6 rounded-2xl glass-card"):
+            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
                 ui.label("TASK STATUS DISTRIBUTION").classes(
                     "text-slate-400 text-xs font-bold mb-4"
                 )
@@ -135,7 +124,7 @@ async def analytics_view(session: Session) -> None:
                 ).classes("h-64")
 
             # Chart 2: Output Trend (Mocked dates for now)
-            with ui.column().classes("flex-grow-[2] p-6 rounded-2xl glass-card"):
+            with ui.column().classes("flex-grow-[2] p-6 rounded-2xl card"):
                 ui.label("PARTS PRODUCED (LAST 7 DAYS)").classes(
                     "text-slate-400 text-xs font-bold mb-4"
                 )
@@ -150,7 +139,7 @@ async def analytics_view(session: Session) -> None:
                             {
                                 "data": [120, 200, 150, 80, 70, 110, 130],
                                 "type": "bar",
-                                "itemStyle": {"color": "#6366f1"},
+                                "itemStyle": {"color": "#14b8a6"},
                             }
                         ],
                     }

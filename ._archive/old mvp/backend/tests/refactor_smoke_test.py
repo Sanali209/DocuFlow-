@@ -6,6 +6,7 @@ sys.path.append(os.path.join(os.getcwd(), "backend"))
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from src.application.services.document_service import DocumentService
 from src.domain.models import Document
 from src.infrastructure.database.models import Base

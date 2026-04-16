@@ -84,6 +84,11 @@ class AdminSystem:
     def get_all_workplaces(self) -> list[Workplace]:
         return list(self.session.exec(select(Workplace)).all())
 
+    def get_workplace_node_ids(self) -> list[str]:
+        """Returns list of node_ids for workplaces, or empty list if none."""
+        workplaces = self.get_all_workplaces()
+        return [w.node_id for w in workplaces] if workplaces else []
+
     def upsert_workplace(self, workplace_data: dict[str, Any]) -> Workplace:
         s = self.session
         node_id = workplace_data.get("node_id")
@@ -109,6 +114,18 @@ class AdminSystem:
             },
         )
         return workplace
+
+    def delete_workplace(self, node_id: str) -> None:
+        """Delete a workplace binding by node_id."""
+        s = self.session
+        statement = select(Workplace).where(Workplace.node_id == node_id)
+        workplace = s.exec(statement).first()
+        if workplace:
+            s.delete(workplace)
+            s.flush()
+            self._orchestrator.broadcast_command(
+                command="DELETE_WORKPLACE", data={"node_id": node_id}
+            )
 
     # --- User & Identity CRUD ---
     def get_all_users(self) -> list[User]:
@@ -262,6 +279,8 @@ class AdminSystem:
             ],
         }
 
+        # DEPRECATED: Legacy role name mapping for database migration only.
+        # Remove after all production databases have been migrated to Cyrillic names.
         legacy_mapping = {
             "Admin": "Админ",
             "Operator": "Оператор",
@@ -331,7 +350,7 @@ class AdminSyncSystem:
         return name.strip().lower() == "admin"
 
     def handle_force_step_down(self, data: dict[str, Any]):
-        # This is a special command handled by orchestrator logic, 
+        # This is a special command handled by orchestrator logic,
         # but registered here for consistency.
         logger.warning("Sync [ADMIN]: Received FORCE_STEP_DOWN command")
 

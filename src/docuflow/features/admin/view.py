@@ -368,6 +368,79 @@ async def render_presets_form(system_provider: Callable) -> None:
         ui.label(f"Preset Error: {e}").classes("text-red-400")
 
 
+@ui.refreshable
+async def render_bindings_panel(admin_system: AdminSystem) -> None:
+    """Refreshable bindings panel - displays all workplace bindings."""
+    try:
+        workplaces = admin_system.get_all_workplaces()
+        if not workplaces:
+            ui.label("No workplaces configured.").classes("text-slate-500 italic p-4")
+        for w in workplaces:
+            with ui.row().classes(
+                "w-full p-6 bg-indigo-500/5 rounded-2xl mb-4 "
+                "border border-indigo-500/10 items-center justify-between"
+            ):
+                with ui.column():
+                    ui.label(w.name).classes("text-2xl font-bold text-white")
+                    ui.badge(w.node_id, color="slate-700").classes("font-mono text-xs")
+
+                with ui.dialog().classes("glass-card p-8 rounded-3xl") as edit_wp:
+                    with ui.column().classes("gap-4 w-[400px]"):
+                        ui.label(f"Configure {w.name}").classes("text-xl font-bold text-indigo-400")
+                        new_nid = ui.input("Hardware Node ID", value=w.node_id).props(
+                            "dark rounded standout"
+                        )
+                        allowed = ui.input(
+                            "Allowed Modules (comma-sep)", value=w.allowed_modules or ""
+                        ).props("dark rounded standout")
+
+                        async def _update_binding(wp=w, nid=new_nid, allow=allowed):
+                            admin_system.upsert_workplace(
+                                {
+                                    "name": wp.name,
+                                    "node_id": nid.value,
+                                    "allowed_modules": allow.value or "",
+                                }
+                            )
+                            edit_wp.close()
+                            ui.notify("Binding updated", color="positive")
+                            render_bindings_panel.refresh(admin_system)
+
+                        ui.button("UPDATE BINDING", on_click=_update_binding).classes(
+                            "w-full vibrant-btn rounded-xl h-12"
+                        )
+
+                with ui.dialog().classes("glass-card p-8 rounded-3xl") as delete_confirm:
+                    with ui.column().classes("gap-4 w-[350px]"):
+                        ui.label(f"Delete '{w.name}'?").classes("text-xl font-bold text-red-400")
+                        ui.label("This action cannot be undone.").classes("text-slate-400")
+
+                        async def _confirm_delete(wp=w):
+                            admin_system.delete_workplace(wp.node_id)
+                            delete_confirm.close()
+                            ui.notify("Binding deleted", color="warning")
+                            render_bindings_panel.refresh(admin_system)
+
+                        ui.button("DELETE", on_click=_confirm_delete).classes(
+                            "w-full bg-red-600 text-white rounded-xl h-12"
+                        )
+                        ui.button("Cancel", on_click=delete_confirm.close).classes(
+                            "w-full bg-white/10 rounded-xl"
+                        )
+
+                with ui.row().classes("gap-2"):
+                    ui.button("Edit", icon="edit", on_click=edit_wp.open).classes(
+                        "rounded-xl bg-white/5 border border-white/10 text-xs py-2 px-4"
+                    )
+                    ui.button("Delete", icon="delete", on_click=delete_confirm.open).classes(
+                        "rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-xs py-2 px-4"
+                    )
+
+    except Exception as e:
+        ui.label(f"Binding Error: {e}").classes("text-red-400")
+        logger.exception(f"Bindings panel failed: {e}")
+
+
 # ────────────────────────────────────────────────────────────────
 # Main view entry point
 # ────────────────────────────────────────────────────────────────
@@ -415,7 +488,7 @@ async def admin_view(admin_system: AdminSystem, system_provider: Callable, layou
             async def _refresh_health():
                 try:
                     fresh_system = await system_provider(AdminSystem)
-                    nodes = await fresh_system.get_cluster_nodes()
+                    nodes = fresh_system.get_cluster_nodes()
                     hg.rows[:] = nodes
                     hg.update()
                 except Exception as exc:
@@ -463,7 +536,7 @@ async def admin_view(admin_system: AdminSystem, system_provider: Callable, layou
                             opts = {r.id: r.name for r in admin_system.get_all_roles()}
                             u_role_sel.set_options(opts)
                             if opts:
-                                u_role_sel.value = list(opts.keys())[0]
+                                u_role_sel.value = next(iter(opts.keys()))
 
                         user_dialog.on("show", _load_roles)
 
@@ -524,54 +597,51 @@ async def admin_view(admin_system: AdminSystem, system_provider: Callable, layou
 
         # ── BINDINGS ───────────────────────────────────────────
         with ui.tab_panel(t_bind):
-            ui.label("Hardware Node Bindings").classes("text-xl font-bold text-indigo-400 mb-6")
-            try:
-                workplaces = admin_system.get_all_workplaces()
-                logger.info(f"Bindings tab: get_all_workplaces() returned {len(workplaces)} workplaces")
-                if not workplaces:
-                    ui.label("No workplaces configured.").classes("text-slate-500 italic p-4")
-                for w in workplaces:
-                    with ui.row().classes(
-                        "w-full p-6 bg-indigo-500/5 rounded-2xl mb-4 "
-                        "border border-indigo-500/10 items-center justify-between"
-                    ):
-                        with ui.column():
-                            ui.label(w.name).classes("text-2xl font-bold text-white")
-                            ui.badge(w.node_id, color="slate-700").classes("font-mono text-xs")
+            with ui.row().classes("w-full justify-between items-center mb-6"):
+                ui.label("Hardware Node Bindings").classes("text-xl font-bold text-indigo-400")
 
-                        with ui.dialog().classes("glass-card p-8 rounded-3xl") as edit_wp:
-                            with ui.column().classes("gap-4 w-[400px]"):
-                                ui.label(f"Configure {w.name}").classes(
-                                    "text-xl font-bold text-indigo-400"
-                                )
-                                new_nid = ui.input("Hardware Node ID", value=w.node_id).props(
-                                    "dark rounded standout"
-                                )
-                                allowed = ui.input(
-                                    "Allowed Modules (comma-sep)", value=w.allowed_modules
-                                ).props("dark rounded standout")
-
-                                async def _update_binding(wp=w, nid=new_nid, allow=allowed):
-                                    admin_system.upsert_workplace(
-                                        {
-                                            "name": wp.name,
-                                            "node_id": nid.value,
-                                            "allowed_modules": allow.value,
-                                        }
-                                    )
-                                    edit_wp.close()
-                                    ui.notify("Binding updated", color="positive")
-
-                                ui.button("UPDATE BINDING", on_click=_update_binding).classes(
-                                    "w-full vibrant-btn rounded-xl h-12"
-                                )
-
-                        ui.button("Manage Station", icon="edit", on_click=edit_wp.open).classes(
-                            "rounded-xl bg-white/5 border border-white/10 text-xs py-2 px-4"
+                with ui.dialog().classes("glass-card p-8 rounded-3xl") as create_wp:
+                    with ui.column().classes("gap-4 w-[400px]"):
+                        ui.label("Create New Binding").classes("text-xl font-bold text-white")
+                        wp_name = ui.input("Workplace Name").props("dark rounded standout")
+                        wp_node = ui.input("Hardware Node ID").props("dark rounded standout")
+                        wp_modules = ui.input("Allowed Modules (comma-sep)").props(
+                            "dark rounded standout"
                         )
-            except Exception as e:
-                ui.label(f"Binding Error: {e}").classes("text-red-400")
-                logger.exception(f"Bindings tab failed: {e}")
+
+                        async def _create_binding():
+                            if not wp_name.value or len(wp_name.value) < 3:
+                                ui.notify(
+                                    "Workplace name must be at least 3 characters", color="negative"
+                                )
+                                return
+                            if not wp_node.value:
+                                ui.notify("Hardware Node ID is required", color="negative")
+                                return
+
+                            admin_system.upsert_workplace(
+                                {
+                                    "name": wp_name.value,
+                                    "node_id": wp_node.value,
+                                    "allowed_modules": wp_modules.value or "",
+                                }
+                            )
+                            create_wp.close()
+                            wp_name.value = ""
+                            wp_node.value = ""
+                            wp_modules.value = ""
+                            ui.notify("Binding created", color="positive")
+                            render_bindings_panel.refresh(admin_system)
+
+                        ui.button("CREATE BINDING", on_click=_create_binding).classes(
+                            "w-full vibrant-btn rounded-xl h-12"
+                        )
+
+                ui.button("Add Binding", icon="add", on_click=create_wp.open).classes(
+                    "rounded-xl px-6 py-2 vibrant-btn"
+                )
+
+            render_bindings_panel.refresh(admin_system)
 
         # ── CONFIGURATION ──────────────────────────────────────
         with ui.tab_panel(t_conf):
@@ -608,7 +678,7 @@ async def admin_view(admin_system: AdminSystem, system_provider: Callable, layou
                     """Load cluster nodes for CONFIGURATION tab independently."""
                     try:
                         fresh_system = await system_provider(AdminSystem)
-                        nodes = await fresh_system.get_cluster_nodes()
+                        nodes = fresh_system.get_cluster_nodes()
                         node_options = {None: "Global"}
                         for n in nodes:
                             node_options[n["node_id"]] = (
@@ -671,6 +741,7 @@ async def render_system_audit(system_provider: Callable) -> None:
     try:
         fresh_system = await system_provider(AdminSystem)
         from sqlmodel import desc
+
         logs = fresh_system.session.exec(
             select(WorkLog).order_by(desc(WorkLog.created_at)).limit(100)
         ).all()

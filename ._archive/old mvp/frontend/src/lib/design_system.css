@@ -10,18 +10,18 @@
     --color-text: #4C1D95;
     --color-surface: #FFFFFF;
     --color-border: #E9D5FF; /* Derived from secondary but lighter */
-    
+
     /* Typography */
     --font-heading: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Plus Jakarta Sans', sans-serif;
-    
+
     /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
-    
+
     /* Effects */
     --radius-sm: 4px;
     --radius-md: 8px;

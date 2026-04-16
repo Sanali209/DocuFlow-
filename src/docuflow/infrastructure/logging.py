@@ -10,4 +10,14 @@ def setup_logging(level: str = "INFO"):
         format="{message}",
         level=level,
     )
+
+    # Add file rotation for logs (max 10MB per file, keep 5 files)
+    logger.add(
+        "logs/docuflow.log",
+        rotation="10 MB",
+        retention="5 days",
+        compression="zip",
+        level="DEBUG",
+    )
+
     logger.info(f"Logging initialized with level: [bold blue]{level}[/]")

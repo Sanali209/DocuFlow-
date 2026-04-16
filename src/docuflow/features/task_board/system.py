@@ -56,13 +56,17 @@ class TaskBoardSystem(BaseSystem):
     def get_db_session(self) -> Generator[Session, None, None]:
         """
         Provides a session for database operations.
+
+        Priority: 1) Injected session (from DI), 2) Create new session from engine.
         """
-        if self.session:
+        if self.session is not None:
             yield self.session
-        else:
+        elif self.db_engine is not None:
             with Session(self.db_engine) as session:
                 yield session
                 session.commit()
+        else:
+            raise RuntimeError(f"{self.__class__.__name__}: No session or db_engine available")
 
     def _sync(self, session: Session):
         """Internal helper to flush or commit based on session ownership."""
@@ -112,14 +116,17 @@ class TaskBoardSystem(BaseSystem):
             session.add(log)
             self._sync(session)
 
-            # Notify integration services
-            if self.ns_mirror:
-                for bucket_entry in bucket_entries:
-                    await self.ns_mirror.on_bucket_add(bucket_entry)
+            # Note: NSMirrorService doesn't have on_bucket_add method
+            # This integration point is reserved for future bucket→NS sync
 
             return bucket_entries
 
     def get_bucket(self, node_id: str) -> list[WorkerBucketEntry]:
+        """Получает все записи корзины для указанного узла."""
+        from loguru import logger
+
+        logger.debug(f"get_bucket called: node_id={node_id!r}, type={type(node_id)}")
+
         with self.get_db_session() as session:
             return list(
                 session.exec(

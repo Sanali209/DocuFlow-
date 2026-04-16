@@ -70,7 +70,7 @@ async def warehouse_view(inventory_system: InventorySystem, system_provider: Cal
                         with ui.card().classes("w-full p-8 text-center glass-card"):
                             ui.icon("check_circle", color="emerald").classes("text-6xl mb-4")
                             ui.label("Все накормлены. Активных запросов нет.").classes(
-                                "text-xl text-gray-400"
+                                "text-xl text-slate-400"
                             )
                     else:
                         with ui.grid(columns=3).classes("w-full gap-4"):

@@ -1,14 +1,17 @@
 import pytest
-from docuflow.features.auth.system import AuthSystem
 from sqlmodel import Session, SQLModel, create_engine
-from docuflow.domain.entities.identity import Role, User
+
+from docuflow.domain.entities.identity import Role
+from docuflow.features.auth.system import AuthSystem
 from docuflow.infrastructure.config import Config
 
 pytest.importorskip("passlib")
 
+
 @pytest.fixture(name="config")
 def config_fixture():
     return Config(node_id="TEST_NODE")
+
 
 @pytest.fixture(name="session")
 def session_fixture():
@@ -34,7 +37,7 @@ def test_admin_bootstrapping(session, config):
     """Confirming that the system can seed an initial admin user on first run."""
     auth = AuthSystem(config, session)
 
-    # Initial state is empty (except what AuthSystem might create in __init__ if we aren't careful, 
+    # Initial state is empty (except what AuthSystem might create in __init__ if we aren't careful,
     # but here we call it manually)
     admin = auth.get_or_create_admin()
 
@@ -53,7 +56,7 @@ def test_admin_bootstrapping(session, config):
 async def test_authentication_flow(session, config):
     """Verifying the standard login flow against the synchronized local database."""
     auth = AuthSystem(config, session)
-    auth.get_or_create_admin() # seeds admin with password 'admin'
+    auth.get_or_create_admin()  # seeds admin with password 'admin'
 
     # Successful login
     user = await auth.authenticate_user("admin", "admin")

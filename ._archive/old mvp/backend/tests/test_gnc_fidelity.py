@@ -133,7 +133,7 @@ def test_gnc_multi_part_nesting():
 
     assert len(p1_moves) == len(p2_moves), "Part 1 and Part 2 have different number of moves"
 
-    for m1, m2 in zip(p1_moves, p2_moves):
+    for m1, m2 in zip(p1_moves, p2_moves, strict=False):
         # Parity check
         for axis in ["X", "Y", "I", "J"]:  # Check all coordinates
             v1_match = re.search(rf"{axis}([+-]?\d*\.?\d+)", m1)
@@ -208,7 +208,7 @@ def test_gnc_sidra_roundtrip():
     print(f"Generated moves: {len(gen_moves)}")
 
     # Even if line numbers differ, coordinates must match
-    for o_move, g_move in zip(orig_moves[:20], gen_moves[:20]):
+    for o_move, g_move in zip(orig_moves[:20], gen_moves[:20], strict=False):
         for axis in ["X", "Y", "I", "J"]:
             o_m = re.search(rf"{axis}([+-]?\d*\.?\d+)", o_move)
             g_m = re.search(rf"{axis}([+-]?\d*\.?\d+)", g_move)

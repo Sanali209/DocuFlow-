@@ -53,7 +53,7 @@ class ChatView:
         self,
         chat_system: ChatSystem,
         current_user: str = "operator",
-        system_provider: Callable = None,
+        system_provider: Callable | None = None,
         layout: Any = None,
     ):
         self.chat_system = chat_system

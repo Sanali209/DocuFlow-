@@ -9,4 +9,3 @@ User accounts and roles are decentralized. Updates to the **Identity Registry** 
 
 ## 3. Emergency Step-Down
 In case of leader failure, utilize the 'EMERGENCY STEP DOWN' command to trigger a new election.
-            

@@ -93,7 +93,7 @@ class BatchEngine:
         sorted_tasks = sorted(tasks, key=key_fn)
 
         groups = []
-        for key, task_group in itertools.groupby(sorted_tasks, key=key_fn):
+        for _key, task_group in itertools.groupby(sorted_tasks, key=key_fn):
             task_list = list(task_group)
 
             # Сортировка внутри батча: step_index → batch_index
@@ -151,9 +151,7 @@ class BatchEngine:
         for task in tasks:
             for part in task.parts:
                 # Ищем ProductionUnit с is_stock=True, содержащие эту деталь
-                in_stock = session.exec(
-                    select(ProductionUnit).where(ProductionUnit.is_stock == True)
-                ).all()
+                in_stock = session.exec(select(ProductionUnit).where(ProductionUnit.is_stock)).all()
 
                 # Фильтруем по part_sku
                 matching_units = [

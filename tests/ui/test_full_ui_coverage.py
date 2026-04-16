@@ -3,9 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from nicegui.testing import user_simulation
 
-from docuflow.features.admin.view import admin_view
 from docuflow.features.admin.system import AdminSystem
-from docuflow.features.inventory.system import InventorySystem
+from docuflow.features.admin.view import admin_view
 from docuflow.features.analytics.view import analytics_view
 
 # Import all views
@@ -55,13 +54,13 @@ async def test_smoke_dashboard(mock_session, system_provider):
     admin_sys = MagicMock()
     admin_sys.get_cluster_nodes = AsyncMock(return_value=[])
     admin_sys.session.get_bind.return_value = MagicMock()
-    
+
     # Also mock the system provider to return our admin_sys when requested
     async def mock_provider(stype):
         if stype == AdminSystem:
             return admin_sys
         return MagicMock()
-        
+
     layout = MagicMock()
 
     # Use patch to ensure any Session() call returns our mock

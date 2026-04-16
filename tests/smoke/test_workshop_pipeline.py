@@ -70,7 +70,7 @@ async def test_full_workshop_pipeline(db_session: Session, config: Config):
     db_session.commit()
 
     # 4. Workshop Operations
-    task_board = TaskBoardSystem(config, db_session)
+    task_board = TaskBoardSystem(config, db_engine=None, session=db_session)
 
     # Lock for operator
     entries = await task_board.lock_batch("BATCH-01", "NODE-1", "operator1")

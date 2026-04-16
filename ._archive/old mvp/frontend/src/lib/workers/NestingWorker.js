@@ -46,7 +46,7 @@ self.onmessage = function (e) {
 
         console.log(`Worker: Prepared ${partsToPlace.length} parts to place.`);
 
-        // 2. Sort by Area (Decreasing) 
+        // 2. Sort by Area (Decreasing)
         partsToPlace.sort((a, b) => (b.width * b.height) - (a.width * a.height));
 
         let resultSheets = JSON.parse(JSON.stringify(sheets));

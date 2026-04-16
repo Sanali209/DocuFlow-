@@ -192,9 +192,9 @@ class ChatSystem(BaseSystem):
         """
         statement = (
             select(ChatMessage)
-            .where(ChatMessage.ref_project_id == None)
-            .where(ChatMessage.ref_work_item_id == None)
-            .where(ChatMessage.ref_task_item_id == None)
+            .where(ChatMessage.ref_project_id is None)
+            .where(ChatMessage.ref_work_item_id is None)
+            .where(ChatMessage.ref_task_item_id is None)
             .order_by(ChatMessage.created_at.desc())
             .limit(limit)
         )

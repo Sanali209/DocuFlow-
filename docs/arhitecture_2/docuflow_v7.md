@@ -143,16 +143,16 @@
 NS-ЗЕРКАЛО (критично):
   Оператор режет с локальной папки NS (папка автоматики станка)
   Проблема: сетевой файл обновился, оператор режет со старой версии
-  
+
   Решение — NS Mirror Service (Background):
     FOR each task_item IN worker_bucket[node]:
       network_path = resolve(task_item.file_path, scan_root)
       local_ns_path = NS_FOLDER / task_item.file_name
-      
+
       IF local_ns_path не существует:
         copy(network_path → local_ns_path)
         WorkLog(INFO, "Скопирован в NS: {file_name}")
-      
+
       ELIF md5(network_path) != md5(local_ns_path):
         WorkLog(FILE_CHANGED, "⚠️ Сетевой файл отличается от локального!")
         ChatMessage(type=WARNING, "Файл {name} обновился на сети! Обновить NS?")
@@ -184,13 +184,13 @@ TaskItem → DONE:
       → пример: ввёл "07-А" → показывает ["2025-07-А-001", "2025-07-А-002", ...]
       → выбирает → qty добавляется к существующей
     (Нет QR-сканера → только ввод + поиск)
-  
+
   Списание материала:
     MaterialAudit(write_off, qty=sheets_done, ref=task_item)
-    
+
 generate_human_id():
   year = now.year[-2:]  # "25"
-  month = now.month     # "07"  
+  month = now.month     # "07"
   node_code = workplace.code  # "А" (короткий код узла)
   seq = next_seq_for(node, month)  # 001, 002 ...
   return f"{year}-{month:02d}-{node_code}-{seq:03d}"  # "25-07-А-042"
@@ -214,7 +214,7 @@ generate_human_id():
 ЧАСТИЧНЫЙ ПЕРЕВОД В ЗАПАС:
   ProductionUnit можно "разбить":
     split(unit, qty_to_stock=10) →
-      unit_stock(qty=10, is_stock=True) 
+      unit_stock(qty=10, is_stock=True)
       unit_active(qty=remaining)
     оба получают новые label_id, старый архивируется
 
@@ -293,19 +293,19 @@ def extract_sku(part_name_raw: str) -> tuple[str, str, str | None]:
     """
     Input:  "3433-11-004-G-1 " (с возможными пробелами, путями)
     Output: (sku, version_letter, version_suffix)
-    
+
     Логика: последний БУКВЕННЫЙ сегмент = версия (letter),
             последний ЦИФРОВОЙ сегмент после версии = version_suffix (назначение TBD)
-    
+
     "3433-11-004-G-1" → sku="3433-11-004-G", version="G", version_suffix="1"
     """
     # Убираем путь (если есть \\server\path\...)
     name = part_name_raw.strip().split("\\")[-1]
     # Убираем расширение (.dft, .DFT)
     name = re.sub(r'\.\w+$', '', name).strip()
-    
+
     segments = name.split("-")
-    
+
     # Находим последний буквенный сегмент = буква версии
     version_letter = "A"
     version_idx = -1
@@ -314,14 +314,14 @@ def extract_sku(part_name_raw: str) -> tuple[str, str, str | None]:
             version_letter = seg
             version_idx = len(segments) - 1 - i
             break
-    
+
     if version_idx < 0:
         return name, "A", None
-    
+
     sku = "-".join(segments[:version_idx + 1])  # "3433-11-004-G"
     suffix_parts = segments[version_idx + 1:]
     version_suffix = "-".join(suffix_parts) if suffix_parts else None  # "1"
-    
+
     return sku, version_letter, version_suffix
 
 # Итог для PartLibrary.sku = "3433-11-004-G"
@@ -388,7 +388,7 @@ def upsert_task_item(session, folder_path, file_path, new_hash, gnc_data):
     existing = session.exec(
         select(TaskItem).where(TaskItem.file_path == file_path)
     ).first()
-    
+
     if not existing:
         # Первый импорт
         task = TaskItem(file_path=file_path, file_hash=new_hash, ...)
@@ -417,7 +417,7 @@ Project
 WorkItem
   id, project_id
   work_item_type: SIDRA|MIHTAV|REWORK
-  
+
   status:
     NEW              # сканер нашёл папку + GNC
     PENDING_CUTS     # папка есть, GNC нет (ждём раскрой)
@@ -429,27 +429,27 @@ WorkItem
     DONE             # все TaskItem done
     CANCELLED
     ARCHIVED
-  
+
   folder_name: str (unique, idx)  # ключ идемпотентности
   folder_path: str                 # относительный от scan_root
-  
+
   # SIDRA-специфика (null если не удалось распарсить)
   sidra_number: str?    # "353203"
   sidra_step: str?      # "SHLAV-2"
-  
+
   folder_found_at, doc_received_at?, started_at?, completed_at?, last_scanned_at?
-  
+
   → task_items[], logs[], reservations[], tags[], comments[]
 
 TaskItem
   id, work_item_id, mat_type_id?
-  
+
   status: PLANNED|IN_PROGRESS|ON_HOLD|DONE|CANCELLED|BLOCKED
   priority: 0-2
   is_urgent: bool
-  
+
   file_name, file_path (relative!), file_hash (MD5)
-  
+
   # Из GNC
   sheet_x?, sheet_y?, sheet_qty?, thickness?
   gnc_date?      # DATE строка из GNC
@@ -457,16 +457,16 @@ TaskItem
   # Прогресс трекинг
   sheets_done: int = 0       # сколько листов порезано
   qty_produced?: int          # финальный факт
-  
+
   # Оценка времени
   estimated_minutes?: int    # из GNC парсера + коэффициент
   actual_minutes?: int       # вычисляется из хронологии + пауз
-  
+
   step_index?, batch_index?  # из имени файла (nullable)
-  
+
   assigned_to_node?, scanned_at, started_at?, completed_at?
   block_reason?: str          # Причина блокировки (если BLOCKED)
-  
+
   → task_parts[], production_units[], logs[], bucket_entries[]
 
 TaskPart
@@ -497,13 +497,13 @@ MaterialType
   thickness?, nominal_x?, nominal_y?
   weight_per_sheet?        # кг (для аудита по весу)
   primary_unit: pcs|kg|m2
-  
+
   # Параметры для расчёта времени резки (редактируются бригадиром):
   cut_speed_mm_per_min: float     # скорость резки (мм/мин)
   pierce_time_sec: float          # время прокола одного контура (сек)
   idle_speed_mm_per_min: float    # скорость холостых перемещений (мм/мин)
   time_tolerance_pct: float = 15  # допуск % (инциденты, смена материала и т.д.)
-  
+
   → stock_items[]
 
 MaterialStock
@@ -611,22 +611,22 @@ NSMirrorService (background task на каждом узле):
   ns_folder      = config.local_ns_path    # из .env: "C:\NS\cutting"
   check_interval = settings.ns_mirror_interval_seconds  # default: 60s
   copy_timeout   = settings.ns_mirror_copy_timeout_s    # default: 30s (защита от зависания)
-  
+
   loop: sleep(check_interval)
   for entry in WorkerBucket[this_node]:
     network_file = resolve(entry.task_item.file_path, scan_root)
     local_file   = ns_folder / entry.task_item.file_name
-    
+
     if not local_file.exists():
       copy(network_file → local_file)
       WorkLog(NS_MIRROR, "Скопирован в NS")
-    
+
     elif md5(network_file) != md5(local_file):
       WorkLog(FILE_CHANGED, f"⚠️ {file_name}: сетевой ≠ локальный!")
       alert_operator(node=this_node, task_item=entry.task_item,
                      message="Файл обновился. Обновить NS-копию?")
       # Оператор выбирает: Обновить / Оставить / Напомнить позже
-      
+
   on_task_done or removed_from_bucket:
     delete(local_file)   # Убираем из NS после завершения
 ```
@@ -819,7 +819,7 @@ class FolderScannerSettings(BaseModuleSettings):
     mihtav_scan_path: str = Field(default="", json_schema_extra={"scope": "local"})
     other_scan_path: str = Field(default="", json_schema_extra={"scope": "local"})
     poll_interval_seconds: int = Field(default=300, json_schema_extra={"scope": "local"})
-    
+
     # GLOBAL — синхронизируются через P2P
     enabled: bool = Field(default=True, json_schema_extra={"scope": "global"})
     default_project_name: str = Field(default="Default", json_schema_extra={"scope": "global"})

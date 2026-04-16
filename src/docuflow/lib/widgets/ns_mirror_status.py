@@ -20,12 +20,12 @@ class NSMirrorStatus(BaseDocuWidget):
 
     def render(self):
         """Рендерит виджет статуса."""
-        with ui.card().classes("w-full bg-slate-900/60 rounded-3xl border border-white/10 p-6"):
+        with ui.card().classes("w-full bg-slate-800/60 rounded-3xl border border-slate-700/50 p-6"):
             with ui.row().classes("w-full items-center justify-between mb-2"):
                 ui.label("LOCAL NS SYNC").classes(
-                    "text-xs font-bold text-indigo-300 opacity-60 tracking-widest uppercase"
+                    "text-xs font-bold text-teal-300 tracking-widest uppercase"
                 )
-                ui.icon("sync", color="indigo").classes("animate-spin-slow")
+                ui.icon("sync", color="teal").classes("animate-spin-slow")
 
             self.main_status = ui.label("Refreshing...").classes("text-lg font-bold text-white")
             self.sub_status = ui.label("").classes("text-xs text-slate-500 font-mono")

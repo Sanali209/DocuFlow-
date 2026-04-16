@@ -6,6 +6,7 @@ BucketPanel — корзина оператора с батчами.
 
 from typing import Any
 
+from loguru import logger
 from nicegui import ui
 from sqlmodel import Session
 
@@ -47,6 +48,15 @@ class BucketPanel(BaseDocuWidget):
     @ui.refreshable
     def render(self) -> None:
         """Рендерит панель корзины с разделением на очереди."""
+        # Validate node_id
+        if not self.node_id or not isinstance(self.node_id, str):
+            logger.warning(f"BucketPanel.render: invalid node_id={self.node_id!r}")
+            with ui.column().classes("w-full p-4 items-center"):
+                ui.label("⚠️ Рабочее место не выбрано").classes("text-yellow-400 font-bold")
+            return
+
+        logger.debug(f"BucketPanel.render: node_id={self.node_id!r}")
+
         bucket_entries = self.system.get_bucket(self.node_id)
 
         if not bucket_entries:
@@ -101,7 +111,7 @@ class BucketPanel(BaseDocuWidget):
                 "border-l-8 border-orange-500 shadow-xl scale-[1.02]" if is_active else ""
             )
 
-            with ui.div().classes(card_classes):
+            with ui.card().classes(card_classes):
                 BatchCard(
                     batch_group_id=batch_group_id,
                     tasks=tasks,
@@ -127,9 +137,9 @@ class BucketPanel(BaseDocuWidget):
     def _render_empty_bucket(self) -> None:
         """Рендерит пустую корзину."""
         with ui.card().classes("w-full p-8 text-center"):
-            ui.icon("inbox").classes("text-6xl text-gray-300 mb-4")
-            ui.label("Корзина пуста").classes("text-h6 text-gray-500")
-            ui.label("Нет назначенных батчей").classes("text-gray-400")
+            ui.icon("inbox").classes("text-6xl text-slate-400 mb-4")
+            ui.label("Корзина пуста").classes("text-h6 text-slate-300")
+            ui.label("Нет назначенных батчей").classes("text-slate-500")
 
     def _group_by_batch(self, entries: list[WorkerBucketEntry]) -> dict[str, list[TaskItem]]:
         """

@@ -164,7 +164,7 @@ class IncidentSystem(BaseSystem):
 
     def get_summary_stats(self) -> dict[str, float]:
         """Aggregate downtime metrics by incident category."""
-        statement = select(IncidentLog).where(IncidentLog.resolved == True)
+        statement = select(IncidentLog).where(IncidentLog.resolved)
         resolved_incidents = self.session.exec(statement).all()
 
         stats: dict[str, float] = {}
@@ -179,7 +179,7 @@ class IncidentSystem(BaseSystem):
         """Retrieve all currently unresolved workshop failures."""
         statement = (
             select(IncidentLog)
-            .where(IncidentLog.resolved == False)
+            .where(not IncidentLog.resolved)
             .order_by(IncidentLog.created_at.desc())
         )
         return list(self.session.exec(statement).all())
@@ -193,7 +193,7 @@ class IncidentSystem(BaseSystem):
         """
         statement = (
             select(IncidentLog)
-            .where(IncidentLog.resolved == True)
+            .where(IncidentLog.resolved)
             .order_by(IncidentLog.resolved_at.desc())
             .limit(limit)
         )

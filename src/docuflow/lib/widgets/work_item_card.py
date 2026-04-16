@@ -55,10 +55,10 @@ class WorkItemCard(BaseDocuWidget):
         ):
             # Custom Header
             with ui.row().classes(
-                "w-full items-center justify-between p-6 bg-slate-900/50 border-b border-white/5"
+                "w-full items-center justify-between p-6 bg-slate-800/60 border-b border-slate-700/50"
             ):
                 with ui.row().classes("items-center gap-3"):
-                    ui.icon("assignment", size="32px").classes("text-indigo-400")
+                    ui.icon("assignment", size="32px").classes("text-teal-400")
                     with ui.column().classes("gap-0"):
                         ui.label(self.work_item.folder_name).classes("text-xl font-bold text-white")
                         ui.label(
@@ -77,7 +77,7 @@ class WorkItemCard(BaseDocuWidget):
             with ui.scroll_area().classes("h-[70vh] w-full p-6"):
                 # Metadata Grid (High Contrast)
                 with ui.grid(columns=3).classes(
-                    "w-full gap-6 mb-8 p-6 bg-white/5 rounded-2xl border border-white/5"
+                    "w-full gap-6 mb-8 p-6 bg-slate-800/50 rounded-2xl border border-slate-700/50"
                 ):
                     self._info_item("Наряд", self.work_item.sidra_number or "—")
                     self._info_item("Тип", self.work_item.work_item_type)
@@ -92,10 +92,10 @@ class WorkItemCard(BaseDocuWidget):
 
                     with ui.column().classes("col-span-3 gap-1 mt-2"):
                         ui.label("ПУТЬ К ФАЙЛАМ").classes(
-                            "text-[10px] text-indigo-400 font-black tracking-tighter"
+                            "text-[10px] text-teal-400 font-black tracking-tighter"
                         )
                         ui.label(self.work_item.folder_path).classes(
-                            "text-xs text-slate-300 font-mono break-all bg-black/30 p-2 rounded border border-white/5"
+                            "text-xs text-slate-300 font-mono break-all bg-slate-900/50 p-2 rounded border border-slate-700/50"
                         )
 
                 # Action Buttons
@@ -127,14 +127,16 @@ class WorkItemCard(BaseDocuWidget):
                     self._render_tasks_table()
 
                 # History Section
-                ui.separator().classes("my-8 bg-white/5")
+                ui.separator().classes("my-8 bg-slate-700/50")
                 ui.label("ЖУРНАЛ СОБЫТИЙ").classes(
                     "text-xs font-black text-slate-500 tracking-widest mb-4"
                 )
                 self._render_work_log()
 
             # Footer
-            with ui.row().classes("w-full justify-end p-4 bg-slate-900/30 border-t border-white/5"):
+            with ui.row().classes(
+                "w-full justify-end p-4 bg-slate-800/40 border-t border-slate-700/50"
+            ):
                 ui.button("ЗАКРЫТЬ", on_click=dialog.close).props("flat color=slate-400").classes(
                     "text-xs font-bold"
                 )
@@ -145,7 +147,7 @@ class WorkItemCard(BaseDocuWidget):
         """Helper for rendering metadata pairs with high contrast."""
         with ui.column().classes(f"gap-0 {classes}"):
             ui.label(label.upper()).classes(
-                "text-[10px] text-indigo-400 font-black tracking-tighter mb-1"
+                "text-[10px] text-teal-400 font-black tracking-tighter mb-1"
             )
             ui.label(value).classes("text-sm text-slate-100 font-semibold")
 
@@ -173,8 +175,8 @@ class WorkItemCard(BaseDocuWidget):
             "body-cell-actions",
             """
             <q-td :props="props">
-                <q-btn flat round dense color="orange" icon="install_desktop" 
-                       @click="$parent.$emit('pull_task', props.row)" 
+                <q-btn flat round dense color="orange" icon="install_desktop"
+                       @click="$parent.$emit('pull_task', props.row)"
                        v-if="props.row.status === 'NEW' || props.row.status === 'PLANNED'" />
             </q-td>
             """,
@@ -208,13 +210,13 @@ class WorkItemCard(BaseDocuWidget):
         ).all()
 
         if not logs:
-            ui.label("Лог пуст").classes("text-gray-400 italic")
+            ui.label("Log empty").classes("text-slate-400 italic")
             return
 
         with ui.column().classes("w-full gap-2"):
             for log in logs:
                 with ui.row().classes("w-full items-start gap-4 text-sm"):
-                    ui.label(log.created_at.strftime("%d.%m %H:%M")).classes("text-gray-500 w-24")
+                    ui.label(log.created_at.strftime("%d.%m %H:%M")).classes("text-slate-500 w-24")
                     ui.label(log.message).classes("flex-grow")
                     if log.author:
                         ui.label(log.author).classes("text-blue-400")
@@ -234,7 +236,7 @@ class WorkItemCard(BaseDocuWidget):
 
         async def do_register():
             system = await self.get_system(WorkItemSystem)
-            system.register_document(self.work_item.id, self.user)
+            self.work_item = system.register_document(self.work_item.id, self.user)
             dialog.close()
 
         self.safe_action(do_register, "Документ успешно зарегистрирован", "Ошибка регистрации")

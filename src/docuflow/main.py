@@ -63,6 +63,7 @@ async def lifespan(fastapi_app: FastAPI):
         async with _container() as request_container:
             auth_system = await request_container.get(AuthSystem)
             auth_system.bootstrap_admin()
+            auth_system.ensure_default_workplace()
             logger.info("Admin bootstrap check complete.")
 
     except Exception:
@@ -114,6 +115,13 @@ register_all_views()
 # 2. FASTAPI INSTANCE
 app = FastAPI(lifespan=lifespan)
 setup_dishka(_container, app)
+
+
+# --- HEALTH ENDPOINT ---
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    return {"status": "healthy", "service": "docuflow", "version": "0.1.0"}
 
 
 # 3. ROUTING & VIEWS
@@ -188,9 +196,17 @@ async def index_page():
                     view_instance.active_filters.search_text = kwargs["filter_text"]
                     view_instance.render()
                 elif view_name == "task_board":
-                    # For TaskBoardView we need filter_work_item_id
+                    # For TaskBoardView: pass session, system, preset_system, admin_system, user as positional,
+                    # then node_id=None, then system_provider as keyword
                     view_instance = view_info.render_fn(
-                        *resolved_deps, filter_work_item_id=kwargs.get("filter_work_item")
+                        resolved_deps[0],  # session
+                        resolved_deps[1],  # system
+                        resolved_deps[2],  # preset_system
+                        resolved_deps[3],  # admin_system
+                        resolved_deps[4],  # user
+                        None,  # node_id = None
+                        filter_work_item_id=kwargs.get("filter_work_item"),
+                        system_provider=resolved_deps[5],  # system_provider
                     )
                     view_instance.render()
                 else:

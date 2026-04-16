@@ -151,9 +151,9 @@ class P2POrchestrator(BaseSystem):
 
     async def _polling_worker(self) -> None:
         """Periodic worker to check for and process inbox/outbox messages."""
-        logger.debug("Orchestrator: Polling worker started.")
+        logger.info("Orchestrator: Polling worker started.")
         while self._is_running:
-            logger.debug(
+            logger.trace(
                 f"Orchestrator [{self.config.node_id}]: Polling bus (interval: {self.config.bus_poll_interval}s)"
             )
             try:
@@ -204,11 +204,11 @@ class P2POrchestrator(BaseSystem):
 
     async def _maintenance_worker(self) -> None:
         """Periodic worker for leader-based synchronization and housekeeping."""
-        logger.debug("Orchestrator: Maintenance worker started.")
+        logger.info("Orchestrator: Maintenance worker started.")
         while self._is_running:
             try:
                 if self._coordination.is_leader:
-                    logger.debug(
+                    logger.trace(
                         f"Orchestrator [{self.config.node_id}]: PEER LEADER - Running maintenance..."
                     )
                     # 1. Database Sync (Master Snapshot)

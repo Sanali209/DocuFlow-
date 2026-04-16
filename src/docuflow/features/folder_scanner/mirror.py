@@ -73,9 +73,17 @@ class NSMirrorService(BaseSystem):
             except Exception as e:
                 logger.error(f"Error in NS Mirror loop: {e}", exc_info=True)
 
-            # Use interval from settings
             settings = await self.sdk.resolve_system_by_type(FolderScannerSettings)
             await asyncio.sleep(settings.ns_mirror_interval_seconds)
+
+    async def on_bucket_add(self, bucket_entry: Any) -> None:
+        """
+        Stub for future bucket→NS sync integration.
+
+        Currently not implemented - reserved for future use.
+        """
+        logger.debug(f"NSMirrorService.on_bucket_add called (not implemented): {bucket_entry}")
+        pass
 
     async def _sync_bucket(self, settings: FolderScannerSettings) -> None:
         """Fetch tasks in bucket and mirror them."""

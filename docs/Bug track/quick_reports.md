@@ -124,4 +124,4 @@ Traceback (most recent call last):
     raise orm_exc.DetachedInstanceError(
 sqlalchemy.orm.exc.DetachedInstanceError: Instance <Project at 0x2895a5fe1c0> is not bound to a Session; attribute refresh operation cannot proceed (Background on this error at: https://sqlalche.me/e/20/bhk3)
 2026-04-05 04:30:00.506 | DEBUG    | docuflow.application.bus.orchestrator:_polling_worker:150 - Orchest
-3. 
+3.

@@ -28,3 +28,7 @@ frontend/node_modules/
 docs/obsidian/docuFlow/.obsidian/plugins/copilot/data.json
 /shared_network/
 /src/docuflow/shared_network/
+tmp_test_shared/
+.coordinator.lock
+.nicegui/
+src/docuflow/.nicegui/

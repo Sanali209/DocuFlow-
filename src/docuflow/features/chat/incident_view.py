@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from nicegui import ui
 
@@ -53,7 +54,7 @@ class IncidentView:
         self,
         incident_system: IncidentSystem,
         current_user: str = "foreman",
-        system_provider: Callable = None,
+        system_provider: Callable | None = None,
         layout: Any = None,
     ):
         self.incident_system = incident_system
@@ -337,36 +338,4 @@ class IncidentView:
             with ui.row().classes("w-full justify-end mt-6"):
                 ui.button("Cancel", on_click=dialog.close).props("flat text-color=slate-500")
                 ui.button("CONFIRM FIX", on_click=submit).props("unelevated color=emerald")
-        dialog.open()
-
-    def open_reporting_dialog(self):
-        """Manual reporting interface for workshop operators."""
-        with (
-            ui.dialog() as dialog,
-            ui.card().classes("bg-slate-900 border border-red-500/20 w-96 p-6"),
-        ):
-            ui.label("REPORT FAILURE").classes(
-                "text-sm font-black text-red-500 mb-4 tracking-widest"
-            )
-
-            # Use systemic constants for type selection
-            opts = [
-                self.incident_system.TYPE_BREAKDOWN,
-                self.incident_system.TYPE_DEFECT,
-                self.incident_system.TYPE_SUPPLY,
-            ]
-            type_select = ui.select(opts, label="Failure Category").classes("w-full")
-            desc = ui.textarea(label="Issue Description").classes("w-full")
-
-            async def submit():
-                if not type_select.value or not desc.value:
-                    return
-                self.incident_system.report_incident(type_select.value, desc.value, "workshop-op")
-                dialog.close()
-                await self.full_refresh()
-                ui.notify("Failure logged and broadcasted", color="red")
-
-            with ui.row().classes("w-full justify-end mt-6"):
-                ui.button("Cancel", on_click=dialog.close).props("flat text-color=slate-500")
-                ui.button("PRIORITY BROADCAST", on_click=submit).props("unelevated color=red")
         dialog.open()

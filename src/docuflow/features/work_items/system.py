@@ -14,6 +14,8 @@ from docuflow.domain.entities.production import (
 )
 from docuflow.infrastructure.config import Config
 
+DEFAULT_PROJECT_ID = 1
+
 
 class WorkItemFilters(BaseModel):
     """Filter criteria for the WorkItem repository."""
@@ -92,8 +94,7 @@ class WorkItemSystem(BaseSystem):
                 item_type=WorkItemType.SIDRA
             )
         """
-        # Default project fallback: Per architecture, everything starts in 'Default' (ID 1)
-        target_project_id = project_id if project_id else 1
+        target_project_id = project_id if project_id else DEFAULT_PROJECT_ID
 
         work_item = WorkItem(
             folder_name=folder_name,
@@ -193,6 +194,7 @@ class WorkItemSystem(BaseSystem):
 
         self.db_session.add(work_item)
         self.db_session.flush()
+        self.db_session.commit()
         return work_item
 
     def update_status(

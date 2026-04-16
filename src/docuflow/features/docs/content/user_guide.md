@@ -6,4 +6,3 @@ The Warehouse module uses absolute-value synchronization. Changes to physical st
 
 ## 2. Access Authorization
 Your sidebar will dynamicall update based on your **Role** and the **Workplace** binding of the current node.
-            

@@ -1,6 +1,6 @@
 # 🌊 DocuFlow: Decentralized Factory Orchestration
 
-**DocuFlow** is a robust, peer-to-peer (P2P) workflow and information management system designed for industrial environments where reliable internet access is not guaranteed. 
+**DocuFlow** is a robust, peer-to-peer (P2P) workflow and information management system designed for industrial environments where reliable internet access is not guaranteed.
 
 It transforms a simple shared network folder (Samba/CIFS) into a highly reliable, cryptographically secured message bus and state synchronization engine.
 

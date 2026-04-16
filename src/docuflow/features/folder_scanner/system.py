@@ -55,7 +55,7 @@ class FolderScannerSystem(BaseSystem):
         self._loop_task: asyncio.Task | None = None
         self._last_successful_scan: datetime.datetime | None = None
         self._items_discovered_count: int = 0
-        
+
         # Compatibility attributes for tests
         self._last_scan_time: datetime.datetime | None = None
         self._files_found: int = 0
@@ -106,7 +106,6 @@ class FolderScannerSystem(BaseSystem):
 
     def fetch_scanner_settings(self) -> FolderScannerSettings:
         """Internal synchronous helper to fetch settings from AdminSystem."""
-        from docuflow.features.admin.system import AdminSystem
 
         if self._admin_system:
             data = self._admin_system.get_node_settings(self.config.node_id, "folder_scanner")
@@ -127,7 +126,7 @@ class FolderScannerSystem(BaseSystem):
         settings = self.fetch_scanner_settings()
         if args and isinstance(args[0], FolderScannerSettings):
             settings = args[0]
-        
+
         loop = asyncio.get_event_loop()
         return loop.create_task(self.run_full_scan_cycle(settings))
 
@@ -226,10 +225,11 @@ class FolderScannerSystem(BaseSystem):
         # Audit the scan cycle
         with Session(self.db_engine) as db_session:
             from docuflow.domain.entities.production import WorkLog, WorkLogType
+
             scan_log = WorkLog(
                 log_type=WorkLogType.INFO,
                 message=f"Scanner completed cycle. Discovered {self._items_discovered_count} items.",
-                node_id=self.config.node_id
+                node_id=self.config.node_id,
             )
             db_session.add(scan_log)
             db_session.commit()

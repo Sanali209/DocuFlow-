@@ -73,7 +73,7 @@ class PartLibrarySystem(BaseSystem):
         return self.db_session.exec(statement).first()
 
     def search_part_library(
-        self, sku_filter: str = None, mat_type_id: int = None, limit: int = 100
+        self, sku_filter: str | None = None, mat_type_id: int | None = None, limit: int = 100
     ) -> list[PartLibrary]:
         """
         Filters and lists parts in the global library.

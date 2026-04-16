@@ -1,30 +1,16 @@
 """Integration tests for FolderScannerSystem."""
 
+from contextlib import asynccontextmanager
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from docuflow.domain.entities.identity import NodeSetting
+from docuflow.domain.entities.production import Project
 from docuflow.features.folder_scanner.settings import FolderScannerSettings
 from docuflow.features.folder_scanner.system import FolderScannerSystem
 from docuflow.infrastructure.config import Config
-
-
-@pytest.fixture
-def mock_config(tmp_path):
-    """Create a mock config with temporary paths."""
-    config = MagicMock(spec=Config)
-    config.node_id = "node_01"
-    config.shared_path = str(tmp_path)
-    return config
-
-
-@pytest.fixture
-def mock_sdk():
-    """Create a mock SDK."""
-    sdk = AsyncMock()
-    sdk.is_master.return_value = True
-    return sdk
 
 
 @pytest.fixture
@@ -37,6 +23,49 @@ def mock_engine(tmp_path):
     engine = create_engine(f"sqlite:///{db_path}")
     SQLModel.metadata.create_all(engine)
     return engine
+
+
+@pytest.fixture
+def mock_config(tmp_path):
+    """Create a mock config with temporary paths."""
+    config = MagicMock(spec=Config)
+    config.node_id = "node_01"
+    config.shared_path = str(tmp_path)
+    return config
+
+
+@pytest.fixture
+def mock_sdk(mock_engine):
+    """Create a mock SDK."""
+    sdk = MagicMock()
+    sdk.is_master.return_value = True
+
+    # Add async resolve_system_by_type mock that returns proper mocks
+    async def mock_resolve(system_cls):
+        # Create a real default project in the test database
+        from sqlmodel import Session, select
+
+        with Session(mock_engine) as session:
+            default_project = session.exec(select(Project).where(Project.name == "Default")).first()
+            if not default_project:
+                default_project = Project(name="Default", is_default=True)
+                session.add(default_project)
+                session.commit()
+                session.refresh(default_project)
+
+        # Return a mock that has the required method
+        mock_system = MagicMock()
+        mock_system.resolve_default_workshop_project.return_value = default_project
+        return mock_system
+
+    sdk.resolve_system_by_type = AsyncMock(side_effect=mock_resolve)
+
+    @asynccontextmanager
+    async def mock_request_scope():
+        yield sdk
+
+    sdk.request_scope = mock_request_scope
+    return sdk
 
 
 @pytest.fixture
@@ -60,8 +89,6 @@ def mock_admin_system(mock_engine):
 
     # Seed test data
     with Session(mock_engine) as session:
-        from docuflow.domain.entities.identity import NodeSetting
-
         setting = NodeSetting(
             node_id="node_01",
             module="folder_scanner",

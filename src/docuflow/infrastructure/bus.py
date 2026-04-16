@@ -34,7 +34,7 @@ class InboxHandler(FileSystemEventHandler):
 
         filename = os.path.basename(os.fsdecode(event.src_path))
         if self._is_valid_new_message(filename):
-            logger.debug(f"FileBus: Valid new message detected: {filename}")
+            logger.trace(f"FileBus: Valid new message detected: {filename}")
 
     def _is_valid_new_message(self, filename: str) -> bool:
         """Check if a filename represents a finalized protocol message."""
@@ -251,7 +251,7 @@ class FileBusSystem(BaseSystem):
             except Exception:
                 logger.exception(f"FileBus: Failed to scan folder for temp files: {folder}")
 
-        logger.debug(f"FileBus: Temp cleanup examined={examined} removed={removed}")
+        logger.trace(f"FileBus: Temp cleanup examined={examined} removed={removed}")
 
     def _is_relevant_message(self, filename: str, folder_name: str) -> bool:
         """Determine if a file is a finalized message addressed to this node."""
@@ -306,11 +306,11 @@ class FileBusSystem(BaseSystem):
                 except OSError:
                     # fsync may fail on certain filesystems or permissions;
                     # still attempt the atomic replace but log the condition.
-                    logger.debug(f"FileBus: os.fsync failed for {temp_path}")
+                    logger.trace(f"FileBus: os.fsync failed for {temp_path}")
 
             # 2. Atomically replace (safer than rename across platforms)
             os.replace(temp_path, final_path)
-            logger.debug(f"FileBus: Wrote message to {final_path}")
+            logger.trace(f"FileBus: Wrote message to {final_path}")
         except Exception:
             # Best-effort cleanup of temp file to avoid littering shared folder
             try:

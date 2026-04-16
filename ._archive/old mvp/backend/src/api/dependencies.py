@@ -1,5 +1,6 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
+
 from src.application.services.document_service import DocumentService
 from src.application.services.gnc_service import GncService
 from src.application.services.inventory_service import InventoryService

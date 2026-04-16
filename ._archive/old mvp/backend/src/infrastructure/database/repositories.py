@@ -5,6 +5,7 @@ from datetime import date
 
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
+
 from src.domain.interfaces import IDocumentRepository, ITaskRepository
 from src.domain.models import (
     Assignee,
@@ -127,7 +128,6 @@ class SQLDocumentRepository(IDocumentRepository):
         end_date: date = None,
         date_field: str = "registration_date",
     ) -> list[Document]:
-
         query = self.db.query(DocumentDB)
 
         # Joins for filtering

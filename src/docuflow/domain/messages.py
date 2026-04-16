@@ -1,10 +1,10 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class CommandType(str, Enum):
+class CommandType(StrEnum):
     """Enumeration of supported P2P cluster commands.
 
     Commands define the intent of a request sent over the File Bus.

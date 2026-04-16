@@ -15,8 +15,8 @@ from docuflow.domain.entities.production import (
     TaskItem,
     WorkLog,
 )
-from docuflow.features.reports.system import BlockParam, ReportDataBlock, ReportRegistry
 from docuflow.features.inventory.settings import InventorySettings
+from docuflow.features.reports.system import BlockParam, ReportDataBlock, ReportRegistry
 from docuflow.infrastructure.config import Config
 
 
@@ -76,7 +76,11 @@ class InventorySystem(BaseSystem):
     # --- Stock & Inventory Management ---
 
     def receive_material_batch(
-        self, mat_type_id: int, quantity: float, batch_code: str = None, location: str = "MAIN"
+        self,
+        mat_type_id: int,
+        quantity: float,
+        batch_code: str | None = None,
+        location: str = "MAIN",
     ) -> MaterialStock:
         """
         Records the arrival of a new material batch into the workshop stock.
@@ -288,12 +292,12 @@ class InventorySystem(BaseSystem):
                 "mat_code": stock.material_type.code if stock.material_type else "Unknown",
                 "quantity": stock.quantity,
                 "location": stock.location,
-                "status": stock.status.value if hasattr(stock.status, "value") else str(stock.status),
+                "status": stock.status.value
+                if hasattr(stock.status, "value")
+                else str(stock.status),
             }
             for stock in stock_records
         ]
-
-
 
     def get_usage_audit_log(self, db_session: Session, report_params: dict) -> list[dict]:
         """
@@ -316,6 +320,7 @@ class InventorySystem(BaseSystem):
     async def on_startup(self):
         """Lifecycle hook to register inventory reporting data blocks and settings."""
         from docuflow.domain.settings import registry as settings_registry
+
         settings_registry.register("inventory", InventorySettings)
 
         if not self.sdk:

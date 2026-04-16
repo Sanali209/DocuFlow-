@@ -121,7 +121,7 @@ class ReportsView:
             default_val = (
                 "shift_summary"
                 if "shift_summary" in options
-                else (list(options.keys())[0] if options else None)
+                else (next(iter(options.keys())) if options else None)
             )
             self.template_selector = ui.select(
                 options, label="Template Type", value=default_val

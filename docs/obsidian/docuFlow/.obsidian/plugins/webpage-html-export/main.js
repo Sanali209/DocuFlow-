@@ -68570,8 +68570,8 @@ var graph_render_worker_txt_default = `if ('function' === typeof importScripts) 
 	function getPosition(index) {
 		return { x: positions[index * 2], y: positions[index * 2 + 1] };
 	}
-	
-	function parseHex(hex) 
+
+	function parseHex(hex)
 	{
 		if (typeof hex === 'number') {
 			return hex;
@@ -68584,8 +68584,8 @@ var graph_render_worker_txt_default = `if ('function' === typeof importScripts) 
 			throw new Error('Invalid hex color. Must be a string or number.');
 		}
 	}
-	
-	function hexToRgb(hex) 
+
+	function hexToRgb(hex)
 	{
 		const parsed = parseHex(hex);
 		return {
@@ -68594,11 +68594,11 @@ var graph_render_worker_txt_default = `if ('function' === typeof importScripts) 
 			b: parsed & 255
 		};
 	}
-	
+
 	function rgbToHex(r, g, b) {
 		return (clamp(r, 0, 255) << 16) | (clamp(g, 0, 255) << 8) | clamp(b, 0, 255);
 	}
-	
+
 	function mixColors(hexStart, hexEnd, factor) {
 		const start = hexToRgb(hexStart);
 		const end = hexToRgb(hexEnd);
@@ -68609,13 +68609,13 @@ var graph_render_worker_txt_default = `if ('function' === typeof importScripts) 
 			Math.round(start.b + (end.b - start.b) * safeFactor)
 		);
 	}
-	
+
 	function toHexString(hexNumber) {
 		return '#' + hexNumber.toString(16).padStart(6, '0');
 	}
 
-	
-	
+
+
 
 	function invertColor(hex, bw) {
 		hex = hex.toString(16); // force conversion
@@ -70032,17 +70032,17 @@ var deferred_txt_default = `async function loadIncludes()
 		try
 		{
 			let includeText = "";
-			
+
 			if (includePath.startsWith("https:") || includePath.startsWith("http:") || window.location.protocol != "file:")
 			{
 				const request = await fetch(includePath);
-				if (!request.ok) 
+				if (!request.ok)
 				{
 					console.log("Could not include file: " + includePath);
 					includeTag?.remove();
 					continue;
 				}
-				
+
 				includeText = await request.text();
 			}
 			else
@@ -70073,7 +70073,7 @@ var deferred_txt_default = `async function loadIncludes()
 	}
 }
 
-document.addEventListener("DOMContentLoaded", () => 
+document.addEventListener("DOMContentLoaded", () =>
 {
 	loadIncludes();
 });
@@ -70099,13 +70099,13 @@ function waitLoadScripts(scriptNames, callback)
 			return;
 		}
 
-		if (!script || script.getAttribute('loaded') == "true") // if already loaded 
+		if (!script || script.getAttribute('loaded') == "true") // if already loaded
 		{
 			if (index < scripts.length)
 				loadNext(nextIndex);
 		}
-		
-		if (index < scripts.length) 
+
+		if (index < scripts.length)
 		{
 			script.addEventListener("load", () => loadNext(nextIndex));
 		}
@@ -70360,7 +70360,7 @@ body
     justify-content: center;
 }
 
-#center-content 
+#center-content
 {
     flex-basis: 100%;
     max-width: 100%;
@@ -70380,7 +70380,7 @@ body
     pointer-events: none;
 }
 
-#center-content>.obsidian-document 
+#center-content>.obsidian-document
 {
     padding-left: 2em;
     padding-right: 1em;
@@ -70400,7 +70400,7 @@ body
     contain: inline-size;
 }
 
-body #center-content>.obsidian-document>.markdown-preview-sizer 
+body #center-content>.obsidian-document>.markdown-preview-sizer
 {
     padding-bottom: 80vh;
     width: 100%;
@@ -70434,7 +70434,7 @@ body #center-content>.obsidian-document>.markdown-preview-sizer
     object-fit: contain;
 }
 
-:not(h1,h2,h3,h4,h5,h6,li):has(> :is(.math, table)) 
+:not(h1,h2,h3,h4,h5,h6,li):has(> :is(.math, table))
 {
     overflow-x: auto !important;
 }
@@ -70503,7 +70503,7 @@ body #center-content>.obsidian-document>.markdown-preview-sizer
 
 /*#region Loading */
 
-.scroll-highlight 
+.scroll-highlight
 {
     position: absolute;
     width: 100%;
@@ -79193,7 +79193,7 @@ var Webpage = class extends Attachment {
       if (!this.viewElement)
         return "";
       const content = this.viewElement.cloneNode(true);
-      content.querySelectorAll(`h1, h2, h3, h4, h5, h6, .mermaid, table, mjx-container, style, script, 
+      content.querySelectorAll(`h1, h2, h3, h4, h5, h6, .mermaid, table, mjx-container, style, script,
 .mod-header, .mod-footer, .metadata-container, .frontmatter, img[src^="data:"]`).forEach((heading) => heading.remove());
       content.querySelectorAll("[src]").forEach((el) => {
         var _a3;

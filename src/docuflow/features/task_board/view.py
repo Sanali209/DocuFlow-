@@ -63,7 +63,7 @@ class TaskBoardView:
         preset_system: ViewPresetSystem,
         admin_system: Any = None,
         user: str = "admin",
-        node_id: str = "LASER_1",
+        node_id: str | None = None,
         role: str = "operator",
         filter_work_item_id: int | None = None,
         system_provider: Any = None,
@@ -82,6 +82,18 @@ class TaskBoardView:
     def render(self) -> None:
         """Рендерит основной view."""
         with ui.column().classes("w-full p-4"):
+            # Check if workplaces are configured
+            if not self._has_workplaces():
+                with ui.column().classes("w-full p-8 items-center"):
+                    ui.label("⚠️ Рабочие места не настроены").classes(
+                        "text-2xl font-bold text-yellow-400"
+                    )
+                    ui.label("Перейдите в Admin → BINDINGS для настройки").classes("text-slate-400")
+                    ui.button(
+                        "Открыть Admin", icon="settings", on_click=lambda: ui.navigate.to("/admin")
+                    ).classes("mt-4 vibrant-btn")
+                return
+
             # Переключатель роли
             self._render_role_switcher()
 
@@ -93,7 +105,7 @@ class TaskBoardView:
     def _render_role_switcher(self) -> None:
         """Рендерит переключатель роли."""
         with ui.row().classes("items-center gap-4 mb-4"):
-            ui.label("Роль:").classes("text-gray-600")
+            ui.label("Роль:").classes("text-slate-500")
             ui.toggle(
                 {"operator": "Оператор", "foreman": "Бригадир"},
                 value=self.role,
@@ -121,14 +133,14 @@ class TaskBoardView:
     def _render_operator_view(self) -> None:
         """Рендерит вид оператора."""
         with ui.column().classes("w-full gap-4"):
-            # Выбираем узел
+            # Выбираем узел (инициализирует self.node_id)
             self._render_node_selector()
 
-            # Корзина оператора
+            # Корзина оператора - передаем явно node_id
             BucketPanel(
                 session=self.session,
                 system=self.system,
-                node_id=self.node_id,
+                node_id=self.node_id if self.node_id else "UNKNOWN",
                 user=self.user,
                 system_provider=self.system_provider,
             ).render()
@@ -177,16 +189,41 @@ class TaskBoardView:
         """Рендерит выбор узла."""
         nodes = self._get_available_nodes()
 
+        if not nodes:
+            with ui.column().classes("w-full p-4 items-center"):
+                ui.label("⚠️ Рабочие места не настроены").classes(
+                    "text-yellow-400 font-bold text-lg"
+                )
+                ui.label("Перейдите в Admin → BINDINGS для настройки").classes(
+                    "text-slate-500 text-sm"
+                )
+            # Note: node_id remains None - render() will handle this
+            return
+
+        # Initialize node_id if not set
+        if not self.node_id:
+            self.node_id = nodes[0]
+
         with ui.row().classes("items-center gap-4 mb-4"):
-            ui.label("Рабочее место:").classes("text-gray-600")
+            ui.label("Рабочее место:").classes("text-slate-500")
+            default_node = self.node_id if self.node_id and self.node_id in nodes else nodes[0]
             ui.select(
                 options={n: n for n in nodes},
-                value=self.node_id,
+                value=default_node,
                 on_change=lambda e: self._select_node(e.value),
             ).classes("w-48")
 
     def _select_node(self, node_id: str) -> None:
         """Выбирает узел и проверяет заметки о передаче смены."""
+        from loguru import logger
+
+        logger.debug(f"_select_node called: node_id={node_id!r}, type={type(node_id)}")
+
+        # Validate node_id
+        if not node_id or not isinstance(node_id, str):
+            logger.warning(f"_select_node: invalid node_id={node_id!r}, ignoring")
+            return
+
         self.node_id = node_id
 
         # Проверка заметок о передаче смены
@@ -289,10 +326,10 @@ class TaskBoardView:
                                     lambda t=tasks[0]: self._show_work_item_by_id(t.work_item_id),
                                 ).classes("font-bold text-blue-600")
 
-                            ui.label(f"Батч {batch_id[:8]}...").classes("text-sm text-gray-500")
+                            ui.label(f"Батч {batch_id[:8]}...").classes("text-sm text-slate-500")
                             ui.label(f"({len(tasks)} задач)").classes("text-xs")
                 else:
-                    ui.label("Нет активных батчей").classes("text-gray-400 ml-4")
+                    ui.label("Нет активных батчей").classes("text-slate-400 ml-4")
 
     def _calculate_node_drift(self, bucket_entries: list[WorkerBucketEntry]) -> float:
         """Вычисляет средний Drift % для всех задач на узле."""
@@ -399,21 +436,33 @@ class TaskBoardView:
                 on_select=self._handle_selection_change,
             ).classes("w-full")
         else:
-            ui.label("Все задачи назначены или батчированы").classes("text-gray-500")
+            ui.label("Все задачи назначены или батчированы").classes("text-slate-500")
 
     def _handle_selection_change(self, e):
         """Show/hide merge button based on selection."""
-        if e.selection and len(e.selection) >= 1:
+        # Store selected IDs for later use
+        self._selected_unassigned_ids = []
+        if e.selection:
+            # Handle both dict and row object
+            for item in e.selection:
+                if hasattr(item, "id"):
+                    self._selected_unassigned_ids.append(item.id)
+                elif isinstance(item, dict) and "id" in item:
+                    self._selected_unassigned_ids.append(item["id"])
+
+        if self._selected_unassigned_ids and len(self._selected_unassigned_ids) >= 1:
             self.merge_button.classes(remove="hidden")
         else:
             self.merge_button.classes(add="hidden")
 
     def _create_manual_batch(self) -> None:
         """Создает батч из выбранных задач вручную."""
-        selected_ids = [row["id"] for row in self.unassigned_table.selection]
-        if not selected_ids:
+        # Use stored selection from handler
+        if not hasattr(self, "_selected_unassigned_ids") or not self._selected_unassigned_ids:
+            ui.notify("Выберите задачи для создания батча", type="warning")
             return
 
+        selected_ids = self._selected_unassigned_ids
         engine = BatchEngine(self.session)
         batch_id = engine.create_batch(selected_ids)
         ui.notify(f"Создан ручной батч {batch_id[:8]}...", type="positive")
@@ -426,7 +475,7 @@ class TaskBoardView:
         if not unassigned:
             with ui.card().classes("w-full p-8 text-center"):
                 ui.icon("check_circle").classes("text-6xl text-green-300 mb-4")
-                ui.label("Все задачи назначены").classes("text-h6 text-gray-500")
+                ui.label("Все задачи назначены").classes("text-h6 text-slate-500")
             return
 
         for task in unassigned:
@@ -435,7 +484,7 @@ class TaskBoardView:
                     with ui.column():
                         ui.label(task.file_name).classes("font-medium")
                         ui.label(f"Листов: {task.sheet_qty or '-'}").classes(
-                            "text-sm text-gray-500"
+                            "text-sm text-slate-500"
                         )
 
                     StatusBadge(task.status).render()
@@ -484,9 +533,11 @@ class TaskBoardView:
             workplaces = self.admin_system.get_all_workplaces()
             if workplaces:
                 return [w.node_id for w in workplaces]
+        return []
 
-        # Fallback if no admin system or no workplaces registered yet
-        return ["LASER_1", "LASER_2", "LASER_3", "LASER_4"]
+    def _has_workplaces(self) -> bool:
+        """Проверяет наличие настроенных рабочих мест."""
+        return bool(self._get_available_nodes())
 
     def _get_node_status(self, node_id: str) -> str:
         """Получает статус узла."""
@@ -521,7 +572,7 @@ class TaskBoardView:
         """Получает неназначенные задачи с учетом фильтра наряда."""
         statement = select(TaskItem).where(
             TaskItem.assigned_to_node.is_(None),
-            TaskItem.status.in_([TaskItemStatus.PLANNED, TaskItemStatus.NEW]),
+            TaskItem.status == TaskItemStatus.PLANNED,
         )
 
         if self.filter_work_item_id:

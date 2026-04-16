@@ -40,10 +40,10 @@ async def dashboard_view(
     with Session(db_engine) as session:
         wi_count = session.exec(select(func.count(WorkItem.id))).one()
         incident_count = session.exec(
-            select(func.count(IncidentLog.id)).where(IncidentLog.resolved == False)
+            select(func.count(IncidentLog.id)).where(not IncidentLog.resolved)
         ).one()
         pallet_count = session.exec(
-            select(func.count(ProductionUnit.id)).where(ProductionUnit.is_stock == True)
+            select(func.count(ProductionUnit.id)).where(ProductionUnit.is_stock)
         ).one()
 
     ui.label("Cluster Management Hub").classes("text-3xl font-bold text-white mb-4")
@@ -51,37 +51,28 @@ async def dashboard_view(
     # --- TOP KPI ROW ---
     with ui.row().classes("w-full gap-6"):
         # 1. PEER COUNT
-        with ui.column().classes("flex-1 p-6 rounded-2xl glass-card relative overflow-hidden"):
-            ui.element("div").classes(
-                "absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"
-            )
-            ui.label("CLUSTERS NODES").classes("text-slate-500 font-bold text-xs tracking-tighter")
+        with ui.column().classes("flex-1 p-6 rounded-2xl card"):
+            ui.label("CLUSTERS NODES").classes("text-slate-400 font-bold text-xs tracking-tighter")
             ui.label(f"{len(nodes)} ONLINE").classes("text-emerald-400 text-4xl font-black mt-2")
             ui.label("P2P Mesh Synchronized").classes(
                 "text-slate-500 text-[10px] mt-4 uppercase font-bold"
             )
 
         # 2. ACTIVE NAREDS
-        with ui.column().classes("flex-1 p-6 rounded-2xl glass-card relative overflow-hidden"):
-            ui.element("div").classes(
-                "absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"
-            )
+        with ui.column().classes("flex-1 p-6 rounded-2xl card"):
             ui.label("TOTAL WORK ITEMS").classes(
-                "text-slate-500 font-bold text-xs tracking-tighter"
+                "text-slate-400 font-bold text-xs tracking-tighter"
             )
-            ui.label(f"{wi_count} ITEMS").classes("text-blue-400 text-4xl font-black mt-2")
+            ui.label(f"{wi_count} ITEMS").classes("text-cyan-400 text-4xl font-black mt-2")
             ui.label(f"{pallet_count} Pallets in Stock").classes(
                 "text-slate-500 text-[10px] mt-4 uppercase font-bold"
             )
 
         # 3. CRITICAL ALERTS
-        alert_color = "red" if incident_count > 0 else "indigo"
-        with ui.column().classes("flex-1 p-6 rounded-2xl glass-card relative overflow-hidden"):
-            ui.element("div").classes(
-                f"absolute top-0 right-0 w-32 h-32 bg-{alert_color}-500/10 rounded-full blur-3xl"
-            )
+        alert_color = "red" if incident_count > 0 else "teal"
+        with ui.column().classes("flex-1 p-6 rounded-2xl card"):
             ui.label("ACTIVE INCIDENTS").classes(
-                "text-slate-500 font-bold text-xs tracking-tighter"
+                "text-slate-400 font-bold text-xs tracking-tighter"
             )
             ui.label(str(incident_count)).classes(
                 f"text-{alert_color}-400 text-4xl font-black mt-2"
@@ -93,16 +84,14 @@ async def dashboard_view(
     # --- MAIN CONTENT AREA: ACTIVITY & LEADER ---
     with ui.row().classes("w-full gap-6 mt-6"):
         # Left Column: Live Activity Stream
-        with ui.column().classes("flex-[2] p-6 rounded-2xl glass-card min-h-[400px]"):
+        with ui.column().classes("flex-[2] p-6 rounded-2xl card min-h-[400px]"):
             ActivityStream.render(ActivityStream(db_engine, system_provider))
 
         # Right Column: Cluster State & Leader
         with ui.column().classes("flex-1 gap-6"):
-            with ui.column().classes(
-                "w-full p-6 rounded-2xl glass-card border border-indigo-500/20"
-            ):
+            with ui.column().classes("w-full p-6 rounded-2xl card border border-teal-500/20"):
                 ui.label("CURRENT MASTER").classes(
-                    "text-slate-500 font-bold text-xs tracking-tighter mb-4"
+                    "text-slate-400 font-bold text-xs tracking-tighter mb-4"
                 )
                 leader_node = next((n for n in nodes if n.get("is_leader")), None)
                 leader_id = (
@@ -110,16 +99,16 @@ async def dashboard_view(
                 )
 
                 with ui.row().classes("items-center gap-3"):
-                    ui.icon("stars", color="indigo-400", size="32px")
+                    ui.icon("stars", color="teal-400", size="32px")
                     with ui.column().classes("gap-0"):
                         ui.label(leader_id).classes("text-xl font-bold text-white font-mono")
-                        ui.label("Coordination Lock Owner").classes("text-[10px] text-indigo-300")
+                        ui.label("Coordination Lock Owner").classes("text-[10px] text-teal-300")
 
-            with ui.column().classes("w-full p-6 rounded-2xl glass-card opacity-50"):
+            with ui.column().classes("w-full p-6 rounded-2xl card"):
                 ui.label("SYSTEM HEALTH").classes(
-                    "text-slate-500 font-bold text-xs tracking-tighter mb-4"
+                    "text-slate-400 font-bold text-xs tracking-tighter mb-4"
                 )
-                ui.label("STORAGE: 84%").classes("text-xs text-white")
+                ui.label("STORAGE: 84%").classes("text-xs text-slate-300")
                 ui.linear_progress(value=0.84).props("color=emerald")
-                ui.label("MEM: 1.2GB / 4GB").classes("text-xs text-white mt-4")
-                ui.linear_progress(value=0.3).props("color=blue")
+                ui.label("MEM: 1.2GB / 4GB").classes("text-xs text-slate-300 mt-4")
+                ui.linear_progress(value=0.3).props("color=cyan")

@@ -11,7 +11,7 @@
 Context:
 - Problem: Implement GNC editor enhancements (multi-sheet, stock, inventory, order integration).
 - Constraints: Maintain existing architecture.
-- Non-goals: 
+- Non-goals:
 
 Architecture:
 - Components:

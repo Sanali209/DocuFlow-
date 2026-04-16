@@ -5,6 +5,7 @@ Smoke тесты — проверяют, что виджеты рендерят�
 """
 
 import pytest
+
 pytest.importorskip("nicegui")
 from unittest.mock import MagicMock, patch
 

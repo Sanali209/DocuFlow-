@@ -1,5 +1,5 @@
 import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlmodel import Field, Relationship, UniqueConstraint
 
@@ -8,14 +8,14 @@ from docuflow.domain.entities.base import BaseEntity
 # --- ENUMS ---
 
 
-class WorkItemType(str, Enum):
+class WorkItemType(StrEnum):
     SIDRA = "sidra"
     MIHTAV = "mihtav"
     REWORK = "rework"
     LASER = "laser"
 
 
-class WorkItemStatus(str, Enum):
+class WorkItemStatus(StrEnum):
     NEW = "new"
     PENDING_CUTS = "pending_cuts"
     FOLDER_NO_DOC = "folder_no_doc"
@@ -29,7 +29,7 @@ class WorkItemStatus(str, Enum):
     ARCHIVED = "archived"
 
 
-class TaskItemStatus(str, Enum):
+class TaskItemStatus(StrEnum):
     PLANNED = "planned"
     IN_PROGRESS = "in_progress"
     ON_HOLD = "on_hold"
@@ -181,14 +181,14 @@ class PartTemplate(BaseEntity, table=True):
 # --- MATERIALS (Block D) ---
 
 
-class MaterialFormFactor(str, Enum):
+class MaterialFormFactor(StrEnum):
     SHEET = "sheet"
     TUBE = "tube"
     BAR = "bar"
     OTHER = "other"
 
 
-class MaterialStockStatus(str, Enum):
+class MaterialStockStatus(StrEnum):
     AVAILABLE = "available"
     RESERVED = "reserved"
     ALLOCATED = "allocated"
@@ -341,7 +341,7 @@ class WorkerBucketEntry(BaseEntity, table=True):
 # --- LOGS & COMMUNICATION (Block H) ---
 
 
-class WorkLogType(str, Enum):
+class WorkLogType(StrEnum):
     INFO = "info"
     WARNING = "warning"
     FILE_CHANGED = "file_changed"
@@ -388,7 +388,7 @@ class IncidentLog(BaseEntity, table=True):
     attachments: str | None = None  # JSON string (list of paths)
 
 
-class ChatMessageType(str, Enum):
+class ChatMessageType(StrEnum):
     MESSAGE = "message"
     INFO = "info"
     WARNING = "warning"

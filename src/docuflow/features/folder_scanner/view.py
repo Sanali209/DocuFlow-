@@ -14,8 +14,6 @@ from docuflow.lib.widgets.scan_log_panel import ScanLogPanel
 
 def register_scanner_view():
     """Register the scanner view in the global registry."""
-    from sqlalchemy import Engine
-
     from docuflow.sdk import SDK
 
     ViewRegistry.register(
@@ -65,7 +63,9 @@ async def folder_scanner_view(sdk: "SDK", config: Config, engine: Engine):
             # Everyone can "Scan Now" as requested
             async def force_scan():
                 ui.notify("Manual Scan Triggered...", icon="cloud_sync", position="top")
-                await scanner.scan_now()
+                result = scanner.scan_now()
+                if result and hasattr(result, "__await__"):
+                    await result
                 ui.notify("Scan request processed by Master", color="emerald")
 
             ui.button("SCAN NOW", icon="sync", on_click=force_scan).classes(
@@ -165,7 +165,7 @@ async def folder_scanner_view(sdk: "SDK", config: Config, engine: Engine):
                     "text-xs font-bold text-slate-500 uppercase tracking-widest mb-4"
                 )
                 # Read settings from database for this node
-                settings = await scanner._fetch_scanner_settings()
+                settings = scanner.fetch_scanner_settings()
                 with ui.column().classes("gap-2"):
                     with ui.row().classes("w-full justify-between items-center text-xs"):
                         ui.label("SIDRA PATH").classes("text-slate-400")

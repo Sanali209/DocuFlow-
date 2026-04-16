@@ -24,14 +24,14 @@ https://svelte.dev/e/a11y_no_noninteractive_element_interactions[39m
 [33m00:25:50 [vite-plugin-svelte] src/lib/SettingsModal.svelte:7:8 `ocrUrl` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
 https://svelte.dev/e/non_reactive_update[39m
  5:     let { isOpen = false, close } = $props();
- 6: 
+ 6:
  7:     let ocrUrl = '';
                   ^
  8:     let docNameRegex = '';
  9:     let userRole = 'operator';
 [33m00:25:50 [vite-plugin-svelte] src/lib/SettingsModal.svelte:8:8 `docNameRegex` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
 https://svelte.dev/e/non_reactive_update[39m
- 6: 
+ 6:
  7:     let ocrUrl = '';
  8:     let docNameRegex = '';
                         ^
@@ -44,14 +44,14 @@ https://svelte.dev/e/non_reactive_update[39m
  9:     let userRole = 'operator';
                     ^
 10:     let loading = true;
-11: 
+11:
 [33m00:25:50 [vite-plugin-svelte] src/lib/SettingsModal.svelte:10:8 `loading` is updated, but is not declared with `$state(...)`. Changing its value will not correctly trigger updates
 https://svelte.dev/e/non_reactive_update[39m
  8:     let docNameRegex = '';
  9:     let userRole = 'operator';
 10:     let loading = true;
                    ^
-11: 
+11:
 12:     async function loadSettings() {
 [32m✓[39m 110 modules transformed.
 [31m✗[39m Build failed in 682ms

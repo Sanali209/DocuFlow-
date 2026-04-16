@@ -28,11 +28,11 @@ class ActivityStream(BaseDocuWidget):
                 ).all()
 
                 if not logs:
-                    ui.label("No recent activity").classes("text-gray-500 italic text-sm")
+                    ui.label("No recent activity").classes("text-slate-500 italic text-sm")
                     return
 
                 for log in logs:
-                    color = "indigo"
+                    color = "teal"
                     icon = "info"
                     if "[MATERIAL_INCIDENT]" in log.message or "[BREAKDOWN]" in log.message:
                         color = "red"
@@ -42,7 +42,7 @@ class ActivityStream(BaseDocuWidget):
                         icon = "check_circle"
 
                     with ui.row().classes(
-                        "w-full items-start gap-3 p-2 bg-white/5 rounded-lg border border-white/5"
+                        "w-full items-start gap-3 p-2 bg-slate-800/50 rounded-lg border border-slate-700/50"
                     ):
                         ui.icon(icon, color=color, size="16px").classes("mt-1")
                         with ui.column().classes("gap-0 flex-1"):

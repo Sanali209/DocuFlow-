@@ -62,7 +62,7 @@
 
         loading = true;
         try {
-            /* 
+            /*
             if (assignee && !task) {
                 // Only save default assignee on create
                 localStorage.setItem("task_assignee", assignee);

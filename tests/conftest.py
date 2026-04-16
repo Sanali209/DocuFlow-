@@ -1,5 +1,6 @@
 import pytest
-from nicegui import ui, context
+from nicegui import ui
+
 
 @pytest.fixture
 def ui_context():

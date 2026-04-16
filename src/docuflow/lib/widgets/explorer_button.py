@@ -59,7 +59,7 @@ class ExplorerButton(BaseDocuWidget):
             ui.label("📁 Путь к папке").classes("text-h6 mb-2")
             ui.label(
                 "Не удалось открыть проводник автоматически (возможно, сетевой диск не подключен)."
-            ).classes("text-sm text-gray-500 mb-4")
+            ).classes("text-sm text-slate-500 mb-4")
 
             path_str = str(self.path)
             with ui.row().classes(

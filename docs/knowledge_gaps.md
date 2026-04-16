@@ -1,6 +1,6 @@
 # Information Guide: Architectural Surprises & Knowledge Gaps
 
-This document identifies implementation details in **DocuFlow** that are counter-intuitive, non-standard, or represent deliberate workarounds for decentralized environments. 
+This document identifies implementation details in **DocuFlow** that are counter-intuitive, non-standard, or represent deliberate workarounds for decentralized environments.
 
 ---
 
@@ -71,7 +71,7 @@ This document identifies implementation details in **DocuFlow** that are counter
 ### 5.1 SQLite `database is locked` in Async Tests
 - **Observation**: During heavy asynchronous unit tests (especially `FolderScannerSystem`), filesystem-backed temporary SQLite databases (`sqlite:///:tmp:`) suffer from aggressive write contention, leading to test flakiness and `OperationalError: database is locked`.
 - **Reasoning**: SQLite handles concurrent reads well, but writes require exclusive locks. In async operations without stringent isolation, these locks overlap across event loop contexts.
-- **Trap**: Using `NullPool` with filesystem-backed SQLite does not resolve locking because `NullPool` closes connections immediately, causing high IO latency. 
+- **Trap**: Using `NullPool` with filesystem-backed SQLite does not resolve locking because `NullPool` closes connections immediately, causing high IO latency.
 - **Solution**: Async testing requires an **in-memory database (`sqlite:///:memory:`) paired strictly with `StaticPool`**. This ensures all connections inside the test event loop share the exact same memory space, completely bypassing filesystem overhead.
 
 ### 5.2 Atomic Scoping in Subsystems

@@ -1,11 +1,14 @@
 import json
+import logging
 from collections.abc import Callable
-from typing import Any, Set
+from typing import Any
 
 from nicegui import app as nicegui_app
 from nicegui import ui
 
 from docuflow.domain.entities.identity import User, Workplace
+
+logger = logging.getLogger(__name__)
 
 
 def check_access(user: User, workplace: Workplace) -> bool:
@@ -25,7 +28,7 @@ def check_access(user: User, workplace: Workplace) -> bool:
         return False
 
 
-def get_active_ui_modules(user: User, workplace: Workplace) -> Set[str]:
+def get_active_ui_modules(user: User, workplace: Workplace) -> set[str]:
     """Calculate the intersection of user permissions and workplace capabilities."""
     if not user.role:
         return set()
@@ -81,43 +84,85 @@ def theme_setup():
     ui.add_head_html("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
-            body { 
-                font-family: 'Outfit', sans-serif; 
-                background-color: #020617 !important; 
-                color: #f8fafc;
+            :root {
+                --primary: #14b8a6;
+                --primary-hover: #0d9488;
+                --primary-subtle: rgba(20, 184, 166, 0.15);
+                --bg-base: #0f172a;
+                --bg-surface: #1e293b;
+                --bg-elevated: #334155;
+                --text-primary: #f8fafc;
+                --text-secondary: #cbd5e1;
+                --text-muted: #64748b;
+                --border-subtle: rgba(100, 116, 139, 0.3);
+                --border-medium: rgba(100, 116, 139, 0.5);
+                --success: #10b981;
+                --warning: #f59e0b;
+                --danger: #ef4444;
+            }
+            body {
+                font-family: 'Outfit', sans-serif;
+                background-color: var(--bg-base) !important;
+                color: var(--text-primary);
                 margin:0; padding:0;
             }
-            /* Target Quasar drawers specifically to allow glassmorphism */
             .q-drawer {
-                background: transparent !important;
+                background: var(--bg-surface) !important;
             }
             .q-drawer__content {
-                background: transparent !important;
+                background: var(--bg-surface) !important;
             }
-            .glass-card {
-                background: rgba(15, 23, 42, 0.7) !important;
-                backdrop-filter: blur(24px) saturate(180%);
-                -webkit-backdrop-filter: blur(24px) saturate(180%);
-                border: 1px solid rgba(255, 255, 255, 0.08);
+            /* Solid card - no glassmorphism */
+            .card {
+                background: var(--bg-surface) !important;
+                border: 1px solid var(--border-subtle);
+                border-radius: 0.75rem;
             }
-            .vibrant-btn {
-                background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-                transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-                box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            /* Primary button - solid teal */
+            .btn-primary {
+                background: var(--primary) !important;
+                border: none;
+                transition: transform 0.15s ease, filter 0.15s ease;
             }
-            .vibrant-btn:hover {
-                transform: scale(1.02) translateY(-1px);
-                filter: brightness(1.2);
+            .btn-primary:hover {
+                filter: brightness(1.1);
+                transform: translateY(-1px);
             }
+            /* Secondary button */
+            .btn-secondary {
+                background: var(--bg-elevated) !important;
+                border: 1px solid var(--border-medium);
+                color: var(--text-secondary) !important;
+            }
+            .btn-secondary:hover {
+                background: var(--bg-surface) !important;
+                border-color: var(--primary);
+                color: var(--primary) !important;
+            }
+            /* Navigation active state - teal */
             .nav-item-active {
-                background: rgba(99, 102, 241, 0.2) !important;
-                border-left: 4px solid #6366f1;
-                color: #fff !important;
+                background: var(--primary-subtle) !important;
+                border-left: 4px solid var(--primary);
+                color: var(--text-primary) !important;
             }
-            .omnibar-input .q-field__control {
-                background: rgba(255, 255, 255, 0.05) !important;
-                border-radius: 99px !important;
-                border: 1px solid rgba(255, 255, 255, 0.1);
+            /* Input field */
+            .input-field .q-field__control {
+                background: var(--bg-elevated) !important;
+                border: 1px solid var(--border-subtle);
+                border-radius: 0.5rem;
+            }
+            .input-field .q-field__control:focus-within {
+                border-color: var(--primary);
+            }
+            /* Divider */
+            .divider {
+                border-color: var(--border-subtle);
+            }
+            /* Surface container */
+            .surface {
+                background: var(--bg-surface);
+                border: 1px solid var(--border-subtle);
+                border-radius: 0.5rem;
             }
         </style>
     """)
@@ -165,7 +210,7 @@ class MainLayout:
                 t.active = False
                 t.deactivate()
             except Exception:
-                pass
+                logger.debug("Timer deactivation failed, ignoring")
         self._active_timers.clear()
 
     def build(self, switch_view_fn: Callable):
@@ -176,10 +221,10 @@ class MainLayout:
 
         # Header - Fixed Top
         with ui.header().classes(
-            "glass-card items-center justify-between px-8 py-4 fixed top-0 w-full z-50"
+            "card items-center justify-between px-8 py-4 fixed top-0 w-full z-50"
         ):
             with ui.row().classes("items-center gap-3"):
-                ui.icon("waves", size="32px", color="primary").classes("animate-pulse")
+                ui.icon("waves", size="32px", color="teal").classes("")
                 ui.label("DocuFlow").classes("text-2xl font-bold tracking-tight")
 
             # --- OMNIBAR (Global Search) ---
@@ -188,7 +233,7 @@ class MainLayout:
 
             with ui.row().classes("items-center gap-6"):
                 with ui.row().classes(
-                    "items-center bg-slate-800/50 rounded-full px-4 py-1 border border-white/5"
+                    "items-center bg-slate-800/60 rounded-full px-4 py-1 border border-slate-700/50"
                 ):
                     ui.icon("sensors", size="16px", color="emerald")
                     ui.label(f"NODE: {self._config.node_id}").classes(
@@ -196,7 +241,7 @@ class MainLayout:
                     )
 
                 with ui.row().classes("items-center gap-2"):
-                    ui.avatar(user["username"][0].upper(), color="indigo").classes(
+                    ui.avatar(user["username"][0].upper(), color="teal").classes(
                         "text-white font-bold"
                     )
                     ui.label(user["username"]).classes("font-semibold text-slate-200")
@@ -209,8 +254,9 @@ class MainLayout:
         # Sidebar - Fixed Left (Color Matched to Header)
         with (
             ui.left_drawer(value=True)
-            .classes("glass-card border-r border-white/5 p-6 pt-24")
-            .style("background-color: transparent !important")
+            .classes("card border-r border-slate-700/50 p-6 pt-24")
+            .style("background-color: var(--bg-surface) !important")
+            .props("persistent")
         ):
             with ui.column().classes("w-full gap-4"):
 
@@ -256,7 +302,7 @@ class MainLayout:
 
         # Main Content Area
         self.content = ui.column().classes(
-            "w-full min-h-screen pt-28 px-10 pb-12 gap-8 bg-[#020617]"
+            "w-full min-h-screen pt-28 px-10 pb-12 gap-8 bg-slate-900"
         )
         return self.content
 
@@ -281,7 +327,7 @@ class MainLayout:
                 if not results:
                     results_menu.clear()
                     with results_menu:
-                        ui.item("Ничего не найдено").classes("text-gray-500 italic")
+                        ui.item("Nothing found").classes("text-slate-500 italic")
                     results_menu.open()
                     return
 

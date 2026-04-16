@@ -248,6 +248,7 @@ class AppProvider(Provider):
         self,
         config: Config,
         session: Session,
+        engine: Engine,
         ns_mirror: NSMirrorService,
         inventory_system: InventorySystem,
         production_system: ProductionSystem,
@@ -255,6 +256,7 @@ class AppProvider(Provider):
         """Provide task board management system."""
         return TaskBoardSystem(
             config,
+            engine,
             session,
             ns_mirror=ns_mirror,
             inventory_system=inventory_system,

@@ -22,7 +22,7 @@ class ScanLogPanel(BaseDocuWidget):
     def render(self):
         """Рендерит панель лога."""
         with ui.column().classes(
-            "w-full gap-2 p-4 bg-slate-900/40 rounded-2xl border border-white/5"
+            "w-full gap-2 p-4 bg-slate-800/60 rounded-2xl border border-slate-700/50"
         ) as self.container:
             ui.label("SYSTEM ACTIVITY LOG").classes(
                 "text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2"

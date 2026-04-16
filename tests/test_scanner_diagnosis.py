@@ -45,24 +45,25 @@ class TestScannerDiagnosis:
     def mock_sdk_master(self):
         """Create a mock SDK that returns True for is_master()."""
         from contextlib import asynccontextmanager
+
         sdk = MagicMock()
         sdk.orchestrator.is_leader = True
-        
+
         @asynccontextmanager
         async def mock_scope():
             yield MagicMock()
-            
+
         sdk.request_scope = mock_scope
-        
+
         async def resolve_mock(stype):
             mock_sys = MagicMock()
-            mock_sys.emit = AsyncMock() # For NotificationService
+            mock_sys.emit = AsyncMock()  # For NotificationService
             if "ProjectSystem" in str(stype):
                 proj = MagicMock()
                 proj.id = 1
                 mock_sys.resolve_default_workshop_project.return_value = proj
             return mock_sys
-            
+
         sdk.resolve_system_by_type = resolve_mock
         return sdk
 
@@ -70,18 +71,19 @@ class TestScannerDiagnosis:
     def mock_sdk_slave(self):
         """Create a mock SDK that returns False for is_master()."""
         from contextlib import asynccontextmanager
+
         sdk = MagicMock()
         sdk.orchestrator.is_leader = False
-        
+
         @asynccontextmanager
         async def mock_scope():
             yield MagicMock()
-            
+
         sdk.request_scope = mock_scope
-        
+
         async def resolve_mock(stype):
             return MagicMock()
-            
+
         sdk.resolve_system_by_type = resolve_mock
         return sdk
 
@@ -89,14 +91,15 @@ class TestScannerDiagnosis:
     def mock_sdk_no_orchestrator(self):
         """Create a mock SDK with no orchestrator."""
         from contextlib import asynccontextmanager
+
         sdk = MagicMock()
         # Simulate orchestrator missing
         del sdk.orchestrator
-        
+
         @asynccontextmanager
         async def mock_scope():
             yield MagicMock()
-            
+
         sdk.request_scope = mock_scope
         return sdk
 

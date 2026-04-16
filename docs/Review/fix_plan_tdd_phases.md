@@ -1,6 +1,6 @@
 # План исправлений DocuFlow — TDD-подход с фазами и тикетами
 
-Дата: 2026-04-05  
+Дата: 2026-04-05
 Составил: Cline
 
 Принципы:
@@ -22,9 +22,9 @@
 - ✅ .gitignore обновлён, runtime-артефакты удалены из индекса
 
 ### Тикет 0.1: Добавить build-system в pyproject.toml ✅ ВЫПОЛНЕН
-**Приоритет:** CRITICAL  
-**Оценка:** 15 мин  
-**Фактически:** 15 мин  
+**Приоритет:** CRITICAL
+**Оценка:** 15 мин
+**Фактически:** 15 мин
 **Коммит:** efde4c8
 
 **Описание:**
@@ -52,9 +52,9 @@ python -c "import docuflow; print(docuflow.__file__)"
 ---
 
 ### Тикет 0.2: Обновить .gitignore ✅ ВЫПОЛНЕН
-**Приоритет:** HIGH  
-**Оценка:** 10 мин  
-**Фактически:** 10 мин  
+**Приоритет:** HIGH
+**Оценка:** 10 мин
+**Фактически:** 10 мин
 **Коммит:** d038af7
 
 **Описание:**
@@ -86,9 +86,9 @@ git status
 ---
 
 ### Тикет 0.3: Удалить runtime-артефакты из git-индекса ✅ ВЫПОЛНЕН
-**Приоритет:** HIGH  
-**Оценка:** 15 мин  
-**Фактически:** 15 мин  
+**Приоритет:** HIGH
+**Оценка:** 15 мин
+**Фактически:** 15 мин
 **Коммит:** 5521780
 
 **Описание:**
@@ -118,9 +118,9 @@ ls -la *.db
 ---
 
 ### Тикет 0.4: Установить пакет и запустить базовую диагностику ✅ ВЫПОЛНЕН
-**Приоритет:** HIGH  
-**Оценка:** 20 мин  
-**Фактически:** 20 мин  
+**Приоритет:** HIGH
+**Оценка:** 20 мин
+**Фактически:** 20 мин
 **Коммит:** 837d45e
 
 **Описание:**
@@ -155,13 +155,13 @@ uv run pytest --collect-only -q > baseline_pytest.txt 2>&1
 - ✅ TYPE_CHECKING блоки корректны
 - ✅ pytest собирает все тесты без ImportError
 
-**Дата завершения:** 05.04.2026  
+**Дата завершения:** 05.04.2026
 **Коммиты:** d33564b, bd72298, 7af98a1, ac50e62
 
 ### Тикет 1.1: Исправить импорты logger в task_board/system.py ✅ ВЫПОЛНЕН
-**Приоритет:** CRITICAL  
-**Оценка:** 10 мин  
-**Фактически:** 10 мин  
+**Приоритет:** CRITICAL
+**Оценка:** 10 мин
+**Фактически:** 10 мин
 **Коммит:** d33564b
 
 **Описание:**
@@ -188,9 +188,9 @@ python -c "from docuflow.features.task_board.system import TaskBoardSystem"
 ---
 
 ### Тикет 1.2: Исправить TYPE_CHECKING импорты в sdk.py ✅ ВЫПОЛНЕН
-**Приоритет:** CRITICAL  
-**Оценка:** 20 мин  
-**Фактически:** 15 мин  
+**Приоритет:** CRITICAL
+**Оценка:** 20 мин
+**Фактически:** 15 мин
 **Коммит:** bd72298
 
 **Описание:**
@@ -227,9 +227,9 @@ python -c "from docuflow.sdk import SDK"
 ---
 
 ### Тикет 1.3: Импортировать PartPreviewWidget в parts/view.py ✅ ВЫПОЛНЕН
-**Приоритет:** HIGH  
-**Оценка:** 10 мин  
-**Фактически:** 10 мин  
+**Приоритет:** HIGH
+**Оценка:** 10 мин
+**Фактически:** 10 мин
 **Коммит:** 7af98a1
 
 **Описание:**
@@ -256,9 +256,9 @@ python -c "from docuflow.features.parts.view import PartLibraryView"
 ---
 
 ### Тикет 1.4: Исправить TYPE_CHECKING в folder_scanner/view.py ✅ ВЫПОЛНЕН
-**Приоритет:** HIGH  
-**Оценка:** 10 мин  
-**Фактически:** 10 мин  
+**Приоритет:** HIGH
+**Оценка:** 10 мин
+**Фактически:** 10 мин
 **Коммит:** ac50e62 (часть)
 
 **Описание:**
@@ -285,9 +285,9 @@ uv run ruff check src/docuflow/features/folder_scanner/view.py --select F821
 ---
 
 ### Тикет 1.5: Исправить TYPE_CHECKING в orchestrator.py и admin/system.py ✅ ВЫПОЛНЕН
-**Приоритет:** HIGH  
-**Оценка:** 15 мин  
-**Фактически:** 15 мин  
+**Приоритет:** HIGH
+**Оценка:** 15 мин
+**Фактически:** 15 мин
 **Коммит:** ac50e62 (часть)
 
 **Описание:**
@@ -321,9 +321,9 @@ uv run ruff check src/docuflow/features/admin/system.py --select F821
 ---
 
 ### Тикет 1.6: Проверка фазы 1 — запуск тестов ✅ ВЫПОЛНЕН
-**Приоритет:** HIGH  
-**Оценка:** 30 мин  
-**Фактически:** 10 мин  
+**Приоритет:** HIGH
+**Оценка:** 30 мин
+**Фактически:** 10 мин
 **Коммит:** ac50e62 (финальный)
 
 **Описание:**
@@ -355,7 +355,7 @@ uv run pytest --collect-only -q
 - ✅ Тесты безопасности проходят
 
 ### Тикет 2.1: Убрать hardcoded пароль из bootstrap_admin
-**Приоритет:** HIGH  
+**Приоритет:** HIGH
 **Оценка:** 20 мин
 
 **Описание:**
@@ -386,7 +386,7 @@ uv run ruff check src/ --select S107
 ---
 
 ### Тикет 2.2: Включить autoescape в Jinja2
-**Приоритет:** HIGH  
+**Приоритет:** HIGH
 **Оценка:** 15 мин
 
 **Описание:**
@@ -417,7 +417,7 @@ uv run pytest tests/unit/features/test_report_system.py -v
 ---
 
 ### Тикет 2.3: Документировать использование MD5
-**Приоритет:** MEDIUM  
+**Приоритет:** MEDIUM
 **Оценка:** 15 мин
 
 **Описание:**
@@ -427,7 +427,7 @@ uv run pytest tests/unit/features/test_report_system.py -v
 ```python
 def _calculate_md5(self, path: Path) -> str:
     """Calculate MD5 checksum for file deduplication.
-    
+
     Note: MD5 is used here only for fast file comparison and deduplication,
     not for cryptographic security. For this use case, MD5 is acceptable.
     """
@@ -447,7 +447,7 @@ uv run ruff check src/ --select S324
 ---
 
 ### Тикет 2.4: Перенести storage_secret в env
-**Приоритет:** HIGH  
+**Приоритет:** HIGH
 **Оценка:** 20 мин
 
 **Описание:**
@@ -484,7 +484,7 @@ uv run python -m docuflow.main &
 - ✅ Unit тесты проходят
 
 ### Тикет 3.1: Заменить except:pass на логирование в di.py
-**Приоритет:** MEDIUM  
+**Приоритет:** MEDIUM
 **Оценка:** 10 мин
 
 **Изменения:**
@@ -506,7 +506,7 @@ uv run ruff check src/docuflow/infrastructure/di.py --select S110
 ---
 
 ### Тикет 3.2: Сохранить ссылку на asyncio.create_task
-**Приоритет:** MEDIUM  
+**Приоритет:** MEDIUM
 **Оценка:** 15 мин
 
 **Изменения в orchestrator.py:**
@@ -527,7 +527,7 @@ uv run ruff check src/ --select RUF006
 ---
 
 ### Тикет 3.3: Исправить loop variable capture в admin/view.py
-**Приоритет:** MEDIUM  
+**Приоритет:** MEDIUM
 **Оценка:** 15 мин
 
 **Изменения:**
@@ -549,7 +549,7 @@ uv run ruff check src/docuflow/features/admin/view.py --select B023
 ---
 
 ### Тикет 3.4: Заменить остальные except:pass
-**Приоритет:** MEDIUM  
+**Приоритет:** MEDIUM
 **Оценка:** 30 мин
 
 **Описание:**
@@ -577,7 +577,7 @@ uv run ruff check src/ --select S110
 - ✅ Тесты проходят после автофикса
 
 ### Тикет 4.1: Запустить ruff --fix
-**Приоритет:** LOW  
+**Приоритет:** LOW
 **Оценка:** 30 мин
 
 **Команды:**
@@ -624,7 +624,7 @@ uv run pytest tests/unit -q
 **Цель:** Улучшить архитектуру.
 
 ### Тикет 6.1: Рефакторинг main.py — реестр view
-**Приоритет:** LOW  
+**Приоритет:** LOW
 **Оценка:** 2-3 часа
 
 (Детали по запросу)

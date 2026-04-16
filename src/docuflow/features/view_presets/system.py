@@ -107,7 +107,7 @@ class ViewPresetSystem(BaseSystem):
         """
         # Сначала ищем personal active
         stmt = select(ViewPreset).where(
-            ViewPreset.module == module, ViewPreset.owner == owner, ViewPreset.is_default == True
+            ViewPreset.module == module, ViewPreset.owner == owner, ViewPreset.is_default
         )
         preset = self.session.exec(stmt).first()
 
@@ -116,7 +116,7 @@ class ViewPresetSystem(BaseSystem):
 
         # Если нет personal active, ищем global default
         stmt = select(ViewPreset).where(
-            ViewPreset.module == module, ViewPreset.owner == "global", ViewPreset.is_default == True
+            ViewPreset.module == module, ViewPreset.owner == "global", ViewPreset.is_default
         )
         return self.session.exec(stmt).first()
 

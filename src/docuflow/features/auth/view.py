@@ -37,20 +37,12 @@ def login_view(auth_system: AuthSystem, admin_system: AdminSystem, node_id: str)
         else:
             ui.notify("Invalid Credentials", color="red", icon="priority_high")
 
-    with ui.column().classes("w-full min-h-screen items-center justify-center bg-[#020617]"):
-        # Background Orbs
-        ui.element("div").classes(
-            "absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px]"
-        )
-        ui.element("div").classes(
-            "absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px]"
-        )
-
+    with ui.column().classes("w-full min-h-screen items-center justify-center bg-slate-900"):
         with ui.column().classes(
-            "w-[450px] p-12 rounded-3xl glass-card items-center gap-10 shadow-2xl relative z-10"
+            "w-[450px] p-12 rounded-3xl card items-center gap-10 relative z-10"
         ):
             with ui.column().classes("items-center gap-4"):
-                ui.icon("waves", size="64px", color="indigo-400").classes("animate-pulse")
+                ui.icon("waves", size="64px", color="teal-400").classes("")
                 ui.label("DocuFlow").classes("text-4xl font-extrabold tracking-tight text-white")
                 ui.label("P2P ORCHESTRATION ENGINE").classes(
                     "text-[10px] tracking-[0.4em] text-slate-500 font-bold"
@@ -58,9 +50,7 @@ def login_view(auth_system: AuthSystem, admin_system: AdminSystem, node_id: str)
 
             with ui.column().classes("w-full gap-5"):
                 username = (
-                    ui.input("Username")
-                    .classes("w-full")
-                    .props("dark rounded standout color=indigo")
+                    ui.input("Username").classes("w-full").props("dark rounded standout color=teal")
                 )
                 password = (
                     ui.input("Password", password=True)

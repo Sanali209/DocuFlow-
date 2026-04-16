@@ -59,9 +59,9 @@ body.html-export-running :is(.nav-files-container, .side-dock-actions, .workspac
 
 .html-progress-bar
 {
-	width: 300px; 
-	height: 15px; 
-	background-color: transparent; 
+	width: 300px;
+	height: 15px;
+	background-color: transparent;
 	color: var(--interactive-accent);
 }
 
@@ -167,12 +167,12 @@ button.html-progress-cancel
 
 .html-progress-log
 {
-	display:none; 
-	flex-direction: column; 
-	border-left: 1px solid var(--divider-color); 
-	overflow-y: auto; 
-	width: 300px; 
-	max-width: 300px; 
+	display:none;
+	flex-direction: column;
+	border-left: 1px solid var(--divider-color);
+	overflow-y: auto;
+	width: 300px;
+	max-width: 300px;
 	min-width: 300px;
 }
 

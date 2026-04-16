@@ -15,7 +15,7 @@ Context:
 Architecture:
 - Services: `app` (Main) and `ocr-service`.
 - Networks: Bridge network `docuflow-network`.
-- Volumes: 
+- Volumes:
     - `docuflow_data` -> `/app/data` (Application DB)
     - `ocr_models` -> `/home/user/.cache` (Docling Models)
 
