@@ -6,7 +6,7 @@ def test_config_defaults():
     config = Config()
     assert config.app_name == "DocuFlow"
     assert config.heartbeat_interval == 15
-    assert config.coordinator_timeout == 45
+    assert config.coordinator_timeout == 20.0
     assert config.shared_path == "./shared_network"
 
 
