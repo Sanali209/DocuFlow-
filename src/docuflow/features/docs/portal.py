@@ -18,7 +18,7 @@ def register_docs_view():
     )
 
 
-def docs_view_wrapper():
+def docs_view_wrapper(**kwargs):
     """Wrapper to instantiate and render the DocumentationPortal."""
     DocumentationPortal().build_portal()
 

@@ -47,3 +47,8 @@ COORDINATOR_HEARTBEAT_INTERVAL = 15.0
 
 # Default interval for the polling observer (seconds)
 OBSERVER_POLLING_INTERVAL = 5.0
+
+# --- Default Entities ---
+DEFAULT_WORKPLACE_ID = "LASER_1"
+DEFAULT_WORKPLACE_NAME = "Лазер 1"
+DEFAULT_PROJECT_NAME = "Default"

@@ -25,9 +25,10 @@ class PartLibrarySystem(BaseSystem):
     - Traceability: Tracks every pallet and work item utilizing a specific SKU.
     """
 
+    DEFAULT_GEOMETRIC_TOLERANCE_PCT = 5.0
+
     def __init__(self, config: Config, db_session: Session, sdk: Any = None):
-        super().__init__(config)
-        self.db_session = db_session
+        super().__init__(config, db_session)
         self.sdk = sdk
 
     # --- Part Definition Logic ---
@@ -80,7 +81,7 @@ class PartLibrarySystem(BaseSystem):
         """
         statement = select(PartLibrary)
         if sku_filter:
-            statement = statement.where(PartLibrary.sku.contains(sku_filter))
+            statement = statement.where(PartLibrary.sku.contains(sku_filter))  # type: ignore[attr-defined]
         if mat_type_id:
             statement = statement.where(PartLibrary.mat_type_id == mat_type_id)
 
@@ -89,7 +90,10 @@ class PartLibrarySystem(BaseSystem):
     # --- Geometrical Intelligence ---
 
     def find_parts_by_geometric_similarity(
-        self, x_dimension: float, y_dimension: float, tolerance_percent: float = 5.0
+        self,
+        x_dimension: float,
+        y_dimension: float,
+        tolerance_percent: float | None = None,
     ) -> list[PartLibrary]:
         """
         Search: find parts with similar bounding box dimensions using percentage tolerance.
@@ -98,7 +102,10 @@ class PartLibrarySystem(BaseSystem):
             matches = system.find_parts_by_geometric_similarity(100.0, 200.0, 2.0)
         """
         db = self.db_session
-        tolerance_factor = tolerance_percent / 100.0
+        actual_tolerance = (
+            tolerance_percent if tolerance_percent is not None else self.DEFAULT_GEOMETRIC_TOLERANCE_PCT
+        )
+        tolerance_factor = actual_tolerance / 100.0
 
         statement = select(PartLibrary).where(
             PartLibrary.bbox_x.between(

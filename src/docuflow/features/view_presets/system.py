@@ -3,8 +3,6 @@ ViewPresetSystem — управление пресетами видов (Notion-
 
 Реализует CRUD для пресетов, управление активными пресетами,
 разделение личных и глобальных пресетов.
-
-Архитектура: Vertical Slice (features/view_presets/system.py)
 """
 
 import json
@@ -19,8 +17,6 @@ from docuflow.infrastructure.config import Config
 class ViewPresetSystem(BaseSystem):
     """
     Система управления пресетами видов.
-
-    Vertical Slice: features/view_presets/system.py
 
     Основные операции:
     - create — создание пресета
@@ -38,8 +34,7 @@ class ViewPresetSystem(BaseSystem):
             config: Конфигурация приложения
             session: SQLModel сессия для работы с БД
         """
-        super().__init__(config)
-        self.session = session
+        super().__init__(config, session)
 
     def create(
         self,
@@ -70,9 +65,9 @@ class ViewPresetSystem(BaseSystem):
             is_default=is_default,
         )
 
-        self.session.add(preset)
-        self.session.commit()
-        self.session.refresh(preset)
+        self.db_session.add(preset)
+        self.db_session.commit()
+        self.db_session.refresh(preset)
 
         return preset
 
@@ -92,7 +87,7 @@ class ViewPresetSystem(BaseSystem):
             (ViewPreset.owner == "global") | (ViewPreset.owner == owner),
         )
 
-        return list(self.session.exec(stmt).all())
+        return list(self.db_session.exec(stmt).all())
 
     def get_active(self, module: str, owner: str) -> ViewPreset | None:
         """
@@ -107,18 +102,20 @@ class ViewPresetSystem(BaseSystem):
         """
         # Сначала ищем personal active
         stmt = select(ViewPreset).where(
-            ViewPreset.module == module, ViewPreset.owner == owner, ViewPreset.is_default
+            ViewPreset.module == module, ViewPreset.owner == owner, ViewPreset.is_default.is_(True)
         )
-        preset = self.session.exec(stmt).first()
+        preset = self.db_session.exec(stmt).first()
 
         if preset:
             return preset
 
         # Если нет personal active, ищем global default
         stmt = select(ViewPreset).where(
-            ViewPreset.module == module, ViewPreset.owner == "global", ViewPreset.is_default
+            ViewPreset.module == module,
+            ViewPreset.owner == "global",
+            ViewPreset.is_default.is_(True),
         )
-        return self.session.exec(stmt).first()
+        return self.db_session.exec(stmt).first()
 
     def set_active(self, module: str, owner: str, preset_id: int) -> ViewPreset:
         """
@@ -140,13 +137,13 @@ class ViewPresetSystem(BaseSystem):
             ViewPreset.module == module,
             ViewPreset.owner == owner,
         )
-        presets = self.session.exec(stmt).all()
+        presets = self.db_session.exec(stmt).all()
         for p in presets:
             p.is_default = False
-            self.session.add(p)
+            self.db_session.add(p)
 
         # Устанавливаем новый default
-        preset = self.session.get(ViewPreset, preset_id)
+        preset = self.db_session.get(ViewPreset, preset_id)
         if preset is None:
             raise ValueError(f"Пресет с ID {preset_id} не найден")
 
@@ -157,9 +154,9 @@ class ViewPresetSystem(BaseSystem):
             raise ValueError(f"Пресет не принадлежит пользователю {owner}")
 
         preset.is_default = True
-        self.session.add(preset)
-        self.session.commit()
-        self.session.refresh(preset)
+        self.db_session.add(preset)
+        self.db_session.commit()
+        self.db_session.refresh(preset)
 
         return preset
 
@@ -175,7 +172,7 @@ class ViewPresetSystem(BaseSystem):
             ValueError: если пресет не найден
             PermissionError: если нет прав на удаление
         """
-        preset = self.session.get(ViewPreset, preset_id)
+        preset = self.db_session.get(ViewPreset, preset_id)
         if preset is None:
             raise ValueError(f"Пресет с ID {preset_id} не найден")
 
@@ -187,8 +184,8 @@ class ViewPresetSystem(BaseSystem):
         if preset.owner != "global" and preset.owner != owner:
             raise PermissionError("Нельзя удалять чужие пресеты")
 
-        self.session.delete(preset)
-        self.session.commit()
+        self.db_session.delete(preset)
+        self.db_session.commit()
 
     def get_preset_json(self, preset: ViewPreset) -> dict:
         """

@@ -21,7 +21,6 @@ class IncidentSystem(BaseSystem):
     """
     Workshop failure tracking and downtime analytics engine.
 
-    Vertical Slice: features/chat/incidents.py
     Principles:
     - Documentation in Code: Methods include Usage Examples.
     - Self-Explaining: Named constants for failure types.
@@ -164,7 +163,7 @@ class IncidentSystem(BaseSystem):
 
     def get_summary_stats(self) -> dict[str, float]:
         """Aggregate downtime metrics by incident category."""
-        statement = select(IncidentLog).where(IncidentLog.resolved)
+        statement = select(IncidentLog).where(IncidentLog.resolved.is_(True))
         resolved_incidents = self.session.exec(statement).all()
 
         stats: dict[str, float] = {}
@@ -179,8 +178,8 @@ class IncidentSystem(BaseSystem):
         """Retrieve all currently unresolved workshop failures."""
         statement = (
             select(IncidentLog)
-            .where(not IncidentLog.resolved)
-            .order_by(IncidentLog.created_at.desc())
+            .where(IncidentLog.resolved.is_(False))
+            .order_by(IncidentLog.created_at.desc())  # type: ignore[attr-defined]
         )
         return list(self.session.exec(statement).all())
 
@@ -193,8 +192,8 @@ class IncidentSystem(BaseSystem):
         """
         statement = (
             select(IncidentLog)
-            .where(IncidentLog.resolved)
-            .order_by(IncidentLog.resolved_at.desc())
+            .where(IncidentLog.resolved.is_(True))
+            .order_by(IncidentLog.resolved_at.desc())  # type: ignore[attr-defined]
             .limit(limit)
         )
         return list(self.session.exec(statement).all())
@@ -231,7 +230,7 @@ class IncidentSystem(BaseSystem):
         Query helper for registration block.
         """
         row_limit = report_params.get("limit", 50)
-        statement = select(IncidentLog).order_by(IncidentLog.created_at.desc()).limit(row_limit)
+        statement = select(IncidentLog).order_by(IncidentLog.created_at.desc()).limit(row_limit)  # type: ignore[attr-defined]
         incidents = db_session.exec(statement).all()
         return [
             {

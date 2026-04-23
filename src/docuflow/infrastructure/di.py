@@ -8,8 +8,7 @@ from sqlmodel import Session, create_engine
 from docuflow.application.bus.dispatcher import SecureDispatcher
 from docuflow.application.bus.orchestrator import P2POrchestrator
 from docuflow.features.admin.system import AdminSyncSystem, AdminSystem
-
-# Import Vertical Slice Systems
+from docuflow.features.analytics.system import AnalyticsSystem
 from docuflow.features.auth.system import AuthSystem
 from docuflow.features.chat.incidents import IncidentSystem
 from docuflow.features.chat.system import ChatSystem
@@ -37,10 +36,9 @@ from docuflow.sdk import SDK
 
 
 class AppProvider(Provider):
-    """Provides unified dependency injection for the DocuFlow Vertical Slice Architecture."""
-
-    ...
-    # (other methods)
+    def __init__(self, config: Config):
+        super().__init__()
+        self.config = config
 
     @provide(scope=Scope.REQUEST)
     def get_search_system(self, session: Session) -> SearchSystem:
@@ -66,10 +64,6 @@ class AppProvider(Provider):
     def get_production_system(self, config: Config, session: Session, sdk: SDK) -> ProductionSystem:
         """Provide production and logistics system."""
         return ProductionSystem(config, session, sdk)
-
-    def __init__(self, config: Config):
-        super().__init__()
-        self.config = config
 
     @provide(scope=Scope.APP)
     def get_config(self) -> Config:
@@ -183,10 +177,8 @@ class AppProvider(Provider):
         if hasattr(self, "_sdk") and self._sdk is not None:
             return self._sdk
         self._sdk = SDK(container)
-        # Lightweight logging for diagnostics (avoid heavy imports at module level)
+        # Lightweight logging for diagnostics
         try:
-            from loguru import logger
-
             logger.debug(f"AppProvider: created SDK instance id={id(self._sdk)}")
         except Exception as e:
             # Loguru import failed - continue without debug logging
@@ -195,7 +187,11 @@ class AppProvider(Provider):
             print(f"Warning: SDK debug logging unavailable: {e}", file=sys.stderr)
         return self._sdk
 
-    # --- Vertical Slice Feature Systems ---
+    @provide(scope=Scope.REQUEST)
+    def get_analytics_system(self, config: Config, session: Session) -> AnalyticsSystem:
+        """Provide analytics system."""
+        return AnalyticsSystem(config, session)
+
     @provide(scope=Scope.REQUEST)
     def get_auth_service(self, config: Config, session: Session) -> AuthSystem:
         """Provide authentication service."""

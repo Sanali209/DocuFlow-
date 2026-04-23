@@ -13,8 +13,8 @@ class NSMirrorStatus(BaseDocuWidget):
     Compact status widget showing local NC synchronization health.
     """
 
-    def __init__(self, engine: Engine, node_id: str, system_provider: Any = None):
-        super().__init__(system_provider)
+    def __init__(self, engine: Engine, node_id: str, system_scope: Any = None):
+        super().__init__(system_scope)
         self.engine = engine
         self.node_id = node_id
 
@@ -37,7 +37,8 @@ class NSMirrorStatus(BaseDocuWidget):
         """Обновляет данные статуса."""
 
         async def do_refresh():
-            with Session(self.engine) as session:
+            async with self.scope() as req:
+                session = await req.get(Session)
                 # 1. Active Bucket Entries
                 bucket_count = session.exec(
                     select(func.count(WorkerBucketEntry.id)).where(

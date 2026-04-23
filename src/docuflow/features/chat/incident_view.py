@@ -1,11 +1,13 @@
 from collections.abc import Callable
-from typing import Any
+from typing import Any, ClassVar
 
 from nicegui import ui
 
 from docuflow.domain.entities.production import IncidentLog
 from docuflow.features.chat.incidents import IncidentSystem
 from docuflow.features.core.views import ViewInfo, ViewRegistry
+from docuflow.lib.base_widget import BaseDocuWidget
+from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
 def register_incidents_view():
@@ -18,31 +20,28 @@ def register_incidents_view():
             render_fn=incidents_view_wrapper,
             dependencies=[IncidentSystem],
             pass_user=True,
-            pass_system_provider=True,
+            pass_system_scope=True,
+            pass_layout=True,
             is_async=True,
         )
     )
 
 
 async def incidents_view_wrapper(
-    system: IncidentSystem, user: str, system_provider: Callable, layout: Any
+    system: IncidentSystem, user: str, system_scope: Callable, layout: Any
 ):
     """Wrapper to instantiate and render the IncidentView."""
-    view = IncidentView(system, current_user=user, system_provider=system_provider, layout=layout)
+    view = IncidentView(system, current_user=user, system_scope=system_scope, layout=layout)
     await view.render_dashboard()
 
 
-class IncidentView:
+class IncidentView(BaseDocuWidget):
     """
     Workshop incident and downtime monitoring dashboard.
-
-    Principles:
-    - Code as Documentation: Methods are self-descriptive and documented with examples.
-    - Theme Integrity: Shared styling extracted into localized constants.
     """
 
     # UI Theme for the Incident Dashboard
-    UI_THEME = {
+    UI_THEME: ClassVar[dict[str, str]] = {
         "page_bg": "w-full h-full p-8 bg-[#020617] gap-6",
         "card_active": "w-full p-4 rounded-xl border border-red-500/30 bg-red-500/5 items-center gap-4 transition-all hover:bg-red-500/10",
         "card_history": "w-full p-3 rounded border border-emerald-500/10 bg-emerald-500/5 gap-2",
@@ -54,16 +53,16 @@ class IncidentView:
         self,
         incident_system: IncidentSystem,
         current_user: str = "foreman",
-        system_provider: Callable | None = None,
+        system_scope: Callable | None = None,
         layout: Any = None,
     ):
+        super().__init__(system_scope)
         self.incident_system = incident_system
         self.current_user = current_user
-        self.system_provider = system_provider
         self.layout = layout
-        self.active_failures_container = None
-        self.recent_history_container = None
-        self.metrics_summary_container = None
+        self.active_failures_container: Any = None
+        self.recent_history_container: Any = None
+        self.metrics_summary_container: Any = None
         self.active_group_filter = "ALL"
 
     async def render_dashboard(self):
@@ -99,7 +98,10 @@ class IncidentView:
             await self.refresh_metrics_summary()
 
             # Live updates every 10 seconds
-            ui.timer(10.0, self.full_refresh)
+            if self.layout:
+                self.layout.register_timer(ui.timer(10.0, self.full_refresh))
+            else:
+                ui.timer(10.0, self.full_refresh)
 
     def _render_group_tabs(self):
         """Renders filtering tabs by responsible group."""
@@ -148,17 +150,19 @@ class IncidentView:
             return
         self.active_failures_container.clear()
 
-        active_list = self.incident_system.get_active_failures()
+        async with self.scope() as req:
+            fresh_incident_sys = await req.get(IncidentSystem)
+            active_list = fresh_incident_sys.get_active_failures()
 
-        if not active_list:
-            with self.active_failures_container:
-                ui.label("No active blockers detected.").classes(
-                    "text-slate-600 text-sm mt-10 italic"
-                )
-            return
+            if not active_list:
+                with self.active_failures_container:
+                    ui.label("No active blockers detected.").classes(
+                        "text-slate-600 text-sm mt-10 italic"
+                    )
+                return
 
-        for incident in active_list:
-            self._render_active_incident_card(incident)
+            for incident in active_list:
+                self._render_active_incident_card(incident)
 
     async def refresh_history_feed(self):
         """Reload the list of recently resolved failures."""
@@ -166,22 +170,24 @@ class IncidentView:
             return
         self.recent_history_container.clear()
 
-        resolution_history = self.incident_system.get_recent_history()
+        async with self.scope() as req:
+            fresh_incident_sys = await req.get(IncidentSystem)
+            resolution_history = fresh_incident_sys.get_recent_history()
 
-        for incident in resolution_history:
-            with self.recent_history_container:
-                with ui.row().classes(self.UI_THEME["card_history"]):
-                    ui.icon("check_circle", color="emerald", size="14px").classes("mt-1")
-                    with ui.column().classes("flex-grow gap-0"):
-                        ui.label(incident.incident_type).classes(
-                            "text-[10px] font-bold text-emerald-400 uppercase tracking-widest"
-                        )
-                        ui.label(incident.description).classes(
-                            "text-xs text-slate-300 line-clamp-1"
-                        )
-                        ui.label(f"{incident.downtime_minutes:.0f} min lost").classes(
-                            "text-[9px] text-slate-600 mt-1 font-mono"
-                        )
+            for incident in resolution_history:
+                with self.recent_history_container:
+                    with ui.row().classes(self.UI_THEME["card_history"]):
+                        ui.icon("check_circle", color="emerald", size="14px").classes("mt-1")
+                        with ui.column().classes("flex-grow gap-0"):
+                            ui.label(incident.incident_type).classes(
+                                "text-[10px] font-bold text-emerald-400 uppercase tracking-widest"
+                            )
+                            ui.label(incident.description).classes(
+                                "text-xs text-slate-300 line-clamp-1"
+                            )
+                            ui.label(f"{incident.downtime_minutes:.0f} min lost").classes(
+                                "text-[9px] text-slate-600 mt-1 font-mono"
+                            )
 
     async def refresh_metrics_summary(self):
         """Updates the high-level metrics counters in the header."""
@@ -189,32 +195,25 @@ class IncidentView:
             return
         self.metrics_summary_container.clear()
 
-        stats_map = self.incident_system.get_summary_stats()
-        total_downtime_minutes = sum(stats_map.values())
-        active_blockers_count = len(self.incident_system.get_active_failures())
+        async with self.scope() as req:
+            fresh_incident_sys = await req.get(IncidentSystem)
+            stats_map = fresh_incident_sys.get_summary_stats()
+            total_downtime_minutes = sum(stats_map.values())
+            active_blockers_count = len(fresh_incident_sys.get_active_failures())
 
-        with self.metrics_summary_container:
-            # Critical Count
-            with ui.column().classes("items-end justify-center"):
-                ui.label(str(active_blockers_count)).classes(
-                    f"text-3xl font-black {'text-red-500' if active_blockers_count > 0 else 'text-slate-800'}"
-                )
-                ui.label("ACTIVE").classes(self.UI_THEME["stat_label"])
-            # Cumulative Downtime
-            with ui.column().classes("items-end justify-center ml-4"):
-                ui.label(f"{total_downtime_minutes / 60:.1f}h").classes(
-                    "text-2xl font-mono text-emerald-500"
-                )
-                ui.label("DOWNTIME").classes(self.UI_THEME["stat_label"])
-
-    def get_active_failures(self):
-        """Alias for incident_system method for test compatibility."""
-        return self.incident_system.get_active_incidents()
-
-    def get_summary_stats(self):
-        """Alias for incident_system method for test compatibility."""
-        # Simple placeholder for stats
-        return {"total": 0}
+            with self.metrics_summary_container:
+                # Critical Count
+                with ui.column().classes("items-end justify-center"):
+                    ui.label(str(active_blockers_count)).classes(
+                        f"text-3xl font-black {'text-red-500' if active_blockers_count > 0 else 'text-slate-800'}"
+                    )
+                    ui.label("ACTIVE").classes(self.UI_THEME["stat_label"])
+                # Cumulative Downtime
+                with ui.column().classes("items-end justify-center ml-4"):
+                    ui.label(f"{total_downtime_minutes / 60:.1f}h").classes(
+                        "text-2xl font-mono text-emerald-500"
+                    )
+                    ui.label("DOWNTIME").classes(self.UI_THEME["stat_label"])
 
     def open_reporting_dialog(self):
         """Manual reporting interface for workshop operators."""
@@ -238,10 +237,14 @@ class IncidentView:
             async def submit():
                 if not type_select.value or not desc.value:
                     return
-                self.incident_system.report_incident(type_select.value, desc.value, "workshop-op")
+                async with self.scope() as req:
+                    fresh_incident_sys = await req.get(IncidentSystem)
+                    await fresh_incident_sys.report_incident(
+                        type_select.value, desc.value, self.current_user
+                    )
                 dialog.close()
                 await self.full_refresh()
-                ui.notify("Failure logged and broadcasted", color="red")
+                NotifyHelper.error("Failure logged and broadcasted")
 
             with ui.row().classes("w-full justify-end mt-6"):
                 ui.button("Cancel", on_click=dialog.close).props("flat text-color=slate-500")
@@ -289,7 +292,7 @@ class IncidentView:
                         ui.button(
                             "Claim",
                             icon="pan_tool",
-                            on_click=lambda: self._claim_incident(incident),
+                            on_click=lambda i=incident: self._claim_incident(i),
                         ).classes("bg-blue-600/20 text-blue-400 font-bold px-4").props(
                             "flat rounded size=sm"
                         )
@@ -297,15 +300,17 @@ class IncidentView:
                     ui.button(
                         "Resolve",
                         icon="done_all",
-                        on_click=lambda: self.open_resolution_dialog(incident),
+                        on_click=lambda i=incident: self.open_resolution_dialog(i),
                     ).classes("bg-emerald-600/20 text-emerald-400 font-bold px-4").props(
                         "flat rounded size=sm"
                     )
 
     async def _claim_incident(self, incident: IncidentLog):
         """Assign incident to Maintenance by default when claiming."""
-        self.incident_system.assign_incident(incident.id, "Maintenance", self.current_user)
-        ui.notify(f"Incident {incident.id} assigned to Maintenance", type="info")
+        async with self.scope() as req:
+            fresh_incident_sys = await req.get(IncidentSystem)
+            fresh_incident_sys.assign_incident(incident.id, "Maintenance", self.current_user)
+        NotifyHelper.info(f"Incident {incident.id} assigned to Maintenance")
         await self.refresh_active_feed()
 
     # --- Interaction Handlers ---
@@ -324,16 +329,18 @@ class IncidentView:
                 label="Resolution Note", placeholder="Replaced motor / Repaired leak..."
             ).classes("w-full")
             tech_name = (
-                ui.input(label="Technician ID").classes("w-full").props('value="maintenance-01"')
+                ui.input(label="Technician ID").classes("w-full").props(f'value="{self.current_user}"')
             )
 
             async def submit():
                 if not note.value:
                     return
-                self.incident_system.resolve_incident(incident.id, tech_name.value, note.value)
+                async with self.scope() as req:
+                    fresh_incident_sys = await req.get(IncidentSystem)
+                    await fresh_incident_sys.resolve_incident(incident.id, tech_name.value, note.value)
                 dialog.close()
                 await self.full_refresh()
-                ui.notify(f"Incident {incident.id} cleared.", color="emerald")
+                NotifyHelper.info(f"Incident {incident.id} cleared.")
 
             with ui.row().classes("w-full justify-end mt-6"):
                 ui.button("Cancel", on_click=dialog.close).props("flat text-color=slate-500")

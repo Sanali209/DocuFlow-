@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 
 @dataclass
@@ -16,14 +16,15 @@ class ViewInfo:
     # Extra flags or settings
     pass_user: bool = False
     pass_switch_view: bool = False
-    pass_system_provider: bool = False
+    pass_system_scope: bool = False
+    pass_layout: bool = False
     is_async: bool = False
 
 
 class ViewRegistry:
     """Central registry for all feature views in DocuFlow."""
 
-    _views: dict[str, ViewInfo] = {}
+    _views: ClassVar[dict[str, ViewInfo]] = {}
 
     @classmethod
     def register(cls, info: ViewInfo):

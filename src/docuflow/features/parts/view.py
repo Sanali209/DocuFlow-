@@ -1,13 +1,16 @@
+from typing import Any
+
 from nicegui import ui
 
 from docuflow.domain.entities.production import PartLibrary, PartTemplate
 from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.parts.system import PartLibrarySystem
+from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.part_preview import PartPreview
+from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
 def register_parts_view():
-    """Register the parts library view."""
     ViewRegistry.register(
         ViewInfo(
             name="parts",
@@ -15,32 +18,33 @@ def register_parts_view():
             icon="extension",
             render_fn=parts_view_wrapper,
             dependencies=[PartLibrarySystem],
+            pass_system_scope=True,
+            pass_layout=True,
             is_async=True,
         )
     )
 
 
-async def parts_view_wrapper(parts_system: PartLibrarySystem):
+async def parts_view_wrapper(
+    parts_system: PartLibrarySystem, system_scope: Any, layout: Any, **kwargs
+):
     """Wrapper to instantiate and render the PartLibraryView."""
-    view = PartLibraryView(parts_system)
+    view = PartLibraryView(parts_system, system_scope, layout=layout)
     await view.render()
 
 
-class PartLibraryView:
+class PartLibraryView(BaseDocuWidget):
     """
     Electronic catalog of all unique parts scanned by the system.
-
-    Features:
-    - Interactive grid with SKU thumbnails.
-    - Advanced filtering (SKU, Material, Bbox range).
-    - Modal details with statistics and history.
     """
 
-    def __init__(self, parts_system: PartLibrarySystem):
+    def __init__(self, parts_system: PartLibrarySystem, system_scope: Any, layout: Any = None):
+        super().__init__(system_scope)
         self.parts_system = parts_system
-        self.grid = None
+        self.layout = layout
+        self.grid: Any = None
         self.search_query = ""
-        self.mat_filter = None
+        self.mat_filter: Any = None
         self.bbox_x_min = 0
         self.bbox_x_max = 2000
 
@@ -72,13 +76,18 @@ class PartLibraryView:
             await self._build_parts_grid()
 
             # Auto-refresh every 15 seconds
-            ui.timer(15.0, self.render.refresh, once=True)
+            if self.layout:
+                self.layout.register_timer(ui.timer(15.0, self.render.refresh, once=True))
+            else:
+                ui.timer(15.0, self.render.refresh, once=True)
 
     async def _build_parts_grid(self):
         """Internal helper to build the grid content."""
-        parts = self.parts_system.list_parts(
-            sku_filter=self.search_query if len(self.search_query) >= 2 else None, limit=50
-        )
+        async with self.scope() as req:
+            parts_system = await req.get(PartLibrarySystem)
+            parts = parts_system.list_parts(
+                sku_filter=self.search_query if len(self.search_query) >= 2 else None, limit=50
+            )
 
         if not parts:
             with self.grid:
@@ -114,7 +123,7 @@ class PartLibraryView:
                     ):
                         ui.icon("info", size="16px").classes("text-blue-500")
 
-    def open_part_details(self, part: PartLibrary):
+    async def open_part_details(self, part: PartLibrary):
         """Open detailed modal for a specific part."""
         with (
             ui.dialog() as dialog,
@@ -157,11 +166,11 @@ class PartLibraryView:
 
                     with ui.tab_panels(tabs, value=t1).classes("w-full bg-transparent"):
                         with ui.tab_panel(t1):
-                            self._render_work_items(part.sku)
+                            await self._render_work_items(part.sku)
                         with ui.tab_panel(t2):
-                            self._render_pallets(part.sku)
+                            await self._render_pallets(part.sku)
                         with ui.tab_panel(t3):
-                            self._render_templates(part.sku)
+                            await self._render_templates(part.sku)
 
         dialog.open()
 
@@ -170,8 +179,11 @@ class PartLibraryView:
             ui.label(label).classes("text-zinc-500")
             ui.label(value).classes("text-zinc-200 font-mono")
 
-    def _render_work_items(self, sku: str):
-        items = self.parts_system.get_work_items_for_part(sku)
+    async def _render_work_items(self, sku: str):
+        async with self.scope() as req:
+            parts_system = await req.get(PartLibrarySystem)
+            items = parts_system.get_work_items_for_part(sku)
+
         if not items:
             ui.label("Не использовалась в заказах").classes("text-sm text-zinc-600 italic")
             return
@@ -187,8 +199,11 @@ class PartLibraryView:
                     with ui.item_section().props("side"):
                         ui.badge(wi.status, color="zinc-700").classes("text-[10px]")
 
-    def _render_pallets(self, sku: str):
-        pallets = self.parts_system.get_production_units_for_part(sku)
+    async def _render_pallets(self, sku: str):
+        async with self.scope() as req:
+            parts_system = await req.get(PartLibrarySystem)
+            pallets = parts_system.get_production_units_for_part(sku)
+
         if not pallets:
             ui.label("Нет на готовых паллетах").classes("text-sm text-zinc-600 italic")
             return
@@ -204,8 +219,10 @@ class PartLibraryView:
                     with ui.item_section().props("side"):
                         ui.label("Склад").classes("text-[10px] text-green-500 uppercase font-bold")
 
-    def _render_templates(self, sku: str):
-        templates = self.parts_system.get_templates(sku)
+    async def _render_templates(self, sku: str):
+        async with self.scope() as req:
+            parts_system = await req.get(PartLibrarySystem)
+            templates = parts_system.get_templates(sku)
 
         with ui.column().classes("w-full gap-4"):
             with ui.row().classes("w-full justify-end"):
@@ -245,10 +262,11 @@ class PartLibraryView:
             ).classes("w-full")
 
             async def submit():
-                self.parts_system.create_template(sku, msg.value, sev.value, author="user")
+                async with self.scope() as req:
+                    parts_system = await req.get(PartLibrarySystem)
+                    parts_system.create_template(sku, msg.value, sev.value, author="user")
                 d.close()
-                # Simplified refresh: reopening details would work but here we just notify
-                ui.notify("Заметка добавлена")
+                NotifyHelper.error("Заметка добавлена")
 
             with ui.row().classes("w-full justify-end mt-4"):
                 ui.button("Отмена", on_click=d.close).props("flat")
@@ -256,8 +274,10 @@ class PartLibraryView:
         d.open()
 
     async def delete_template(self, template: PartTemplate):
-        self.parts_system.delete_template(template.id)
-        ui.notify("Заметка удалена")
+        async with self.scope() as req:
+            parts_system = await req.get(PartLibrarySystem)
+            parts_system.delete_template(template.id)
+        NotifyHelper.info("Заметка удалена")
 
     def open_geo_search(self):
         """Dialog for Bbox-based geometrical search."""
@@ -268,7 +288,9 @@ class PartLibraryView:
             tol = ui.number(label="Допуск, %", value=5)
 
             async def run_search():
-                parts = self.parts_system.find_by_bbox(x.value, y.value, tol.value)
+                async with self.scope() as req:
+                    parts_system = await req.get(PartLibrarySystem)
+                    parts = parts_system.find_by_bbox(x.value, y.value, tol.value)
                 d.close()
                 self._show_search_results(parts)
 
@@ -278,7 +300,7 @@ class PartLibraryView:
     def _show_search_results(self, parts):
         """Temporary overlay or notify if no results found."""
         if not parts:
-            ui.notify("Похожих деталей не найдено", color="negative")
+            NotifyHelper.info("Похожих деталей не найдено")
             return
-        ui.notify(f"Найдено аналогов: {len(parts)}")
+        NotifyHelper.info(f"Найдено аналогов: {len(parts)}")
         # Potentially update grid with results

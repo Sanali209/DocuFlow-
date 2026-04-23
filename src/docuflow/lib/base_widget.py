@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 
 from nicegui import ui
@@ -14,14 +15,23 @@ class BaseDocuWidget:
     Предоставляет унифицированные методы для выполнения действий и доступа к системам.
     """
 
-    def __init__(self, system_provider: Any = None):
-        self.system_provider = system_provider
+    def __init__(self, system_scope: Any = None):
+        self.system_scope = system_scope
+
+    @asynccontextmanager
+    async def scope(self):
+        """Provides a safe request scope for resolving and using systems."""
+        if not self.system_scope:
+            raise RuntimeError("System scope is not set for this widget.")
+        async with self.system_scope() as req:
+            yield req
 
     async def get_system(self, system_cls: type[T]) -> T:
-        """Типизированное получение системы через провайдер."""
-        if not self.system_provider:
-            raise RuntimeError("System provider is not set for this widget.")
-        return await self.system_provider(system_cls)
+        """Типизированное получение системы через провайдер (Legacy)."""
+        if not self.system_scope:
+            raise RuntimeError("System scope is not set for this widget.")
+        async with self.system_scope() as req:
+            return await req.get(system_cls)
 
     def safe_action(
         self, action_fn: Callable, success_msg: str | None = None, error_prefix: str = "Ошибка"
@@ -36,11 +46,12 @@ class BaseDocuWidget:
         """
 
         async def wrapped_action():
+            from docuflow.lib.widgets.ui_utils import NotifyHelper
             try:
                 await action_fn()
                 if success_msg:
-                    ui.notify(success_msg, type="positive")
+                    NotifyHelper.success(success_msg)
             except Exception as e:
-                ui.notify(f"{error_prefix}: {e}", type="negative")
+                NotifyHelper.error(f"{error_prefix}: {e}")
 
         ui.timer(0, wrapped_action, once=True)

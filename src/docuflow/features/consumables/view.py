@@ -1,12 +1,15 @@
+from typing import Any
+
 from nicegui import ui
 
 from docuflow.domain.entities.production import Consumable
 from docuflow.features.consumables.system import ConsumableSystem
 from docuflow.features.core.views import ViewInfo, ViewRegistry
+from docuflow.lib.base_widget import BaseDocuWidget
+from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
 def register_consumables_view():
-    """Register the consumables management view."""
     ViewRegistry.register(
         ViewInfo(
             name="consumables",
@@ -14,31 +17,30 @@ def register_consumables_view():
             icon="inventory",
             render_fn=consumables_view_wrapper,
             dependencies=[ConsumableSystem],
+            pass_system_scope=True,
+            pass_layout=True,
             is_async=True,
         )
     )
 
 
-async def consumables_view_wrapper(system: ConsumableSystem):
+async def consumables_view_wrapper(system: ConsumableSystem, system_scope: Any, layout: Any, **kwargs):
     """Wrapper to instantiate and render the ConsumableView."""
-    view = ConsumableView(system)
+    view = ConsumableView(system, system_scope, layout=layout)
     await view.render()
 
 
-class ConsumableView:
+class ConsumableView(BaseDocuWidget):
     """
     Workshop supply and consumable dashboard.
-
-    Features:
-    - High-contrast table with critical stock alerts.
-    - Quick actions for usage and restocking.
-    - Detailed movement history log.
     """
 
-    def __init__(self, system: ConsumableSystem):
+    def __init__(self, system: ConsumableSystem, system_scope: Any, layout: Any = None):
+        super().__init__(system_scope)
         self.system = system
-        self.table = None
-        self.log_container = None
+        self.layout = layout
+        self.table: Any = None
+        self.log_container: Any = None
         self.active_consumable: Consumable | None = None
 
     async def render(self):
@@ -64,7 +66,7 @@ class ConsumableView:
             with ui.row().classes("w-full gap-6 items-start"):
                 # Left: Main Status Table
                 with ui.column().classes("flex-grow gap-4"):
-                    self._render_status_table()
+                    await self._render_status_table()
 
                 # Right: Audit Log Side-panel
                 with ui.column().classes("w-80 gap-4"):
@@ -76,7 +78,7 @@ class ConsumableView:
                     )
                     await self.refresh_logs()
 
-    def _render_status_table(self):
+    async def _render_status_table(self):
         """Build the main supply status table."""
         columns = [
             {"name": "status", "label": "", "field": "status", "align": "left"},
@@ -140,11 +142,14 @@ class ConsumableView:
         self.table.on("restock", lambda msg: self.open_op_dialog(msg.args, "restock"))
         self.table.on("history", lambda msg: self.refresh_logs(msg.args["id"]))
 
-        self.refresh_table()
+        await self.refresh_table()
 
-    def refresh_table(self):
+    async def refresh_table(self):
         """Update table data."""
-        consumables = self.system.list_consumables()
+        async with self.scope() as req:
+            system = await req.get(ConsumableSystem)
+            consumables = system.list_consumables()
+
         self.table.rows = [
             {
                 "id": c.id,
@@ -165,37 +170,43 @@ class ConsumableView:
 
         # If no specific ID, show last 20 total or header
         if not consumable_id:
-            ui.label("Выберите материал для просмотра истории").classes(
-                "text-xs text-zinc-600 italic mt-8"
-            )
-            return
-
-        logs = self.system.get_log(consumable_id, limit=20)
-        if not logs:
-            ui.label("Истории нет").classes("text-xs text-zinc-600 italic mt-4")
-            return
-
-        for log in logs:
-            color = (
-                "emerald-500"
-                if log.operation == "restock"
-                else "red-500"
-                if log.operation in ["use", "write_off"]
-                else "blue-500"
-            )
-            with ui.card().classes(
-                f"w-full bg-zinc-900/50 border-l-2 border-{color} p-2 gap-0 shadow-none"
-            ):
-                with ui.row().classes("w-full justify-between items-start"):
-                    ui.label(log.operation.upper()).classes(f"text-[9px] font-bold text-{color}")
-                    ui.label(log.created_at.strftime("%H:%M")).classes("text-[9px] text-zinc-600")
-
-                ui.label(f"{'+' if log.qty_delta > 0 else ''}{log.qty_delta:.1f}").classes(
-                    "text-lg font-mono text-zinc-200 mt-1"
+            with self.log_container:
+                ui.label("Выберите материал для просмотра истории").classes(
+                    "text-xs text-zinc-600 italic mt-8"
                 )
-                if log.note:
-                    ui.label(log.note).classes("text-[10px] text-zinc-500 mt-1 italic")
-                ui.label(f"От: {log.author}").classes("text-[8px] text-zinc-700 text-right w-full")
+            return
+
+        async with self.scope() as req:
+            system = await req.get(ConsumableSystem)
+            logs = system.get_log(consumable_id, limit=20)
+
+        if not logs:
+            with self.log_container:
+                ui.label("Истории нет").classes("text-xs text-zinc-600 italic mt-4")
+            return
+
+        with self.log_container:
+            for log in logs:
+                color = (
+                    "emerald-500"
+                    if log.operation == "restock"
+                    else "red-500"
+                    if log.operation in ["use", "write_off"]
+                    else "blue-500"
+                )
+                with ui.card().classes(
+                    f"w-full bg-zinc-900/50 border-l-2 border-{color} p-2 gap-0 shadow-none"
+                ):
+                    with ui.row().classes("w-full justify-between items-start"):
+                        ui.label(log.operation.upper()).classes(f"text-[9px] font-bold text-{color}")
+                        ui.label(log.created_at.strftime("%H:%M")).classes("text-[9px] text-zinc-600")
+
+                    ui.label(f"{'+' if log.qty_delta > 0 else ''}{log.qty_delta:.1f}").classes(
+                        "text-lg font-mono text-zinc-200 mt-1"
+                    )
+                    if log.note:
+                        ui.label(log.note).classes("text-[10px] text-zinc-500 mt-1 italic")
+                    ui.label(f"От: {log.author}").classes("text-[8px] text-zinc-700 text-right w-full")
 
     def open_op_dialog(self, row: dict, op_type: str):
         """Dialog for adding/removing stock."""
@@ -218,14 +229,16 @@ class ConsumableView:
             async def submit():
                 if qty.value is None or qty.value <= 0:
                     return
-                if op_type == "use":
-                    self.system.use(row["id"], qty.value, user="operator", note=note.value)
-                else:
-                    self.system.restock(row["id"], qty.value, user="operator", note=note.value)
+                async with self.scope() as req:
+                    system = await req.get(ConsumableSystem)
+                    if op_type == "use":
+                        system.use(row["id"], qty.value, user="operator", note=note.value)
+                    else:
+                        system.restock(row["id"], qty.value, user="operator", note=note.value)
 
                 d.close()
-                self.refresh_all()
-                ui.notify("Операция выполнена")
+                await self.refresh_all()
+                NotifyHelper.info("Операция выполнена")
 
             with ui.row().classes("w-full justify-end mt-4"):
                 ui.button("Отмена", on_click=d.close).props("flat color=zinc-500")
@@ -252,21 +265,24 @@ class ConsumableView:
             async def submit():
                 if not name.value:
                     return
-                self.system.create_consumable(name.value, cat.value, unit.value, min_q.value)
+                async with self.scope() as req:
+                    system = await req.get(ConsumableSystem)
+                    system.create_consumable(name.value, cat.value, unit.value, min_q.value)
                 d.close()
-                self.refresh_all()
-                ui.notify("Новая позиция добавлена")
+                await self.refresh_all()
+                NotifyHelper.info("Новая позиция добавлена")
 
             with ui.row().classes("w-full justify-end mt-6"):
                 ui.button("Отмена", on_click=d.close).props("flat")
                 ui.button("Создать", on_click=submit).props("flat color=primary")
         d.open()
 
-    def refresh_all(self):
-        self.refresh_table()
+    async def refresh_all(self):
+        await self.refresh_table()
         # Full refresh of logs is tricky without last ID, so we just clear sidebar header
         if self.log_container:
             self.log_container.clear()
-            ui.label("Выберите материал для просмотра истории").classes(
-                "text-xs text-zinc-600 italic mt-8"
-            )
+            with self.log_container:
+                ui.label("Выберите материал для просмотра истории").classes(
+                    "text-xs text-zinc-600 italic mt-8"
+                )

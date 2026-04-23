@@ -24,8 +24,7 @@ class AuthSystem(BaseSystem):
             config: System configuration.
             db_session: SQLModel session for identity verification.
         """
-        super().__init__(config)
-        self.db_session = db_session
+        super().__init__(config, db_session)
         self._pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
     def hash_password(self, password: str) -> str:
@@ -51,13 +50,13 @@ class AuthSystem(BaseSystem):
 
         return user
 
-    def get_or_create_admin(self, default_password: str | None = "admin") -> User:
+    def get_or_create_admin(self, default_password: str | None = None) -> User:
         """
         Ensures at least one administrative user exists in the cluster.
         Symmetry: Every node must be able to bootstrap an initial admin if empty.
 
         Args:
-            default_password: Admin password. Default is 'admin'.
+            default_password: Admin password. Falls back to 'admin' if not provided.
         """
         # 1. Check if the administrative role exists
         admin_role_name = "Admin"
@@ -95,21 +94,30 @@ class AuthSystem(BaseSystem):
         return self.get_or_create_admin(default_password)
 
     def ensure_default_workplace(self) -> None:
-        """Creates a default Workplace (LASER_1) if none exists."""
+        """
+        Creates a default Workplace if none exists.
+        Bootstrapping logic for initial node setup.
+        """
         from loguru import logger
 
         from docuflow.domain.entities.identity import Workplace
+        from docuflow.infrastructure import constants
 
         existing = self.db_session.exec(
-            select(Workplace).where(Workplace.node_id == "LASER_1")
+            select(Workplace).where(Workplace.node_id == constants.DEFAULT_WORKPLACE_ID)
         ).first()
 
         if not existing:
             workplace = Workplace(
-                node_id="LASER_1",
-                name="Лазер 1",
+                node_id=constants.DEFAULT_WORKPLACE_ID,
+                name=constants.DEFAULT_WORKPLACE_NAME,
                 allowed_modules="",
             )
-            self.db_session.add(workplace)
-            self.db_session.commit()
-            logger.info("Created default workplace: LASER_1")
+            try:
+                self.db_session.add(workplace)
+                self.db_session.commit()
+                logger.info(f"Created default workplace: {constants.DEFAULT_WORKPLACE_ID}")
+            except Exception:
+                # Handle race condition in multi-node startup
+                self.db_session.rollback()
+                logger.debug("Default workplace already exists (race condition handled)")

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from pydantic import BaseModel
 
@@ -32,9 +32,9 @@ class SettingsRegistry:
     - Read and write settings from database (unified repository).
     """
 
-    _instance: Optional["SettingsRegistry"] = None
-    _schemas: dict[str, type[BaseModuleSettings]] = {}
-    _admin: Any | None = None  # AdminSystem reference for DB access
+    _instance: ClassVar[Optional["SettingsRegistry"]] = None
+    _schemas: ClassVar[dict[str, type[BaseModuleSettings]]] = {}
+    _admin: ClassVar[Any | None] = None  # AdminSystem reference for DB access
 
     def __new__(cls):
         if cls._instance is None:

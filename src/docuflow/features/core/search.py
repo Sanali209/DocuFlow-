@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
-from sqlalchemy.orm import Session
-from sqlmodel import select
+from sqlmodel import Session, col, select
 
 from docuflow.domain.entities.production import (
     PartLibrary,
@@ -52,7 +51,7 @@ class SearchSystem:
         # 1. Поиск по Нарядам (WorkItems)
         items = self.session.exec(
             select(WorkItem)
-            .where((WorkItem.folder_name.ilike(pattern)) | (WorkItem.sidra_number.ilike(pattern)))
+            .where((col(WorkItem.folder_name).ilike(pattern)) | (col(WorkItem.sidra_number).ilike(pattern)))  # type: ignore[attr-defined]
             .limit(limit)
         ).all()
 
@@ -71,7 +70,7 @@ class SearchSystem:
 
         # 2. Поиск по Деталям (PartLibrary)
         parts = self.session.exec(
-            select(PartLibrary).where(PartLibrary.sku.ilike(pattern)).limit(limit)
+            select(PartLibrary).where(col(PartLibrary.sku).ilike(pattern)).limit(limit)  # type: ignore[attr-defined]
         ).all()
 
         for part in parts:
@@ -89,7 +88,7 @@ class SearchSystem:
 
         # 3. Поиск по Паллетам (ProductionUnits)
         units = self.session.exec(
-            select(ProductionUnit).where(ProductionUnit.label_id.ilike(pattern)).limit(limit)
+            select(ProductionUnit).where(col(ProductionUnit.label_id).ilike(pattern)).limit(limit)  # type: ignore[attr-defined]
         ).all()
 
         for unit in units:

@@ -181,3 +181,53 @@ class NotifyHelper:
     @staticmethod
     def info(message: str) -> None:
         ui.notify(message, type="info", position="top-right")
+
+
+def get_kpi_color(value: float, thresholds: dict[float, str] | None = None) -> str:
+    """Returns a Quasar color string based on value thresholds.
+
+    Default logic:
+    - < 5: emerald (excellent)
+    - < 20: orange (warning)
+    - >= 20: red (critical)
+    """
+    t = thresholds or {0: "emerald", 5: "orange", 20: "red"}
+    # Sort keys descending to check from highest threshold
+    for limit in sorted(t.keys(), reverse=True):
+        if value >= limit:
+            return t[limit]
+    return "grey"
+
+
+def get_node_status_color(status: str) -> str:
+    """Returns a Quasar color string for node status (Cyrillic)."""
+    colors = {
+        "Свободен": "gray",
+        "Режет": "green",
+        "На паузе": "orange",
+        "Ожидание": "blue",
+    }
+    return colors.get(status, "gray")
+
+
+def get_action_color(action: str) -> str:
+    """Returns a Quasar color string for standard action buttons."""
+    colors = {
+        "start": "green",
+        "pause": "orange",
+        "complete": "green",
+        "resume": "green",
+        "block": "red",
+        "claim": "teal",
+    }
+    return colors.get(action.lower(), "gray")
+
+
+def get_role_indicator_color(is_leader: bool) -> str:
+    """Returns Tailwind color string for cluster role indicators."""
+    return "emerald-400" if is_leader else "indigo-400"
+
+
+def get_sync_indicator_color(is_active: bool) -> str:
+    """Returns Tailwind color string for sync/scan active indicators."""
+    return "emerald-400" if is_active else "slate-500"

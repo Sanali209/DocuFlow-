@@ -109,7 +109,7 @@ class DataSyncSystem(BaseSystem):
             if isinstance(val, datetime.datetime):
                 data[key] = val.isoformat()
 
-        logger.info(f"DataSync: Broadcasting delta for {type(entity).__name__} (ID: {entity.id})")
+        logger.info(f"DataSync: Broadcasting delta for {type(entity).__name__} (ID: {getattr(entity, 'id', 'unknown')})")
         await self._orchestrator.broadcast_request(CommandType.UPSERT_USER, data)
 
     # --- Private Helpers: Complexity Decomposition ---

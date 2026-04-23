@@ -10,13 +10,14 @@
 - WorkItemFilters — фильтры для списка
 """
 
+from docuflow.domain.entities.production import WorkItemStatus, WorkItemType
+from docuflow.lib.widgets.work_item_card import WorkItemCard
+
 from .system import (
     WorkItemFilters,
-    WorkItemStatus,
     WorkItemSystem,
-    WorkItemType,
 )
-from .view import WorkItemCard, WorkItemsView
+from .view import WorkItemsView
 
 __all__ = [
     "WorkItemCard",

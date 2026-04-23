@@ -46,8 +46,8 @@ class FolderScannerSystem(BaseSystem):
     LEADER_POLL_INTERVAL_SECONDS = 5
     MD5_CHUNK_SIZE = 4096
 
-    def __init__(self, config: Config, sdk: Any, engine: Engine, admin_system: Any | None = None):
-        super().__init__(config)
+    def __init__(self, config: Config, sdk: Any, engine: Engine, admin_system: Any | None = None, session: Session | None = None):
+        super().__init__(config, session)
         self.sdk = sdk
         self.db_engine = engine
         self._admin_system = admin_system

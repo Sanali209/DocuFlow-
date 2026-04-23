@@ -23,8 +23,7 @@ class NotificationService(BaseSystem):
             config: System configuration.
             db_session: SQLModel session for message persistence.
         """
-        super().__init__(config)
-        self.db_session = db_session
+        super().__init__(config, db_session)
 
     async def render(self, key: str, **vars) -> str | None:
         """

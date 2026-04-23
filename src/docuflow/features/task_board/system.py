@@ -35,6 +35,8 @@ class TaskBoardSystem(BaseSystem):
     Управляет жизненным циклом задач на конкретном узле.
     """
 
+    SHEET_OVERAGE_TOLERANCE = 1.2
+
     def __init__(
         self,
         config: Config,
@@ -180,7 +182,7 @@ class TaskBoardSystem(BaseSystem):
 
             # Validation: Prevent accidental over-entry (e.g. 100 instead of 10)
             planned = task_item.sheet_qty or 0
-            if sheets_done > (planned * 1.2) and planned > 0:
+            if sheets_done > (planned * self.SHEET_OVERAGE_TOLERANCE) and planned > 0:
                 raise ValueError(
                     f"Количество листов ({sheets_done}) значительно превышает план ({planned}). Проверьте ввод."
                 )
@@ -340,7 +342,7 @@ class TaskBoardSystem(BaseSystem):
                 TaskItem.assigned_to_node.is_(None),
                 TaskItem.mat_type_id == mat_type_id,
                 TaskItem.thickness == thickness,
-                TaskItem.status.in_([TaskItemStatus.NEW, TaskItemStatus.PLANNED]),
+                TaskItem.status.in_([TaskItemStatus.PLANNED]),  # type: ignore[attr-defined]
             )
             return list(session.exec(statement).all())
 
@@ -378,6 +380,55 @@ class TaskBoardSystem(BaseSystem):
         if not task.estimated_minutes or not task.actual_minutes:
             return 0.0
         return (task.actual_minutes - task.estimated_minutes) / task.estimated_minutes * 100
+
+    def get_node_drift(self, node_id: str) -> float:
+        """Calculates the average Drift % for all completed tasks on a node."""
+        with self.get_db_session() as session:
+            bucket_entries = self.get_bucket(node_id)
+            total_estimated = 0
+            total_actual = 0
+            for entry in bucket_entries:
+                task = session.get(TaskItem, entry.task_item_id)
+                if task and task.status == TaskItemStatus.DONE:
+                    total_estimated += task.estimated_minutes or 0
+                    total_actual += task.actual_minutes or 0
+
+            if total_estimated == 0:
+                return 0.0
+            return (total_actual - total_estimated) / total_estimated * 100
+
+    def get_node_status(self, node_id: str) -> str:
+        """Returns a human-readable status for the node based on its current tasks."""
+        with self.get_db_session() as session:
+            bucket = self.get_bucket(node_id)
+            if not bucket:
+                return "Свободен"
+
+            tasks = []
+            for entry in bucket:
+                task = session.get(TaskItem, entry.task_item_id)
+                if task:
+                    tasks.append(task)
+
+            if any(t.status == TaskItemStatus.IN_PROGRESS for t in tasks):
+                return "Режет"
+            elif any(t.status == TaskItemStatus.ON_HOLD for t in tasks):
+                return "На паузе"
+            else:
+                return "Ожидание"
+
+    def get_unassigned_tasks(self, work_item_id: int | None = None) -> list[TaskItem]:
+        """Retrieves tasks that haven't been assigned to any node."""
+        with self.get_db_session() as session:
+            statement = select(TaskItem).where(
+                TaskItem.assigned_to_node.is_(None),
+                TaskItem.status == TaskItemStatus.PLANNED,
+            )
+
+            if work_item_id:
+                statement = statement.where(TaskItem.work_item_id == work_item_id)
+
+            return list(session.exec(statement).all())
 
     def _validate_transition(
         self, task_id: int, target_status: TaskItemStatus, session: Session

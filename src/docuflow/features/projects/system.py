@@ -18,8 +18,7 @@ class ProjectSystem(BaseSystem):
     """
 
     def __init__(self, config: Config, db_session: Session):
-        super().__init__(config)
-        self.db_session = db_session
+        super().__init__(config, db_session)
 
     def get_all_active_projects(self) -> list[Project]:
         """

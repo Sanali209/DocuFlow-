@@ -24,11 +24,12 @@ class InventorySystem(BaseSystem):
     """
     Decentralized management of material catalog and stock level operations.
 
-    Vertical Slice: features/inventory/system.py
     Principles:
     - Code as Documentation: Methods include usage examples.
     - Self-Explaining: Descriptive variable names (db_session, material_type).
     """
+
+    DEFAULT_TIME_TOLERANCE_PCT = 15.0
 
     def __init__(self, config: Config, session: Session, sdk: Any = None):
         """
@@ -53,6 +54,21 @@ class InventorySystem(BaseSystem):
         """
         return list(self.session.exec(select(MaterialType)).all())
 
+    def update_material_settings(self, mat_id: int, **kwargs) -> MaterialType | None:
+        """Updates specific parameters of a material definition."""
+        material = self.session.get(MaterialType, mat_id)
+        if not material:
+            return None
+
+        for key, value in kwargs.items():
+            if hasattr(material, key):
+                setattr(material, key, value)
+
+        self.session.add(material)
+        self.session.commit()
+        self.session.refresh(material)
+        return material
+
     def create_material_definition(self, code: str, thickness: float, **kwargs) -> MaterialType:
         """
         Create or synchronize a material specification in the local catalog.
@@ -74,6 +90,30 @@ class InventorySystem(BaseSystem):
         return material_type
 
     # --- Stock & Inventory Management ---
+
+    def get_all_stock(self) -> list[MaterialStock]:
+        """Retrieves all current material stock records."""
+        return list(self.session.exec(select(MaterialStock)).all())
+
+    def get_audit_history(self, limit: int = 100) -> list[MaterialAudit]:
+        """Retrieves historical material movements."""
+        statement = select(MaterialAudit).order_by(MaterialAudit.created_at.desc()).limit(limit)  # type: ignore[attr-defined]
+        return list(self.session.exec(statement).all())
+
+    def get_active_supply_requests(self, hours: int = 12) -> list[WorkLog]:
+        """Retrieves recent material supply requests from logs."""
+        import datetime
+
+        since = datetime.datetime.now() - datetime.timedelta(hours=hours)
+        statement = (
+            select(WorkLog)
+            .where(
+                WorkLog.message.contains("[LOGISTICS_REQUEST]"),  # type: ignore[attr-defined]
+                WorkLog.created_at >= since,
+            )
+            .order_by(WorkLog.created_at.desc())  # type: ignore[attr-defined]
+        )
+        return list(self.session.exec(statement).all())
 
     def receive_material_batch(
         self,
@@ -202,7 +242,7 @@ class InventorySystem(BaseSystem):
                     MaterialStock.mat_type_id == task_item.mat_type_id,
                     MaterialStock.status == MaterialStockStatus.AVAILABLE,
                 )
-                .order_by(MaterialStock.created_at.asc())
+                .order_by(MaterialStock.created_at.asc())  # type: ignore[attr-defined]
             )
             target_stock = self.session.exec(fifo_query).first()
 
@@ -304,7 +344,7 @@ class InventorySystem(BaseSystem):
         Query method for material usage history blocks.
         """
         row_limit = report_params.get("limit", 50)
-        statement = select(MaterialAudit).order_by(MaterialAudit.created_at.desc()).limit(row_limit)
+        statement = select(MaterialAudit).order_by(MaterialAudit.created_at.desc()).limit(row_limit)  # type: ignore[attr-defined]
         audit_items = db_session.exec(statement).all()
         return [
             {

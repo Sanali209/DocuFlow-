@@ -31,7 +31,7 @@ class NSMirrorService(BaseSystem):
     Preserves the directory structure of the work orders.
     """
 
-    def __init__(self, config: Config, sdk: Any, engine: Engine):
+    def __init__(self, config: Config, sdk: Any, engine: Engine, session: Session | None = None):
         """
         Initialize the network synchronization service.
 
@@ -39,8 +39,9 @@ class NSMirrorService(BaseSystem):
             config: System configuration.
             sdk: SDK facade.
             engine: SQLAlchemy database engine.
+            session: Optional SQLModel session.
         """
-        super().__init__(config)
+        super().__init__(config, session)
         self.sdk = sdk
         self.db_engine = engine
         self._running = False

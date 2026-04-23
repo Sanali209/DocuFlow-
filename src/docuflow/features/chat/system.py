@@ -14,7 +14,6 @@ class ChatSystem(BaseSystem):
     """
     Decentralized communication engine for the DocuFlow workshop.
 
-    Vertical Slice: features/chat/system.py
     Principles:
     - Self-explaining code: Named constants and descriptive variables.
     - Code as documentation: Docstrings include usage examples.
@@ -155,7 +154,7 @@ class ChatSystem(BaseSystem):
         statement = (
             select(ChatMessage)
             .where(FIELD_MAP[ref_type] == ref_id)
-            .order_by(ChatMessage.created_at.asc())
+            .order_by(ChatMessage.created_at.asc())  # type: ignore[attr-defined]
             .limit(limit)
         )
 
@@ -175,7 +174,7 @@ class ChatSystem(BaseSystem):
             children_statement = (
                 select(ChatMessage)
                 .where(ChatMessage.parent_message_id == parent_id)
-                .order_by(ChatMessage.created_at.asc())
+                .order_by(ChatMessage.created_at.asc())  # type: ignore[attr-defined]
             )
 
             children = self.session.exec(children_statement).all()
@@ -192,16 +191,16 @@ class ChatSystem(BaseSystem):
         """
         statement = (
             select(ChatMessage)
-            .where(ChatMessage.ref_project_id is None)
-            .where(ChatMessage.ref_work_item_id is None)
-            .where(ChatMessage.ref_task_item_id is None)
-            .order_by(ChatMessage.created_at.desc())
+            .where(ChatMessage.ref_project_id.is_(None))
+            .where(ChatMessage.ref_work_item_id.is_(None))
+            .where(ChatMessage.ref_task_item_id.is_(None))
+            .order_by(ChatMessage.created_at.desc())  # type: ignore[attr-defined]
             .limit(limit)
         )
 
         return list(self.session.exec(statement).all())
 
-    # --- File Management Vertical Slice ---
+    # --- File Management ---
 
     def attach_file(self, message_id: int, filename: str, content: bytes) -> str:
         """

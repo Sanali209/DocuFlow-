@@ -1,5 +1,8 @@
 import datetime
-from typing import Any
+import logging
+from typing import Any, ClassVar
+
+logger = logging.getLogger("docuflow.work_items")
 
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
@@ -13,8 +16,6 @@ from docuflow.domain.entities.production import (
     WorkLogType,
 )
 from docuflow.infrastructure.config import Config
-
-DEFAULT_PROJECT_ID = 1
 
 
 class WorkItemFilters(BaseModel):
@@ -41,7 +42,7 @@ class WorkItemSystem(BaseSystem):
     """
 
     # Validation rules for production state transitions
-    VALID_TRANSITIONS: dict[WorkItemStatus, list[WorkItemStatus]] = {
+    VALID_TRANSITIONS: ClassVar[dict[WorkItemStatus, list[WorkItemStatus]]] = {
         WorkItemStatus.NEW: [
             WorkItemStatus.REGISTERED,
             WorkItemStatus.IN_PROGRESS,
@@ -87,14 +88,41 @@ class WorkItemSystem(BaseSystem):
     ) -> WorkItem:
         """
         Registers a new production order into the workshop tracking system.
-
-        Example:
-            new_item = system.create_work_item(
-                folder_name="S-105-X",
-                item_type=WorkItemType.SIDRA
-            )
         """
-        target_project_id = project_id if project_id else DEFAULT_PROJECT_ID
+        target_project_id = project_id
+
+        if not target_project_id:
+            # Try to resolve default project via ProjectSystem if SDK is available
+            if self.sdk:
+                try:
+                    from docuflow.features.projects.system import ProjectSystem
+
+                    proj_sys = self.sdk.resolve_system_by_type(ProjectSystem)
+                    default_proj = proj_sys.resolve_default_workshop_project()
+                    target_project_id = default_proj.id
+                except Exception:
+                    logger.warning(
+                        "WorkItemSystem: failed to resolve default project via SDK, "
+                        "falling back to direct DB lookup.",
+                        exc_info=True,
+                    )
+
+        # Final fallback if still not resolved
+        if not target_project_id:
+            from docuflow.domain.entities.production import Project
+            from docuflow.infrastructure.constants import DEFAULT_PROJECT_NAME
+
+            stmt = select(Project).where(Project.name == DEFAULT_PROJECT_NAME)
+            default_proj = self.db_session.exec(stmt).first()
+            if default_proj:
+                target_project_id = default_proj.id
+            else:
+                # If everything fails, resolve/create the default project manually
+                # to avoid hardcoding ID 1 which might not exist or be incorrect.
+                new_default = Project(name=DEFAULT_PROJECT_NAME, is_default=True)
+                self.db_session.add(new_default)
+                self.db_session.flush()
+                target_project_id = new_default.id
 
         work_item = WorkItem(
             folder_name=folder_name,
@@ -157,6 +185,24 @@ class WorkItemSystem(BaseSystem):
         # Execution with pagination
         statement = statement.offset(criteria.offset).limit(criteria.limit)
         return list(self.db_session.exec(statement).all())
+
+    def get_tasks_for_work_item(self, work_item_id: int) -> list[Any]:
+        """Retrieves all tasks associated with a specific work item."""
+        from docuflow.domain.entities.production import TaskItem
+
+        return list(
+            self.db_session.exec(select(TaskItem).where(TaskItem.work_item_id == work_item_id)).all()
+        )
+
+    def get_logs_for_work_item(self, work_item_id: int) -> list[WorkLog]:
+        """Retrieves all logs associated with a specific work item."""
+        return list(
+            self.db_session.exec(
+                select(WorkLog)
+                .where(WorkLog.work_item_id == work_item_id)
+                .order_by(WorkLog.created_at.desc())  # type: ignore[attr-defined]
+            ).all()
+        )
 
     def update_work_item_metadata(self, work_item_id: int, **updates: Any) -> WorkItem:
         """

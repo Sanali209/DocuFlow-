@@ -8,12 +8,12 @@ from docuflow.lib.base_widget import BaseDocuWidget
 class ActivityStream(BaseDocuWidget):
     """Живая лента событий системы."""
 
-    def __init__(self, db_engine, system_provider=None):
-        super().__init__(system_provider)
+    def __init__(self, db_engine, system_scope=None):
+        super().__init__(system_scope)
         self.db_engine = db_engine
 
     @ui.refreshable
-    def render(self) -> None:
+    async def render(self) -> None:
         """Живая лента событий системы."""
         with ui.column().classes("w-full h-full gap-2 p-4"):
             ui.label("LIVE ACTIVITY").classes(
@@ -22,9 +22,10 @@ class ActivityStream(BaseDocuWidget):
 
             from sqlmodel import Session
 
-            with Session(self.db_engine) as session:
+            async with self.scope() as req:
+                session = await req.get(Session)
                 logs = session.exec(
-                    select(WorkLog).order_by(WorkLog.created_at.desc()).limit(15)
+                    select(WorkLog).order_by(WorkLog.created_at.desc()).limit(15)  # type: ignore[attr-defined]
                 ).all()
 
                 if not logs:

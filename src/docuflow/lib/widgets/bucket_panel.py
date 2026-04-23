@@ -17,6 +17,7 @@ from docuflow.domain.entities.production import (
 )
 from docuflow.features.task_board.system import TaskBoardSystem
 from docuflow.lib.base_widget import BaseDocuWidget
+from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
 class BucketPanel(BaseDocuWidget):
@@ -24,29 +25,24 @@ class BucketPanel(BaseDocuWidget):
     Панель корзины оператора.
 
     Props:
-        session: Session — сессия БД
-        system: TaskBoardSystem — система управления задачами
         node_id: str — ID узла (лазера)
         user: str — текущий пользователь
-        system_provider: Any — провайдер для получения свежих систем
+        system_scope: Any — провайдер для получения свежих систем
     """
 
     def __init__(
         self,
-        session: Session,
-        system: TaskBoardSystem,
         node_id: str,
         user: str,
-        system_provider: Any = None,
+        system_scope: Any,
+        **kwargs,
     ):
-        super().__init__(system_provider)
-        self.session = session
-        self.system = system
+        super().__init__(system_scope)
         self.node_id = node_id
         self.user = user
 
     @ui.refreshable
-    def render(self) -> None:
+    async def render(self) -> None:
         """Рендерит панель корзины с разделением на очереди."""
         # Validate node_id
         if not self.node_id or not isinstance(self.node_id, str):
@@ -57,47 +53,50 @@ class BucketPanel(BaseDocuWidget):
 
         logger.debug(f"BucketPanel.render: node_id={self.node_id!r}")
 
-        bucket_entries = self.system.get_bucket(self.node_id)
+        async with self.scope() as req:
+            session = await req.get(Session)
+            system = await req.get(TaskBoardSystem)
+            bucket_entries = system.get_bucket(self.node_id)
 
-        if not bucket_entries:
-            self._render_empty_bucket()
-            return
+            if not bucket_entries:
+                self._render_empty_bucket()
+                return
 
-        # Группируем по batch_group_id
-        batches = self._group_by_batch(bucket_entries)
+            # Группируем по batch_group_id
+            batches = self._group_by_batch(session, bucket_entries)
 
-        # Разделяем на Активные (есть хоть одна задача IN_PROGRESS) и Предстоящие
-        active_batches = {}
-        upcoming_batches = {}
+            # Разделяем на Активные (есть хоть одна задача IN_PROGRESS) и Предстоящие
+            active_batches = {}
+            upcoming_batches = {}
 
-        for bid, tasks in batches.items():
-            if any(t.status == TaskItemStatus.IN_PROGRESS for t in tasks):
-                active_batches[bid] = tasks
-            else:
-                upcoming_batches[bid] = tasks
+            for bid, tasks in batches.items():
+                if any(t.status == TaskItemStatus.IN_PROGRESS for t in tasks):
+                    active_batches[bid] = tasks
+                else:
+                    upcoming_batches[bid] = tasks
 
-        with ui.column().classes("w-full gap-6"):
-            # --- SECTION: ACTIVE ---
-            if active_batches:
-                ui.label("🔥 В РАБОТЕ СЕЙЧАС").classes(
-                    "text-xs font-black text-orange-500 tracking-widest"
-                )
-                for bid, tasks in active_batches.items():
-                    self._render_batch_card(bid, tasks, is_active=True)
-
-            # --- SECTION: UPCOMING ---
-            if upcoming_batches:
-                with ui.row().classes("items-center gap-2 mt-4"):
-                    ui.label("⏳ ОЧЕРЕДЬ НА ПОДГОТОВКУ").classes(
-                        "text-xs font-black text-slate-500 tracking-widest"
+            with ui.column().classes("w-full gap-6"):
+                # --- SECTION: ACTIVE ---
+                if active_batches:
+                    ui.label("🔥 В РАБОТЕ СЕЙЧАС").classes(
+                        "text-xs font-black text-orange-500 tracking-widest"
                     )
-                    ui.badge(str(len(upcoming_batches))).props("color=slate-700 size=xs")
+                    for bid, tasks in active_batches.items():
+                        self._render_batch_card(session, system, bid, tasks, is_active=True)
 
-                for bid, tasks in upcoming_batches.items():
-                    self._render_batch_card(bid, tasks, is_active=False)
+                # --- SECTION: UPCOMING ---
+                if upcoming_batches:
+                    with ui.row().classes("items-center gap-2 mt-4"):
+                        ui.label("⏳ ОЧЕРЕДЬ НА ПОДГОТОВКУ").classes(
+                            "text-xs font-black text-slate-500 tracking-widest"
+                        )
+                        ui.badge(str(len(upcoming_batches))).props("color=slate-700 size=xs")
+
+                    for bid, tasks in upcoming_batches.items():
+                        self._render_batch_card(session, system, bid, tasks, is_active=False)
 
     def _render_batch_card(
-        self, batch_group_id: str, tasks: list[TaskItem], is_active: bool = False
+        self, session: Session, system: TaskBoardSystem, batch_group_id: str, tasks: list[TaskItem], is_active: bool = False
     ) -> None:
         """Вспомогательный метод для рендера карточки батча."""
         drift = self._calculate_batch_drift(tasks)
@@ -116,10 +115,9 @@ class BucketPanel(BaseDocuWidget):
                     batch_group_id=batch_group_id,
                     tasks=tasks,
                     drift_percent=drift,
-                    session=self.session,
                     node_id=self.node_id,
                     user=self.user,
-                    system_provider=self.system_provider,
+                    system_scope=self.system_scope,
                     on_start=self._on_start_task,
                     on_pause=self._on_pause_task,
                     on_resume=self._on_resume_task,
@@ -131,7 +129,7 @@ class BucketPanel(BaseDocuWidget):
             if not is_active and len(tasks) > 0:
                 with ui.row().classes("absolute -top-3 right-4"):
                     ui.button(
-                        icon="expand_less", on_click=lambda: ui.notify("Приоритет повышен")
+                        icon="expand_less", on_click=lambda: NotifyHelper.info("Приоритет повышен")
                     ).props("round flat size=sm color=slate-400 bg-white shadow-sm")
 
     def _render_empty_bucket(self) -> None:
@@ -141,7 +139,7 @@ class BucketPanel(BaseDocuWidget):
             ui.label("Корзина пуста").classes("text-h6 text-slate-300")
             ui.label("Нет назначенных батчей").classes("text-slate-500")
 
-    def _group_by_batch(self, entries: list[WorkerBucketEntry]) -> dict[str, list[TaskItem]]:
+    def _group_by_batch(self, session: Session, entries: list[WorkerBucketEntry]) -> dict[str, list[TaskItem]]:
         """
         Группирует записи корзины по batch_group_id.
 
@@ -151,7 +149,7 @@ class BucketPanel(BaseDocuWidget):
         batches: dict[str, list[TaskItem]] = {}
 
         for entry in entries:
-            task = self.session.get(TaskItem, entry.task_item_id)
+            task = session.get(TaskItem, entry.task_item_id)
             if task:
                 batch_id = entry.batch_group_id or f"single_{task.id}"
                 if batch_id not in batches:
@@ -176,8 +174,9 @@ class BucketPanel(BaseDocuWidget):
         """Обработчик кнопки 'Начать'."""
 
         async def do_start():
-            system = await self.get_system(TaskBoardSystem)
-            system.start_task(task_id)
+            async with self.scope() as req:
+                system = await req.get(TaskBoardSystem)
+                system.start_task(task_id)
             self.render.refresh()
 
         self.safe_action(do_start, "Задача начата")
@@ -186,20 +185,23 @@ class BucketPanel(BaseDocuWidget):
         """Обработчик кнопки 'Пауза' — открывает диалог причины."""
         from .bucket_panel_dialogs import PauseDialog
 
-        PauseDialog(
-            task_id,
-            self.system,
-            on_success=self.render.refresh,
-            system_provider=self.system_provider,
-        ).render()
+        async def show():
+            await PauseDialog(
+                task_id,
+                on_success=self.render.refresh,
+                system_scope=self.system_scope,
+            ).render()
+
+        ui.timer(0, show, once=True)
 
     def _on_resume_task(self, task_id: int) -> None:
         """Обработчик кнопки 'Возобновить'."""
 
         async def do_resume():
-            system = await self.get_system(TaskBoardSystem)
-            system.resume_task(task_id)
-            self.render.refresh()
+            async with self.scope() as req:
+                system = await req.get(TaskBoardSystem)
+                system.resume_task(task_id)
+            await self.render.refresh()
 
         self.safe_action(do_resume, "Задача возобновлена")
 
@@ -207,20 +209,24 @@ class BucketPanel(BaseDocuWidget):
         """Обработчик кнопки 'Завершить' — открывает диалог."""
         from .bucket_panel_dialogs import CompleteDialog
 
-        CompleteDialog(
-            task_id,
-            self.system,
-            on_success=self.render.refresh,
-            system_provider=self.system_provider,
-        ).render()
+        async def show():
+            await CompleteDialog(
+                task_id,
+                on_success=self.render.refresh,
+                system_scope=self.system_scope,
+            ).render()
+
+        ui.timer(0, show, once=True)
 
     def _on_block_task(self, task_id: int) -> None:
         """Обработчик кнопки 'Заблокировать' — открывает диалог причины."""
         from .bucket_panel_dialogs import BlockDialog
 
-        BlockDialog(
-            task_id,
-            self.system,
-            on_success=self.render.refresh,
-            system_provider=self.system_provider,
-        ).render()
+        async def show():
+            await BlockDialog(
+                task_id,
+                on_success=self.render.refresh,
+                system_scope=self.system_scope,
+            ).render()
+
+        ui.timer(0, show, once=True)

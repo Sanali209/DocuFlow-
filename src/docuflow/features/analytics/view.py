@@ -1,8 +1,12 @@
-from nicegui import ui
-from sqlmodel import Session, func, select
+from typing import Any
 
-from docuflow.domain.entities.production import ProductionUnit, TaskItem, TaskItemStatus, WorkItem
+from nicegui import ui
+
+from docuflow.features.analytics.system import AnalyticsSystem
 from docuflow.features.core.views import ViewInfo, ViewRegistry
+from docuflow.lib.base_widget import BaseDocuWidget
+from docuflow.lib.widgets.kpi_card import KPICard, KPIGrid
+from docuflow.lib.widgets.ui_utils import get_kpi_color
 
 
 def register_analytics_view():
@@ -12,135 +16,124 @@ def register_analytics_view():
             name="analytics",
             label="Analytics",
             icon="analytics",
-            render_fn=analytics_view,
-            dependencies=[Session],
+            render_fn=analytics_view_wrapper,
+            pass_system_scope=True,
+            pass_layout=True,
             is_async=True,
         )
     )
 
 
-async def analytics_view(session: Session) -> None:
+async def analytics_view_wrapper(system_scope: Any, layout: Any, **kwargs):
+    """Wrapper for the class-based AnalyticsView."""
+    view = AnalyticsView(system_scope, layout=layout)
+    await view.render()
+
+
+class AnalyticsView(BaseDocuWidget):
     """Provides high-level KPI and performance analytics."""
 
-    with ui.column().classes("w-full h-full p-8 gap-6"):
-        ui.label("Analytics Dashboard").classes("text-3xl font-bold text-white mb-2")
+    def __init__(self, system_scope: Any, layout: Any = None):
+        super().__init__(system_scope)
+        self.layout = layout
 
-        try:
-            # Gather metrics
-            total_work_items = session.exec(select(func.count(WorkItem.id))).one()
-            total_tasks = session.exec(select(func.count(TaskItem.id))).one()
-            completed_tasks = session.exec(
-                select(func.count(TaskItem.id)).where(TaskItem.status == TaskItemStatus.DONE)
-            ).one()
-            total_pallets = session.exec(select(func.count(ProductionUnit.id))).one()
-            total_parts_produced = (
-                session.exec(select(func.sum(ProductionUnit.qty_produced))).one() or 0
-            )
+    async def render(self) -> None:
+        """Render the analytics dashboard."""
+        with ui.column().classes("w-full h-full p-8 gap-6"):
+            ui.label("Analytics Dashboard").classes("text-3xl font-bold text-white mb-2")
 
-            # --- NEW: Calculation of Drift KPI ---
-            stmt_drift = select(TaskItem).where(TaskItem.status == TaskItemStatus.DONE)
-            done_tasks = session.exec(stmt_drift).all()
-            total_drift = 0.0
-            count_drift = 0
-            for t in done_tasks:
-                if t.estimated_minutes and t.actual_minutes:
-                    total_drift += (
-                        (t.actual_minutes - t.estimated_minutes) / t.estimated_minutes * 100
+            try:
+                async with self.scope() as req:
+                    system = await req.get(AnalyticsSystem)
+                    metrics = system.get_dashboard_metrics()
+
+                    total_work_items = metrics["total_work_items"]
+                    total_tasks = metrics["total_tasks"]
+                    total_pallets = metrics["total_pallets"]
+                    total_parts_produced = metrics["total_parts_produced"]
+                    avg_drift = metrics["avg_drift"]
+                    count_drift = metrics["count_drift"]
+                    completion_rate = metrics["completion_rate"]
+                    status_counts = metrics["status_counts"]
+            except Exception as e:
+                ui.label(f"Failed to load metrics: {e}").classes("text-red-400")
+                return
+
+            drift_color = get_kpi_color(avg_drift)
+
+            KPIGrid(
+                kpis=[
+                    KPICard(
+                        label="Total Work Items",
+                        value=str(total_work_items),
+                        subtitle=f"Completion rate: {completion_rate}%",
+                        icon="inventory_2",
+                        icon_color="cyan",
+                    ),
+                    KPICard(
+                        label="Avg Production Drift",
+                        value=f"{'+' if avg_drift > 0 else ''}{avg_drift}%",
+                        subtitle=f"Based on {count_drift} tasks",
+                        icon="trending_up" if avg_drift > 0 else "trending_down",
+                        icon_color=drift_color,
+                        accent_color=drift_color,
+                    ),
+                    KPICard(
+                        label="Total Finished Parts",
+                        value=str(total_parts_produced),
+                        subtitle=f"Across {total_pallets} Pallets",
+                        icon="precision_manufacturing",
+                        icon_color="orange",
+                    ),
+                ]
+            ).render()
+
+            # --- CHARTS SECTION ---
+            with ui.row().classes("w-full gap-6 mt-6"):
+                # Chart 1: Status Distribution
+                with ui.column().classes("flex-1 p-6 rounded-2xl card"):
+                    ui.label("TASK STATUS DISTRIBUTION").classes(
+                        "text-slate-400 text-xs font-bold mb-4"
                     )
-                    count_drift += 1
-            avg_drift = round(total_drift / count_drift, 1) if count_drift > 0 else 0.0
 
-            round((completed_tasks / total_tasks * 100) if total_tasks > 0 else 0, 1)
-        except Exception as e:
-            ui.label(f"Failed to load metrics: {e}").classes("text-red-400")
-            return
+                    ui.echart(
+                        {
+                            "tooltip": {"trigger": "item"},
+                            "series": [
+                                {
+                                    "type": "pie",
+                                    "radius": ["40%", "70%"],
+                                    "avoidLabelOverlap": False,
+                                    "itemStyle": {
+                                        "borderRadius": 10,
+                                        "borderColor": "#0f172a",
+                                        "borderWidth": 2,
+                                    },
+                                    "label": {"show": False},
+                                    "data": [{"value": v, "name": k} for k, v in status_counts.items()],
+                                }
+                            ],
+                        }
+                    ).classes("h-64")
 
-        with ui.row().classes("w-full gap-6"):
-            # Metric Card 1
-            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
-                ui.label("TOTAL WORK ITEMS").classes(
-                    "text-slate-400 font-bold text-xs tracking-tighter"
-                )
-                ui.label(str(total_work_items)).classes("text-cyan-400 text-4xl font-black mt-2")
-
-            # Metric Card 2 (DRIFT)
-            drift_color = "emerald" if avg_drift <= 5 else "orange" if avg_drift <= 20 else "red"
-            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
-                ui.label("AVG PRODUCTION DRIFT").classes(
-                    "text-slate-400 font-bold text-xs tracking-tighter"
-                )
-                ui.label(f"{'+' if avg_drift > 0 else ''}{avg_drift}%").classes(
-                    f"text-{drift_color}-400 text-4xl font-black mt-2"
-                )
-                ui.label(f"Based on {count_drift} completed tasks").classes(
-                    "text-slate-500 text-sm mt-2"
-                )
-
-            # Metric Card 3
-            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
-                ui.label("TOTAL FINISHED PARTS").classes(
-                    "text-slate-400 font-bold text-xs tracking-tighter"
-                )
-                ui.label(str(total_parts_produced)).classes(
-                    "text-orange-400 text-4xl font-black mt-2"
-                )
-                ui.label(f"Across {total_pallets} Pallets").classes("text-slate-500 text-sm mt-2")
-
-        # --- CHARTS SECTION ---
-        with ui.row().classes("w-full gap-6 mt-6"):
-            # Chart 1: Status Distribution
-            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
-                ui.label("TASK STATUS DISTRIBUTION").classes(
-                    "text-slate-400 text-xs font-bold mb-4"
-                )
-
-                # Dynamic data for chart
-                status_counts = {}
-                for s in TaskItemStatus:
-                    count = session.exec(
-                        select(func.count(TaskItem.id)).where(TaskItem.status == s)
-                    ).one()
-                    if count > 0:
-                        status_counts[s.value.upper()] = count
-
-                ui.echart(
-                    {
-                        "tooltip": {"trigger": "item"},
-                        "series": [
-                            {
-                                "type": "pie",
-                                "radius": ["40%", "70%"],
-                                "avoidLabelOverlap": False,
-                                "itemStyle": {
-                                    "borderRadius": 10,
-                                    "borderColor": "#0f172a",
-                                    "borderWidth": 2,
-                                },
-                                "label": {"show": False},
-                                "data": [{"value": v, "name": k} for k, v in status_counts.items()],
-                            }
-                        ],
-                    }
-                ).classes("h-64")
-
-            # Chart 2: Output Trend (Mocked dates for now)
-            with ui.column().classes("flex-grow-[2] p-6 rounded-2xl card"):
-                ui.label("PARTS PRODUCED (LAST 7 DAYS)").classes(
-                    "text-slate-400 text-xs font-bold mb-4"
-                )
-                ui.echart(
-                    {
-                        "xAxis": {
-                            "type": "category",
-                            "data": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-                        },
-                        "yAxis": {"type": "value"},
-                        "series": [
-                            {
-                                "data": [120, 200, 150, 80, 70, 110, 130],
-                                "type": "bar",
-                                "itemStyle": {"color": "#14b8a6"},
-                            }
-                        ],
-                    }
-                ).classes("h-64")
+                # Chart 2: Output Trend (Mocked dates for now)
+                with ui.column().classes("flex-grow-[2] p-6 rounded-2xl card"):
+                    ui.label("PARTS PRODUCED (LAST 7 DAYS)").classes(
+                        "text-slate-400 text-xs font-bold mb-4"
+                    )
+                    ui.echart(
+                        {
+                            "xAxis": {
+                                "type": "category",
+                                "data": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                            },
+                            "yAxis": {"type": "value"},
+                            "series": [
+                                {
+                                    "data": [120, 200, 150, 80, 70, 110, 130],
+                                    "type": "bar",
+                                    "itemStyle": {"color": "#14b8a6"},
+                                }
+                            ],
+                        }
+                    ).classes("h-64")

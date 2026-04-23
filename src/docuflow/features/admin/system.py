@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import time
@@ -8,9 +9,17 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
+from docuflow.application.base import BaseSystem
 from docuflow.application.bus.orchestrator import P2POrchestrator
 from docuflow.domain.entities.identity import NodeSetting, Role, User, Workplace
+from docuflow.domain.entities.production import (
+    NotificationTemplate,
+    ViewPreset,
+    WorkLog,
+)
+from docuflow.domain.messages import CommandType
 from docuflow.infrastructure import constants
+from docuflow.infrastructure.config import Config
 from docuflow.infrastructure.security import HMACSigner
 
 if TYPE_CHECKING:
@@ -19,29 +28,23 @@ if TYPE_CHECKING:
 logger = logging.getLogger("docuflow.admin")
 
 
-class AdminSystem:
+class AdminSystem(BaseSystem):
     """
     Main administrative logic for user management, node settings, and workplace registry.
 
-    Refactored to use constructor-based Session injection (Phase C).
+    Refactored to inherit from BaseSystem and support all admin-plane entities.
     """
 
     def __init__(
         self,
-        session: Session | None = None,
-        orchestrator: P2POrchestrator | None = None,
-        signer: HMACSigner | None = None,
-        config: Any | None = None,
-        engine: Engine | None = None,
+        session: Session,
+        orchestrator: P2POrchestrator,
+        signer: HMACSigner,
+        config: Config,
     ):
-        if session is None and engine is not None:
-            self.session = Session(engine)
-        else:
-            self.session = session  # type: ignore[assignment]
-
-        self._orchestrator = orchestrator  # type: ignore[assignment]
-        self._signer = signer  # type: ignore[assignment]
-        self._config = config
+        super().__init__(config, session)
+        self._orchestrator = orchestrator
+        self._signer = signer
 
     def _is_admin(self, name: str) -> bool:
         """Robust normalization for core identity checks."""
@@ -76,8 +79,11 @@ class AdminSystem:
 
     def force_global_step_down(self):
         """Administrative command to trigger an immediate cluster-wide re-election."""
-        self._orchestrator.broadcast_command(
-            command="FORCE_STEP_DOWN", data={"reason": "Manual administrative reset"}
+        asyncio.get_event_loop().create_task(
+            self._orchestrator.broadcast_command(
+                command=CommandType.FORCE_STEP_DOWN,
+                data={"reason": "Manual administrative reset"},
+            )
         )
 
     # --- Workplace/Node Binding Management ---
@@ -105,13 +111,15 @@ class AdminSystem:
         s.flush()
         s.refresh(workplace)
 
-        self._orchestrator.broadcast_command(
-            command="UPSERT_WORKPLACE",
-            data={
-                "node_id": workplace.node_id,
-                "name": workplace.name,
-                "allowed_modules": workplace.allowed_modules,
-            },
+        asyncio.get_event_loop().create_task(
+            self._orchestrator.broadcast_command(
+                command=CommandType.UPSERT_WORKPLACE,
+                data={
+                    "node_id": workplace.node_id,
+                    "name": workplace.name,
+                    "allowed_modules": workplace.allowed_modules,
+                },
+            )
         )
         return workplace
 
@@ -123,8 +131,10 @@ class AdminSystem:
         if workplace:
             s.delete(workplace)
             s.flush()
-            self._orchestrator.broadcast_command(
-                command="DELETE_WORKPLACE", data={"node_id": node_id}
+            asyncio.get_event_loop().create_task(
+                self._orchestrator.broadcast_command(
+                    command=CommandType.DELETE_WORKPLACE, data={"node_id": node_id}
+                )
             )
 
     # --- User & Identity CRUD ---
@@ -150,14 +160,16 @@ class AdminSystem:
         s.flush()
         s.refresh(user)
 
-        self._orchestrator.broadcast_command(
-            command="UPSERT_USER",
-            data={
-                "username": user.username,
-                "role_id": user.role_id,
-                "password_hash": user.password_hash,
-                "allowed_workplaces": user.allowed_workplaces,
-            },
+        asyncio.get_event_loop().create_task(
+            self._orchestrator.broadcast_command(
+                command=CommandType.UPSERT_USER,
+                data={
+                    "username": user.username,
+                    "role_id": user.role_id,
+                    "password_hash": user.password_hash,
+                    "allowed_workplaces": user.allowed_workplaces,
+                },
+            )
         )
         return user
 
@@ -171,7 +183,11 @@ class AdminSystem:
         if user:
             s.delete(user)
             s.flush()
-            self._orchestrator.broadcast_command(command="DELETE_USER", data={"username": username})
+            asyncio.get_event_loop().create_task(
+                self._orchestrator.broadcast_command(
+                    command=CommandType.DELETE_USER, data={"username": username}
+                )
+            )
 
     # --- Role & Permission Matrix Management ---
     def upsert_role(self, role_name: str, permissions_list: list[str]) -> Role:
@@ -190,8 +206,11 @@ class AdminSystem:
         s.flush()
         s.refresh(role)
 
-        self._orchestrator.broadcast_command(
-            command="UPSERT_ROLE", data={"name": role.name, "permissions": role.permissions}
+        asyncio.get_event_loop().create_task(
+            self._orchestrator.broadcast_command(
+                command=CommandType.UPSERT_ROLE,
+                data={"name": role.name, "permissions": role.permissions},
+            )
         )
         return role
 
@@ -205,7 +224,11 @@ class AdminSystem:
         if role:
             s.delete(role)
             s.flush()
-            self._orchestrator.broadcast_command(command="DELETE_ROLE", data={"name": role_name})
+            asyncio.get_event_loop().create_task(
+                self._orchestrator.broadcast_command(
+                    command=CommandType.DELETE_ROLE, data={"name": role_name}
+                )
+            )
 
     # --- Node-Specific Configuration Matrix ---
     def get_node_settings(self, node_id: str, module: str) -> dict[str, str]:
@@ -228,11 +251,59 @@ class AdminSystem:
         setting.value = str(value)
         s.add(setting)
         s.flush()
+        s.commit()
 
-        self._orchestrator.broadcast_command(
-            command="UPSERT_SETTING",
-            data={"node_id": node_id, "module": module, "key": key, "value": str(value)},
+        asyncio.get_event_loop().create_task(
+            self._orchestrator.broadcast_command(
+                command=CommandType.UPSERT_SETTING,
+                data={"node_id": node_id, "module": module, "key": key, "value": str(value)},
+            )
         )
+
+    # --- Notification Templates ---
+    def get_notification_templates(self) -> list[NotificationTemplate]:
+        return list(self.session.exec(select(NotificationTemplate)).all())
+
+    def update_notification_template(
+        self, template_id: int, text: str, enabled: bool
+    ) -> NotificationTemplate | None:
+        template = self.session.get(NotificationTemplate, template_id)
+        if template:
+            template.text = text
+            template.enabled = enabled
+            self.session.add(template)
+            self.session.flush()
+            self.session.commit()
+        return template
+
+    # --- View Presets ---
+    def get_view_presets(self, owner: str = "global") -> list[ViewPreset]:
+        statement = select(ViewPreset).where(ViewPreset.owner == owner)
+        return list(self.session.exec(statement).all())
+
+    def create_view_preset(
+        self, module: str, name: str, preset_json: str, owner: str = "global"
+    ) -> ViewPreset:
+        preset = ViewPreset(module=module, name=name, preset_json=preset_json, owner=owner)
+        self.session.add(preset)
+        self.session.flush()
+        self.session.commit()
+        self.session.refresh(preset)
+        return preset
+
+    def delete_view_preset(self, preset_id: int):
+        preset = self.session.get(ViewPreset, preset_id)
+        if preset:
+            self.session.delete(preset)
+            self.session.flush()
+            self.session.commit()
+
+    # --- System Audit Log ---
+    def get_system_audit_logs(self, limit: int = 100) -> list[WorkLog]:
+        from sqlmodel import desc
+
+        statement = select(WorkLog).order_by(desc(WorkLog.created_at)).limit(limit)
+        return list(self.session.exec(statement).all())
 
     def seed_default_roles(self):
         """Populate the database with the core DocuFlow role matrix (Cyrillic)."""

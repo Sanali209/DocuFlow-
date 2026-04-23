@@ -148,20 +148,25 @@ class BatchEngine:
         session = session or self.session
         alerts = []
 
+        # Optimization: Pre-fetch all stock units with their parts in one go
+        # to avoid N+1 queries in nested loops.
+        from sqlalchemy.orm import selectinload
+        in_stock = session.exec(
+            select(ProductionUnit)
+            .where(ProductionUnit.is_stock.is_(True))
+            .options(selectinload(ProductionUnit.task_item).selectinload(TaskItem.parts))
+        ).all()
+
+        stock_map: dict[str, list[ProductionUnit]] = {}
+
+        for u in in_stock:
+            if u.task_item:
+                for tp in u.task_item.parts:
+                    stock_map.setdefault(tp.part_sku, []).append(u)
+
         for task in tasks:
             for part in task.parts:
-                # Ищем ProductionUnit с is_stock=True, содержащие эту деталь
-                in_stock = session.exec(select(ProductionUnit).where(ProductionUnit.is_stock)).all()
-
-                # Фильтруем по part_sku
-                matching_units = [
-                    u
-                    for u in in_stock
-                    if any(
-                        tp.part_sku == part.part_sku
-                        for tp in (u.task_item.parts if u.task_item else [])
-                    )
-                ]
+                matching_units = stock_map.get(part.part_sku, [])
 
                 if matching_units:
                     alerts.append(StockAlert(sku=part.part_sku, units=matching_units))

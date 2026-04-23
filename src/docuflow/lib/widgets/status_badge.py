@@ -44,13 +44,13 @@ class StatusBadge(BaseDocuWidget):
     Props:
         status: WorkItemStatus | TaskItemStatus — статус для отображения
         size: str — размер ("sm", "md", "lg")
-        system_provider: Any — провайдер систем (опционально)
+        system_scope: Any — провайдер систем (опционально)
     """
 
     def __init__(
-        self, status: WorkItemStatus | TaskItemStatus, size: str = "md", system_provider: Any = None
+        self, status: WorkItemStatus | TaskItemStatus, size: str = "md", system_scope: Any = None
     ):
-        super().__init__(system_provider)
+        super().__init__(system_scope)
         self.status = status
         self.size = size
 

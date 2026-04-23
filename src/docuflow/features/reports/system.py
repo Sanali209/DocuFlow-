@@ -87,7 +87,6 @@ class ReportSystem(BaseSystem):
     """
     The workshop analytics and PDF reporting engine.
 
-    Vertical Slice: features/reports/system.py
     Principles:
     - Code as Documentation: Direct Jinja2 interaction via BlockProxy.
     - Performance: WeasyPrint for professional PDF layouts.
@@ -98,18 +97,21 @@ class ReportSystem(BaseSystem):
     TEMPLATE_MATERIAL_AUDIT = "material_audit"
     TEMPLATE_INCIDENT_LOG = "incident_log"
 
-    def __init__(self, config: Config, db_session: Session, registry: ReportRegistry):
+    def __init__(self, config: Config, session: Session, registry: ReportRegistry):
         """
         Initialize the reporting engine.
 
         Args:
             config: System configuration.
-            db_session: SQLModel session for data aggregation.
+            session: SQLModel session for data aggregation.
             registry: Central registry for report data blocks.
         """
-        super().__init__(config)
-        self.db_session = db_session
+        super().__init__(config, session)
         self.registry = registry
+
+    def get_all_templates(self) -> list[ReportTemplate]:
+        """Retrieves all registered report templates from the database."""
+        return list(self.db_session.exec(select(ReportTemplate)).all())
 
     def generate_html_preview(self, template_name: str, params: dict[str, Any]) -> str:
         """
@@ -227,7 +229,7 @@ class ReportSystem(BaseSystem):
             <h2>INCIDENT LOG</h2>
             {% for entry in blocks.incident_log() %}
             <div style="border-left: 3px solid #f43f5e; padding: 10px 20px; background: #fff1f2; margin-bottom: 10px;">
-                <strong>{{ entry.type }}</strong>: {{ entry.desc }} (reported by {{ entry.by }})
+                <strong>{{ entry.type }}</strong>: {{ entry.desc }} (reported by {{ entry.by }})  # type: ignore[attr-defined]
                 <br/><small>Status: {{ 'Resolved' if entry.resolved else 'UNRESOLVED' }}</small>
             </div>
             {% endfor %}
@@ -282,14 +284,14 @@ class ReportSystem(BaseSystem):
             h1 { color: #991b1b; border-bottom: 2px solid #fee2e2; padding-bottom: 10px; }
             .incident-card { border: 1px solid #fca5a5; background: #fff1f2; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
             .meta { font-size: 11px; color: #b91c1c; font-weight: bold; margin-bottom: 5px; }
-            .desc { font-size: 14px; margin-bottom: 10px; }
+            .desc { font-size: 14px; margin-bottom: 10px; }  # type: ignore[attr-defined]
             .res { border-top: 1px solid #fecaca; padding-top: 8px; font-size: 12px; color: #15803d; }
         </style>
         <h1>WORKSHOP INCIDENT LOG</h1>
         {% for incident in blocks.incident_log(limit=50) %}
         <div class="incident-card">
             <div class="meta">{{ incident.type }} | Reported by: {{ incident.by }}</div>
-            <div class="desc">{{ incident.desc }}</div>
+            <div class="desc">{{ incident.desc }}</div>  # type: ignore[attr-defined]
             {% if incident.resolved %}
             <div class="res">✓ Resolved: {{ incident.res_note }}</div>
             {% else %}

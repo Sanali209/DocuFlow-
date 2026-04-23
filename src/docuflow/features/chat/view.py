@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any
+from typing import Any, ClassVar
 
 from nicegui import ui
 from sqlmodel import select
@@ -7,6 +7,8 @@ from sqlmodel import select
 from docuflow.domain.entities.production import ChatMessage, ChatMessageType
 from docuflow.features.chat.system import ChatSystem
 from docuflow.features.core.views import ViewInfo, ViewRegistry
+from docuflow.lib.base_widget import BaseDocuWidget
+from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
 def register_chat_view():
@@ -19,29 +21,26 @@ def register_chat_view():
             render_fn=chat_view_wrapper,
             dependencies=[ChatSystem],
             pass_user=True,
-            pass_system_provider=True,
+            pass_system_scope=True,
+            pass_layout=True,
             is_async=True,
         )
     )
 
 
-async def chat_view_wrapper(system: ChatSystem, user: str, system_provider: Callable, layout: Any):
+async def chat_view_wrapper(system: ChatSystem, user: str, system_scope: Callable, layout: Any):
     """Wrapper to instantiate and render the ChatView."""
-    view = ChatView(system, current_user=user, system_provider=system_provider, layout=layout)
+    view = ChatView(system, current_user=user, system_scope=system_scope, layout=layout)
     await view.render_portal()
 
 
-class ChatView:
+class ChatView(BaseDocuWidget):
     """
     Real-time communication portal for a distributed workshop floor.
-
-    Principles:
-    - Code as Documentation: UI methods are organized by functional area.
-    - Theme Consistency: Styling extracted from logic into local theme constants.
     """
 
     # Global UI Theme for the Chat Module
-    UI_STYLING = {
+    UI_STYLING: ClassVar[dict[str, str]] = {
         "sidebar_bg": "bg-[#020617] border-r border-white/5 p-6 h-full gap-4",
         "feed_bg": "bg-[#020617]",
         "input_bar": "absolute bottom-0 w-full p-4 bg-slate-900/50 backdrop-blur-xl border-t border-white/5 gap-2 items-end",
@@ -53,24 +52,20 @@ class ChatView:
         self,
         chat_system: ChatSystem,
         current_user: str = "operator",
-        system_provider: Callable | None = None,
+        system_scope: Callable | None = None,
         layout: Any = None,
     ):
+        super().__init__(system_scope)
         self.chat_system = chat_system
         self.current_user = current_user
-        self.system_provider = system_provider
         self.layout = layout
-        self.message_feed_container = None
+        self.message_feed_container: Any = None
         self.active_channel = "global"  # global thread by default
-        self.user_input_area = None
+        self.user_input_area: Any = None
 
     async def render_portal(self):
         """
         Builds the complete multi-pane chat interface.
-
-        Example:
-            view = ChatView(system)
-            await view.render_portal()
         """
         with ui.row().classes("w-full h-full gap-0 bg-[#020617]"):
             # 1. Sidebar Navigation
@@ -158,23 +153,25 @@ class ChatView:
             return
         self.message_feed_container.clear()
 
-        relevant_messages = self._query_messages_for_channel()
+        async with self.scope() as req:
+            fresh_chat = await req.get(ChatSystem)
+            relevant_messages = self._query_messages_for_channel(fresh_chat)
 
-        if not relevant_messages:
-            with self.message_feed_container:
-                ui.label("No transmission in this channel yet.").classes(
-                    "text-slate-600 text-sm mt-10 w-full text-center italic"
-                )
-            return
+            if not relevant_messages:
+                with self.message_feed_container:
+                    ui.label("No transmission in this channel yet.").classes(
+                        "text-slate-600 text-sm mt-10 w-full text-center italic"
+                    )
+                return
 
-        # Sort chronological (bottom is newest)
-        for chat_msg in sorted(relevant_messages, key=lambda x: x.created_at):
-            self._render_message_bubble(chat_msg)
+            # Sort chronological (bottom is newest)
+            for chat_msg in sorted(relevant_messages, key=lambda x: x.created_at):
+                self._render_message_bubble(chat_msg)
 
-    def _query_messages_for_channel(self) -> list[ChatMessage]:
+    def _query_messages_for_channel(self, chat_system: ChatSystem) -> list[ChatMessage]:
         """Internal selector for database queries depending on channel context."""
         if self.active_channel == "global":
-            return self.chat_system.get_global_messages()
+            return chat_system.get_global_messages()
 
         # Mapping channel keys to Database message types
         TYPE_MAP = {"order": ChatMessageType.ORDER, "incident": ChatMessageType.INCIDENT}
@@ -183,10 +180,10 @@ class ChatView:
         statement = (
             select(ChatMessage)
             .where(ChatMessage.message_type == target_type)
-            .order_by(ChatMessage.created_at.desc())
+            .order_by(ChatMessage.created_at.desc())  # type: ignore[attr-defined]
         )
 
-        return list(self.chat_system.db_session.exec(statement).all())
+        return list(chat_system.db_session.exec(statement).all())
 
     def _render_message_bubble(self, msg: ChatMessage):
         """Displays a single colored message component."""
@@ -237,13 +234,13 @@ class ChatView:
         # Default mapping for quick entry from specific channels
         TYPE_MAP = {"order": ChatMessageType.ORDER, "incident": ChatMessageType.INCIDENT}
 
-        # H2 FIX: Fresh system for action
-        fresh_system = await self.system_provider(ChatSystem)
-        await fresh_system.send_message(
-            author=self.current_user,
-            content=content,
-            message_type=TYPE_MAP.get(self.active_channel, ChatMessageType.MESSAGE),
-        )
+        async with self.scope() as req:
+            fresh_system = await req.get(ChatSystem)
+            await fresh_system.send_message(
+                author=self.current_user,
+                content=content,
+                message_type=TYPE_MAP.get(self.active_channel, ChatMessageType.MESSAGE),
+            )
 
         self.user_input_area.value = ""
         await self.refresh_discussion_feed()
@@ -271,17 +268,18 @@ class ChatView:
                 # Refactored incident system call
                 from docuflow.features.chat.incidents import IncidentSystem
 
-                incident_sys = await self.system_provider(IncidentSystem)
-                incident_sys.report_incident(
-                    incident_sys.TYPE_BREAKDOWN,
-                    description.value,
-                    "operator",
-                    task_item_id=int(task_ref.value or 0),
-                )
+                async with self.scope() as req:
+                    incident_sys = await req.get(IncidentSystem)
+                    await incident_sys.report_incident(
+                        incident_sys.TYPE_BREAKDOWN,
+                        description.value,
+                        self.current_user,
+                        task_item_id=int(task_ref.value or 0),
+                    )
 
                 dialog.close()
                 await self.refresh_discussion_feed()
-                ui.notify("Incident logged and broadcasted", color="red")
+                NotifyHelper.error("Incident logged and broadcasted")
 
             with ui.row().classes("w-full justify-end mt-6"):
                 ui.button("Cancel", on_click=dialog.close).props("flat text-color=slate-500")

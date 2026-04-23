@@ -11,6 +11,7 @@ from typing import Any
 from nicegui import ui
 
 from docuflow.lib.base_widget import BaseDocuWidget
+from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
 class ExplorerButton(BaseDocuWidget):
@@ -21,7 +22,7 @@ class ExplorerButton(BaseDocuWidget):
         path: str | Path — путь к папке
         label: str — текст кнопки (по умолчанию "📂")
         tooltip: str — подсказка
-        system_provider: Any — провайдер систем (опционально)
+        system_scope: Any — провайдер систем (опционально)
     """
 
     def __init__(
@@ -29,9 +30,9 @@ class ExplorerButton(BaseDocuWidget):
         path: str | Path,
         label: str = "📂",
         tooltip: str = "Открыть в Explorer",
-        system_provider: Any = None,
+        system_scope: Any = None,
     ):
-        super().__init__(system_provider)
+        super().__init__(system_scope)
         self.path = Path(path) if isinstance(path, str) else path
         self.label = label
         self.tooltip = tooltip
@@ -50,7 +51,7 @@ class ExplorerButton(BaseDocuWidget):
             # subprocess.Popen is non-blocking, so we don't need safe_action/timer here
             subprocess.Popen(["explorer.exe", str(self.path)])
         except Exception as e:
-            ui.notify(f"Не удалось открыть проводник автоматически: {e}", type="negative")
+            NotifyHelper.error(f"Не удалось открыть проводник автоматически: {e}")
             self._show_fallback_dialog(str(e))
 
     def _show_fallback_dialog(self, error_msg: str) -> None:
@@ -78,4 +79,4 @@ class ExplorerButton(BaseDocuWidget):
     def _copy_to_clipboard(self, text: str) -> None:
         """Копирует текст в буфер обмена через JS."""
         ui.run_javascript(f'navigator.clipboard.writeText("{text}")')
-        ui.notify("Путь скопирован в буфер обмена", type="positive")
+        NotifyHelper.success("Путь скопирован в буфер обмена")

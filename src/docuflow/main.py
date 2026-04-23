@@ -1,5 +1,12 @@
+import os
 import traceback
 from contextlib import asynccontextmanager
+
+from docuflow.lib.utils.os_utils import kill_port_process
+
+_port = int(os.getenv("DOCUFLOW_PORT", "8082"))
+if __name__ in {"__main__", "__mp_main__"}:
+    kill_port_process(_port)
 
 from dishka import make_async_container
 from dishka.integrations.fastapi import FastapiProvider, setup_dishka
@@ -10,26 +17,24 @@ from nicegui import ui
 from docuflow.features.admin.system import AdminSystem
 from docuflow.features.auth.system import AuthSystem
 from docuflow.features.auth.view import login_view
-
-# Import Vertical Slice Features
 from docuflow.features.core.layout import MainLayout, SessionContext, get_current_user, theme_setup
 from docuflow.features.core.search import SearchSystem
 from docuflow.infrastructure.config import Config
 from docuflow.infrastructure.di import AppProvider
 from docuflow.sdk import SDK
 
-# 1. GLOBAL CONTAINER & SDK
 _config = Config()
 _app_provider = AppProvider(_config)
 _fastapi_provider = FastapiProvider()
 _container = make_async_container(_app_provider, _fastapi_provider)
 
 
-# --- GLOBAL SYSTEM PROVIDER (To fix NameError across scopes) ---
-async def system_provider(system_type):
-    """Helper to resolve a system from a fresh request container."""
-    async with _container() as req:
-        return await req.get(system_type)
+# --- GLOBAL SYSTEM PROVIDERS ---
+@asynccontextmanager
+async def system_scope():
+    """Provides a safe request scope for views to resolve and use systems."""
+    async with _container() as request_container:
+        yield request_container
 
 
 @asynccontextmanager
@@ -112,7 +117,6 @@ def register_all_views():
 
 register_all_views()
 
-# 2. FASTAPI INSTANCE
 app = FastAPI(lifespan=lifespan)
 setup_dishka(_container, app)
 
@@ -124,14 +128,10 @@ async def health_check():
     return {"status": "healthy", "service": "docuflow", "version": "0.1.0"}
 
 
-# 3. ROUTING & VIEWS
 @ui.page("/login")
 async def login_page():
     theme_setup()
-    async with _container() as request_container:
-        auth_system = await request_container.get(AuthSystem)
-        admin_system = await request_container.get(AdminSystem)
-        login_view(auth_system, admin_system, _config.node_id)
+    login_view(system_scope, _config.node_id)
 
 
 @ui.page("/")
@@ -148,7 +148,7 @@ async def index_page():
             title="DocuFlow Portal",
             config=_config,
             search_system=search_system,
-            system_provider=system_provider,
+            system_scope=system_scope,
         )
 
     async def switch_view(view_name: str, **kwargs):
@@ -169,7 +169,7 @@ async def index_page():
                 ui.label(f"View '{view_name}' not found.").classes("text-red-500 p-8")
                 return
 
-            async with _container() as request_container:
+            async with system_scope() as request_container:
                 # 1. Resolve Dependencies
                 resolved_deps = []
                 for dep_type in view_info.dependencies:
@@ -180,45 +180,20 @@ async def index_page():
                     resolved_deps.append(user.get("username", "admin"))
                 if view_info.pass_switch_view:
                     resolved_deps.append(switch_view)
-                if view_info.pass_system_provider:
-                    resolved_deps.append(system_provider)
-
-                # --- NEW: Pass Layout for Timer Management ---
-                # We dynamically inject the layout if the view signature or info requires it.
-                # For simplicity, we'll check if it's one of the known "heavy" views.
-                if view_name in ["dashboard", "warehouse", "admin", "chat", "incidents"]:
+                if view_info.pass_system_scope:
+                    resolved_deps.append(system_scope)
+                if view_info.pass_layout:
                     resolved_deps.append(layout)
 
-                # 3. Special handling for kwargs in some views
-                if view_name == "work_items" and "filter_text" in kwargs:
-                    # For classes that we instantiate and then call render()
-                    view_instance = view_info.render_fn(*resolved_deps)
-                    view_instance.active_filters.search_text = kwargs["filter_text"]
-                    view_instance.render()
-                elif view_name == "task_board":
-                    # For TaskBoardView: pass session, system, preset_system, admin_system, user as positional,
-                    # then node_id=None, then system_provider as keyword
-                    view_instance = view_info.render_fn(
-                        resolved_deps[0],  # session
-                        resolved_deps[1],  # system
-                        resolved_deps[2],  # preset_system
-                        resolved_deps[3],  # admin_system
-                        resolved_deps[4],  # user
-                        None,  # node_id = None
-                        filter_work_item_id=kwargs.get("filter_work_item"),
-                        system_provider=resolved_deps[5],  # system_provider
-                    )
-                    view_instance.render()
+                # 3. Render
+                if view_info.is_async:
+                    res = await view_info.render_fn(*resolved_deps, **kwargs)
+                    if hasattr(res, "render"):
+                        await res.render()
                 else:
-                    # 4. Normal render
-                    if view_info.is_async:
-                        res = await view_info.render_fn(*resolved_deps)
-                        if hasattr(res, "render"):
-                            await res.render()
-                    else:
-                        res = view_info.render_fn(*resolved_deps)
-                        if hasattr(res, "render"):
-                            res.render()
+                    res = view_info.render_fn(*resolved_deps, **kwargs)
+                    if hasattr(res, "render"):
+                        res.render()
 
     # Shared Layout Build
     content_area = layout.build(switch_view)
@@ -234,31 +209,8 @@ async def index_page():
     await switch_view(saved_view, **init_kwargs)
 
 
-# 6. INTEGRATION & CONFIG
 ui.run_with(app, title="DocuFlow Portal", storage_secret="docuflow_nicegui_shh")
 
 if __name__ in {"__main__", "__mp_main__"}:
-    import os
-    import subprocess
-
     import uvicorn
-
-    port = int(os.getenv("DOCUFLOW_PORT", "8082"))
-
-    # --- PORT KILLER LOGIC ---
-    try:
-        result = subprocess.run(
-            ["netstat", "-ano", "-p", "TCP"], capture_output=True, text=True, encoding="cp866"
-        )
-        for line in result.stdout.split("\n"):
-            if f":{port}" in line and "LISTENING" in line:
-                parts = line.split()
-                if len(parts) >= 5:
-                    pid = parts[-1]
-                    if pid != str(os.getpid()):
-                        logger.info(f"Port {port} is busy. Killing PID {pid}...")
-                        subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
-    except Exception as e:
-        logger.warning(f"Port killer error: {e}")
-
-    uvicorn.run("docuflow.main:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("docuflow.main:app", host="0.0.0.0", port=_port, reload=False)

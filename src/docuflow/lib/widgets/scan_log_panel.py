@@ -13,11 +13,11 @@ class ScanLogPanel(BaseDocuWidget):
     Reactive log panel for displaying the last N production events.
     """
 
-    def __init__(self, engine: Engine, limit: int = 50, system_provider: Any = None):
-        super().__init__(system_provider)
+    def __init__(self, engine: Engine, limit: int = 50, system_scope: Any = None):
+        super().__init__(system_scope)
         self.engine = engine
         self.limit = limit
-        self.container = None
+        self.container: Any = None
 
     def render(self):
         """Рендерит панель лога."""
@@ -39,7 +39,8 @@ class ScanLogPanel(BaseDocuWidget):
         """Fetch and render the latest logs."""
 
         async def do_refresh():
-            with Session(self.engine) as session:
+            async with self.scope() as req:
+                session = await req.get(Session)
                 logs = session.exec(
                     select(WorkLog).order_by(desc(WorkLog.created_at)).limit(self.limit)
                 ).all()

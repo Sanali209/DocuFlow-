@@ -1,106 +1,90 @@
-"""
-TaskBoardView — главный экран task board для оператора и бригадира.
-
-Вид Оператора: корзина, батчи, прогресс, статусы.
-Вид Бригадира: все узлы, батчинг инструменты, приоритеты.
-"""
-
 from typing import Any
 
 from nicegui import ui
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from docuflow.domain.entities.production import (
     TaskItem,
-    TaskItemStatus,
     WorkerBucketEntry,
 )
+from docuflow.features.core.layout import SessionContext
 from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.task_board.batch_engine import BatchEngine
 from docuflow.features.task_board.system import TaskBoardSystem
-from docuflow.features.view_presets.system import ViewPresetSystem
+from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets import StatusBadge
 from docuflow.lib.widgets.bucket_panel import BucketPanel
+from docuflow.lib.widgets.ui_utils import NotifyHelper, get_kpi_color, get_node_status_color
 
 
 def register_task_board_view():
     """Register the task board view in the global registry."""
-    from docuflow.features.admin.system import AdminSystem
-
     ViewRegistry.register(
         ViewInfo(
             name="task_board",
             label="Task Board",
             icon="assignment",
-            render_fn=TaskBoardView,
-            dependencies=[Session, TaskBoardSystem, ViewPresetSystem, AdminSystem],
+            render_fn=task_board_view_wrapper,
             pass_user=True,
-            pass_system_provider=True,
+            pass_system_scope=True,
+            pass_layout=True,
+            is_async=True,
         )
     )
 
 
-class TaskBoardView:
-    """
-    Главный экран Task Board.
+async def task_board_view_wrapper(user: str, system_scope: Any, layout: Any, **kwargs):
+    """Wrapper to instantiate and render the TaskBoardView."""
+    view = TaskBoardView(system_scope, user=user, layout=layout, **kwargs)
+    await view.render()
 
-    Props:
-        session: Session — сессия БД
-        system: TaskBoardSystem — система управления задачами
-        preset_system: ViewPresetSystem — система пресетов
-        admin_system: Any — система администрирования
-        user: str — текущий пользователь
-        node_id: str — ID узла (лазера)
-        role: str — роль: "operator" или "foreman"
-        filter_work_item_id: int | None — фильтр по наряду
-        system_provider: Any — провайдер для свежих систем
-    """
 
+class TaskBoardView(BaseDocuWidget):
     def __init__(
         self,
-        session: Session,
-        system: TaskBoardSystem,
-        preset_system: ViewPresetSystem,
-        admin_system: Any = None,
+        system_scope: Any,
         user: str = "admin",
+        layout: Any = None,
         node_id: str | None = None,
         role: str = "operator",
         filter_work_item_id: int | None = None,
-        system_provider: Any = None,
+        **kwargs,
     ):
-        self.session = session
-        self.system = system
-        self.preset_system = preset_system
-        self.admin_system = admin_system
+        super().__init__(system_scope)
         self.user = user
+        self.layout = layout
         self.node_id = node_id
-        self.role = role
-        self.filter_work_item_id = filter_work_item_id
-        self.system_provider = system_provider
+        self.role = role or SessionContext.get("task_board_role", "operator")
+        self.filter_work_item_id = filter_work_item_id or kwargs.get("filter_work_item_id")
 
     @ui.refreshable
-    def render(self) -> None:
+    async def render(self) -> None:
         """Рендерит основной view."""
-        with ui.column().classes("w-full p-4"):
-            # Check if workplaces are configured
-            if not self._has_workplaces():
-                with ui.column().classes("w-full p-8 items-center"):
-                    ui.label("⚠️ Рабочие места не настроены").classes(
-                        "text-2xl font-bold text-yellow-400"
-                    )
-                    ui.label("Перейдите в Admin → BINDINGS для настройки").classes("text-slate-400")
-                    ui.button(
-                        "Открыть Admin", icon="settings", on_click=lambda: ui.navigate.to("/admin")
-                    ).classes("mt-4 vibrant-btn")
-                return
+        async with self.scope() as req:
+            from docuflow.features.admin.system import AdminSystem
+            admin_system = await req.get(AdminSystem)
+            nodes = admin_system.get_workplace_node_ids()
 
-            # Переключатель роли
-            self._render_role_switcher()
+            with ui.column().classes("w-full p-4"):
+                # Check if workplaces are configured
+                if not nodes:
+                    with ui.column().classes("w-full p-8 items-center"):
+                        ui.label("⚠️ Рабочие места не настроены").classes(
+                            "text-2xl font-bold text-yellow-400"
+                        )
+                        ui.label("Перейдите в Admin → BINDINGS для настройки").classes("text-slate-400")
+                        ui.button(
+                            "Открыть Admin", icon="settings", on_click=lambda: ui.navigate.to("/admin")
+                        ).classes("mt-4 vibrant-btn")
+                    return
 
-            if self.role == "operator":
-                self._render_operator_view()
-            else:
-                self._render_foreman_view()
+                # Переключатель роли
+                self._render_role_switcher()
+
+                if self.role == "operator":
+                    await self._render_operator_view(req, nodes)
+                else:
+                    await self._render_foreman_view(req, nodes)
 
     def _render_role_switcher(self) -> None:
         """Рендерит переключатель роли."""
@@ -120,29 +104,28 @@ class TaskBoardView:
 
     def _clear_filter(self) -> None:
         """Очищает фильтр наряда."""
-        self.filter_work_item_id = None
+        self.filter_work_item_id: Any = None
         self.render.refresh()
 
     def _switch_role(self, role: str) -> None:
         """Переключает роль."""
         self.role = role
+        SessionContext.set("task_board_role", role)
         self.render.refresh()
 
     # ==================== ВИД ОПЕРАТОРА ====================
 
-    def _render_operator_view(self) -> None:
+    async def _render_operator_view(self, req, nodes) -> None:
         """Рендерит вид оператора."""
         with ui.column().classes("w-full gap-4"):
             # Выбираем узел (инициализирует self.node_id)
-            self._render_node_selector()
+            self._render_node_selector(nodes)
 
             # Корзина оператора - передаем явно node_id
             BucketPanel(
-                session=self.session,
-                system=self.system,
                 node_id=self.node_id if self.node_id else "UNKNOWN",
                 user=self.user,
-                system_provider=self.system_provider,
+                system_scope=self.system_scope,
             ).render()
 
             # Передача смены
@@ -152,96 +135,93 @@ class TaskBoardView:
                 ).props("color=orange rounded-xl")
 
     def _show_handover_dialog(self):
+        from docuflow.lib.widgets.input import InputLabel, TextareaLabel
+
         with ui.dialog() as dialog, ui.card().classes("p-6 w-[400px] gap-4"):
             ui.label("Сдача смены").classes("text-xl font-bold text-orange-400")
-            recv_operator = (
-                ui.input("Имя сменщика (кому передать)")
-                .props("dark standout rounded")
-                .classes("w-full")
-            )
-            note = (
-                ui.textarea("Заметка по работе / материалу")
-                .props("dark standout rounded")
-                .classes("w-full")
-            )
+
+            recv_operator_widget = InputLabel(
+                label="Имя сменщика (кому передать)", placeholder="Введите имя..."
+            ).render()
+
+            note_widget = TextareaLabel(
+                label="Заметка по работе / материалу", placeholder="Добавьте детали..."
+            ).render()
+
             with ui.row().classes("w-full justify-between items-center"):
                 ui.button("Отмена", on_click=dialog.close).props("flat text-color=slate-400")
                 ui.button(
                     "ПОДТВЕРДИТЬ СДАЧУ",
                     on_click=lambda: self._execute_handover(
-                        recv_operator.value, note.value, dialog
+                        recv_operator_widget.value, note_widget.value, dialog
                     ),
                 ).props("color=orange rounded-xl").classes("font-bold")
         dialog.open()
 
-    def _execute_handover(self, recv_operator: str, note: str, dialog):
+    async def _execute_handover(self, recv_operator: str, note: str, dialog):
         if not recv_operator:
-            ui.notify("Укажите кому сдаете смену", type="warning")
+            NotifyHelper.warning("Укажите кому сдаете смену")
             return
-        self.system.handover(
-            self.node_id, recv_operator, str(note) if note else "Смена закрыта без комментариев"
-        )
-        ui.notify("Смена успешно передана", type="positive")
+
+        async with self.scope() as req:
+            tb_system = await req.get(TaskBoardSystem)
+            tb_system.handover(
+                self.node_id, recv_operator, str(note) if note else "Смена закрыта без комментариев"
+            )
+
+        NotifyHelper.success("Смена успешно передана")
         dialog.close()
         self.render.refresh()
 
-    def _render_node_selector(self) -> None:
+    def _render_node_selector(self, nodes) -> None:
         """Рендерит выбор узла."""
-        nodes = self._get_available_nodes()
-
         if not nodes:
-            with ui.column().classes("w-full p-4 items-center"):
-                ui.label("⚠️ Рабочие места не настроены").classes(
-                    "text-yellow-400 font-bold text-lg"
-                )
-                ui.label("Перейдите в Admin → BINDINGS для настройки").classes(
-                    "text-slate-500 text-sm"
-                )
-            # Note: node_id remains None - render() will handle this
             return
 
         # Initialize node_id if not set
         if not self.node_id:
             self.node_id = nodes[0]
 
+        from docuflow.lib.widgets.input import SelectLabel
+
         with ui.row().classes("items-center gap-4 mb-4"):
             ui.label("Рабочее место:").classes("text-slate-500")
             default_node = self.node_id if self.node_id and self.node_id in nodes else nodes[0]
-            ui.select(
-                options={n: n for n in nodes},
+
+            SelectLabel(
+                label="",
+                options=[(n, n) for n in nodes],
                 value=default_node,
                 on_change=lambda e: self._select_node(e.value),
-            ).classes("w-48")
+            ).render().classes("w-48")
 
-    def _select_node(self, node_id: str) -> None:
+    async def _select_node(self, node_id: str) -> None:
         """Выбирает узел и проверяет заметки о передаче смены."""
-        from loguru import logger
-
-        logger.debug(f"_select_node called: node_id={node_id!r}, type={type(node_id)}")
-
-        # Validate node_id
         if not node_id or not isinstance(node_id, str):
-            logger.warning(f"_select_node: invalid node_id={node_id!r}, ignoring")
             return
 
         self.node_id = node_id
 
-        # Проверка заметок о передаче смены
-        bucket_entries = self.system.get_bucket(node_id)
-        handover_notes = [
-            e.handover_note
-            for e in bucket_entries
-            if e.handover_note and e.assigned_user == self.user
-        ]
+        async with self.scope() as req:
+            tb_system = await req.get(TaskBoardSystem)
+            session = await req.get(Session)
 
-        if handover_notes:
-            self._show_handover_alert(handover_notes[0])
-            # Очищаем заметки после прочтения, чтобы не показывать снова
-            for e in bucket_entries:
-                if e.handover_note:
-                    e.handover_note = None
-                    self.session.add(e)
-            self.session.commit()
+            # Проверка заметок о передаче смены
+            bucket_entries = tb_system.get_bucket(node_id)
+            handover_notes = [
+                e.handover_note
+                for e in bucket_entries
+                if e.handover_note and e.assigned_user == self.user
+            ]
+
+            if handover_notes:
+                self._show_handover_alert(handover_notes[0])
+                # Очищаем заметки после прочтения, чтобы не показывать снова
+                for e in bucket_entries:
+                    if e.handover_note:
+                        e.handover_note = None
+                        session.add(e)
+                session.commit()
 
         self.render.refresh()
 
@@ -265,7 +245,7 @@ class TaskBoardView:
 
     # ==================== ВИД БРИГАДИРА ====================
 
-    def _render_foreman_view(self) -> None:
+    async def _render_foreman_view(self, req, nodes) -> None:
         """Рендерит вид бригадира."""
         # Если есть фильтр наряда, открываем вкладку 'Неназначенные' по умолчанию
         default_tab_name = "Неназначенные" if self.filter_work_item_id else "Все узлы"
@@ -277,36 +257,37 @@ class TaskBoardView:
 
         with ui.tab_panels(tabs, value=default_tab_name).classes("w-full"):
             with ui.tab_panel(all_nodes_tab):
-                self._render_all_nodes_panel()
+                await self._render_all_nodes_panel(req, nodes)
 
             with ui.tab_panel(batching_tab):
-                self._render_batching_panel()
+                await self._render_batching_panel(req)
 
             with ui.tab_panel(unassigned_tab):
-                self._render_unassigned_panel()
+                await self._render_unassigned_panel(req)
 
-    def _render_all_nodes_panel(self) -> None:
+    async def _render_all_nodes_panel(self, req, nodes) -> None:
         """Панель всех узлов."""
-        nodes = self._get_available_nodes()
+        tb_system = await req.get(TaskBoardSystem)
+        session = await req.get(Session)
 
         for node_id in nodes:
             # Получаем батчи и задачи для расчета KPI
-            bucket_entries = self.system.get_bucket(node_id)
-            batches = self._group_by_batch(bucket_entries)
+            bucket_entries = tb_system.get_bucket(node_id)
+            batches = self._group_by_batch(session, bucket_entries)
 
             # Расчет среднего Drift % по узлу
-            node_drift = self._calculate_node_drift(bucket_entries)
+            node_drift = tb_system.get_node_drift(node_id)
+            node_status = tb_system.get_node_status(node_id)
 
             with (
                 ui.card()
                 .classes("w-full mb-4 p-4 border-l-4")
-                .style(f"border-color: {self._status_color(self._get_node_status(node_id))}")
+                .style(f"border-color: {get_node_status_color(node_status)}")
             ):
                 with ui.row().classes("items-center justify-between mb-2"):
                     with ui.row().classes("items-center gap-2"):
                         ui.label(f"🔹 {node_id}").classes("text-h6")
-                        node_status = self._get_node_status(node_id)
-                        ui.badge(node_status).props(f"color={self._status_color(node_status)}")
+                        ui.badge(node_status).props(f"color={get_node_status_color(node_status)}")
 
                     # KPI Drift Badge
                     self._render_kpi_drift(node_drift)
@@ -331,23 +312,9 @@ class TaskBoardView:
                 else:
                     ui.label("Нет активных батчей").classes("text-slate-400 ml-4")
 
-    def _calculate_node_drift(self, bucket_entries: list[WorkerBucketEntry]) -> float:
-        """Вычисляет средний Drift % для всех задач на узле."""
-        total_estimated = 0
-        total_actual = 0
-        for entry in bucket_entries:
-            task = self.session.get(TaskItem, entry.task_item_id)
-            if task and task.status == TaskItemStatus.DONE:
-                total_estimated += task.estimated_minutes or 0
-                total_actual += task.actual_minutes or 0
-
-        if total_estimated == 0:
-            return 0.0
-        return (total_actual - total_estimated) / total_estimated * 100
-
     def _render_kpi_drift(self, drift: float) -> None:
         """Рендерит KPI бейдж отклонения."""
-        color = "green" if drift <= 5 else "orange" if drift <= 20 else "red"
+        color = get_kpi_color(drift)
         icon = "trending_up" if drift > 0 else "trending_down"
 
         with ui.row().classes(
@@ -357,27 +324,28 @@ class TaskBoardView:
             ui.label(f"DRIFT: {drift:.1f}%").classes("text-xs font-bold")
             ui.tooltip("Отклонение фактического времени от планового")
 
-    def _show_work_item_by_id(self, work_item_id: int) -> None:
+    async def _show_work_item_by_id(self, work_item_id: int) -> None:
         """Открывает карточку наряда по ID (Deep Link)."""
         # Resolve WorkItem from session
         from docuflow.domain.entities.production import WorkItem
-        from docuflow.features.work_items.system import WorkItemSystem
         from docuflow.lib.widgets.work_item_card import WorkItemCard
 
-        work_item = self.session.get(WorkItem, work_item_id)
+        async with self.scope() as req:
+            session = await req.get(Session)
+            work_item = session.get(WorkItem, work_item_id)
 
-        if work_item:
-            from docuflow.infrastructure.config import Config
+            if work_item:
+                await WorkItemCard(
+                    work_item, None, self.user, system_scope=self.system_scope
+                ).render()
+            else:
+                NotifyHelper.error(f"Наряд {work_item_id} не найден")
 
-            wi_system = WorkItemSystem(Config(), self.session, None)
-            WorkItemCard(
-                work_item, wi_system, self.user, system_provider=self.system_provider
-            ).render()
-        else:
-            ui.notify(f"Наряд {work_item_id} не найден", type="negative")
-
-    def _render_batching_panel(self) -> None:
+    async def _render_batching_panel(self, req) -> None:
         """Панель батчинга."""
+        tb_system = await req.get(TaskBoardSystem)
+        session = await req.get(Session)
+
         with ui.row().classes("gap-4 mb-4"):
             ui.button(
                 "🔄 Авто-батчинг",
@@ -395,7 +363,7 @@ class TaskBoardView:
             )
 
         # Непривязанные задачи
-        unassigned = self._get_unassigned_tasks()
+        unassigned = tb_system.get_unassigned_tasks(self.filter_work_item_id)
 
         if unassigned:
             ui.label(f"Непривязанных задач: {len(unassigned)}").classes("mb-4")
@@ -415,7 +383,7 @@ class TaskBoardView:
                 if t.mat_type_id:
                     from docuflow.domain.entities.production import MaterialType
 
-                    mat = self.session.get(MaterialType, t.mat_type_id)
+                    mat = session.get(MaterialType, t.mat_type_id)
                     if mat:
                         mat_code = mat.code
 
@@ -450,27 +418,30 @@ class TaskBoardView:
                 elif isinstance(item, dict) and "id" in item:
                     self._selected_unassigned_ids.append(item["id"])
 
-        if self._selected_unassigned_ids and len(self._selected_unassigned_ids) >= 1:
+        if hasattr(self, "_selected_unassigned_ids") and self._selected_unassigned_ids:
             self.merge_button.classes(remove="hidden")
         else:
             self.merge_button.classes(add="hidden")
 
-    def _create_manual_batch(self) -> None:
+    async def _create_manual_batch(self) -> None:
         """Создает батч из выбранных задач вручную."""
         # Use stored selection from handler
         if not hasattr(self, "_selected_unassigned_ids") or not self._selected_unassigned_ids:
-            ui.notify("Выберите задачи для создания батча", type="warning")
+            NotifyHelper.warning("Выберите задачи для создания батча")
             return
 
         selected_ids = self._selected_unassigned_ids
-        engine = BatchEngine(self.session)
-        batch_id = engine.create_batch(selected_ids)
-        ui.notify(f"Создан ручной батч {batch_id[:8]}...", type="positive")
+        async with self.scope() as req:
+            session = await req.get(Session)
+            engine = BatchEngine(session)
+            batch_id = engine.create_batch(selected_ids)
+            NotifyHelper.success(f"Создан ручной батч {batch_id[:8]}...")
         self.render.refresh()
 
-    def _render_unassigned_panel(self) -> None:
+    async def _render_unassigned_panel(self, req) -> None:
         """Панель неназначенных задач."""
-        unassigned = self._get_unassigned_tasks()
+        tb_system = await req.get(TaskBoardSystem)
+        unassigned = tb_system.get_unassigned_tasks(self.filter_work_item_id)
 
         if not unassigned:
             with ui.card().classes("w-full p-8 text-center"):
@@ -494,98 +465,51 @@ class TaskBoardView:
                         on_click=lambda t=task: self._assign_task_to_node(t.id),
                     ).props("size=sm color=blue")
 
-    def _run_auto_batching(self) -> None:
+    async def _run_auto_batching(self) -> None:
         """Запускает авто-батчинг."""
-        engine = BatchEngine(self.session)
-        unassigned = self._get_unassigned_tasks()
+        async with self.scope() as req:
+            session = await req.get(Session)
+            tb_system = await req.get(TaskBoardSystem)
+            engine = BatchEngine(session)
+            unassigned = tb_system.get_unassigned_tasks(self.filter_work_item_id)
 
-        if not unassigned:
-            ui.notify("Нет задач для батчина", type="info")
-            return
+            if not unassigned:
+                NotifyHelper.info("Нет задач для батчина")
+                return
 
-        groups = engine.compute(unassigned)
-        engine.apply_batches(groups)
-        ui.notify(f"Создано {len(groups)} батчей", type="positive")
+            groups = engine.compute(unassigned)
+            engine.apply_batches(groups)
+            NotifyHelper.success(f"Создано {len(groups)} батчей")
         self.render.refresh()
 
     async def _assign_task_to_node(self, task_id: int) -> None:
         """Назначает задачу (и весь её батч) на узел оператора."""
-        task = self.session.get(TaskItem, task_id)
-        if task:
-            # Assign single ID if no batch is formed
-            batch_id = task.batch_group_id or f"single_{task.id}"
-            if not task.batch_group_id:
-                task.batch_group_id = batch_id
-                self.session.add(task)
-                self.session.commit()
+        async with self.scope() as req:
+            session = await req.get(Session)
+            tb_system = await req.get(TaskBoardSystem)
+            task = session.get(TaskItem, task_id)
+            if task:
+                # Assign single ID if no batch is formed
+                batch_id = task.batch_group_id or f"single_{task.id}"
+                if not task.batch_group_id:
+                    task.batch_group_id = batch_id
+                    session.add(task)
+                    session.commit()
 
-            await self.system.lock_batch(
-                batch_group_id=batch_id, node_id=self.node_id, operator=self.user
-            )
-            ui.notify(f"Батч назначен на {self.node_id} (Worker: {self.user})", type="positive")
-            self.render.refresh()
+                await tb_system.lock_batch(
+                    batch_group_id=batch_id, node_id=self.node_id, operator=self.user
+                )
+                NotifyHelper.success(f"Батч назначен на {self.node_id} (Worker: {self.user})")
+        self.render.refresh()
 
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
 
-    def _get_available_nodes(self) -> list[str]:
-        """Получает список доступных узлов из реестра рабочих мест."""
-        if self.admin_system:
-            workplaces = self.admin_system.get_all_workplaces()
-            if workplaces:
-                return [w.node_id for w in workplaces]
-        return []
-
-    def _has_workplaces(self) -> bool:
-        """Проверяет наличие настроенных рабочих мест."""
-        return bool(self._get_available_nodes())
-
-    def _get_node_status(self, node_id: str) -> str:
-        """Получает статус узла."""
-        bucket = self.system.get_bucket(node_id)
-        if not bucket:
-            return "Свободен"
-
-        tasks = []
-        for entry in bucket:
-            task = self.session.get(TaskItem, entry.task_item_id)
-            if task:
-                tasks.append(task)
-
-        if any(t.status == TaskItemStatus.IN_PROGRESS for t in tasks):
-            return "Режет"
-        elif any(t.status == TaskItemStatus.ON_HOLD for t in tasks):
-            return "На паузе"
-        else:
-            return "Ожидание"
-
-    def _status_color(self, status: str) -> str:
-        """Возвращает цвет для статуса узла."""
-        colors = {
-            "Свободен": "gray",
-            "Режет": "green",
-            "На паузе": "orange",
-            "Ожидание": "blue",
-        }
-        return colors.get(status, "gray")
-
-    def _get_unassigned_tasks(self) -> list[TaskItem]:
-        """Получает неназначенные задачи с учетом фильтра наряда."""
-        statement = select(TaskItem).where(
-            TaskItem.assigned_to_node.is_(None),
-            TaskItem.status == TaskItemStatus.PLANNED,
-        )
-
-        if self.filter_work_item_id:
-            statement = statement.where(TaskItem.work_item_id == self.filter_work_item_id)
-
-        return list(self.session.exec(statement).all())
-
-    def _group_by_batch(self, entries: list[WorkerBucketEntry]) -> dict[str, list[TaskItem]]:
+    def _group_by_batch(self, session, entries: list[WorkerBucketEntry]) -> dict[str, list[TaskItem]]:
         """Группирует записи по batch_group_id."""
         batches: dict[str, list[TaskItem]] = {}
 
         for entry in entries:
-            task = self.session.get(TaskItem, entry.task_item_id)
+            task = session.get(TaskItem, entry.task_item_id)
             if task:
                 batch_id = entry.batch_group_id or f"single_{task.id}"
                 if batch_id not in batches:

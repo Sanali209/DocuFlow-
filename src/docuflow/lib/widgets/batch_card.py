@@ -11,6 +11,7 @@ from nicegui import ui
 
 from docuflow.domain.entities.production import TaskItem, TaskItemStatus, WorkLog, WorkLogType
 from docuflow.lib.base_widget import BaseDocuWidget
+from docuflow.lib.widgets.ui_utils import NotifyHelper, get_action_color
 
 
 class BatchCard(BaseDocuWidget):
@@ -24,7 +25,7 @@ class BatchCard(BaseDocuWidget):
         session: Session — сессия БД для проверки STOCK_ALERT
         node_id: str — ID узла (лазера)
         user: str — текущий пользователь
-        system_provider: Any — провайдер систем для динамического разрешения
+        system_scope: Any — провайдер систем для динамического разрешения
         on_start: callable — callback для кнопки "Начать"
         on_pause: callable — callback для кнопки "Пауза"
         on_resume: callable — callback для кнопки "Возобновить"
@@ -40,18 +41,17 @@ class BatchCard(BaseDocuWidget):
         session=None,
         node_id: str | None = None,
         user: str = "admin",
-        system_provider: Any = None,
+        system_scope: Any = None,
         on_start=None,
         on_pause=None,
         on_resume=None,
         on_complete=None,
         on_block=None,
     ):
-        super().__init__(system_provider)
+        super().__init__(system_scope)
         self.batch_group_id = batch_group_id
         self.tasks = tasks
         self.drift_percent = drift_percent
-        self.session = session
         self.node_id = node_id
         self.user = user
         self.on_start = on_start
@@ -80,8 +80,7 @@ class BatchCard(BaseDocuWidget):
                 with ui.row().classes("items-center gap-2"):
                     ui.label(f"📦 {mat_type}").classes("text-h6")
                     # Stock Alert Indicator
-                    if self.session:
-                        self._render_batch_stock_alert()
+                    self._render_batch_stock_alert()
 
                 with ui.row().classes("items-center gap-2"):
                     # Task Magnet (Suggestions)
@@ -111,12 +110,12 @@ class BatchCard(BaseDocuWidget):
             for task in self.tasks:
                 TaskItemRow(
                     task=task,
-                    session=self.session,
                     on_start=self.on_start,
                     on_pause=self.on_pause,
                     on_resume=self.on_resume,
                     on_complete=self.on_complete,
                     on_block=self.on_block,
+                    system_scope=self.system_scope,
                 ).render()
 
     def _render_optimization_monitor(self) -> None:
@@ -126,31 +125,32 @@ class BatchCard(BaseDocuWidget):
             from docuflow.features.task_board.system import TaskBoardSystem
 
             try:
-                system = await self.get_system(TaskBoardSystem)
-                if not self.tasks:
-                    return
+                async with self.scope() as req:
+                    system = await req.get(TaskBoardSystem)
+                    if not self.tasks:
+                        return
 
-                first_task = self.tasks[0]
-                if not first_task.mat_type_id:
-                    return
+                    first_task = self.tasks[0]
+                    if not first_task.mat_type_id:
+                        return
 
-                matches = system.get_matching_unassigned_tasks(
-                    first_task.mat_type_id, first_task.thickness
-                )
+                    matches = system.get_matching_unassigned_tasks(
+                        first_task.mat_type_id, first_task.thickness
+                    )
 
-                if matches:
-                    with container:
-                        with ui.row().classes(
-                            "w-full items-center justify-between bg-teal-900/20 p-2 mb-2 rounded border border-teal-500/30"
-                        ):
-                            with ui.row().classes("items-center gap-2"):
-                                ui.icon("auto_awesome", color="teal-400")
-                                ui.label(
-                                    f"Optimisation: {len(matches)} tasks in queue for this metal"
-                                ).classes("text-xs font-bold text-teal-300")
-                            ui.button("CLAIM", on_click=self._show_matching_suggestions).props(
-                                "size=xs color=teal unelevated rounded"
-                            )
+                    if matches:
+                        with container:
+                            with ui.row().classes(
+                                "w-full items-center justify-between bg-teal-900/20 p-2 mb-2 rounded border border-teal-500/30"
+                            ):
+                                with ui.row().classes("items-center gap-2"):
+                                    ui.icon("auto_awesome", color="teal-400")
+                                    ui.label(
+                                        f"Optimisation: {len(matches)} tasks in queue for this metal"
+                                    ).classes("text-xs font-bold text-teal-300")
+                                ui.button("CLAIM", on_click=self._show_matching_suggestions).props(
+                                    "size=xs color=teal unelevated rounded"
+                                )
             except Exception:
                 logger.debug("Batch optimization check failed, ignoring")
 
@@ -164,48 +164,49 @@ class BatchCard(BaseDocuWidget):
             from docuflow.features.task_board.system import TaskBoardSystem
 
             try:
-                system = await self.get_system(TaskBoardSystem)
-                if not self.tasks:
-                    return
+                async with self.scope() as req:
+                    system = await req.get(TaskBoardSystem)
+                    if not self.tasks:
+                        return
 
-                first_task = self.tasks[0]
-                matches = system.get_matching_unassigned_tasks(
-                    first_task.mat_type_id, first_task.thickness
-                )
+                    first_task = self.tasks[0]
+                    matches = system.get_matching_unassigned_tasks(
+                        first_task.mat_type_id, first_task.thickness
+                    )
 
-                if not matches:
-                    ui.notify("Похожих задач в очереди нет", type="info")
-                    return
+                    if not matches:
+                        NotifyHelper.info("Похожих задач в очереди нет")
+                        return
 
-                with ui.dialog() as dialog, ui.card().classes("p-6 w-[500px]"):
-                    ui.label("🧲 Подходящие задачи").classes("text-h6 mb-2")
-                    ui.label(
-                        "Эти задачи используют такой же материал. Вы можете забрать их себе."
-                    ).classes("text-sm text-slate-400 mb-4")
+                    with ui.dialog() as dialog, ui.card().classes("p-6 w-[500px]"):
+                        ui.label("🧲 Подходящие задачи").classes("text-h6 mb-2")
+                        ui.label(
+                            "Эти задачи используют такой же материал. Вы можете забрать их себе."
+                        ).classes("text-sm text-slate-400 mb-4")
 
-                    with ui.column().classes("w-full gap-2"):
-                        for task in matches:
-                            with ui.row().classes(
-                                "w-full items-center justify-between p-2 bg-gray-50 rounded border border-gray-100"
-                            ):
-                                with ui.column().classes("gap-0"):
-                                    ui.label(task.file_name).classes(
-                                        "font-bold text-sm text-gray-200"
-                                    )
-                                    ui.label(f"Листов: {task.sheet_qty}").classes(
-                                        "text-[10px] text-slate-400"
-                                    )
+                        with ui.column().classes("w-full gap-2"):
+                            for task in matches:
+                                with ui.row().classes(
+                                    "w-full items-center justify-between p-2 bg-gray-50 rounded border border-gray-100"
+                                ):
+                                    with ui.column().classes("gap-0"):
+                                        ui.label(task.file_name).classes(
+                                            "font-bold text-sm text-gray-200"
+                                        )
+                                        ui.label(f"Листов: {task.sheet_qty}").classes(
+                                            "text-[10px] text-slate-400"
+                                        )
 
-                                ui.button(
-                                    icon="add_circle",
-                                    on_click=lambda t=task: self._pull_suggested_task(t, dialog),
-                                ).props("flat color=green")
+                                    ui.button(
+                                        icon="add_circle",
+                                        on_click=lambda t=task: self._pull_suggested_task(t, dialog),
+                                    ).props("flat color=green")
 
-                    with ui.row().classes("w-full justify-end mt-4"):
-                        ui.button("Закрыть", on_click=dialog.close).props("flat")
-                dialog.open()
+                        with ui.row().classes("w-full justify-end mt-4"):
+                            ui.button("Закрыть", on_click=dialog.close).props("flat")
+                    dialog.open()
             except Exception as e:
-                ui.notify(f"Ошибка загрузки предложений: {e}", type="negative")
+                NotifyHelper.error(f"Ошибка загрузки предложений: {e}")
 
         ui.timer(0, load_and_show, once=True)
 
@@ -215,8 +216,9 @@ class BatchCard(BaseDocuWidget):
         async def do_pull():
             from docuflow.features.task_board.system import TaskBoardSystem
 
-            system = await self.get_system(TaskBoardSystem)
-            await system.assign_task_to_node(task.id, self.node_id, self.user)
+            async with self.scope() as req:
+                system = await req.get(TaskBoardSystem)
+                await system.assign_task_to_node(task.id, self.node_id, self.user)
             dialog.close()
             # Trigger global refresh via JS for now
             ui.run_javascript("window.location.reload()")
@@ -233,38 +235,54 @@ class BatchCard(BaseDocuWidget):
 
             message = f"[LOGISTICS_REQUEST] Требуется подача металла для {wi_name} на {self.node_id}. Оператор: {self.user}"
 
-            ui.notify(f"Запрос на подачу отправлен: {self._get_material_type()}", type="warning")
+            NotifyHelper.warning(f"Запрос на подачу отправлен: {self._get_material_type()}")
             if self.tasks:
                 import datetime
 
-                log = WorkLog(
-                    work_item_id=self.tasks[0].work_item_id,
-                    task_item_id=self.tasks[0].id,
-                    log_type=WorkLogType.STATUS_CHANGE.value,
-                    message=f"Запрошена логистика: {message}",
-                    author=self.user,
-                    created_at=datetime.datetime.now(),
-                    node_id=self.node_id,
-                )
-                self.session.add(log)
-                self.session.commit()
+                from sqlmodel import Session
+
+                async with self.scope() as req:
+                    session = await req.get(Session)
+                    log = WorkLog(
+                        work_item_id=self.tasks[0].work_item_id,
+                        task_item_id=self.tasks[0].id,
+                        log_type=WorkLogType.STATUS_CHANGE.value,
+                        message=f"Запрошена логистика: {message}",
+                        author=self.user,
+                        created_at=datetime.datetime.now(),
+                        node_id=self.node_id,
+                    )
+                    session.add(log)
+                    session.commit()
 
         self.safe_action(do_request, error_prefix="Ошибка отправки запроса")
 
     def _render_batch_stock_alert(self) -> None:
         """Check and render batch-level stock alerts."""
-        from docuflow.features.task_board.batch_engine import BatchEngine
 
-        engine = BatchEngine(self.session)
-        alerts = engine.check_stock_alerts(self.tasks)
+        async def check_alerts(container):
+            from sqlmodel import Session
 
-        if alerts:
-            with ui.row().classes(
-                "items-center gap-1 text-orange-600 bg-orange-50 px-2 rounded-full"
-            ):
-                ui.icon("inventory_2", size="xs")
-                ui.label("STOCK_ALERT").classes("text-[10px] font-bold")
-                ui.tooltip(f"В запасе найдены детали: {', '.join(a.sku for a in alerts[:3])}...")
+            from docuflow.features.task_board.batch_engine import BatchEngine
+
+            async with self.scope() as req:
+                session = await req.get(Session)
+                engine = BatchEngine(session)
+                alerts = engine.check_stock_alerts(self.tasks)
+
+                if alerts:
+                    with container:
+                        with ui.row().classes(
+                            "items-center gap-1 text-orange-600 bg-orange-50 px-2 rounded-full"
+                        ):
+                            ui.icon("inventory_2", size="xs")
+                            ui.label("STOCK_ALERT").classes("text-[10px] font-bold")
+                            ui.tooltip(
+                                f"В запасе найдены детали: {', '.join(a.sku for a in alerts[:3])}..."
+                            )
+
+        container = ui.row().classes("items-center gap-1")
+        ui.timer(0.1, lambda: check_alerts(container), once=True)
 
     def _get_material_type(self) -> str:
         """Получает тип материала из первой задачи."""
@@ -275,8 +293,10 @@ class BatchCard(BaseDocuWidget):
 
     def _render_drift_badge(self) -> None:
         """Рендерит бейдж drift% с цветовой кодировкой."""
+        from docuflow.lib.widgets.ui_utils import get_kpi_color
+
         drift = self.drift_percent
-        color = "green" if drift < 0 else "yellow" if drift < 20 else "red"
+        color = get_kpi_color(drift)
         label = f"{'+' if drift >= 0 else ''}{drift:.1f}%"
         ui.badge(label).props(f"color={color}")
 
@@ -289,20 +309,20 @@ class TaskItemRow:
     def __init__(
         self,
         task: TaskItem,
-        session=None,
         on_start=None,
         on_pause=None,
         on_resume=None,
         on_complete=None,
         on_block=None,
+        system_scope: Any = None,
     ):
         self.task = task
-        self.session = session
         self.on_start = on_start
         self.on_pause = on_pause
         self.on_resume = on_resume
         self.on_complete = on_complete
         self.on_block = on_block
+        self.system_scope = system_scope
 
     def render(self) -> None:
         """Рендерит строку задачи."""
@@ -314,8 +334,7 @@ class TaskItemRow:
 
             with ui.column().classes("flex-grow truncate gap-0"):
                 ui.label(self.task.file_name).classes("truncate font-medium text-gray-200")
-                if self.session:
-                    self._render_task_stock_alert()
+                self._render_task_stock_alert()
 
             progress = self.task.sheets_done / (self.task.sheet_qty or 1)
             ui.linear_progress(value=progress).props("stripe").classes("w-32")
@@ -326,34 +345,46 @@ class TaskItemRow:
 
     def _render_task_stock_alert(self) -> None:
         """Check and render task-specific stock alerts."""
-        from docuflow.features.task_board.batch_engine import BatchEngine
 
-        engine = BatchEngine(self.session)
-        alerts = engine.check_stock_alerts([self.task])
-        if alerts:
-            with ui.row().classes("items-center gap-1 text-orange-600"):
-                ui.icon("inventory_2", size="xs")
-                ui.label(f"В запасе: {', '.join(a.sku for a in alerts)}").classes("text-[10px]")
+        async def check_alerts(container):
+            from sqlmodel import Session
+
+            from docuflow.features.task_board.batch_engine import BatchEngine
+
+            async with self.system_scope() as req:
+                session = await req.get(Session)
+                engine = BatchEngine(session)
+                alerts = engine.check_stock_alerts([self.task])
+                if alerts:
+                    with container:
+                        with ui.row().classes("items-center gap-1 text-orange-600"):
+                            ui.icon("inventory_2", size="xs")
+                            ui.label(f"В запасе: {', '.join(a.sku for a in alerts)}").classes(
+                                "text-[10px]"
+                            )
+
+        container = ui.row().classes("items-center gap-1")
+        ui.timer(0.1, lambda: check_alerts(container), once=True)
 
     def _render_action_buttons(self) -> None:
         """Рендерит кнопки действий."""
         status = self.task.status
         if status == TaskItemStatus.PLANNED and self.on_start:
             ui.button("▶ Начать", on_click=lambda: self.on_start(self.task.id)).props(
-                "size=sm color=green"
+                f"size=sm color={get_action_color('start')}"
             )
         elif status == TaskItemStatus.IN_PROGRESS:
             if self.on_pause:
                 ui.button("⏸ Пауза", on_click=lambda: self.on_pause(self.task.id)).props(
-                    "size=sm color=orange"
+                    f"size=sm color={get_action_color('pause')}"
                 )
             if self.on_complete:
                 ui.button("✅ Завершить", on_click=lambda: self.on_complete(self.task.id)).props(
-                    "size=sm color=green"
+                    f"size=sm color={get_action_color('complete')}"
                 )
         elif status == TaskItemStatus.ON_HOLD and self.on_resume:
             ui.button("▶ Возобновить", on_click=lambda: self.on_resume(self.task.id)).props(
-                "size=sm color=green"
+                f"size=sm color={get_action_color('resume')}"
             )
 
         if (
@@ -361,7 +392,7 @@ class TaskItemRow:
             and self.on_block
         ):
             ui.button("🔒", on_click=lambda: self.on_block(self.task.id)).props(
-                "size=sm color=red flat"
+                f"size=sm color={get_action_color('block')} flat"
             )
 
     def _render_part_preview(self) -> None:

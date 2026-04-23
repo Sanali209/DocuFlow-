@@ -17,6 +17,8 @@ class ProductionSystem(BaseSystem):
     - Code as Documentation: Methods are self-describing and documented with examples.
     """
 
+    DEFAULT_RECENT_LIMIT = 50
+
     def __init__(self, config: Config, session: Session, sdk: Any = None):
         super().__init__(config, session)
         self.sdk = sdk
@@ -117,11 +119,12 @@ class ProductionSystem(BaseSystem):
         db.flush()
         return pallet
 
-    def get_recent_production_units(self, limit: int = 50) -> list[ProductionUnit]:
+    def get_recent_production_units(self, limit: int | None = None) -> list[ProductionUnit]:
         """
         Lists recently registered production units for dashboard monitoring.
         """
-        statement = select(ProductionUnit).order_by(ProductionUnit.id.desc()).limit(limit)
+        actual_limit = limit if limit is not None else self.DEFAULT_RECENT_LIMIT
+        statement = select(ProductionUnit).order_by(ProductionUnit.id.desc()).limit(actual_limit)  # type: ignore[attr-defined]
         return list(self.session.exec(statement).all())
 
     def split_production_unit(

@@ -7,6 +7,7 @@ from nicegui import app as nicegui_app
 from nicegui import ui
 
 from docuflow.domain.entities.identity import User, Workplace
+from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 logger = logging.getLogger(__name__)
 
@@ -190,12 +191,12 @@ class MainLayout:
     Ensures consistent aesthetics (color matching) and decentralized authorization.
     """
 
-    def __init__(self, title: str, config, search_system: Any = None, system_provider: Any = None):
+    def __init__(self, title: str, config, search_system: Any = None, system_scope: Any = None):
         self.title = title
         self._config = config
         self.search_system = search_system
-        self.system_provider = system_provider
-        self.content = None
+        self.system_scope = system_scope
+        self.content: Any = None
         self._active_timers: list[ui.timer] = []
 
     def register_timer(self, timer: ui.timer) -> ui.timer:
@@ -339,15 +340,15 @@ class MainLayout:
                                 r, switch_view_fn, results_menu
                             )
                         ):
-                            with ui.section().props("side"):
+                            with ui.item_section().props("side"):
                                 ui.icon(res.icon, color="primary")
-                            with ui.section():
+                            with ui.item_section():
                                 ui.item_label(res.title).classes("font-bold")
                                 ui.item_label(res.subtitle).props("caption")
 
                             # --- QUICK ACTION: PULL TO NODE ---
                             if res.type == "work_item":
-                                with ui.section().props("side"):
+                                with ui.item_section().props("side"):
                                     ui.button(
                                         icon="install_desktop",
                                         on_click=lambda r=res: self._pull_to_current_node(
@@ -358,17 +359,15 @@ class MainLayout:
 
                 results_menu.open()
 
-            search_input.on("update:model-value", handle_search)
+            search_input.on_value_change(handle_search)
 
     async def _pull_to_current_node(self, result, switch_view_fn: Callable) -> None:
         """Быстрое назначение наряда на текущий физический узел."""
         try:
-            ui.notify(
-                f"Наряд {result.title} передан на узел {self._config.node_id}", type="warning"
-            )
+            NotifyHelper.warning(f"Наряд {result.title} передан на узел {self._config.node_id}")
             switch_view_fn("task_board", filter_work_item=result.id)
         except Exception as e:
-            ui.notify(f"Ошибка захвата: {e}", type="negative")
+            NotifyHelper.info(f"Ошибка захвата: {e}")
 
     def _on_search_select(self, result, switch_view_fn, menu) -> None:
         """Обработка выбора результата поиска с сохранением контекста и авто-открытием."""
@@ -385,27 +384,26 @@ class MainLayout:
                 from docuflow.features.work_items.system import WorkItemSystem
                 from docuflow.lib.widgets.work_item_card import WorkItemCard
 
-                system = (
-                    await self.system_provider(WorkItemSystem) if self.system_provider else None
-                )
-                if system:
-                    work_item = system.db_session.get(WorkItem, result.id)
-                    if work_item:
-                        user_data = get_current_user()
-                        WorkItemCard(
-                            work_item,
-                            system,
-                            user_data.get("username", "admin") if user_data else "admin",
-                            on_navigate=switch_view_fn,
-                            system_provider=self.system_provider,
-                        ).render()
+                if self.system_scope:
+                    async with self.system_scope() as req:
+                        system = await req.get(WorkItemSystem)
+                        work_item = system.db_session.get(WorkItem, result.id)
+                        if work_item:
+                            user_data = get_current_user()
+                            await WorkItemCard(
+                                work_item,
+                                None,
+                                user_data.get("username", "admin") if user_data else "admin",
+                                on_navigate=switch_view_fn,
+                                system_scope=self.system_scope,
+                            ).render()
 
             ui.timer(0.1, auto_open, once=True)
 
         elif result.type == "pallet":
             SessionContext.set("active_pallet_id", result.id)
 
-        ui.notify(f"Результат: {result.title}", type="info")
+        NotifyHelper.info(f"Результат: {result.title}")
 
         # Передаем параметры в роутер
         payload = {}
