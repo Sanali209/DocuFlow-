@@ -74,8 +74,7 @@ class AdminSystem(BaseSystem):
 
     def get_workplace_by_node_id(self, node_id: str) -> Workplace | None:
         """Retrieve the workplace configuration for a specific node."""
-        statement = select(Workplace).where(Workplace.node_id == node_id)
-        return self.session.exec(statement).first()
+        return self.find_one(Workplace, node_id=node_id)
 
     def force_global_step_down(self):
         """Administrative command to trigger an immediate cluster-wide re-election."""
@@ -88,7 +87,7 @@ class AdminSystem(BaseSystem):
 
     # --- Workplace/Node Binding Management ---
     def get_all_workplaces(self) -> list[Workplace]:
-        return list(self.session.exec(select(Workplace)).all())
+        return self.find_all(Workplace)
 
     def get_workplace_node_ids(self) -> list[str]:
         """Returns list of node_ids for workplaces, or empty list if none."""
@@ -146,7 +145,7 @@ class AdminSystem(BaseSystem):
         return users
 
     def get_all_roles(self) -> list[Role]:
-        return list(self.session.exec(select(Role)).all())
+        return self.find_all(Role)
 
     def create_user(self, user_data: dict[str, Any]) -> User:
         s = self.session
@@ -177,12 +176,10 @@ class AdminSystem(BaseSystem):
         if self._is_admin(username):
             return
 
-        s = self.session
-        statement = select(User).where(User.username == username)
-        user = s.exec(statement).first()
+        user = self.find_one(User, username=username)
         if user:
-            s.delete(user)
-            s.flush()
+            self.session.delete(user)
+            self.session.flush()
             asyncio.get_event_loop().create_task(
                 self._orchestrator.broadcast_command(
                     command=CommandType.DELETE_USER, data={"username": username}
@@ -232,10 +229,7 @@ class AdminSystem(BaseSystem):
 
     # --- Node-Specific Configuration Matrix ---
     def get_node_settings(self, node_id: str, module: str) -> dict[str, str]:
-        statement = select(NodeSetting).where(
-            NodeSetting.node_id == node_id, NodeSetting.module == module
-        )
-        results = self.session.exec(statement).all()
+        results = self.find_all(NodeSetting, node_id=node_id, module=module)
         return {s.key: s.value for s in results}
 
     def update_node_setting(self, node_id: str, module: str, key: str, value: str):
@@ -262,7 +256,7 @@ class AdminSystem(BaseSystem):
 
     # --- Notification Templates ---
     def get_notification_templates(self) -> list[NotificationTemplate]:
-        return list(self.session.exec(select(NotificationTemplate)).all())
+        return self.find_all(NotificationTemplate)
 
     def update_notification_template(
         self, template_id: int, text: str, enabled: bool
@@ -271,32 +265,23 @@ class AdminSystem(BaseSystem):
         if template:
             template.text = text
             template.enabled = enabled
-            self.session.add(template)
-            self.session.flush()
-            self.session.commit()
+            self.save(template)
         return template
 
     # --- View Presets ---
     def get_view_presets(self, owner: str = "global") -> list[ViewPreset]:
-        statement = select(ViewPreset).where(ViewPreset.owner == owner)
-        return list(self.session.exec(statement).all())
+        return self.find_all(ViewPreset, owner=owner)
 
     def create_view_preset(
         self, module: str, name: str, preset_json: str, owner: str = "global"
     ) -> ViewPreset:
         preset = ViewPreset(module=module, name=name, preset_json=preset_json, owner=owner)
-        self.session.add(preset)
-        self.session.flush()
-        self.session.commit()
-        self.session.refresh(preset)
-        return preset
+        return self.save(preset)
 
     def delete_view_preset(self, preset_id: int):
         preset = self.session.get(ViewPreset, preset_id)
         if preset:
-            self.session.delete(preset)
-            self.session.flush()
-            self.session.commit()
+            self.delete(preset)
 
     # --- System Audit Log ---
     def get_system_audit_logs(self, limit: int = 100) -> list[WorkLog]:
