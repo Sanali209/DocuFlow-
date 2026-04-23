@@ -33,7 +33,9 @@ DocuFlow/
 ├── AGENTS.md, CLAUDE.md, README.md
 └── pyproject.toml, pytest.ini, Dockerfile
 ```
-**Rules**: root contains only manifests/configs. No `.db`, `.log`, or temp `.py` scripts in root.
+**Rules**: root contains only manifests/configs. No `.db`, `.log`, loose `.py` scripts, or IDE/agent directories in root.
+- Runtime artifacts go to `.gitignore` (see `.claude/`, `.idea/`, `test_shared/`, `tmp_shared/`, `*.db`, `app_*.log`, etc.)
+- Historical archive: `._archive/` (old prototypes, do not import into src)
 
 ## Developer commands
 ```bash
