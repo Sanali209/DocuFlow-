@@ -1,7 +1,7 @@
 import json
 
 from passlib.context import CryptContext
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.identity import Role, User
@@ -42,8 +42,7 @@ class AuthSystem(BaseSystem):
         Example:
             user = await system.authenticate_user("admin", "secret123")
         """
-        statement = select(User).where(User.username == username)
-        user = self.db_session.exec(statement).first()
+        user = self.find_one(User, username=username)
 
         if not user or not self.verify_password(password, user.password_hash):
             return None
@@ -58,34 +57,24 @@ class AuthSystem(BaseSystem):
         Args:
             default_password: Admin password. Falls back to 'admin' if not provided.
         """
-        # 1. Check if the administrative role exists
-        admin_role_name = "Admin"
-        role_statement = select(Role).where(Role.name == admin_role_name)
-        admin_role = self.db_session.exec(role_statement).first()
-
+        # 1. Ensure Admin role exists
+        admin_role = self.find_one(Role, name="Admin")
         if not admin_role:
-            admin_role = Role(
-                name=admin_role_name,
-                permissions=json.dumps(["*:full"]),  # Master permission
+            admin_role = self.save(
+                Role(name="Admin", permissions=json.dumps(["*:full"]))
             )
-            self.db_session.add(admin_role)
-            self.db_session.commit()
-            self.db_session.refresh(admin_role)
 
-        # 2. Check if admin user is registered
-        user_statement = select(User).where(User.username == "admin")
-        admin_user = self.db_session.exec(user_statement).first()
-
+        # 2. Ensure admin user exists
+        admin_user = self.find_one(User, username="admin")
         if not admin_user:
-            admin_user = User(
-                username="admin",
-                password_hash=self.hash_password(default_password or "admin"),
-                role_id=admin_role.id,
-                allowed_workplaces="[]",
+            admin_user = self.save(
+                User(
+                    username="admin",
+                    password_hash=self.hash_password(default_password or "admin"),
+                    role_id=admin_role.id,
+                    allowed_workplaces="[]",
+                )
             )
-            self.db_session.add(admin_user)
-            self.db_session.commit()
-            self.db_session.refresh(admin_user)
 
         return admin_user
 
@@ -103,9 +92,7 @@ class AuthSystem(BaseSystem):
         from docuflow.domain.entities.identity import Workplace
         from docuflow.infrastructure import constants
 
-        existing = self.db_session.exec(
-            select(Workplace).where(Workplace.node_id == constants.DEFAULT_WORKPLACE_ID)
-        ).first()
+        existing = self.find_one(Workplace, node_id=constants.DEFAULT_WORKPLACE_ID)
 
         if not existing:
             workplace = Workplace(
@@ -114,8 +101,7 @@ class AuthSystem(BaseSystem):
                 allowed_modules="",
             )
             try:
-                self.db_session.add(workplace)
-                self.db_session.commit()
+                self.save(workplace, refresh=False)
                 logger.info(f"Created default workplace: {constants.DEFAULT_WORKPLACE_ID}")
             except Exception:
                 # Handle race condition in multi-node startup

@@ -1,6 +1,11 @@
-from sqlmodel import Session
+from typing import TypeVar
+
+from sqlalchemy import func
+from sqlmodel import Session, select
 
 from docuflow.infrastructure.config import Config
+
+T = TypeVar("T")
 
 
 class BaseSystem:
@@ -40,6 +45,44 @@ class BaseSystem:
     def set_session(self, session: Session) -> None:
         """Dynamically set or swap the session for the system."""
         self.session = session
+
+    # --- CRUD Helpers ---
+
+    def find_one(self, model: type[T], **filters) -> T | None:
+        """Return the first row matching all filters, or None."""
+        stmt = select(model)
+        for key, value in filters.items():
+            stmt = stmt.where(getattr(model, key) == value)
+        return self.db_session.exec(stmt).first()
+
+    def find_all(self, model: type[T], **filters) -> list[T]:
+        """Return all rows matching the filters."""
+        stmt = select(model)
+        for key, value in filters.items():
+            stmt = stmt.where(getattr(model, key) == value)
+        return list(self.db_session.exec(stmt).all())
+
+    def save(self, obj: T, refresh: bool = True) -> T:
+        """Persist an object and optionally refresh it from the DB."""
+        self.db_session.add(obj)
+        self.db_session.commit()
+        if refresh:
+            self.db_session.refresh(obj)
+        return obj
+
+    def delete(self, obj: T) -> None:
+        """Remove an object from the database."""
+        self.db_session.delete(obj)
+        self.db_session.commit()
+
+    def count(self, model: type[T], **filters) -> int:
+        """Return the number of rows matching the filters."""
+        stmt = select(func.count()).select_from(model)
+        for key, value in filters.items():
+            stmt = stmt.where(getattr(model, key) == value)
+        return self.db_session.exec(stmt).one() or 0
+
+    # --- Lifecycle Hooks ---
 
     async def on_startup(self) -> None:
         """Async lifecycle hook: system start."""
