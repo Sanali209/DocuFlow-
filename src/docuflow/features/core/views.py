@@ -37,3 +37,46 @@ class ViewRegistry:
     @classmethod
     def get_all_views(cls) -> list[ViewInfo]:
         return list(cls._views.values())
+
+
+def register_view(
+    name: str,
+    label: str,
+    icon: str,
+    dependencies: list[type[Any]] | None = None,
+    *,
+    pass_system_scope: bool = True,
+    pass_layout: bool = True,
+    is_async: bool = True,
+    **extra: Any,
+):
+    """Decorator to register a view class in the ViewRegistry.
+
+    Usage:
+        @register_view(name="warehouse", label="Warehouse", icon="inventory_2",
+                        dependencies=[InventorySystem])
+        class WarehouseView(BaseDocuWidget):
+            ...
+    """
+
+    def decorator(view_class: type[Any]) -> type[Any]:
+        async def render_fn(system, system_scope, layout):
+            view = view_class(system, system_scope, layout)
+            await view.render()
+
+        ViewRegistry.register(
+            ViewInfo(
+                name=name,
+                label=label,
+                icon=icon,
+                render_fn=render_fn,
+                dependencies=dependencies or [],
+                pass_system_scope=pass_system_scope,
+                pass_layout=pass_layout,
+                is_async=is_async,
+                **extra,
+            )
+        )
+        return view_class
+
+    return decorator
