@@ -1,0 +1,619 @@
+INFO:     Started server process [25192]
+INFO:     Waiting for application startup.
+2026-04-23 02:39:51.324 | INFO     | docuflow.infrastructure.di:get_engine:89 - Identity [node_01]: Initialized local database at sqlite:///node_01.db
+2026-04-23 02:39:51.511 | DEBUG    | docuflow.infrastructure.di:get_sdk:182 - AppProvider: created SDK instance id=1921716990704
+2026-04-23 02:39:51.536 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for UPSERT_ROLE
+2026-04-23 02:39:51.536 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for DELETE_ROLE
+2026-04-23 02:39:51.536 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for UPSERT_SETTING
+2026-04-23 02:39:51.536 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for UPSERT_USER
+2026-04-23 02:39:51.536 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for DELETE_USER
+2026-04-23 02:39:51.536 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for UPSERT_WORKPLACE
+2026-04-23 02:39:51.536 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for FORCE_STEP_DOWN
+2026-04-23 02:39:51.536 | INFO     | docuflow.main:lifespan:64 - SettingsRegistry initialized.
+2026-04-23 02:39:51.537 | INFO     | docuflow.infrastructure.coordination:on_startup:52 - Coordination [node_01]: Mapping heartbeats to D:\github\DocuFlow-\shared_network\HEARTBEATS
+2026-04-23 02:39:51.545 | INFO     | docuflow.infrastructure.coordination:_acquire_lock_atomically:189 - Coordination: Node node_01 elected LEADER
+2026-04-23 02:39:51.548 | INFO     | docuflow.infrastructure.bus:on_startup:79 - FileBus: Monitoring shared_network\BUS\INBOX for node node_01
+2026-04-23 02:39:51.549 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for UPSERT_ROLE
+2026-04-23 02:39:51.549 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for DELETE_ROLE
+2026-04-23 02:39:51.549 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for UPSERT_SETTING
+2026-04-23 02:39:51.549 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for UPSERT_USER
+2026-04-23 02:39:51.549 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for DELETE_USER
+2026-04-23 02:39:51.549 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for UPSERT_WORKPLACE
+2026-04-23 02:39:51.549 | DEBUG    | docuflow.application.bus.dispatcher:register_handler:44 - [node_01] Dispatcher: Registered handler for FORCE_STEP_DOWN
+2026-04-23 02:39:51.549 | INFO     | docuflow.application.bus.orchestrator:on_startup:122 - [node_01] P2P Orchestrator background loops initialized.
+2026-04-23 02:39:51.693 | INFO     | docuflow.main:lifespan:74 - Admin bootstrap check complete.
+2026-04-23 02:39:51.694 | INFO     | docuflow.application.bus.orchestrator:_run_orchestration_master:129 - Orchestrator [node_01]: Spawning Coordination loop...
+INFO:     Application startup complete.
+2026-04-23 02:39:51.698 | INFO     | docuflow.infrastructure.coordination:run_coordination_loop:72 - Coordination: Starting heartbeat loop for node_01
+2026-04-23 02:39:51.698 | INFO     | docuflow.application.bus.orchestrator:_polling_worker:154 - Orchestrator: Polling worker started.
+2026-04-23 02:39:51.698 | INFO     | docuflow.application.bus.orchestrator:_maintenance_worker:207 - Orchestrator: Maintenance worker started.
+INFO:     Uvicorn running on http://0.0.0.0:8082 (Press CTRL+C to quit)
+2026-04-23 02:39:51.737 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-39-51.699740.json
+2026-04-23 02:39:51.746 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     127.0.0.1:62925 - "WebSocket /socket.io/?client_id=8cbddcb4-9195-4e50-b6f0-3faf26f8ebe6&next_message_id=0&implicit_handshake=true&document_id=019e1ee1-353e-4499-9387-368391debbaa&tab_id=3d5ddc84-3d5e-4ce2-8812-5b69080161a3&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63443 - "WebSocket /socket.io/?client_id=f05ed8aa-bfee-4262-8ca1-ed1f55030500&next_message_id=0&implicit_handshake=true&document_id=25a6bd31-789b-465d-81bf-23c41d238544&tab_id=3d5ddc84-3d5e-4ce2-8812-5b69080161a3&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+Invalid value: LASER_1
+Traceback (most recent call last):
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\events.py", line 459, in wait_for_result
+    await result
+  File "D:\github\DocuFlow-\src\docuflow\main.py", line 192, in switch_view
+    res = await view_info.render_fn(*resolved_deps, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 40, in task_board_view_wrapper
+    await view.render()
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\functions\refreshable.py", line 45, in wait_for_result
+    return await result
+           ^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 86, in render
+    await self._render_operator_view(req, nodes)
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 123, in _render_operator_view
+    self._render_node_selector(nodes)
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 197, in _render_node_selector
+    ).render().classes("w-48")
+      ^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\lib\widgets\input.py", line 123, in render
+    ui.select(
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\defaults.py", line 64, in decorated
+    return original_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\select.py", line 67, in __init__
+    super().__init__(label=label, options=options, value=value, on_change=on_change, validation=validation)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\mixins\label_element.py", line 15, in __init__
+    super().__init__(**kwargs)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\mixins\validation_element.py", line 19, in __init__
+    super().__init__(**kwargs)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\choice_element.py", line 20, in __init__
+    raise ValueError(f'Invalid value: {value}')
+ValueError: Invalid value: LASER_1
+'PartLibrarySystem' object has no attribute 'list_parts'
+Traceback (most recent call last):
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\events.py", line 459, in wait_for_result
+    await result
+  File "D:\github\DocuFlow-\src\docuflow\main.py", line 192, in switch_view
+    res = await view_info.render_fn(*resolved_deps, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 33, in parts_view_wrapper
+    await view.render()
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\functions\refreshable.py", line 45, in wait_for_result
+    return await result
+           ^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 76, in render
+    await self._build_parts_grid()
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 88, in _build_parts_grid
+    parts = parts_system.list_parts(
+            ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PartLibrarySystem' object has no attribute 'list_parts'
+2026-04-23 02:40:51.774 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-40-51.769443.json
+2026-04-23 02:40:51.802 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     connection closed
+2026-04-23 02:41:51.813 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-41-51.808740.json
+2026-04-23 02:41:51.816 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+2026-04-23 02:42:51.862 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-42-51.828771.json
+2026-04-23 02:42:51.872 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     127.0.0.1:57663 - "WebSocket /socket.io/?client_id=c02674ea-4a85-4077-a82f-2ecf3dcdf8cf&next_message_id=0&implicit_handshake=true&document_id=82686844-bcb9-4f11-a418-1aaee44b2039&tab_id=4584e1e4-1054-4348-8581-07337d0f4086&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49669 - "WebSocket /socket.io/?client_id=218c6b3e-97e1-4166-9b44-a6f85a907dde&next_message_id=0&implicit_handshake=true&document_id=1b57bb8b-dc38-423b-aa08-5387d61a12a5&tab_id=edf1786b-790f-4783-8a93-63b48eb6a47c&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:62999 - "WebSocket /socket.io/?client_id=d5d651e8-8384-4977-a1b8-a513018cdd3a&next_message_id=0&implicit_handshake=true&document_id=aa37804f-fd26-49bd-a61e-493f2889db03&tab_id=edf1786b-790f-4783-8a93-63b48eb6a47c&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56218 - "WebSocket /socket.io/?client_id=73c240fe-c44f-48ca-8396-e50498cc41f0&next_message_id=0&implicit_handshake=true&document_id=0f365e23-9e2c-494f-97f5-d644018a7821&tab_id=de187bd4-a237-41fa-84b3-5f3cff8c398f&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:54845 - "WebSocket /socket.io/?client_id=0ceeeaeb-e75c-4b5f-8099-e5a0449062fb&next_message_id=0&implicit_handshake=true&document_id=e14b004e-243d-4090-937f-a7161bdfcab5&tab_id=8fbad876-824b-44c2-bde6-e918c827a7a7&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63427 - "WebSocket /socket.io/?client_id=4ddb789f-feb3-4d23-bd95-a5ca6c5aa7ad&next_message_id=0&implicit_handshake=true&document_id=76d24c83-c41b-43f1-81d3-fd1d2c14303d&tab_id=8fbad876-824b-44c2-bde6-e918c827a7a7&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:54838 - "WebSocket /socket.io/?client_id=88388e14-83e2-45c7-89c4-2f466abe5fd5&next_message_id=0&implicit_handshake=true&document_id=ea9c7685-946b-40d2-83e8-139e45769693&tab_id=e129d4d2-2aac-4d3c-b603-945ec38994c4&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55567 - "WebSocket /socket.io/?client_id=3a5cea7d-277a-4299-bb2b-e6a5c7100b0f&next_message_id=0&implicit_handshake=true&document_id=b4cf5124-8ff6-4f92-8e2d-5c2c808b840b&tab_id=e129d4d2-2aac-4d3c-b603-945ec38994c4&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+2026-04-23 02:43:51.887 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-43-51.881769.json
+2026-04-23 02:43:51.891 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     127.0.0.1:59749 - "WebSocket /socket.io/?client_id=1b2f4163-1640-48b9-9488-06b5f9d1db47&next_message_id=0&implicit_handshake=true&document_id=f3c672eb-7eb5-40de-9916-01cbc2961100&tab_id=2c99154c-11d5-411a-bacb-3769159d678d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60396 - "WebSocket /socket.io/?client_id=1dfb8800-5582-46fd-9551-0cd2129395ef&next_message_id=0&implicit_handshake=true&document_id=e08594ee-2f72-48e4-b586-65829e4ba4eb&tab_id=2c99154c-11d5-411a-bacb-3769159d678d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58178 - "WebSocket /socket.io/?client_id=a58dde91-1d75-4184-ab3f-f3f8912c59fd&next_message_id=0&implicit_handshake=true&document_id=e59a7c20-74d3-4a95-b3d0-ebaae677d7f3&tab_id=7ef9d109-a55e-42ad-b2a4-497ada260ce8&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:61844 - "WebSocket /socket.io/?client_id=d3799357-acc3-4d00-9f79-c3bcc7b2faa5&next_message_id=0&implicit_handshake=true&document_id=9c27e685-f1b8-4102-baa8-6614ebb6e43a&tab_id=7ef9d109-a55e-42ad-b2a4-497ada260ce8&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:62653 - "WebSocket /socket.io/?client_id=88d74b24-584d-4e1c-8675-3dde5ee08320&next_message_id=0&implicit_handshake=true&document_id=0928635a-542b-4fc3-a3c9-6108268397f9&tab_id=b70c88ce-10db-4f36-9b93-00592fa81f6e&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:64992 - "WebSocket /socket.io/?client_id=82ac5783-8768-43b4-923a-7487251cc902&next_message_id=0&implicit_handshake=true&document_id=636d4094-970c-4957-8bd0-48325cd84b45&tab_id=b70c88ce-10db-4f36-9b93-00592fa81f6e&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:52650 - "WebSocket /socket.io/?client_id=c0bd676e-3bd9-47f7-949e-8dc3febf63fb&next_message_id=0&implicit_handshake=true&document_id=079f5f05-dab7-4ea6-90f7-5bc38573af39&tab_id=4d52bacc-ff5c-4f48-84ce-7d00b1798d2a&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58491 - "WebSocket /socket.io/?client_id=a7d0cd1a-ecba-44e8-b819-e2eb46a6e365&next_message_id=0&implicit_handshake=true&document_id=2c35ad97-e773-4e56-a12d-1bf6516b0da8&tab_id=4d52bacc-ff5c-4f48-84ce-7d00b1798d2a&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50061 - "WebSocket /socket.io/?client_id=af56505e-005d-49d3-8d69-6313f909c181&next_message_id=0&implicit_handshake=true&document_id=0fd2bf2e-2baa-41ed-a93d-5368e62defbe&tab_id=cd950f86-a424-4866-ab73-01d67892312d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55971 - "WebSocket /socket.io/?client_id=7e2090d9-c754-46d7-aeb4-dffb348176db&next_message_id=0&implicit_handshake=true&document_id=d75e4121-fa2e-4e4a-a2f9-6a58ee214310&tab_id=cd950f86-a424-4866-ab73-01d67892312d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:53396 - "WebSocket /socket.io/?client_id=2fde9b38-02b2-43e2-a1cc-72a824a8a15f&next_message_id=0&implicit_handshake=true&document_id=9c59e344-2bb3-4df0-b722-dd9dd92d723a&tab_id=cd950f86-a424-4866-ab73-01d67892312d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:64398 - "WebSocket /socket.io/?client_id=3cddebcc-3b15-4bf6-86c4-d125189338b9&next_message_id=0&implicit_handshake=true&document_id=7c63fb54-3450-48a3-baff-fb86920242a9&tab_id=5737c4d7-f6f3-446a-92e8-85c1063bf466&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60634 - "WebSocket /socket.io/?client_id=70dc2782-642b-4b43-932a-f852646a846d&next_message_id=0&implicit_handshake=true&document_id=59a9cf74-0e70-4f07-95c9-3aabc4a2ee8e&tab_id=0b2f19ad-d327-452a-a58d-52ee7b8043f9&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50285 - "WebSocket /socket.io/?client_id=811f896d-9e25-447b-9da6-ead60ded9c5c&next_message_id=0&implicit_handshake=true&document_id=d21cee09-0592-4011-8abd-7af4452f87d9&tab_id=0b2f19ad-d327-452a-a58d-52ee7b8043f9&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63646 - "WebSocket /socket.io/?client_id=f237d37c-7249-479e-bd18-afb3ee76a467&next_message_id=0&implicit_handshake=true&document_id=1ed9f143-8363-447a-b2f9-56c7709f1889&tab_id=420ee5e6-497c-4786-82de-b54f201c2f78&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50693 - "WebSocket /socket.io/?client_id=2d464f75-858d-41ff-825f-601a341a09e1&next_message_id=0&implicit_handshake=true&document_id=fc1a7d3f-d4bf-4196-a925-ed25296907fd&tab_id=420ee5e6-497c-4786-82de-b54f201c2f78&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+Invalid value: LASER_1
+Traceback (most recent call last):
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\events.py", line 459, in wait_for_result
+    await result
+  File "D:\github\DocuFlow-\src\docuflow\main.py", line 192, in switch_view
+    res = await view_info.render_fn(*resolved_deps, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 40, in task_board_view_wrapper
+    await view.render()
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\functions\refreshable.py", line 45, in wait_for_result
+    return await result
+           ^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 86, in render
+    await self._render_operator_view(req, nodes)
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 123, in _render_operator_view
+    self._render_node_selector(nodes)
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 197, in _render_node_selector
+    ).render().classes("w-48")
+      ^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\lib\widgets\input.py", line 123, in render
+    ui.select(
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\defaults.py", line 64, in decorated
+    return original_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\select.py", line 67, in __init__
+    super().__init__(label=label, options=options, value=value, on_change=on_change, validation=validation)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\mixins\label_element.py", line 15, in __init__
+    super().__init__(**kwargs)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\mixins\validation_element.py", line 19, in __init__
+    super().__init__(**kwargs)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\choice_element.py", line 20, in __init__
+    raise ValueError(f'Invalid value: {value}')
+ValueError: Invalid value: LASER_1
+2026-04-23 02:44:51.908 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-44-51.900874.json
+2026-04-23 02:44:51.912 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     connection closed
+INFO:     127.0.0.1:53814 - "WebSocket /socket.io/?client_id=c6efbd6d-ff81-4bea-87e7-20ba7c66fcac&next_message_id=0&implicit_handshake=true&document_id=808b9796-e56d-4fdd-b9cb-a4afc77ca545&tab_id=f81ba261-adf2-4ce3-a92b-7bd1cf493b38&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58429 - "WebSocket /socket.io/?client_id=fd0cc3e1-1d77-49cc-a4d9-8f7a7c52964b&next_message_id=0&implicit_handshake=true&document_id=874d48b9-fdb9-43b9-a8ac-ab844adb46e7&tab_id=f81ba261-adf2-4ce3-a92b-7bd1cf493b38&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:53043 - "WebSocket /socket.io/?client_id=402f289b-da13-4adf-8f0c-8d8bc07ddb13&next_message_id=0&implicit_handshake=true&document_id=1767ff89-e38b-4830-8529-c4b3798c9d38&tab_id=fee9e9b2-f09f-4dde-a402-862e3b4083a4&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:54523 - "WebSocket /socket.io/?client_id=dc406675-ee7a-4435-bd01-bfc8119ae8a4&next_message_id=0&implicit_handshake=true&document_id=48f19268-3a0c-45de-8148-fad5a2bbd1ba&tab_id=fee9e9b2-f09f-4dde-a402-862e3b4083a4&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:52664 - "WebSocket /socket.io/?client_id=d3204582-522f-4109-9841-ffcd4655f8e0&next_message_id=0&implicit_handshake=true&document_id=e965868b-b71a-4d2a-bcbb-0b181c506c18&tab_id=5e3b5c6d-255c-4b4f-937b-bbfe2aacd36e&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58719 - "WebSocket /socket.io/?client_id=314afd41-8006-45da-b42b-163dd39e6882&next_message_id=0&implicit_handshake=true&document_id=c412ffb0-4a4a-4f71-b8c0-6e0c4822214b&tab_id=5e3b5c6d-255c-4b4f-937b-bbfe2aacd36e&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56748 - "WebSocket /socket.io/?client_id=a58696cf-ef97-4358-9076-903afd488338&next_message_id=0&implicit_handshake=true&document_id=2fb26c5e-6b47-49a0-a43b-5182f92907e5&tab_id=5b4ce88f-ae9e-4172-a904-0b1f5f442140&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56077 - "WebSocket /socket.io/?client_id=670fb018-16d0-448d-a4ef-a350b2071d40&next_message_id=0&implicit_handshake=true&document_id=90ee344f-44bc-428f-be26-aae0a9efa15e&tab_id=5b4ce88f-ae9e-4172-a904-0b1f5f442140&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+'PartLibrarySystem' object has no attribute 'list_parts'
+Traceback (most recent call last):
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\events.py", line 459, in wait_for_result
+    await result
+  File "D:\github\DocuFlow-\src\docuflow\main.py", line 192, in switch_view
+    res = await view_info.render_fn(*resolved_deps, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 33, in parts_view_wrapper
+    await view.render()
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\functions\refreshable.py", line 45, in wait_for_result
+    return await result
+           ^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 76, in render
+    await self._build_parts_grid()
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 88, in _build_parts_grid
+    parts = parts_system.list_parts(
+            ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PartLibrarySystem' object has no attribute 'list_parts'
+INFO:     connection closed
+INFO:     127.0.0.1:55799 - "WebSocket /socket.io/?client_id=b79926e5-fffb-4806-852d-c36e25639b99&next_message_id=0&implicit_handshake=true&document_id=18df6ab0-3b23-4b63-a137-1cf0f9b50f19&tab_id=8167a752-70f7-4434-849f-a925b12b7a2f&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:62173 - "WebSocket /socket.io/?client_id=5d6a7a70-01cb-4d41-948b-cc68ca68e635&next_message_id=0&implicit_handshake=true&document_id=7b0d4295-9b9c-4122-bf8c-b4df33925a2c&tab_id=8167a752-70f7-4434-849f-a925b12b7a2f&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:52025 - "WebSocket /socket.io/?client_id=5a055250-f0d2-47c0-9702-5eb35b2c1e15&next_message_id=0&implicit_handshake=true&document_id=6e8d27ff-6876-4df7-9653-8e877a578510&tab_id=9972fb3c-0e99-414f-8654-581fd0e85728&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58270 - "WebSocket /socket.io/?client_id=845953d8-c4a5-4f0e-843c-69b9b7f0d5ee&next_message_id=0&implicit_handshake=true&document_id=4e643a1a-3c10-4c15-b661-c92426c48099&tab_id=9972fb3c-0e99-414f-8654-581fd0e85728&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+2026-04-23 02:45:51.924 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-45-51.920989.json
+2026-04-23 02:45:51.929 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     connection closed
+INFO:     127.0.0.1:50336 - "WebSocket /socket.io/?client_id=81c6539b-3c5a-47da-8583-f3b69ed67a01&next_message_id=0&implicit_handshake=true&document_id=9ea58a50-6255-4ebe-b65a-ab9d2ae80828&tab_id=c884cb07-f444-414b-a135-e994ea4da245&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:59483 - "WebSocket /socket.io/?client_id=9c15e137-3be4-45cf-9016-c2f67844b090&next_message_id=0&implicit_handshake=true&document_id=a0773541-2639-43fe-b7d1-590686fcb08d&tab_id=c884cb07-f444-414b-a135-e994ea4da245&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:59350 - "WebSocket /socket.io/?client_id=5ab90636-892c-4f79-a38e-57f115adf73c&next_message_id=0&implicit_handshake=true&document_id=edbe524d-65cd-487e-baa3-f9f826cdafc4&tab_id=ed7feb62-e054-491a-860d-83e74c8aa4da&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55525 - "WebSocket /socket.io/?client_id=4a94f254-ea82-42f0-a740-967e3933bef9&next_message_id=0&implicit_handshake=true&document_id=6a4a1811-2404-44d5-9a92-26a66242e332&tab_id=1d1122e9-622e-431a-b22a-7092dd10ee2d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:65210 - "WebSocket /socket.io/?client_id=3d2415b9-924f-4985-9eb0-e7634059408f&next_message_id=0&implicit_handshake=true&document_id=17e21fb4-ab7a-4b6f-998d-ef60a546c592&tab_id=c491df38-85c1-415e-a03a-eafc8d1a0e15&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49222 - "WebSocket /socket.io/?client_id=bdb0a879-a70d-453b-b3be-4da616229ba1&next_message_id=0&implicit_handshake=true&document_id=a29e57ca-d497-48f1-8bde-79cc271680dd&tab_id=c491df38-85c1-415e-a03a-eafc8d1a0e15&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:54612 - "WebSocket /socket.io/?client_id=a50aeabf-14d4-4848-af6e-adedb545506c&next_message_id=0&implicit_handshake=true&document_id=4593bb10-b3ab-4a34-be9f-c7c1ee8e3d65&tab_id=36aab401-ba31-458d-9abd-89cc09644c32&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+2026-04-23 02:46:51.936 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-46-51.931537.json
+2026-04-23 02:46:51.938 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     127.0.0.1:50857 - "WebSocket /socket.io/?client_id=ae918d74-cb16-4587-b04c-a0f127045cb1&next_message_id=0&implicit_handshake=true&document_id=ea22837c-5d4c-467a-a321-3ef4025f2911&tab_id=e1338509-540a-4d74-99c6-4bae723110e9&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:57721 - "WebSocket /socket.io/?client_id=ad07835b-5e47-435e-a61b-7960181444e3&next_message_id=0&implicit_handshake=true&document_id=cb3554c8-6aa9-4a54-9c03-1fc919ded1f6&tab_id=e1338509-540a-4d74-99c6-4bae723110e9&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55105 - "WebSocket /socket.io/?client_id=dd0abf71-3941-4737-a2c4-1ab63b9e95b4&next_message_id=0&implicit_handshake=true&document_id=ec09f8c4-5c20-4ec7-95c7-08d339820917&tab_id=aff2488d-0912-4ace-9de1-06695bbebfc6&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:52653 - "WebSocket /socket.io/?client_id=8098a2ea-356b-423e-b65c-5e496b11201e&next_message_id=0&implicit_handshake=true&document_id=cb1e9ed0-3ab1-46a7-822a-fd1d117f13dd&tab_id=aff2488d-0912-4ace-9de1-06695bbebfc6&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:51040 - "WebSocket /socket.io/?client_id=ff5e63cf-c9bf-44ee-9ddc-1edc6f898714&next_message_id=0&implicit_handshake=true&document_id=36e271eb-b41e-46f8-a968-ea136bf96d6f&tab_id=30301cf1-edd2-4b0d-81c5-7d3c6723fec3&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:53164 - "WebSocket /socket.io/?client_id=d8375a55-8f07-4f88-99f7-49fbaa1307d6&next_message_id=0&implicit_handshake=true&document_id=4c663d81-f6ea-4c4e-bf7a-f69d3a7faf4e&tab_id=30301cf1-edd2-4b0d-81c5-7d3c6723fec3&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+Invalid value: LASER_1
+Traceback (most recent call last):
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\events.py", line 459, in wait_for_result
+    await result
+  File "D:\github\DocuFlow-\src\docuflow\main.py", line 192, in switch_view
+    res = await view_info.render_fn(*resolved_deps, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 40, in task_board_view_wrapper
+    await view.render()
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\functions\refreshable.py", line 45, in wait_for_result
+    return await result
+           ^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 86, in render
+    await self._render_operator_view(req, nodes)
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 123, in _render_operator_view
+    self._render_node_selector(nodes)
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 197, in _render_node_selector
+    ).render().classes("w-48")
+      ^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\lib\widgets\input.py", line 123, in render
+    ui.select(
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\defaults.py", line 64, in decorated
+    return original_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\select.py", line 67, in __init__
+    super().__init__(label=label, options=options, value=value, on_change=on_change, validation=validation)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\mixins\label_element.py", line 15, in __init__
+    super().__init__(**kwargs)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\mixins\validation_element.py", line 19, in __init__
+    super().__init__(**kwargs)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\choice_element.py", line 20, in __init__
+    raise ValueError(f'Invalid value: {value}')
+ValueError: Invalid value: LASER_1
+INFO:     connection closed
+INFO:     127.0.0.1:61679 - "WebSocket /socket.io/?client_id=50b380ea-2aa4-4cef-bcca-f795af0e1a96&next_message_id=0&implicit_handshake=true&document_id=7cc6ee4a-1942-4bbb-ad35-c8b7350bc449&tab_id=744ff139-62a0-4e46-a641-dfd89a7dce1d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50263 - "WebSocket /socket.io/?client_id=c6b76869-7c60-4aac-afbf-f639f8d514a5&next_message_id=0&implicit_handshake=true&document_id=4397014d-04ef-499c-94f8-f6019bedbe87&tab_id=744ff139-62a0-4e46-a641-dfd89a7dce1d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:53918 - "WebSocket /socket.io/?client_id=1fc21c7b-05c0-464e-88f6-d481e8d22882&next_message_id=0&implicit_handshake=true&document_id=2b02a327-4f16-434d-aaf2-73b4dea38600&tab_id=45fdeaa0-ca18-4650-b42e-c99d77a3b5d2&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58644 - "WebSocket /socket.io/?client_id=ed482b00-927d-4746-a77a-adb4db72e883&next_message_id=0&implicit_handshake=true&document_id=a8fbf7c9-3e37-4a8d-8db6-3cca23c3c013&tab_id=45fdeaa0-ca18-4650-b42e-c99d77a3b5d2&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+2026-04-23 02:47:51.959 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-47-51.951915.json
+2026-04-23 02:47:51.963 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     connection closed
+INFO:     127.0.0.1:56412 - "WebSocket /socket.io/?client_id=7c780826-71bc-48ed-b817-15fd92e92f51&next_message_id=0&implicit_handshake=true&document_id=f6e3ea28-9630-402b-8f51-3d5bde142a33&tab_id=f1778864-0301-4923-9396-337ac9ebba97&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50988 - "WebSocket /socket.io/?client_id=9fe3092c-dd18-468c-81d0-8dac72b7247a&next_message_id=0&implicit_handshake=true&document_id=d3c0640a-9cc1-4c9c-bead-33b9df306fa9&tab_id=f1778864-0301-4923-9396-337ac9ebba97&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49684 - "WebSocket /socket.io/?client_id=11a809c2-1c57-4151-9eb8-0cc785e68d96&next_message_id=0&implicit_handshake=true&document_id=a1225363-85d4-44ab-a59a-1c6d06965c1c&tab_id=1c873bc1-132c-43df-9012-a9277259ac9e&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55543 - "WebSocket /socket.io/?client_id=3eba581d-8e1c-4d38-936b-abf01ebfda93&next_message_id=0&implicit_handshake=true&document_id=b71befde-7e3e-4412-a90f-e6b032d7a6a9&tab_id=1c873bc1-132c-43df-9012-a9277259ac9e&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+'PartLibrarySystem' object has no attribute 'list_parts'
+Traceback (most recent call last):
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\events.py", line 459, in wait_for_result
+    await result
+  File "D:\github\DocuFlow-\src\docuflow\main.py", line 192, in switch_view
+    res = await view_info.render_fn(*resolved_deps, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 33, in parts_view_wrapper
+    await view.render()
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\functions\refreshable.py", line 45, in wait_for_result
+    return await result
+           ^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 76, in render
+    await self._build_parts_grid()
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 88, in _build_parts_grid
+    parts = parts_system.list_parts(
+            ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PartLibrarySystem' object has no attribute 'list_parts'
+INFO:     connection closed
+INFO:     127.0.0.1:59459 - "WebSocket /socket.io/?client_id=db276658-dff2-4e95-9c72-0effa9d46ad2&next_message_id=0&implicit_handshake=true&document_id=3bb87a1e-0939-431f-b8b0-3922cf9e32ef&tab_id=cb45b3d7-344a-43b3-abe1-5a298a033473&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:61296 - "WebSocket /socket.io/?client_id=9b5d024d-ca3d-4e03-869e-77d5f71577a8&next_message_id=0&implicit_handshake=true&document_id=711298de-8eed-4e15-8cf0-57527b815a08&tab_id=cb45b3d7-344a-43b3-abe1-5a298a033473&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49903 - "WebSocket /socket.io/?client_id=8bd59ce9-c840-4266-a5ac-803cf650f5ac&next_message_id=0&implicit_handshake=true&document_id=f7e449aa-7133-4dd9-a24d-8c8693d0afaa&tab_id=dccbed5c-aa7e-4632-b656-2203be020447&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55852 - "WebSocket /socket.io/?client_id=a1c606f9-7c5c-4d15-8f19-ac5ce85c01c2&next_message_id=0&implicit_handshake=true&document_id=b0c2e6a6-360f-4a87-b7aa-e357b61f135c&tab_id=dccbed5c-aa7e-4632-b656-2203be020447&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60327 - "WebSocket /socket.io/?client_id=d11d27f1-c7b3-4dcc-a59f-94aa76e4c0b6&next_message_id=0&implicit_handshake=true&document_id=a71cf00f-064d-4a6e-93dd-63972333ac9b&tab_id=b93db436-d02b-4ab1-b762-f4f2b7b5181a&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:62438 - "WebSocket /socket.io/?client_id=1c9eccc8-aea0-483d-91ab-c3c6d31f189c&next_message_id=0&implicit_handshake=true&document_id=f5bdadd3-2b74-4ccf-9607-84646b094f85&tab_id=b93db436-d02b-4ab1-b762-f4f2b7b5181a&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:61116 - "WebSocket /socket.io/?client_id=88e5c0cc-b415-4090-bcda-12a7ee01734a&next_message_id=0&implicit_handshake=true&document_id=88ff02a0-8083-479a-91f1-a26520f6ce4d&tab_id=dee31911-67f1-4804-b362-4a45b38436cb&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:59022 - "WebSocket /socket.io/?client_id=176120ee-2a6b-4eee-bb7e-e4b9071212d4&next_message_id=0&implicit_handshake=true&document_id=c1c4f6f6-80a8-4b28-9485-64b6b872fa8c&tab_id=dee31911-67f1-4804-b362-4a45b38436cb&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+2026-04-23 02:48:51.994 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-48-51.989306.json
+2026-04-23 02:48:51.997 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     connection closed
+INFO:     127.0.0.1:64269 - "WebSocket /socket.io/?client_id=d259ab48-ee23-4c48-8777-5327409d0738&next_message_id=0&implicit_handshake=true&document_id=afb2277f-2df9-4d18-8032-6fd48043744c&tab_id=026cb26e-eb33-4c40-bef6-56e74a10fc2b&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:52915 - "WebSocket /socket.io/?client_id=eaf9868e-f8d4-45c3-b88d-6be8a3cb9f92&next_message_id=0&implicit_handshake=true&document_id=140e1d68-341e-4709-b424-6cb4bd55a758&tab_id=026cb26e-eb33-4c40-bef6-56e74a10fc2b&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63154 - "WebSocket /socket.io/?client_id=00306544-2c5e-4c2c-9aed-9410aa2af261&next_message_id=0&implicit_handshake=true&document_id=c3c4729f-82af-4277-8920-ac8f82c3a650&tab_id=8aa51bf7-61df-4098-9cf9-eeef17dbf01c&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50469 - "WebSocket /socket.io/?client_id=318ae6c0-e78b-40bd-9bfd-d56cdad7808a&next_message_id=0&implicit_handshake=true&document_id=496a05e0-b47f-46ba-aa5e-685de467acd6&tab_id=8aa51bf7-61df-4098-9cf9-eeef17dbf01c&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:59636 - "WebSocket /socket.io/?client_id=eba045ca-d932-4dc7-b853-f7b1a009cfb4&next_message_id=0&implicit_handshake=true&document_id=5a055c24-d0fa-4047-ae79-624e6fbb5208&tab_id=78ea7e8e-f22e-48d0-98b6-ff761a9029eb&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:62537 - "WebSocket /socket.io/?client_id=d4e4b683-765f-4c14-ba48-846183ab0c25&next_message_id=0&implicit_handshake=true&document_id=cdca5c9e-7929-44b4-8fb4-362387b887c5&tab_id=78ea7e8e-f22e-48d0-98b6-ff761a9029eb&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+2026-04-23 02:49:52.010 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-49-52.004412.json
+2026-04-23 02:49:52.015 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     127.0.0.1:62227 - "WebSocket /socket.io/?client_id=3a0cf775-2258-43b8-a5c1-fa6c9892ee6e&next_message_id=0&implicit_handshake=true&document_id=24587083-6712-4536-be09-bdada6ee6d58&tab_id=3697a278-494b-4a1e-8b76-06b8ea5f9223&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:54712 - "WebSocket /socket.io/?client_id=bdb526c3-8ebe-4e59-8aad-7e023ba13509&next_message_id=0&implicit_handshake=true&document_id=3b952c83-0fca-4120-922b-727e164fe2df&tab_id=c6fa2e18-1d86-466b-94d3-cd47957575d7&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63827 - "WebSocket /socket.io/?client_id=b94e7ae3-d77b-450c-9404-40f76a83d454&next_message_id=0&implicit_handshake=true&document_id=31a3617b-e0d7-406f-83af-1b74fb819ec4&tab_id=c6fa2e18-1d86-466b-94d3-cd47957575d7&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56355 - "WebSocket /socket.io/?client_id=065a8a2f-020a-4459-ac2d-37b29a3533c8&next_message_id=0&implicit_handshake=true&document_id=287c83e3-ca5a-45f7-99b5-11143590f6c0&tab_id=63d8e209-f907-47c2-88e2-024be0ef76e3&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:62750 - "WebSocket /socket.io/?client_id=f77cd99a-08d0-43e1-b0cd-f57d02723457&next_message_id=0&implicit_handshake=true&document_id=97571b21-a661-4aec-bc60-3cf22c066345&tab_id=3e21e06f-c2b3-4451-aaa9-702ee962d240&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49881 - "WebSocket /socket.io/?client_id=bd9becbd-6c68-4a1d-b259-b79cfbeea858&next_message_id=0&implicit_handshake=true&document_id=3b21149f-1728-4b6b-9c70-f6a338dbd361&tab_id=3e21e06f-c2b3-4451-aaa9-702ee962d240&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:64657 - "WebSocket /socket.io/?client_id=f10ae499-21cd-494a-8833-5ad531484579&next_message_id=0&implicit_handshake=true&document_id=b85c8857-d709-446a-9283-90f105988bb0&tab_id=c89132d2-aacc-416b-ace3-0b2c06a15313&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50157 - "WebSocket /socket.io/?client_id=6880eb5e-c515-4143-b22c-db95702f18c2&next_message_id=0&implicit_handshake=true&document_id=3f462f39-632a-4e30-9e2c-c5e06492f182&tab_id=c89132d2-aacc-416b-ace3-0b2c06a15313&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:65444 - "WebSocket /socket.io/?client_id=7d40876d-ef29-43e3-a946-7812802b750d&next_message_id=0&implicit_handshake=true&document_id=0901b5ce-c5ba-4e61-81e2-ea202190bcb2&tab_id=2fce8706-baa3-4034-a1cd-69229f8efef2&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55566 - "WebSocket /socket.io/?client_id=cd11c6b4-dbf5-4b18-b232-c6ea6abaaa5d&next_message_id=0&implicit_handshake=true&document_id=a13dcec4-999c-4d65-acb4-c3dd39247e98&tab_id=2fce8706-baa3-4034-a1cd-69229f8efef2&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63292 - "WebSocket /socket.io/?client_id=a7bfb4c1-b6fd-4139-9ba7-d5ea8dbf25e5&next_message_id=0&implicit_handshake=true&document_id=47944bf5-6efc-4450-98c1-bd8e455b6fde&tab_id=c880a09d-65a6-4f96-8651-9513334a733d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49264 - "WebSocket /socket.io/?client_id=d42211ed-fedc-45b1-8890-a4a2ffae12c3&next_message_id=0&implicit_handshake=true&document_id=ad2446fb-3bd9-41fb-ab17-d1d37bf8bf12&tab_id=c880a09d-65a6-4f96-8651-9513334a733d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49671 - "WebSocket /socket.io/?client_id=58b12d5b-4a8d-44d3-b66a-cf93582a9b41&next_message_id=0&implicit_handshake=true&document_id=ab16cc3f-4dcf-4977-9780-3046ad1312a3&tab_id=c812e5f6-cb0a-4bde-b2ec-0275dfdd13ae&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:62960 - "WebSocket /socket.io/?client_id=3075bf41-2789-4f5f-bdc2-27e49c478ed4&next_message_id=0&implicit_handshake=true&document_id=59441f78-645c-48cc-928e-29f0f5a97d0a&tab_id=c812e5f6-cb0a-4bde-b2ec-0275dfdd13ae&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+2026-04-23 02:50:52.060 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-50-52.028491.json
+2026-04-23 02:50:52.065 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     connection closed
+INFO:     127.0.0.1:63750 - "WebSocket /socket.io/?client_id=bbd19157-02ed-41c8-a4ac-dba638b67939&next_message_id=0&implicit_handshake=true&document_id=b656d564-5cbc-429a-bd65-4d2fea632f4a&tab_id=f9098486-dc75-4715-9aec-031b566b32c7&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:61789 - "WebSocket /socket.io/?client_id=f1a7f36c-1d57-4998-a7c6-bc3a6503239b&next_message_id=0&implicit_handshake=true&document_id=bcacfd70-add6-42be-82d3-b2083a384377&tab_id=f9098486-dc75-4715-9aec-031b566b32c7&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60227 - "WebSocket /socket.io/?client_id=42d5c8c9-95c6-434b-91c1-62567fccd1e0&next_message_id=0&implicit_handshake=true&document_id=05470db3-5c5c-499e-8ca7-ed101b1673b8&tab_id=46dc8b69-6533-4010-9343-802d9a729400&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49672 - "WebSocket /socket.io/?client_id=816cf7f2-975e-41b1-9794-78342022fd53&next_message_id=0&implicit_handshake=true&document_id=b90aff0f-0002-4c8f-8215-eb3d9ae9b79d&tab_id=46dc8b69-6533-4010-9343-802d9a729400&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50464 - "WebSocket /socket.io/?client_id=10c3beef-74fb-4e93-b393-a29f0ee0720f&next_message_id=0&implicit_handshake=true&document_id=b323f27e-716b-459b-8ccd-e2f52674ca3a&tab_id=46dc8b69-6533-4010-9343-802d9a729400&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:53569 - "WebSocket /socket.io/?client_id=937b1463-fc58-4451-a63e-85522f231bd2&next_message_id=0&implicit_handshake=true&document_id=9000ccd1-34bb-4fb5-9295-d27dbaefa620&tab_id=381a3712-20d7-479c-9921-e369248c71ee&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:57307 - "WebSocket /socket.io/?client_id=6c0d8b93-d833-47bd-a5af-8108046809d0&next_message_id=0&implicit_handshake=true&document_id=aabe813e-741d-4842-a750-691cd8cda0e0&tab_id=237458ca-60e0-466c-bfda-9bb97532bfc5&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:54325 - "WebSocket /socket.io/?client_id=09b7d0cd-11ce-407d-946a-7ae8c32bdc5b&next_message_id=0&implicit_handshake=true&document_id=0f4ba4e9-15ee-42b5-ae8e-212b128d1b33&tab_id=237458ca-60e0-466c-bfda-9bb97532bfc5&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:57926 - "WebSocket /socket.io/?client_id=6874bb99-1c4d-4081-95d6-3ca384513a7e&next_message_id=0&implicit_handshake=true&document_id=fd3cb620-0d34-43b8-820f-e0343e8f8ce5&tab_id=c231f874-e706-4f8a-ae9a-fb4518514d45&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:51353 - "WebSocket /socket.io/?client_id=7be99747-159a-4898-9b67-157043dd4e09&next_message_id=0&implicit_handshake=true&document_id=61cff6ad-b2af-40b9-9db5-ad1ca092c132&tab_id=c231f874-e706-4f8a-ae9a-fb4518514d45&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+Invalid value: LASER_1
+Traceback (most recent call last):
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\events.py", line 459, in wait_for_result
+    await result
+  File "D:\github\DocuFlow-\src\docuflow\main.py", line 192, in switch_view
+    res = await view_info.render_fn(*resolved_deps, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 40, in task_board_view_wrapper
+    await view.render()
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\functions\refreshable.py", line 45, in wait_for_result
+    return await result
+           ^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 86, in render
+    await self._render_operator_view(req, nodes)
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 123, in _render_operator_view
+    self._render_node_selector(nodes)
+  File "D:\github\DocuFlow-\src\docuflow\features\task_board\view.py", line 197, in _render_node_selector
+    ).render().classes("w-48")
+      ^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\lib\widgets\input.py", line 123, in render
+    ui.select(
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\defaults.py", line 64, in decorated
+    return original_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\select.py", line 67, in __init__
+    super().__init__(label=label, options=options, value=value, on_change=on_change, validation=validation)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\mixins\label_element.py", line 15, in __init__
+    super().__init__(**kwargs)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\mixins\validation_element.py", line 19, in __init__
+    super().__init__(**kwargs)
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\elements\choice_element.py", line 20, in __init__
+    raise ValueError(f'Invalid value: {value}')
+ValueError: Invalid value: LASER_1
+INFO:     connection closed
+INFO:     127.0.0.1:49841 - "WebSocket /socket.io/?client_id=966036cc-4f3e-42d3-8874-47e11b22de2f&next_message_id=0&implicit_handshake=true&document_id=46b5eeb8-9adb-4234-a700-3ec3747b8d63&tab_id=df7dc408-8413-463c-844e-29eb72bfcda0&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50584 - "WebSocket /socket.io/?client_id=34a72894-32c7-486a-8f19-d5888f433374&next_message_id=0&implicit_handshake=true&document_id=5ee285db-99aa-448a-8c8f-46684bd52d52&tab_id=df7dc408-8413-463c-844e-29eb72bfcda0&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:53585 - "WebSocket /socket.io/?client_id=f2446c4d-3ba8-42af-81ad-cb2d4b22bcf6&next_message_id=0&implicit_handshake=true&document_id=f2c521b1-3720-4f3e-9643-c3b42ebe743e&tab_id=38e07e62-797d-4c77-afcf-dd89f6aafe4b&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49733 - "WebSocket /socket.io/?client_id=6610f63b-abb9-4f49-aae3-60ba4a3b8fec&next_message_id=0&implicit_handshake=true&document_id=8f2ad4be-cb03-41e2-9c3d-3b1bcf804b21&tab_id=38e07e62-797d-4c77-afcf-dd89f6aafe4b&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:52874 - "WebSocket /socket.io/?client_id=99a12c41-ed82-4115-8a48-ef4355f67934&next_message_id=0&implicit_handshake=true&document_id=7a5c901c-1cff-4e56-a941-81f518ea6961&tab_id=21f98b5a-449e-4c32-b43d-cc7221f46e01&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60690 - "WebSocket /socket.io/?client_id=83ed630b-6793-484f-9618-ea2b12d981f6&next_message_id=0&implicit_handshake=true&document_id=2e99f562-96bf-483a-8215-95d48c01bc01&tab_id=21f98b5a-449e-4c32-b43d-cc7221f46e01&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+2026-04-23 02:51:52.094 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-51-52.082892.json
+2026-04-23 02:51:52.099 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     connection closed
+INFO:     127.0.0.1:59724 - "WebSocket /socket.io/?client_id=cefecbf7-090e-4ba7-842a-9eb0a2890a13&next_message_id=0&implicit_handshake=true&document_id=6d1efd95-2de2-439c-9252-c6615ac3c443&tab_id=3606ab1c-ba90-40c1-8b36-407c94020db2&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58962 - "WebSocket /socket.io/?client_id=24075294-aaaa-4ee7-bea4-a71f675a3c0d&next_message_id=0&implicit_handshake=true&document_id=012b5271-e144-4acb-936a-0b69f1f7ed34&tab_id=3606ab1c-ba90-40c1-8b36-407c94020db2&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+'PartLibrarySystem' object has no attribute 'list_parts'
+Traceback (most recent call last):
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\events.py", line 459, in wait_for_result
+    await result
+  File "D:\github\DocuFlow-\src\docuflow\main.py", line 192, in switch_view
+    res = await view_info.render_fn(*resolved_deps, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 33, in parts_view_wrapper
+    await view.render()
+  File "D:\github\DocuFlow-\.venv\Lib\site-packages\nicegui\functions\refreshable.py", line 45, in wait_for_result
+    return await result
+           ^^^^^^^^^^^^
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 76, in render
+    await self._build_parts_grid()
+  File "D:\github\DocuFlow-\src\docuflow\features\parts\view.py", line 88, in _build_parts_grid
+    parts = parts_system.list_parts(
+            ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PartLibrarySystem' object has no attribute 'list_parts'
+INFO:     connection closed
+INFO:     127.0.0.1:64667 - "WebSocket /socket.io/?client_id=5ebed19c-8802-4941-9406-1799f8ee653b&next_message_id=0&implicit_handshake=true&document_id=c75912d1-b6bb-4b06-91c8-c79eefb5b481&tab_id=e0714e94-d23a-4d36-ba90-b595151b9dbe&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55024 - "WebSocket /socket.io/?client_id=75ba88c7-304c-43e1-ad41-fecba61cd44e&next_message_id=0&implicit_handshake=true&document_id=52372ccd-5a51-4207-8f6f-cc4cc84fa297&tab_id=e0714e94-d23a-4d36-ba90-b595151b9dbe&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60232 - "WebSocket /socket.io/?client_id=f473a4e2-3e6c-434c-8e1d-fe5909c44a96&next_message_id=0&implicit_handshake=true&document_id=61f2fca7-fd72-40c3-85bd-8c4341190800&tab_id=81eef6c5-6c9a-4c39-9e2c-90e1e3390940&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:50717 - "WebSocket /socket.io/?client_id=3030d751-0ea6-4502-b74e-d7f3e1371d55&next_message_id=0&implicit_handshake=true&document_id=6bd2d74d-b069-4da1-bc01-cfafd6940e00&tab_id=81eef6c5-6c9a-4c39-9e2c-90e1e3390940&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49357 - "WebSocket /socket.io/?client_id=410607a1-b30f-4360-9dd9-6756f71d54ab&next_message_id=0&implicit_handshake=true&document_id=7a9a8311-837d-47e9-bd4f-d70099d40f9e&tab_id=d624285e-27a1-46fc-b49d-649c14775f49&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49314 - "WebSocket /socket.io/?client_id=cbf6fca9-2138-45c3-9f6c-2919e87a334f&next_message_id=0&implicit_handshake=true&document_id=4e915718-4edd-4545-bd3d-cc96df04dcb6&tab_id=d624285e-27a1-46fc-b49d-649c14775f49&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55732 - "WebSocket /socket.io/?client_id=d4e9bae6-c077-47ca-853c-163341a861c8&next_message_id=0&implicit_handshake=true&document_id=71720027-6fc7-4954-98ed-2e2a0debd694&tab_id=eb6f568f-7944-427a-8cb7-9724e120f65a&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58738 - "WebSocket /socket.io/?client_id=2d424ba8-e100-4a55-b620-1c952a042b0a&next_message_id=0&implicit_handshake=true&document_id=6be1dda6-14c1-4b88-898b-a306182ae4e7&tab_id=eb6f568f-7944-427a-8cb7-9724e120f65a&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:64331 - "WebSocket /socket.io/?client_id=346ac0b6-5277-4aad-ad05-09b53f26fa0c&next_message_id=0&implicit_handshake=true&document_id=f7971ee5-bed2-44c2-9c66-62ead8e57e3d&tab_id=e2efd88a-5be8-4c58-8a22-b4385155b695&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60485 - "WebSocket /socket.io/?client_id=babd03ee-d9fc-44d5-903e-5dd2a98a4c0c&next_message_id=0&implicit_handshake=true&document_id=92958e4c-cc88-41b4-9f03-7b23230c201a&tab_id=e2efd88a-5be8-4c58-8a22-b4385155b695&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+2026-04-23 02:52:52.121 | INFO     | docuflow.infrastructure.sync:create_master_snapshot:66 - DataSync: Created master snapshot SNAP_node_01_2026-04-23T02-52-52.114860.json
+2026-04-23 02:52:52.125 | INFO     | docuflow.infrastructure.housekeeping:rotate_snapshots:98 - Housekeeping: Rotated 1 old snapshots
+INFO:     connection closed
+INFO:     127.0.0.1:57414 - "WebSocket /socket.io/?client_id=9639454c-4874-4058-89b6-f06444225e40&next_message_id=0&implicit_handshake=true&document_id=6a900986-6ff4-4479-b8e6-3c47095f0019&tab_id=8d5be151-9748-4230-9d58-56d87e1d081d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:61444 - "WebSocket /socket.io/?client_id=5baf4c35-b9f1-4a7b-9f34-2ff3b5b05d6a&next_message_id=0&implicit_handshake=true&document_id=f0f2de31-5f94-4e20-89b1-853c913201a0&tab_id=8d5be151-9748-4230-9d58-56d87e1d081d&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:65072 - "WebSocket /socket.io/?client_id=5dc40c8d-d7c0-4571-b00c-0655e5d6a963&next_message_id=0&implicit_handshake=true&document_id=090bee25-7da8-44ad-94ed-129c7dc4137b&tab_id=7b06991d-1d14-43f2-8ecd-cdaa1f191d0c&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:53903 - "WebSocket /socket.io/?client_id=807e47d8-2bb8-4802-8e0a-9001498e6049&next_message_id=0&implicit_handshake=true&document_id=ba4ce552-6fdb-457d-a816-d5a3c202d8d4&tab_id=7b06991d-1d14-43f2-8ecd-cdaa1f191d0c&old_tab_id=null&EIO=4&transport=websocket" [accepted]
+INFO:     connection open
+INFO:     connection closed

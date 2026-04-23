@@ -1,0 +1,554 @@
+diff --git a/src/docuflow/features/analytics/view.py b/src/docuflow/features/analytics/view.py
+index 0d37c40..2f19ca9 100644
+--- a/src/docuflow/features/analytics/view.py
++++ b/src/docuflow/features/analytics/view.py
+@@ -50,41 +50,41 @@ async def analytics_view(session: Session) -> None:
+                     count_drift += 1
+             avg_drift = round(total_drift / count_drift, 1) if count_drift > 0 else 0.0
+ 
+-            round((completed_tasks / total_tasks * 100) if total_tasks > 0 else 0, 1)
++            completion_rate = (
++                round(completed_tasks / total_tasks * 100, 1) if total_tasks > 0 else 0.0
++            )
+         except Exception as e:
+             ui.label(f"Failed to load metrics: {e}").classes("text-red-400")
+             return
+ 
+-        with ui.row().classes("w-full gap-6"):
+-            # Metric Card 1
+-            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
+-                ui.label("TOTAL WORK ITEMS").classes(
+-                    "text-slate-400 font-bold text-xs tracking-tighter"
+-                )
+-                ui.label(str(total_work_items)).classes("text-cyan-400 text-4xl font-black mt-2")
+-
+-            # Metric Card 2 (DRIFT)
+-            drift_color = "emerald" if avg_drift <= 5 else "orange" if avg_drift <= 20 else "red"
+-            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
+-                ui.label("AVG PRODUCTION DRIFT").classes(
+-                    "text-slate-400 font-bold text-xs tracking-tighter"
+-                )
+-                ui.label(f"{'+' if avg_drift > 0 else ''}{avg_drift}%").classes(
+-                    f"text-{drift_color}-400 text-4xl font-black mt-2"
+-                )
+-                ui.label(f"Based on {count_drift} completed tasks").classes(
+-                    "text-slate-500 text-sm mt-2"
+-                )
+-
+-            # Metric Card 3
+-            with ui.column().classes("flex-1 p-6 rounded-2xl card"):
+-                ui.label("TOTAL FINISHED PARTS").classes(
+-                    "text-slate-400 font-bold text-xs tracking-tighter"
+-                )
+-                ui.label(str(total_parts_produced)).classes(
+-                    "text-orange-400 text-4xl font-black mt-2"
+-                )
+-                ui.label(f"Across {total_pallets} Pallets").classes("text-slate-500 text-sm mt-2")
++        from docuflow.lib.widgets.kpi_card import KPICard, KPIGrid
++
++        KPIGrid(
++            kpis=[
++                KPICard(
++                    label="Total Work Items",
++                    value=str(total_work_items),
++                    subtitle=f"Completion rate: {completion_rate}%",
++                    icon="inventory_2",
++                    icon_color="cyan",
++                ),
++                KPICard(
++                    label="Avg Production Drift",
++                    value=f"{'+' if avg_drift > 0 else ''}{avg_drift}%",
++                    subtitle=f"Based on {count_drift} tasks",
++                    icon="trending_up" if avg_drift > 0 else "trending_down",
++                    icon_color="emerald" if avg_drift <= 5 else "orange",
++                    accent_color="emerald" if avg_drift <= 5 else "orange",
++                ),
++                KPICard(
++                    label="Total Finished Parts",
++                    value=str(total_parts_produced),
++                    subtitle=f"Across {total_pallets} Pallets",
++                    icon="precision_manufacturing",
++                    icon_color="orange",
++                ),
++            ]
++        ).render()
+ 
+         # --- CHARTS SECTION ---
+         with ui.row().classes("w-full gap-6 mt-6"):
+diff --git a/src/docuflow/features/auth/system.py b/src/docuflow/features/auth/system.py
+index 9e00aff..92598eb 100644
+--- a/src/docuflow/features/auth/system.py
++++ b/src/docuflow/features/auth/system.py
+@@ -95,21 +95,30 @@ class AuthSystem(BaseSystem):
+         return self.get_or_create_admin(default_password)
+ 
+     def ensure_default_workplace(self) -> None:
+-        """Creates a default Workplace (LASER_1) if none exists."""
++        """
++        Creates a default Workplace if none exists.
++        Bootstrapping logic for initial node setup.
++        """
+         from loguru import logger
+ 
+         from docuflow.domain.entities.identity import Workplace
++        from docuflow.infrastructure import constants
+ 
+         existing = self.db_session.exec(
+-            select(Workplace).where(Workplace.node_id == "LASER_1")
++            select(Workplace).where(Workplace.node_id == constants.DEFAULT_WORKPLACE_ID)
+         ).first()
+ 
+         if not existing:
+             workplace = Workplace(
+-                node_id="LASER_1",
+-                name="Лазер 1",
++                node_id=constants.DEFAULT_WORKPLACE_ID,
++                name=constants.DEFAULT_WORKPLACE_NAME,
+                 allowed_modules="",
+             )
+-            self.db_session.add(workplace)
+-            self.db_session.commit()
+-            logger.info("Created default workplace: LASER_1")
++            try:
++                self.db_session.add(workplace)
++                self.db_session.commit()
++                logger.info(f"Created default workplace: {constants.DEFAULT_WORKPLACE_ID}")
++            except Exception:
++                # Handle race condition in multi-node startup
++                self.db_session.rollback()
++                logger.debug("Default workplace already exists (race condition handled)")
+diff --git a/src/docuflow/features/chat/system.py b/src/docuflow/features/chat/system.py
+index a11b26b..66ae1fc 100644
+--- a/src/docuflow/features/chat/system.py
++++ b/src/docuflow/features/chat/system.py
+@@ -192,9 +192,9 @@ class ChatSystem(BaseSystem):
+         """
+         statement = (
+             select(ChatMessage)
+-            .where(ChatMessage.ref_project_id is None)
+-            .where(ChatMessage.ref_work_item_id is None)
+-            .where(ChatMessage.ref_task_item_id is None)
++            .where(ChatMessage.ref_project_id == None)
++            .where(ChatMessage.ref_work_item_id == None)
++            .where(ChatMessage.ref_task_item_id == None)
+             .order_by(ChatMessage.created_at.desc())
+             .limit(limit)
+         )
+diff --git a/src/docuflow/features/core/layout.py b/src/docuflow/features/core/layout.py
+index 31bd20d..9b82368 100644
+--- a/src/docuflow/features/core/layout.py
++++ b/src/docuflow/features/core/layout.py
+@@ -358,7 +358,7 @@ class MainLayout:
+ 
+                 results_menu.open()
+ 
+-            search_input.on("update:model-value", handle_search)
++            search_input.on_change(handle_search)
+ 
+     async def _pull_to_current_node(self, result, switch_view_fn: Callable) -> None:
+         """Быстрое назначение наряда на текущий физический узел."""
+diff --git a/src/docuflow/features/projects/view.py b/src/docuflow/features/projects/view.py
+index ee27cba..bfe0576 100644
+--- a/src/docuflow/features/projects/view.py
++++ b/src/docuflow/features/projects/view.py
+@@ -1,3 +1,5 @@
++from typing import Any
++
+ from nicegui import ui
+ 
+ from docuflow.features.core.views import ViewInfo, ViewRegistry
+@@ -14,13 +16,17 @@ def register_projects_view():
+             icon="topic",
+             render_fn=projects_view_wrapper,
+             dependencies=[ProjectSystem, WorkItemSystem],
++            pass_system_provider=True,
++            is_async=True,
+         )
+     )
+ 
+ 
+-def projects_view_wrapper(project_system: ProjectSystem, wi_system: WorkItemSystem):
++async def projects_view_wrapper(
++    project_system: ProjectSystem, wi_system: WorkItemSystem, system_provider: Any
++):
+     """Wrapper to instantiate and render the ProjectManagementView."""
+-    ProjectManagementView(project_system, wi_system).render()
++    await ProjectManagementView(project_system, wi_system, system_provider).render()
+ 
+ 
+ class ProjectManagementView:
+@@ -30,12 +36,18 @@ class ProjectManagementView:
+     Vertical Slice: features/projects/view.py
+     """
+ 
+-    def __init__(self, project_system: ProjectSystem, work_item_system: WorkItemSystem):
++    def __init__(
++        self,
++        project_system: ProjectSystem,
++        work_item_system: WorkItemSystem,
++        system_provider: Any,
++    ):
+         self.project_system = project_system
+         self.wi_system = work_item_system
++        self.system_provider = system_provider
+         self.selected_project_id: int | None = None
+ 
+-    def render(self):
++    async def render(self):
+         with ui.column().classes("w-full p-4 gap-6"):
+             ui.label("Управление проектами").classes("text-h4 mb-2")
+ 
+@@ -44,7 +56,7 @@ class ProjectManagementView:
+                 with ui.card().classes("w-1/3 p-4"):
+                     ui.label("Список проектов").classes("text-h6 mb-2")
+                     self.projects_list = ui.column().classes("w-full gap-2")
+-                    self._refresh_projects()
++                    await self._refresh_projects()
+ 
+                     ui.separator().classes("my-4")
+ 
+@@ -62,11 +74,12 @@ class ProjectManagementView:
+                     )
+ 
+                     self.wi_table_container = ui.column().classes("w-full")
+-                    self._refresh_work_items()
++                    await self._refresh_work_items()
+ 
+-    def _refresh_projects(self):
++    async def _refresh_projects(self):
+         self.projects_list.clear()
+-        projects = self.project_system.get_all_active_projects()
++        p_sys = await self.system_provider(ProjectSystem)
++        projects = p_sys.get_all_active_projects()
+         with self.projects_list:
+             for p in projects:
+                 with ui.row().classes(
+@@ -86,28 +99,36 @@ class ProjectManagementView:
+                             icon="login", on_click=lambda p=p: self._select_project(p.id)
+                         ).props("flat round")
+ 
+-    def _select_project(self, project_id: int):
++    async def _select_project(self, project_id: int):
+         self.selected_project_id = project_id
+         ui.notify(f"Выбран целевой проект ID {project_id}")
+-        self._refresh_projects()
++        await self._refresh_projects()
+ 
+-    def _add_project(self):
++    async def _add_project(self):
+         name = self.new_project_name.value.strip()
+         if not name:
+             ui.notify("Имя проекта не может быть пустым", type="warning")
+             return
+-        # Use domain API to register a new project
+-        self.project_system.register_new_project(project_name=name)
++
++        # Use fresh system from provider to avoid DetachedInstanceError
++        sys = await self.system_provider(ProjectSystem)
++        sys.register_new_project(project_name=name)
++
+         self.new_project_name.value = ""
+         ui.notify(f"Проект '{name}' создан")
+-        self._refresh_projects()
++        await self._refresh_projects()
+ 
+-    def _refresh_work_items(self):
++    async def _refresh_work_items(self):
+         self.wi_table_container.clear()
++
++        # Use fresh systems
++        p_sys = await self.system_provider(ProjectSystem)
++        wi_sys = await self.system_provider(WorkItemSystem)
++
+         # Filter: only items in Default Project (resolve id from ProjectSystem)
+-        default_project = self.project_system.resolve_default_workshop_project()
++        default_project = p_sys.resolve_default_workshop_project()
+         filters = WorkItemFilters(project_id=default_project.id, limit=500)
+-        items = self.wi_system.list(filters)
++        items = wi_sys.list_work_items_by_filter(filters)
+ 
+         if not items:
+             with self.wi_table_container:
+@@ -141,12 +162,14 @@ class ProjectManagementView:
+             )
+             self.table.on("reassign", lambda e: self._reassign_item(e.args))
+ 
+-    def _reassign_item(self, wi_id: int):
++    async def _reassign_item(self, wi_id: int):
+         if not self.selected_project_id:
+             ui.notify("Сначала выберите целевой проект в левой колонке", type="negative")
+             return
+ 
+-        default_project = self.project_system.resolve_default_workshop_project()
++        # Use fresh system
++        p_sys = await self.system_provider(ProjectSystem)
++        default_project = p_sys.resolve_default_workshop_project()
+         default_id = default_project.id
+ 
+         if self.selected_project_id == default_id:
+@@ -155,10 +178,10 @@ class ProjectManagementView:
+ 
+         try:
+             # Use domain API for reassignment
+-            self.project_system.reassign_production_group(
++            p_sys.reassign_production_group(
+                 work_item_id=wi_id, target_project_id=self.selected_project_id
+             )
+             ui.notify(f"Наряд {wi_id} переназначен")
+-            self._refresh_work_items()
++            await self._refresh_work_items()
+         except Exception as e:
+             ui.notify(f"Ошибка: {e}", type="negative")
+diff --git a/src/docuflow/features/task_board/batch_engine.py b/src/docuflow/features/task_board/batch_engine.py
+index af9f82a..16d8f48 100644
+--- a/src/docuflow/features/task_board/batch_engine.py
++++ b/src/docuflow/features/task_board/batch_engine.py
+@@ -148,20 +148,25 @@ class BatchEngine:
+         session = session or self.session
+         alerts = []
+ 
++        # Optimization: Pre-fetch all stock units with their parts in one go
++        # to avoid N+1 queries in nested loops.
++        from sqlalchemy.orm import selectinload
++        in_stock = session.exec(
++            select(ProductionUnit)
++            .where(ProductionUnit.is_stock)
++            .options(selectinload(ProductionUnit.task_item).selectinload(TaskItem.parts))
++        ).all()
++
++        stock_map: dict[str, list[ProductionUnit]] = {}
++
++        for u in in_stock:
++            if u.task_item:
++                for tp in u.task_item.parts:
++                    stock_map.setdefault(tp.part_sku, []).append(u)
++
+         for task in tasks:
+             for part in task.parts:
+-                # Ищем ProductionUnit с is_stock=True, содержащие эту деталь
+-                in_stock = session.exec(select(ProductionUnit).where(ProductionUnit.is_stock)).all()
+-
+-                # Фильтруем по part_sku
+-                matching_units = [
+-                    u
+-                    for u in in_stock
+-                    if any(
+-                        tp.part_sku == part.part_sku
+-                        for tp in (u.task_item.parts if u.task_item else [])
+-                    )
+-                ]
++                matching_units = stock_map.get(part.part_sku, [])
+ 
+                 if matching_units:
+                     alerts.append(StockAlert(sku=part.part_sku, units=matching_units))
+diff --git a/src/docuflow/features/task_board/view.py b/src/docuflow/features/task_board/view.py
+index a8b61dd..7f2443a 100644
+--- a/src/docuflow/features/task_board/view.py
++++ b/src/docuflow/features/task_board/view.py
+@@ -152,24 +152,25 @@ class TaskBoardView:
+                 ).props("color=orange rounded-xl")
+ 
+     def _show_handover_dialog(self):
++        from docuflow.lib.widgets.input import InputLabel, TextareaLabel
++
+         with ui.dialog() as dialog, ui.card().classes("p-6 w-[400px] gap-4"):
+             ui.label("Сдача смены").classes("text-xl font-bold text-orange-400")
+-            recv_operator = (
+-                ui.input("Имя сменщика (кому передать)")
+-                .props("dark standout rounded")
+-                .classes("w-full")
+-            )
+-            note = (
+-                ui.textarea("Заметка по работе / материалу")
+-                .props("dark standout rounded")
+-                .classes("w-full")
+-            )
++
++            recv_operator_widget = InputLabel(
++                label="Имя сменщика (кому передать)", placeholder="Введите имя..."
++            ).render()
++
++            note_widget = TextareaLabel(
++                label="Заметка по работе / материалу", placeholder="Добавьте детали..."
++            ).render()
++
+             with ui.row().classes("w-full justify-between items-center"):
+                 ui.button("Отмена", on_click=dialog.close).props("flat text-color=slate-400")
+                 ui.button(
+                     "ПОДТВЕРДИТЬ СДАЧУ",
+                     on_click=lambda: self._execute_handover(
+-                        recv_operator.value, note.value, dialog
++                        recv_operator_widget.value, note_widget.value, dialog
+                     ),
+                 ).props("color=orange rounded-xl").classes("font-bold")
+         dialog.open()
+@@ -204,14 +205,18 @@ class TaskBoardView:
+         if not self.node_id:
+             self.node_id = nodes[0]
+ 
++        from docuflow.lib.widgets.input import SelectLabel
++
+         with ui.row().classes("items-center gap-4 mb-4"):
+             ui.label("Рабочее место:").classes("text-slate-500")
+             default_node = self.node_id if self.node_id and self.node_id in nodes else nodes[0]
+-            ui.select(
+-                options={n: n for n in nodes},
++
++            SelectLabel(
++                label="",
++                options=[(n, n) for n in nodes],
+                 value=default_node,
+                 on_change=lambda e: self._select_node(e.value),
+-            ).classes("w-48")
++            ).render().classes("w-48")
+ 
+     def _select_node(self, node_id: str) -> None:
+         """Выбирает узел и проверяет заметки о передаче смены."""
+@@ -530,9 +535,7 @@ class TaskBoardView:
+     def _get_available_nodes(self) -> list[str]:
+         """Получает список доступных узлов из реестра рабочих мест."""
+         if self.admin_system:
+-            workplaces = self.admin_system.get_all_workplaces()
+-            if workplaces:
+-                return [w.node_id for w in workplaces]
++            return self.admin_system.get_workplace_node_ids()
+         return []
+ 
+     def _has_workplaces(self) -> bool:
+diff --git a/src/docuflow/features/work_items/system.py b/src/docuflow/features/work_items/system.py
+index 4e58d02..7055a57 100644
+--- a/src/docuflow/features/work_items/system.py
++++ b/src/docuflow/features/work_items/system.py
+@@ -14,8 +14,6 @@ from docuflow.domain.entities.production import (
+ )
+ from docuflow.infrastructure.config import Config
+ 
+-DEFAULT_PROJECT_ID = 1
+-
+ 
+ class WorkItemFilters(BaseModel):
+     """Filter criteria for the WorkItem repository."""
+@@ -87,14 +85,34 @@ class WorkItemSystem(BaseSystem):
+     ) -> WorkItem:
+         """
+         Registers a new production order into the workshop tracking system.
+-
+-        Example:
+-            new_item = system.create_work_item(
+-                folder_name="S-105-X",
+-                item_type=WorkItemType.SIDRA
+-            )
+         """
+-        target_project_id = project_id if project_id else DEFAULT_PROJECT_ID
++        target_project_id = project_id
++
++        if not target_project_id:
++            # Try to resolve default project via ProjectSystem if SDK is available
++            if self.sdk:
++                try:
++                    from docuflow.features.projects.system import ProjectSystem
++
++                    proj_sys = self.sdk.resolve_system_by_type(ProjectSystem)
++                    default_proj = proj_sys.resolve_default_workshop_project()
++                    target_project_id = default_proj.id
++                except Exception:
++                    # Fallback to manual resolution if SDK/System fails
++                    pass
++
++        # Final fallback if still not resolved
++        if not target_project_id:
++            from docuflow.domain.entities.production import Project
++            from docuflow.infrastructure.constants import DEFAULT_PROJECT_NAME
++
++            stmt = select(Project).where(Project.name == DEFAULT_PROJECT_NAME)
++            default_proj = self.db_session.exec(stmt).first()
++            if default_proj:
++                target_project_id = default_proj.id
++            else:
++                # Absolute fallback to ID 1 as last resort
++                target_project_id = 1
+ 
+         work_item = WorkItem(
+             folder_name=folder_name,
+diff --git a/src/docuflow/infrastructure/constants.py b/src/docuflow/infrastructure/constants.py
+index 899e6f6..78cbc6a 100644
+--- a/src/docuflow/infrastructure/constants.py
++++ b/src/docuflow/infrastructure/constants.py
+@@ -47,3 +47,8 @@ COORDINATOR_HEARTBEAT_INTERVAL = 15.0
+ 
+ # Default interval for the polling observer (seconds)
+ OBSERVER_POLLING_INTERVAL = 5.0
++
++# --- Default Entities ---
++DEFAULT_WORKPLACE_ID = "LASER_1"
++DEFAULT_WORKPLACE_NAME = "Лазер 1"
++DEFAULT_PROJECT_NAME = "Default"
+diff --git a/src/docuflow/main.py b/src/docuflow/main.py
+index a512e11..985f9dd 100644
+--- a/src/docuflow/main.py
++++ b/src/docuflow/main.py
+@@ -1,6 +1,35 @@
++import os
++import subprocess
++import sys
++import time
+ import traceback
+ from contextlib import asynccontextmanager
+ 
++# --- CRITICAL: PORT KILLER (Must run before any heavy imports) ---
++def kill_port_process(port: int):
++    try:
++        # Use a faster check for Windows
++        result = subprocess.run(
++            ["netstat", "-ano", "-p", "TCP"], capture_output=True, text=True, encoding="cp866"
++        )
++        for line in result.stdout.splitlines():
++            if f":{port}" in line and "LISTENING" in line:
++                parts = line.split()
++                if len(parts) >= 5:
++                    pid = parts[-1]
++                    if pid != str(os.getpid()) and pid != "0":
++                        # Using taskkill /F to ensure the process is gone
++                        subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
++                        # Give Windows a moment to release the socket
++                        time.sleep(0.5)
++    except Exception:
++        pass
++
++# Initialize port from env or default
++_port = int(os.getenv("DOCUFLOW_PORT", "8082"))
++if __name__ in {"__main__", "__mp_main__"}:
++    kill_port_process(_port)
++
+ from dishka import make_async_container
+ from dishka.integrations.fastapi import FastapiProvider, setup_dishka
+ from fastapi import FastAPI
+@@ -238,27 +267,5 @@ async def index_page():
+ ui.run_with(app, title="DocuFlow Portal", storage_secret="docuflow_nicegui_shh")
+ 
+ if __name__ in {"__main__", "__mp_main__"}:
+-    import os
+-    import subprocess
+-
+     import uvicorn
+-
+-    port = int(os.getenv("DOCUFLOW_PORT", "8082"))
+-
+-    # --- PORT KILLER LOGIC ---
+-    try:
+-        result = subprocess.run(
+-            ["netstat", "-ano", "-p", "TCP"], capture_output=True, text=True, encoding="cp866"
+-        )
+-        for line in result.stdout.split("\n"):
+-            if f":{port}" in line and "LISTENING" in line:
+-                parts = line.split()
+-                if len(parts) >= 5:
+-                    pid = parts[-1]
+-                    if pid != str(os.getpid()):
+-                        logger.info(f"Port {port} is busy. Killing PID {pid}...")
+-                        subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
+-    except Exception as e:
+-        logger.warning(f"Port killer error: {e}")
+-
+-    uvicorn.run("docuflow.main:app", host="0.0.0.0", port=port, reload=False)
++    uvicorn.run("docuflow.main:app", host="0.0.0.0", port=_port, reload=False)

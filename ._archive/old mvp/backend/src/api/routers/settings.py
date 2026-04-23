@@ -2,7 +2,6 @@ import os
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import BaseModel
-
 from src.api.dependencies import get_settings_service
 from src.application.services.settings_service import SettingsService
 
@@ -61,7 +60,6 @@ def config_check(service: SettingsService = Depends(get_settings_service)):
         db_ok = True
         try:
             from sqlalchemy import text
-
             from src.api.database import SessionLocal
 
             db = SessionLocal()

@@ -25,7 +25,7 @@ def session_fixture(engine):
 @pytest.fixture
 def consumable_system(session: Session):
     config = Config(node_id="test_node")
-    return ConsumableSystem(config, db_session=session)
+    return ConsumableSystem(config, session=session)
 
 
 def test_create_consumable(consumable_system: ConsumableSystem, session: Session):
@@ -37,9 +37,9 @@ def test_create_consumable(consumable_system: ConsumableSystem, session: Session
 
 def test_use_reduces_quantity_and_logs(consumable_system: ConsumableSystem, session: Session):
     item = consumable_system.create_consumable("Tape", min_quantity=1.0)
-    consumable_system.restock(item.id, quantity_delta=10.0, author="admin")
+    consumable_system.restock(item.id, quantity_delta=10.0, user="admin")
 
-    consumable_system.use_consumable(item.id, quantity_used=3.0, author="worker", note="Job A")
+    consumable_system.use_consumable(item.id, quantity_used=3.0, user="worker", note="Job A")
 
     session.refresh(item)
     assert item.quantity == 7.0

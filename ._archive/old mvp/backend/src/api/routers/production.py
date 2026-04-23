@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-
 from src.api.dependencies import get_production_service
 from src.application.services.production_service import ProductionService
 from src.domain.models import Task

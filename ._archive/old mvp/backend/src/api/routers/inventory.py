@@ -1,7 +1,6 @@
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-
 from src.api.dependencies import get_gnc_service, get_inventory_service
 from src.application.services.gnc_service import GncService
 from src.application.services.inventory_service import InventoryService

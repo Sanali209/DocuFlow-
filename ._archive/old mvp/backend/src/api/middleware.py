@@ -1,7 +1,6 @@
 from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
-
 from src.infrastructure.database.audit_repository import SQLAuditRepository
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from .dependencies import SessionLocal
 

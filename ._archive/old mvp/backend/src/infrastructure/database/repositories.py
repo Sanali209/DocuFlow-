@@ -5,7 +5,6 @@ from datetime import date
 
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
-
 from src.domain.interfaces import IDocumentRepository, ITaskRepository
 from src.domain.models import (
     Assignee,

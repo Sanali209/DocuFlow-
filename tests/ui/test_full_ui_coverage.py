@@ -4,21 +4,21 @@ import pytest
 from nicegui.testing import user_simulation
 
 from docuflow.features.admin.system import AdminSystem
-from docuflow.features.admin.view import admin_view
-from docuflow.features.analytics.view import analytics_view
+from docuflow.features.admin.view import admin_view_wrapper as admin_view
+from docuflow.features.analytics.view import analytics_view_wrapper as analytics_view
 
 # Import all views
 from docuflow.features.auth.view import login_view
 from docuflow.features.chat.incident_view import IncidentView
 from docuflow.features.chat.view import ChatView
-from docuflow.features.consumables.view import ConsumableView
-from docuflow.features.dashboard.view import dashboard_view
+from docuflow.features.consumables.view import consumables_view_wrapper as ConsumableView
+from docuflow.features.dashboard.view import dashboard_view_wrapper as dashboard_view
 from docuflow.features.docs.portal import DocumentationPortal
-from docuflow.features.inventory.view import warehouse_view
-from docuflow.features.parts.view import PartLibraryView
-from docuflow.features.production.view import production_view
+from docuflow.features.inventory.view import warehouse_view_wrapper as warehouse_view
+from docuflow.features.parts.view import parts_view_wrapper as PartLibraryView
+from docuflow.features.production.view import production_view_wrapper as production_view
 from docuflow.features.projects.view import ProjectManagementView
-from docuflow.features.reports.view import ReportsView
+from docuflow.features.reports.view import reports_view_wrapper as ReportsView
 from docuflow.features.task_board.view import TaskBoardView
 from docuflow.features.work_items.view import WorkItemsView
 

@@ -4,7 +4,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-
 from src.application.services.settings_service import SettingsService
 from src.application.services.sync.manager import SyncManager
 from src.application.services.sync.processor import SyncProcessor

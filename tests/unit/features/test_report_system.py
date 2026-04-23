@@ -35,7 +35,7 @@ def registry():
 @pytest.fixture
 def report_system(session: Session, registry: ReportRegistry):
     config = Config(node_id="test_node")
-    return ReportSystem(config, db_session=session, registry=registry)
+    return ReportSystem(config, session=session, registry=registry)
 
 
 def test_registry_registration(registry: ReportRegistry):

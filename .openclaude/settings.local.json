@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find src:*)",
+      "Bash(xargs grep:*)",
+      "Bash(ls:*)",
+      "Bash(uv run:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(python:*)",
+      "Bash(sed -i 's/NotifyHelper.warning\\(\"\"Шаблон уведомления сохранен\"\", color=\"\"positive\"\"\\)/NotifyHelper.success\\(\"\"Шаблон уведомления сохранен\"\"\\)/g' src/docuflow/features/admin/view.py)",
+      "Bash(sed -i 's/NotifyHelper.error\\(\"\"Binding updated\"\", color=\"\"positive\"\"\\)/NotifyHelper.success\\(\"\"Binding updated\"\"\\)/g' src/docuflow/features/admin/view.py)",
+      "Bash(sed -i 's/NotifyHelper.error\\(\"\"Параметры обновлены\"\", color=\"\"positive\"\"\\)/NotifyHelper.success\\(\"\"Параметры обновлены\"\"\\)/g' src/docuflow/features/inventory/view.py)",
+      "Bash(sed -i 's/NotifyHelper.success\\(\"\"Заказ отправлен в чат!\"\", color=\"\"orange\"\"\\)/NotifyHelper.warning\\(\"\"Заказ отправлен в чат!\"\"\\)/g' src/docuflow/features/inventory/view.py)",
+      "Bash(sed -i 's/NotifyHelper.success\\(f\"\"Incident {incident.id} assigned to Maintenance\"\", type=\"\"info\"\"\\)/NotifyHelper.info\\(f\"\"Incident {incident.id} assigned to Maintenance\"\"\\)/g' src/docuflow/features/chat/incident_view.py)",
+      "Bash(sed -i 's/NotifyHelper.error\\(\"\"Паллета успешно разделена\"\", type=\"\"positive\"\"\\)/NotifyHelper.success\\(\"\"Паллета успешно разделена\"\"\\)/g' src/docuflow/features/production/view.py)",
+      "Bash(grep -v 'NotifyHelper\\\\.[a-z]\\\\+\\(f\\\\?\"\"\"\".*\"\"\"\"\\\\?\\)$')",
+      "Bash(sed -i 's/NotifyHelper.info\\(\"\"Hardware Node ID is required\"\"\\)/NotifyHelper.warning\\(\"\"Hardware Node ID is required\"\"\\)/g' src/docuflow/features/admin/view.py)",
+      "Bash(sed -i 's/NotifyHelper.success\\(\"\"Username and Role required\"\"\\)/NotifyHelper.warning\\(\"\"Username and Role required\"\"\\)/g' src/docuflow/features/admin/view.py)",
+      "Bash(sed -i 's/ui.notify/NotifyHelper.success/g' src/docuflow/lib/base_widget.py)",
+      "Bash(sed -i 's/NotifyHelper.success\\(f\"\"{error_prefix}: {e}\"\", type=\"\"negative\"\"\\)/NotifyHelper.error\\(f\"\"{error_prefix}: {e}\"\"\\)/g' src/docuflow/lib/base_widget.py)",
+      "Bash(sed -i 's/NotifyHelper.success\\(success_msg, type=\"\"positive\"\"\\)/NotifyHelper.success\\(success_msg\\)/g' src/docuflow/lib/base_widget.py)",
+      "WebSearch",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}

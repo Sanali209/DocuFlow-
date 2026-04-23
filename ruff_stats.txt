@@ -1,0 +1,20 @@
+143	E501  	[ ] line-too-long
+ 78	RUF001	[ ] ambiguous-unicode-character-string
+ 31	RUF002	[ ] ambiguous-unicode-character-docstring
+ 23	F401  	[*] unused-import
+ 19	I001  	[*] unsorted-imports
+ 14	E402  	[ ] module-import-not-at-top-of-file
+ 10	RUF003	[ ] ambiguous-unicode-character-comment
+  8	E712  	[ ] true-false-comparison
+  6	RUF012	[ ] mutable-class-default
+  3	E711  	[ ] none-comparison
+  3	S607  	[ ] start-process-with-partial-path
+  2	S603  	[ ] subprocess-without-shell-equals-true
+  1	E741  	[ ] ambiguous-variable-name
+  1	F841  	[ ] unused-variable
+  1	S104  	[ ] hardcoded-bind-all-interfaces
+  1	S107  	[ ] hardcoded-password-default
+  1	S110  	[ ] try-except-pass
+  1	UP035 	[*] deprecated-import
+Found 346 errors.
+[*] 43 fixable with the `--fix` option (12 hidden fixes can be enabled with the `--unsafe-fixes` option).

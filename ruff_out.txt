@@ -1,0 +1,3966 @@
+E501 Line too long (113 > 100)
+  --> src\docuflow\application\bus\dispatcher.py:65:101
+   |
+63 |         if not self._signer.verify(signable_content, message.signature):
+64 |             logger.warning(
+65 |                 f"[{self.config.node_id}] Dispatcher: Security alert! Invalid signature from {message.sender_id}"
+   |                                                                                                     ^^^^^^^^^^^^^
+66 |             )
+67 |             raise ValueError("Invalid message signature")
+   |
+
+E501 Line too long (133 > 100)
+  --> src\docuflow\application\bus\dispatcher.py:73:101
+   |
+71 |         if message.sequence <= last_seq:
+72 |             logger.warning(
+73 |                 f"[{self.config.node_id}] Dispatcher: Replay detected! Node {message.sender_id} seq {message.sequence} <= {last_seq}"
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+74 |             )
+75 |             raise ValueError(
+   |
+
+E501 Line too long (121 > 100)
+  --> src\docuflow\application\bus\dispatcher.py:93:101
+   |
+92 |         logger.info(
+93 |             f"[{self.config.node_id}] Dispatcher: Executing {command} from {message.sender_id} (seq: {message.sequence})"
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^
+94 |         )
+95 |         return handler(message.payload.data)
+   |
+
+E501 Line too long (113 > 100)
+   --> src\docuflow\application\bus\orchestrator.py:157:101
+    |
+155 |         while self._is_running:
+156 |             logger.trace(
+157 |                 f"Orchestrator [{self.config.node_id}]: Polling bus (interval: {self.config.bus_poll_interval}s)"
+    |                                                                                                     ^^^^^^^^^^^^^
+158 |             )
+159 |             try:
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\application\bus\orchestrator.py:212:101
+    |
+210 |                 if self._coordination.is_leader:
+211 |                     logger.trace(
+212 |                         f"Orchestrator [{self.config.node_id}]: PEER LEADER - Running maintenance..."
+    |                                                                                                     ^
+213 |                     )
+214 |                     # 1. Database Sync (Master Snapshot)
+    |
+
+RUF012 Mutable default value for class attribute
+  --> src\docuflow\domain\settings.py:36:53
+   |
+35 |     _instance: Optional["SettingsRegistry"] = None
+36 |     _schemas: dict[str, type[BaseModuleSettings]] = {}
+   |                                                     ^^
+37 |     _admin: Any | None = None  # AdminSystem reference for DB access
+   |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+F401 [*] `collections.abc.Callable` imported but unused
+ --> src\docuflow\features\admin\view.py:2:29
+  |
+1 | import logging
+2 | from collections.abc import Callable
+  |                             ^^^^^^^^
+3 | from typing import Any
+  |
+help: Remove unused import: `collections.abc.Callable`
+
+E501 Line too long (104 > 100)
+  --> src\docuflow\features\admin\view.py:66:101
+   |
+64 |                         with ui.row().classes(
+65 |                             "w-full items-center justify-between p-4 bg-white/5 "
+66 |                             "rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all"
+   |                                                                                                     ^^^^
+67 |                         ):
+68 |                             with ui.row().classes("items-center gap-4"):
+   |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\admin\view.py:126:101
+    |
+124 |                         is_admin_role = r.name.strip().lower() == "admin"
+125 |                         border = "border-indigo-500/40" if is_admin_role else "border-white/5"
+126 |                         with ui.column().classes(f"w-full p-6 bg-white/5 rounded-2xl border {border}"):
+    |                                                                                                     ^^^
+127 |                             with ui.row().classes("w-full justify-between items-center mb-4"):
+128 |                                 with ui.column().classes("gap-0"):
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\admin\view.py:129:101
+    |
+127 | …                     with ui.row().classes("w-full justify-between items-center mb-4"):
+128 | …                         with ui.column().classes("gap-0"):
+129 | …                             label_color = "text-indigo-400" if is_admin_role else "text-white"
+    |                                                                                               ^^
+130 | …                             ui.label(r.name).classes(f"text-xl font-bold {label_color}")
+131 | …                             ui.label(f"Role ID: {r.id}").classes(
+    |
+
+E501 Line too long (106 > 100)
+   --> src\docuflow\features\admin\view.py:155:101
+    |
+153 |                                     perm_type = module_perm.split(":")[1] if is_on else "none"
+154 |
+155 |                                     async def _toggle(m=mod, r_name=r.name, active=is_on, mp=module_perm):
+    |                                                                                                     ^^^^^^
+156 |                                         if r_name.strip().lower() == "admin":
+157 |                                             return
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> src\docuflow\features\admin\view.py:162:45
+    |
+160 |   …                     fresh_system = await req3.get(AdminSystem)
+161 |   …                     # Fetch fresh role object within scope
+162 | / …                     from docuflow.domain.entities.identity import Role
+163 | | …                     from sqlmodel import select
+    | |_________________________________________________^
+164 |   …                     r_ref = fresh_system.session.exec(select(Role).where(Role.name == r_name)).first()
+    |
+help: Organize imports
+
+E501 Line too long (126 > 100)
+   --> src\docuflow\features\admin\view.py:164:101
+    |
+162 |                                             from docuflow.domain.entities.identity import Role
+163 |                                             from sqlmodel import select
+164 |                                             r_ref = fresh_system.session.exec(select(Role).where(Role.name == r_name)).first()
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+165 |
+166 |                                             if not r_ref:
+    |
+
+E501 Line too long (110 > 100)
+   --> src\docuflow\features\admin\view.py:170:101
+    |
+169 | …                     remaining = [
+170 | …                         p for p in r_ref.permissions_list if not p.startswith(f"{m}:")
+    |                                                                               ^^^^^^^^^^
+171 | …                     ]
+172 | …                     if not active:
+    |
+
+E501 Line too long (106 > 100)
+   --> src\docuflow\features\admin\view.py:189:101
+    |
+187 | …                     ui.button(f"{mod}:{perm_type}", on_click=_toggle).classes(
+188 | …                         f"text-[10px] uppercase font-bold rounded-lg px-3 py-1 "
+189 | …                         f"bg-{color}-500/20 text-{color}-400 border border-{color}-500/30"
+    |                                                                                       ^^^^^^
+190 | …                     ).props("flat dense")
+    |
+
+E501 Line too long (164 > 100)
+   --> src\docuflow\features\admin\view.py:225:101
+    |
+224 | …
+225 | …elds_count={len(fields) if fields else 0}, current_keys={list(current.keys()) if current else []}"
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+226 | …
+    |
+
+E501 Line too long (114 > 100)
+   --> src\docuflow\features\admin\view.py:289:101
+    |
+287 |                     for tmpl in tmpls:
+288 |                         with ui.row().classes(
+289 |                             "w-full items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10"
+    |                                                                                                     ^^^^^^^^^^^^^^
+290 |                         ):
+291 |                             with ui.column().classes("gap-1 flex-1"):
+    |
+
+E501 Line too long (109 > 100)
+   --> src\docuflow\features\admin\view.py:309:101
+    |
+307 | …                     )
+308 | …                     txt_input.on(
+309 | …                         "change", lambda e, tid=tmpl.id, en=tmpl.enabled: update_text(e, tid, en)
+    |                                                                                           ^^^^^^^^^
+310 | …                     )
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\admin\view.py:348:101
+    |
+346 | …                     )
+347 | …                     p_name = (
+348 | …                         ui.input("Название").props("dark rounded standout").classes("w-full")
+    |                                                                                               ^
+349 | …                     )
+350 | …                     p_json = (
+    |
+
+E501 Line too long (114 > 100)
+   --> src\docuflow\features\admin\view.py:381:101
+    |
+379 |                     for preset in presets:
+380 |                         with ui.row().classes(
+381 |                             "w-full items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10"
+    |                                                                                                     ^^^^^^^^^^^^^^
+382 |                         ):
+383 |                             with ui.column().classes("gap-1"):
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\admin\view.py:431:101
+    |
+429 |                                 ).props("dark rounded standout")
+430 |
+431 |                                 async def _update_binding(wp_name=w.name, nid=new_nid, allow=allowed):
+    |                                                                                                     ^^
+432 |                                     async with self.scope() as req2:
+433 |                                         fresh_system = await req2.get(AdminSystem)
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\admin\view.py:473:101
+    |
+471 |                         with ui.row().classes("gap-2"):
+472 |                             ui.button("Edit")
+473 |                             ui.button("Delete", icon="delete", on_click=delete_confirm.open).classes(
+    |                                                                                                     ^
+474 |                                 "rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-xs py-2 px-4"
+475 |                             )
+    |
+
+E501 Line too long (114 > 100)
+   --> src\docuflow\features\admin\view.py:474:101
+    |
+472 | …                     ui.button("Edit")
+473 | …                     ui.button("Delete", icon="delete", on_click=delete_confirm.open).classes(
+474 | …                         "rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-xs py-2 px-4"
+    |                                                                                               ^^^^^^^^^^^^^^
+475 | …                     )
+    |
+
+E501 Line too long (144 > 100)
+   --> src\docuflow\features\admin\view.py:496:101
+    |
+494 | …
+495 | …
+496 | …4 bg-white/5 rounded-xl border border-white/5 hover:border-indigo-500/20 transition-all"
+    |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+497 | …
+498 | …
+    |
+
+E501 Line too long (104 > 100)
+   --> src\docuflow\features\admin\view.py:514:101
+    |
+512 |                                 ui.label(log.message).classes("text-slate-200 text-sm")
+513 |                                 if log.payload and len(log.payload) > 2:
+514 |                                     ui.label(log.payload).classes("text-[9px] text-slate-600 font-mono")
+    |                                                                                                     ^^^^
+515 |
+516 |                             # Author and Node
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\admin\view.py:519:101
+    |
+517 | …                     with ui.column().classes("items-end w-32 gap-0"):
+518 | …                         if log.author:
+519 | …                             ui.label(log.author).classes("text-xs text-indigo-400 font-bold")
+    |                                                                                               ^
+520 | …                         ui.label(log.node_id or "system").classes(
+521 | …                             "text-[10px] text-slate-500"
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\admin\view.py:552:101
+    |
+550 |                     {"name": "node_id", "label": "Identifier", "field": "node_id", "align": "left"},
+551 |                     {"name": "status", "label": "State", "field": "status", "align": "center"},
+552 |                     {"name": "is_leader", "label": "Leader", "field": "is_leader", "align": "center"},
+    |                                                                                                     ^^
+553 |                     {
+554 |                         "name": "last_active",
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\admin\view.py:594:101
+    |
+592 |                     with ui.dialog().classes("glass-card p-4 rounded-3xl") as user_dialog:
+593 |                         with ui.column().classes("gap-4 w-[350px] p-6"):
+594 |                             ui.label("Register New Identity").classes("text-xl font-bold text-white")
+    |                                                                                                     ^
+595 |                             u_name = (
+596 |                                 ui.input("Username").props("dark rounded standout").classes("w-full")
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\admin\view.py:596:101
+    |
+594 | …                     ui.label("Register New Identity").classes("text-xl font-bold text-white")
+595 | …                     u_name = (
+596 | …                         ui.input("Username").props("dark rounded standout").classes("w-full")
+    |                                                                                               ^
+597 | …                     )
+598 | …                     u_pass = (
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\admin\view.py:653:101
+    |
+651 | …                     ui.label("Create Custom Role").classes("text-xl font-bold text-white")
+652 | …                     r_name = (
+653 | …                         ui.input("Role Name").props("dark rounded standout").classes("w-full")
+    |                                                                                               ^^
+654 | …                     )
+    |
+
+E501 Line too long (104 > 100)
+   --> src\docuflow\features\admin\view.py:689:101
+    |
+687 | …                     async def _create_binding():
+688 | …                         if not wp_name.value or len(wp_name.value) < 3:
+689 | …                             NotifyHelper.warning("Workplace name must be at least 3 characters")
+    |                                                                                               ^^^^
+690 | …                             return
+691 | …                         if not wp_node.value:
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\admin\view.py:725:101
+    |
+723 |                 )
+724 |                 ui.label(
+725 |                     "Changing these parameters will broadcast signed P2P updates across the cluster."
+    |                                                                                                     ^
+726 |                 ).classes("text-xs text-slate-500 mb-6")
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\admin\view.py:773:101
+    |
+771 |                         scope = "global" if node_id is None else "local"
+772 |                         logger.debug(
+773 |                             f"Config refresh: module={mod_select.value}, scope={scope}, node={node_id}"
+    |                                                                                                     ^^^
+774 |                         )
+775 |                         await self.render_settings_form.refresh(mod_select.value, node_id, [])
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\features\analytics\system.py:1:1
+   |
+ 1 | / from typing import Any
+ 2 | | from sqlmodel import Session, func, select
+ 3 | | from docuflow.application.base import BaseSystem
+ 4 | | from docuflow.domain.entities.production import (
+ 5 | |     IncidentLog,
+ 6 | |     ProductionUnit,
+ 7 | |     TaskItem,
+ 8 | |     TaskItemStatus,
+ 9 | |     WorkItem,
+10 | | )
+11 | | from docuflow.infrastructure.config import Config
+   | |_________________________________________________^
+   |
+help: Organize imports
+
+E712 Avoid equality comparisons to `False`; use `not IncidentLog.resolved:` for false checks
+  --> src\docuflow\features\analytics\system.py:30:54
+   |
+28 |         wi_count = session.exec(select(func.count(WorkItem.id))).one()
+29 |         incident_count = session.exec(
+30 |             select(func.count(IncidentLog.id)).where(IncidentLog.resolved == False)
+   |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+31 |         ).one()
+32 |         pallet_count = session.exec(
+   |
+help: Replace with `not IncidentLog.resolved`
+
+E712 Avoid equality comparisons to `True`; use `ProductionUnit.is_stock:` for truth checks
+  --> src\docuflow\features\analytics\system.py:33:57
+   |
+31 |         ).one()
+32 |         pallet_count = session.exec(
+33 |             select(func.count(ProductionUnit.id)).where(ProductionUnit.is_stock == True)
+   |                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 |         ).one()
+   |
+help: Replace with `ProductionUnit.is_stock`
+
+F401 [*] `sqlmodel.Session` imported but unused
+ --> src\docuflow\features\analytics\view.py:4:22
+  |
+3 | from nicegui import ui
+4 | from sqlmodel import Session, func, select
+  |                      ^^^^^^^
+5 |
+6 | from docuflow.domain.entities.production import TaskItemStatus
+  |
+help: Remove unused import
+
+F401 [*] `sqlmodel.func` imported but unused
+ --> src\docuflow\features\analytics\view.py:4:31
+  |
+3 | from nicegui import ui
+4 | from sqlmodel import Session, func, select
+  |                               ^^^^
+5 |
+6 | from docuflow.domain.entities.production import TaskItemStatus
+  |
+help: Remove unused import
+
+F401 [*] `sqlmodel.select` imported but unused
+ --> src\docuflow\features\analytics\view.py:4:37
+  |
+3 | from nicegui import ui
+4 | from sqlmodel import Session, func, select
+  |                                     ^^^^^^
+5 |
+6 | from docuflow.domain.entities.production import TaskItemStatus
+  |
+help: Remove unused import
+
+F401 [*] `docuflow.domain.entities.production.TaskItemStatus` imported but unused
+ --> src\docuflow\features\analytics\view.py:6:49
+  |
+4 | from sqlmodel import Session, func, select
+5 |
+6 | from docuflow.domain.entities.production import TaskItemStatus
+  |                                                 ^^^^^^^^^^^^^^
+7 | from docuflow.features.analytics.system import AnalyticsSystem
+8 | from docuflow.features.core.views import ViewInfo, ViewRegistry
+  |
+help: Remove unused import: `docuflow.domain.entities.production.TaskItemStatus`
+
+F841 Local variable `total_tasks` is assigned to but never used
+  --> src\docuflow\features\analytics\view.py:53:21
+   |
+52 |                     total_work_items = metrics["total_work_items"]
+53 |                     total_tasks = metrics["total_tasks"]
+   |                     ^^^^^^^^^^^
+54 |                     total_pallets = metrics["total_pallets"]
+55 |                     total_parts_produced = metrics["total_parts_produced"]
+   |
+help: Remove assignment to unused variable `total_tasks`
+
+E501 Line too long (104 > 100)
+   --> src\docuflow\features\analytics\view.py:115:101
+    |
+113 | …                             },
+114 | …                             "label": {"show": False},
+115 | …                             "data": [{"value": v, "name": k} for k, v in status_counts.items()],
+    |                                                                                               ^^^^
+116 | …                         }
+117 | …                     ],
+    |
+
+S107 Possible hardcoded password assigned to function default: "default_password"
+  --> src\docuflow\features\auth\system.py:53:66
+   |
+51 |         return user
+52 |
+53 |     def get_or_create_admin(self, default_password: str | None = "admin") -> User:
+   |                                                                  ^^^^^^^
+54 |         """
+55 |         Ensures at least one administrative user exists in the cluster.
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\features\auth\view.py:1:1
+   |
+ 1 | / from collections.abc import Callable
+ 2 | | from typing import Any
+ 3 | |
+ 4 | | import json
+ 5 | |
+ 6 | | from nicegui import app as nicegui_app
+ 7 | | from nicegui import ui
+ 8 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+ 9 | |
+10 | | from docuflow.features.admin.system import AdminSystem
+11 | | from docuflow.features.auth.system import AuthSystem
+12 | | from docuflow.lib.base_widget import BaseDocuWidget
+   | |___________________________________________________^
+   |
+help: Organize imports
+
+F401 [*] `typing.Any` imported but unused
+ --> src\docuflow\features\auth\view.py:2:20
+  |
+1 | from collections.abc import Callable
+2 | from typing import Any
+  |                    ^^^
+3 |
+4 | import json
+  |
+help: Remove unused import: `typing.Any`
+
+E501 Line too long (101 > 100)
+  --> src\docuflow\features\auth\view.py:70:101
+   |
+68 |                 with ui.column().classes("items-center gap-4"):
+69 |                     ui.icon("waves", size="64px", color="teal-400").classes("")
+70 |                     ui.label("DocuFlow").classes("text-4xl font-extrabold tracking-tight text-white")
+   |                                                                                                     ^
+71 |                     ui.label("P2P ORCHESTRATION ENGINE").classes(
+72 |                         "text-[10px] tracking-[0.4em] text-slate-500 font-bold"
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\features\chat\incident_view.py:1:1
+   |
+ 1 | / from collections.abc import Callable
+ 2 | | from typing import Any
+ 3 | |
+ 4 | | from nicegui import ui
+ 5 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+ 6 | |
+ 7 | | from docuflow.domain.entities.production import IncidentLog
+ 8 | | from docuflow.features.chat.incidents import IncidentSystem
+ 9 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+10 | | from docuflow.lib.base_widget import BaseDocuWidget
+   | |___________________________________________________^
+   |
+help: Organize imports
+
+RUF012 Mutable default value for class attribute
+  --> src\docuflow\features\chat\incident_view.py:44:16
+   |
+43 |       # UI Theme for the Incident Dashboard
+44 |       UI_THEME = {
+   |  ________________^
+45 | |         "page_bg": "w-full h-full p-8 bg-[#020617] gap-6",
+46 | |         "card_active": "w-full p-4 rounded-xl border border-red-500/30 bg-red-500/5 items-center gap-4 transition-all hover:bg-red-500…
+47 | |         "card_history": "w-full p-3 rounded border border-emerald-500/10 bg-emerald-500/5 gap-2",
+48 | |         "label_pill": "text-[10px] font-black tracking-[0.2em] mb-2 uppercase",
+49 | |         "stat_label": "text-[9px] text-slate-500 tracking-widest uppercase",
+50 | |     }
+   | |_____^
+51 |
+52 |       def __init__(
+   |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+E501 Line too long (139 > 100)
+  --> src\docuflow\features\chat\incident_view.py:46:101
+   |
+44 | …
+45 | …p-6",
+46 | …border-red-500/30 bg-red-500/5 items-center gap-4 transition-all hover:bg-red-500/10",
+   |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+47 | …rder-emerald-500/10 bg-emerald-500/5 gap-2",
+48 | …g-[0.2em] mb-2 uppercase",
+   |
+
+E501 Line too long (114 > 100)
+   --> src\docuflow\features\chat\incident_view.py:208:101
+    |
+206 |                 with ui.column().classes("items-end justify-center"):
+207 |                     ui.label(str(active_blockers_count)).classes(
+208 |                         f"text-3xl font-black {'text-red-500' if active_blockers_count > 0 else 'text-slate-800'}"
+    |                                                                                                     ^^^^^^^^^^^^^^
+209 |                     )
+210 |                     ui.label("ACTIVE").classes(self.UI_THEME["stat_label"])
+    |
+
+E501 Line too long (108 > 100)
+   --> src\docuflow\features\chat\incident_view.py:269:101
+    |
+267 |                     with ui.row().classes("items-center gap-2"):
+268 |                         ui.label(incident.incident_type).classes(
+269 |                             "text-[9px] font-black px-2 py-0.5 rounded bg-red-500/20 text-red-100 uppercase"
+    |                                                                                                     ^^^^^^^^
+270 |                         )
+271 |                         if incident.assigned_group:
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\chat\incident_view.py:332:101
+    |
+330 |             ).classes("w-full")
+331 |             tech_name = (
+332 |                 ui.input(label="Technician ID").classes("w-full").props(f'value="{self.current_user}"')
+    |                                                                                                     ^^^
+333 |             )
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\chat\incident_view.py:340:101
+    |
+338 |                 async with self.scope() as req:
+339 |                     fresh_incident_sys = await req.get(IncidentSystem)
+340 |                     await fresh_incident_sys.resolve_incident(incident.id, tech_name.value, note.value)
+    |                                                                                                     ^^^
+341 |                 dialog.close()
+342 |                 await self.full_refresh()
+    |
+
+E501 Line too long (110 > 100)
+   --> src\docuflow\features\chat\incidents.py:125:101
+    |
+124 |         Example:
+125 |             system.resolve_incident(incident_id=1, resolved_by="maintenance", resolution_note="Replaced belt")
+    |                                                                                                     ^^^^^^^^^^
+126 |         """
+127 |         incident = self.session.get(IncidentLog, incident_id)
+    |
+
+E501 Line too long (156 > 100)
+   --> src\docuflow\features\chat\incidents.py:155:101
+    |
+153 | …
+154 | …
+155 | …nt_type}) resolved by {incident.resolved_by}. Downtime: {incident.downtime_minutes:.1f} min.",
+    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+156 | …
+157 | …
+    |
+
+E712 Avoid equality comparisons to `True`; use `IncidentLog.resolved:` for truth checks
+   --> src\docuflow\features\chat\incidents.py:166:47
+    |
+164 |     def get_summary_stats(self) -> dict[str, float]:
+165 |         """Aggregate downtime metrics by incident category."""
+166 |         statement = select(IncidentLog).where(IncidentLog.resolved == True)
+    |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+167 |         resolved_incidents = self.session.exec(statement).all()
+    |
+help: Replace with `IncidentLog.resolved`
+
+E712 Avoid equality comparisons to `False`; use `not IncidentLog.resolved:` for false checks
+   --> src\docuflow\features\chat\incidents.py:181:20
+    |
+179 |         statement = (
+180 |             select(IncidentLog)
+181 |             .where(IncidentLog.resolved == False)
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+182 |             .order_by(IncidentLog.created_at.desc())  # type: ignore[attr-defined]
+183 |         )
+    |
+help: Replace with `not IncidentLog.resolved`
+
+E712 Avoid equality comparisons to `True`; use `IncidentLog.resolved:` for truth checks
+   --> src\docuflow\features\chat\incidents.py:195:20
+    |
+193 |         statement = (
+194 |             select(IncidentLog)
+195 |             .where(IncidentLog.resolved == True)
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+196 |             .order_by(IncidentLog.resolved_at.desc())  # type: ignore[attr-defined]
+197 |             .limit(limit)
+    |
+help: Replace with `IncidentLog.resolved`
+
+E711 Comparison to `None` should be `cond is None`
+   --> src\docuflow\features\chat\system.py:194:50
+    |
+192 |         statement = (
+193 |             select(ChatMessage)
+194 |             .where(ChatMessage.ref_project_id == None)
+    |                                                  ^^^^
+195 |             .where(ChatMessage.ref_work_item_id == None)
+196 |             .where(ChatMessage.ref_task_item_id == None)
+    |
+help: Replace with `cond is None`
+
+E711 Comparison to `None` should be `cond is None`
+   --> src\docuflow\features\chat\system.py:195:52
+    |
+193 |             select(ChatMessage)
+194 |             .where(ChatMessage.ref_project_id == None)
+195 |             .where(ChatMessage.ref_work_item_id == None)
+    |                                                    ^^^^
+196 |             .where(ChatMessage.ref_task_item_id == None)
+197 |             .order_by(ChatMessage.created_at.desc())  # type: ignore[attr-defined]
+    |
+help: Replace with `cond is None`
+
+E711 Comparison to `None` should be `cond is None`
+   --> src\docuflow\features\chat\system.py:196:52
+    |
+194 |             .where(ChatMessage.ref_project_id == None)
+195 |             .where(ChatMessage.ref_work_item_id == None)
+196 |             .where(ChatMessage.ref_task_item_id == None)
+    |                                                    ^^^^
+197 |             .order_by(ChatMessage.created_at.desc())  # type: ignore[attr-defined]
+198 |             .limit(limit)
+    |
+help: Replace with `cond is None`
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> src\docuflow\features\chat\view.py:1:1
+  |
+1 | / from typing import Any
+2 | | from typing import Callable, Any
+3 | | from nicegui import ui
+4 | | from sqlmodel import select
+5 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+6 | | from docuflow.domain.entities.production import ChatMessage, ChatMessageType
+7 | | from docuflow.features.chat.system import ChatSystem
+8 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+9 | | from docuflow.lib.base_widget import BaseDocuWidget
+  | |___________________________________________________^
+  |
+help: Organize imports
+
+UP035 [*] Import from `collections.abc` instead: `Callable`
+ --> src\docuflow\features\chat\view.py:2:1
+  |
+1 | from typing import Any
+2 | from typing import Callable, Any
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3 | from nicegui import ui
+4 | from sqlmodel import select
+  |
+help: Import from `collections.abc`
+
+F811 [*] Redefinition of unused `Any` from line 1
+ --> src\docuflow\features\chat\view.py:1:20
+  |
+1 | from typing import Any
+  |                    --- previous definition of `Any` here
+2 | from typing import Callable, Any
+  |                              ^^^ `Any` redefined here
+3 | from nicegui import ui
+4 | from sqlmodel import select
+  |
+help: Remove definition: `Any`
+
+RUF012 Mutable default value for class attribute
+  --> src\docuflow\features\chat\view.py:41:18
+   |
+40 |       # Global UI Theme for the Chat Module
+41 |       UI_STYLING = {
+   |  __________________^
+42 | |         "sidebar_bg": "bg-[#020617] border-r border-white/5 p-6 h-full gap-4",
+43 | |         "feed_bg": "bg-[#020617]",
+44 | |         "input_bar": "absolute bottom-0 w-full p-4 bg-slate-900/50 backdrop-blur-xl border-t border-white/5 gap-2 items-end",
+45 | |         "message_bubble": "w-full gap-3 p-3 rounded-xl border transition-all hover:bg-white/5",
+46 | |         "label_header": "text-[10px] font-bold text-slate-500 uppercase tracking-widest",
+47 | |     }
+   | |_____^
+48 |
+49 |       def __init__(
+   |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+E501 Line too long (125 > 100)
+  --> src\docuflow\features\chat\view.py:44:101
+   |
+42 |         "sidebar_bg": "bg-[#020617] border-r border-white/5 p-6 h-full gap-4",
+43 |         "feed_bg": "bg-[#020617]",
+44 |         "input_bar": "absolute bottom-0 w-full p-4 bg-slate-900/50 backdrop-blur-xl border-t border-white/5 gap-2 items-end",
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+45 |         "message_bubble": "w-full gap-3 p-3 rounded-xl border transition-all hover:bg-white/5",
+46 |         "label_header": "text-[10px] font-bold text-slate-500 uppercase tracking-widest",
+   |
+
+E501 Line too long (117 > 100)
+   --> src\docuflow\features\chat\view.py:115:101
+    |
+113 |             ui.row()
+114 |             .classes(
+115 |                 f"w-full p-2 rounded-lg cursor-pointer transition-all items-center gap-3 {bg_style} hover:bg-white/5"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^
+116 |             )
+117 |             .on("click", lambda: self._switch_channel(channel_key))
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\consumables\system.py:116:101
+    |
+114 |     ) -> Consumable:
+115 |         """
+116 |         Decrement consumable stock and log usage. Triggers a cluster alert if minimum quantity reached.
+    |                                                                                                     ^^^
+117 |
+118 |         Example:
+    |
+
+RUF001 String contains ambiguous `О` (CYRILLIC CAPITAL LETTER O). Did you mean `O` (LATIN CAPITAL LETTER O)?
+   --> src\docuflow\features\consumables\system.py:200:38
+    |
+198 | …         node_id=self.config.node_id,
+199 | …         message_type=ChatMessageType.WARNING,
+200 | …         content=f"⚠️ КРИТИЧЕСКИЙ ОСТАТОК: {consumable.name} = {consumable.quantity:.0f} {consumable.unit} (Мин: {consumable.min_qua…t
+    |                                   ^
+201 | …     )
+202 | …     self.db_session.add(alert_entry)
+    |
+
+RUF001 String contains ambiguous `С` (CYRILLIC CAPITAL LETTER ES). Did you mean `C` (LATIN CAPITAL LETTER C)?
+   --> src\docuflow\features\consumables\system.py:200:39
+    |
+198 | …         node_id=self.config.node_id,
+199 | …         message_type=ChatMessageType.WARNING,
+200 | …         content=f"⚠️ КРИТИЧЕСКИЙ ОСТАТОК: {consumable.name} = {consumable.quantity:.0f} {consumable.unit} (Мин: {consumable.min_qua…t
+    |                                    ^
+201 | …     )
+202 | …     self.db_session.add(alert_entry)
+    |
+
+RUF001 String contains ambiguous `Т` (CYRILLIC CAPITAL LETTER TE). Did you mean `T` (LATIN CAPITAL LETTER T)?
+   --> src\docuflow\features\consumables\system.py:200:40
+    |
+198 | …         node_id=self.config.node_id,
+199 | …         message_type=ChatMessageType.WARNING,
+200 | …         content=f"⚠️ КРИТИЧЕСКИЙ ОСТАТОК: {consumable.name} = {consumable.quantity:.0f} {consumable.unit} (Мин: {consumable.min_qua…t
+    |                                     ^
+201 | …     )
+202 | …     self.db_session.add(alert_entry)
+    |
+
+RUF001 String contains ambiguous `А` (CYRILLIC CAPITAL LETTER A). Did you mean `A` (LATIN CAPITAL LETTER A)?
+   --> src\docuflow\features\consumables\system.py:200:41
+    |
+198 | …         node_id=self.config.node_id,
+199 | …         message_type=ChatMessageType.WARNING,
+200 | …         content=f"⚠️ КРИТИЧЕСКИЙ ОСТАТОК: {consumable.name} = {consumable.quantity:.0f} {consumable.unit} (Мин: {consumable.min_qua…t
+    |                                      ^
+201 | …     )
+202 | …     self.db_session.add(alert_entry)
+    |
+
+RUF001 String contains ambiguous `Т` (CYRILLIC CAPITAL LETTER TE). Did you mean `T` (LATIN CAPITAL LETTER T)?
+   --> src\docuflow\features\consumables\system.py:200:42
+    |
+198 | …         node_id=self.config.node_id,
+199 | …         message_type=ChatMessageType.WARNING,
+200 | …         content=f"⚠️ КРИТИЧЕСКИЙ ОСТАТОК: {consumable.name} = {consumable.quantity:.0f} {consumable.unit} (Мин: {consumable.min_qua…t
+    |                                       ^
+201 | …     )
+202 | …     self.db_session.add(alert_entry)
+    |
+
+RUF001 String contains ambiguous `О` (CYRILLIC CAPITAL LETTER O). Did you mean `O` (LATIN CAPITAL LETTER O)?
+   --> src\docuflow\features\consumables\system.py:200:43
+    |
+198 | …         node_id=self.config.node_id,
+199 | …         message_type=ChatMessageType.WARNING,
+200 | …         content=f"⚠️ КРИТИЧЕСКИЙ ОСТАТОК: {consumable.name} = {consumable.quantity:.0f} {consumable.unit} (Мин: {consumable.min_qua…t
+    |                                        ^
+201 | …     )
+202 | …     self.db_session.add(alert_entry)
+    |
+
+RUF001 String contains ambiguous `К` (CYRILLIC CAPITAL LETTER KA). Did you mean `K` (LATIN CAPITAL LETTER K)?
+   --> src\docuflow\features\consumables\system.py:200:44
+    |
+198 | …         node_id=self.config.node_id,
+199 | …         message_type=ChatMessageType.WARNING,
+200 | …         content=f"⚠️ КРИТИЧЕСКИЙ ОСТАТОК: {consumable.name} = {consumable.quantity:.0f} {consumable.unit} (Мин: {consumable.min_qua…t
+    |                                         ^
+201 | …     )
+202 | …     self.db_session.add(alert_entry)
+    |
+
+E501 Line too long (147 > 100)
+   --> src\docuflow\features\consumables\system.py:200:102
+    |
+198 | …
+199 | …
+200 | …name} = {consumable.quantity:.0f} {consumable.unit} (Мин: {consumable.min_quantity:.0f})",
+    |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+201 | …
+202 | …
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> src\docuflow\features\consumables\view.py:1:1
+  |
+1 | / from typing import Any
+2 | |
+3 | | from nicegui import ui
+4 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+5 | |
+6 | | from docuflow.domain.entities.production import Consumable
+7 | | from docuflow.features.consumables.system import ConsumableSystem
+8 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+9 | | from docuflow.lib.base_widget import BaseDocuWidget
+  | |___________________________________________________^
+  |
+help: Organize imports
+
+E501 Line too long (103 > 100)
+  --> src\docuflow\features\consumables\view.py:27:101
+   |
+27 | async def consumables_view_wrapper(system: ConsumableSystem, system_scope: Any, layout: Any, **kwargs):
+   |                                                                                                     ^^^
+28 |     """Wrapper to instantiate and render the ConsumableView."""
+29 |     view = ConsumableView(system, system_scope, layout=layout)
+   |
+
+E501 Line too long (115 > 100)
+   --> src\docuflow\features\consumables\view.py:112:101
+    |
+110 |             """
+111 |             <q-td :props="props">
+112 |                 <q-icon v-if="props.row.quantity <= props.row.min_quantity" name="warning" color="red" size="xs" />
+    |                                                                                                     ^^^^^^^^^^^^^^^
+113 |                 <q-icon v-else name="check_circle" color="emerald" size="xs" />
+114 |             </q-td>
+    |
+
+E501 Line too long (119 > 100)
+   --> src\docuflow\features\consumables\view.py:121:101
+    |
+119 |             "body-cell-name",
+120 |             """
+121 |             <q-td :props="props" :class="props.row.quantity <= props.row.min_quantity ? 'text-red-500 font-bold' : ''">
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^
+122 |                 {{ props.value }}
+123 |                 <div class="text-[10px] text-zinc-500 uppercase">{{ props.row.unit }}</div>
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\consumables\view.py:133:101
+    |
+131 |             <q-td :props="props">
+132 |                 <q-btn-group flat>
+133 |                     <q-btn flat icon="remove" color="red-4" @click="$parent.$emit('use', props.row)" />
+    |                                                                                                     ^^^
+134 |                     <q-btn flat icon="add" color="emerald-4" @click="$parent.$emit('restock', props.row)" />
+135 |                     <q-btn flat icon="history" @click="$parent.$emit('history', props.row)" />
+    |
+
+E501 Line too long (108 > 100)
+   --> src\docuflow\features\consumables\view.py:134:101
+    |
+132 |                 <q-btn-group flat>
+133 |                     <q-btn flat icon="remove" color="red-4" @click="$parent.$emit('use', props.row)" />
+134 |                     <q-btn flat icon="add" color="emerald-4" @click="$parent.$emit('restock', props.row)" />
+    |                                                                                                     ^^^^^^^^
+135 |                     <q-btn flat icon="history" @click="$parent.$emit('history', props.row)" />
+136 |                 </q-btn-group>
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\consumables\view.py:201:101
+    |
+199 |                 ):
+200 |                     with ui.row().classes("w-full justify-between items-start"):
+201 |                         ui.label(log.operation.upper()).classes(f"text-[9px] font-bold text-{color}")
+    |                                                                                                     ^
+202 |                         ui.label(log.created_at.strftime("%H:%M")).classes("text-[9px] text-zinc-600")
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\consumables\view.py:202:101
+    |
+200 |                     with ui.row().classes("w-full justify-between items-start"):
+201 |                         ui.label(log.operation.upper()).classes(f"text-[9px] font-bold text-{color}")
+202 |                         ui.label(log.created_at.strftime("%H:%M")).classes("text-[9px] text-zinc-600")
+    |                                                                                                     ^^
+203 |
+204 |                     ui.label(f"{'+' if log.qty_delta > 0 else ''}{log.qty_delta:.1f}").classes(
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\consumables\view.py:209:101
+    |
+207 |                     if log.note:
+208 |                         ui.label(log.note).classes("text-[10px] text-zinc-500 mt-1 italic")
+209 |                     ui.label(f"От: {log.author}").classes("text-[8px] text-zinc-700 text-right w-full")
+    |                                                                                                     ^^^
+210 |
+211 |     def open_op_dialog(self, row: dict, op_type: str):
+    |
+
+RUF001 String contains ambiguous `О` (CYRILLIC CAPITAL LETTER O). Did you mean `O` (LATIN CAPITAL LETTER O)?
+   --> src\docuflow\features\consumables\view.py:245:28
+    |
+243 |             with ui.row().classes("w-full justify-end mt-4"):
+244 |                 ui.button("Отмена", on_click=d.close).props("flat color=zinc-500")
+245 |                 ui.button("ОК", on_click=submit).props(f"flat color={color}")
+    |                            ^
+246 |
+247 |         d.open()
+    |
+
+RUF001 String contains ambiguous `К` (CYRILLIC CAPITAL LETTER KA). Did you mean `K` (LATIN CAPITAL LETTER K)?
+   --> src\docuflow\features\consumables\view.py:245:29
+    |
+243 |             with ui.row().classes("w-full justify-end mt-4"):
+244 |                 ui.button("Отмена", on_click=d.close).props("flat color=zinc-500")
+245 |                 ui.button("ОК", on_click=submit).props(f"flat color={color}")
+    |                             ^
+246 |
+247 |         d.open()
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\features\core\layout.py:1:1
+   |
+ 1 | / import json
+ 2 | | import logging
+ 3 | | from collections.abc import Callable
+ 4 | | from typing import Any
+ 5 | |
+ 6 | | from nicegui import app as nicegui_app
+ 7 | | from nicegui import ui
+ 8 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+ 9 | |
+10 | | from docuflow.domain.entities.identity import User, Workplace
+   | |_____________________________________________________________^
+11 |
+12 |   logger = logging.getLogger(__name__)
+   |
+help: Organize imports
+
+E501 Line too long (147 > 100)
+   --> src\docuflow\features\core\layout.py:269:101
+    |
+267 | …ck=lambda: switch_view_fn(view_name))
+268 | …
+269 | …ase text-slate-300 hover:text-white px-4 py-3 rounded-xl hover:bg-white/5 transition-all"
+    |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+270 | …
+271 | …
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\core\layout.py:373:47
+    |
+372 |     def _on_search_select(self, result, switch_view_fn, menu) -> None:
+373 |         """Обработка выбора результата поиска с сохранением контекста и авто-открытием."""
+    |                                               ^
+374 |         menu.close()
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> src\docuflow\features\core\search.py:1:1
+  |
+1 | / from dataclasses import dataclass
+2 | |
+3 | | from sqlmodel import Session, select, col
+4 | |
+5 | | from docuflow.domain.entities.production import (
+6 | |     PartLibrary,
+7 | |     ProductionUnit,
+8 | |     WorkItem,
+9 | | )
+  | |_^
+  |
+help: Organize imports
+
+E501 Line too long (108 > 100)
+  --> src\docuflow\features\core\search.py:54:101
+   |
+52 | …     items = self.session.exec(
+53 | …         select(WorkItem)
+54 | …         .where((col(WorkItem.folder_name).ilike(pattern)) | (col(WorkItem.sidra_number).ilike(pattern)))  # type: ignore[attr-define…
+   |                                                                                                   ^^^^^^^^
+55 | …         .limit(limit)
+56 | …     ).all()
+   |
+
+RUF012 Mutable default value for class attribute
+  --> src\docuflow\features\core\views.py:27:35
+   |
+25 |     """Central registry for all feature views in DocuFlow."""
+26 |
+27 |     _views: dict[str, ViewInfo] = {}
+   |                                   ^^
+28 |
+29 |     @classmethod
+   |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+F401 [*] `sqlmodel.func` imported but unused
+ --> src\docuflow\features\dashboard\view.py:5:31
+  |
+4 | from nicegui import ui
+5 | from sqlmodel import Session, func, select
+  |                               ^^^^
+6 |
+7 | from docuflow.application.bus.orchestrator import P2POrchestrator
+  |
+help: Remove unused import
+
+F401 [*] `sqlmodel.select` imported but unused
+ --> src\docuflow\features\dashboard\view.py:5:37
+  |
+4 | from nicegui import ui
+5 | from sqlmodel import Session, func, select
+  |                                     ^^^^^^
+6 |
+7 | from docuflow.application.bus.orchestrator import P2POrchestrator
+  |
+help: Remove unused import
+
+E501 Line too long (101 > 100)
+  --> src\docuflow\features\dashboard\view.py:77:101
+   |
+75 |                     "text-slate-400 font-bold text-xs tracking-tighter"
+76 |                 )
+77 |                 ui.label(f"{len(nodes)} ONLINE").classes("text-emerald-400 text-4xl font-black mt-2")
+   |                                                                                                     ^
+78 |                 ui.label("P2P Mesh Synchronized").classes(
+79 |                     "text-slate-500 text-[10px] mt-4 uppercase font-bold"
+   |
+
+E501 Line too long (163 > 100)
+  --> src\docuflow\features\docs\portal.py:45:101
+   |
+44 | …
+45 | … via the **Health Registry**. Every node emits a heartbeat every 30 seconds to the shared network.
+   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+46 | …
+47 | …
+   |
+
+E501 Line too long (135 > 100)
+  --> src\docuflow\features\docs\portal.py:48:101
+   |
+47 | ## 2. Identity Management
+48 | User accounts and roles are decentralized. Updates to the **Identity Registry** are broadcast across the P2P bus using HMAC signatures.
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+49 |
+50 | ## 3. Emergency Step-Down
+   |
+
+E501 Line too long (127 > 100)
+  --> src\docuflow\features\docs\portal.py:60:101
+   |
+59 | ## 1. Material Stock Tracking
+60 | The Warehouse module uses absolute-value synchronization. Changes to physical stock are immediately reflected across all nodes.
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |
+62 | ## 2. Access Authorization
+   |
+
+E501 Line too long (109 > 100)
+  --> src\docuflow\features\docs\portal.py:63:101
+   |
+62 | ## 2. Access Authorization
+63 | Your sidebar will dynamicall update based on your **Role** and the **Workplace** binding of the current node.
+   |                                                                                                     ^^^^^^^^^
+64 |             """)
+   |
+
+E501 Line too long (130 > 100)
+  --> src\docuflow\features\folder_scanner\system.py:49:101
+   |
+47 |     MD5_CHUNK_SIZE = 4096
+48 |
+49 |     def __init__(self, config: Config, sdk: Any, engine: Engine, admin_system: Any | None = None, session: Session | None = None):
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+50 |         super().__init__(config, session)
+51 |         self.sdk = sdk
+   |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\folder_scanner\system.py:231:101
+    |
+229 |             scan_log = WorkLog(
+230 |                 log_type=WorkLogType.INFO,
+231 |                 message=f"Scanner completed cycle. Discovered {self._items_discovered_count} items.",
+    |                                                                                                     ^
+232 |                 node_id=self.config.node_id,
+233 |             )
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\features\folder_scanner\view.py:1:1
+   |
+ 1 | / import logging
+ 2 | | from typing import TYPE_CHECKING, Any
+ 3 | |
+ 4 | | from nicegui import ui
+ 5 | | from docuflow.lib.widgets.ui_utils import NotifyHelper, get_role_indicator_color, get_sync_indicator_color
+ 6 | | from sqlalchemy import Engine
+ 7 | | from sqlmodel import Session
+ 8 | |
+ 9 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+10 | | from docuflow.features.folder_scanner.system import FolderScannerSystem
+11 | | from docuflow.infrastructure.config import Config
+12 | | from docuflow.lib.base_widget import BaseDocuWidget
+13 | | from docuflow.lib.widgets.ns_mirror_status import NSMirrorStatus
+14 | | from docuflow.lib.widgets.scan_log_panel import ScanLogPanel
+   | |____________________________________________________________^
+   |
+help: Organize imports
+
+E501 Line too long (106 > 100)
+ --> src\docuflow\features\folder_scanner\view.py:5:101
+  |
+4 | from nicegui import ui
+5 | from docuflow.lib.widgets.ui_utils import NotifyHelper, get_role_indicator_color, get_sync_indicator_color
+  |                                                                                                     ^^^^^^
+6 | from sqlalchemy import Engine
+7 | from sqlmodel import Session
+  |
+
+E501 Line too long (101 > 100)
+  --> src\docuflow\features\folder_scanner\view.py:68:101
+   |
+66 |             with ui.row().classes("w-full items-center justify-between"):
+67 |                 with ui.column().classes("gap-1"):
+68 |                     ui.label("Folder Ingestion & NC Mirror").classes("text-3xl font-bold text-white")
+   |                                                                                                     ^
+69 |                     with ui.row().classes("items-center gap-2"):
+70 |                         # Pulsing indicator for Master status
+   |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\folder_scanner\view.py:120:101
+    |
+118 |                         ui.label(f"Files found: {status['items_found']}")
+119 |                         ui.label(
+120 |                             "Status: Scanning SIDRA folder" if status["is_active"] else "Status: Idle"
+    |                                                                                                     ^^
+121 |                         )
+    |
+
+E501 Line too long (110 > 100)
+   --> src\docuflow\features\folder_scanner\view.py:165:101
+    |
+163 | …                     if latest_mirror_log:
+164 | …                         ui.label(
+165 | …                             f"Last sync: {latest_mirror_log.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+    |                                                                                               ^^^^^^^^^^
+166 | …                         )
+167 | …                     else:
+    |
+
+E501 Line too long (116 > 100)
+   --> src\docuflow\features\folder_scanner\view.py:178:101
+    |
+176 |                         "text-xs font-bold text-slate-500 uppercase tracking-widest mb-4"
+177 |                     )
+178 |                     mirror_status = NSMirrorStatus(self.engine, self.config.node_id, system_scope=self.system_scope)
+    |                                                                                                     ^^^^^^^^^^^^^^^^
+179 |                     mirror_status.render()
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\folder_scanner\view.py:225:101
+    |
+223 |                             )
+224 |                         with ui.row().classes(
+225 |                             "w-full justify-between items-center text-xs pt-2 border-t border-white/5"
+    |                                                                                                     ^^
+226 |                         ):
+227 |                             ui.label("LOCAL NS MIRROR").classes("text-indigo-400 font-bold")
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\inventory\system.py:129:101
+    |
+128 |         Example:
+129 |             batch = inventory.receive_material_batch(mat_type_id=1, quantity=50, batch_code="BATCH-99")
+    |                                                                                                     ^^^
+130 |         """
+131 |         batch_stock = MaterialStock(
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\inventory\system.py:163:101
+    |
+162 |         Example:
+163 |             inventory.record_inventory_correction(stock_item_id=10, actual_qty=48.5, reason="Damaged")
+    |                                                                                                     ^^
+164 |         """
+165 |         stock_item = self.session.get(MaterialStock, stock_item_id)
+    |
+
+E501 Line too long (113 > 100)
+   --> src\docuflow\features\inventory\system.py:253:101
+    |
+251 | …     if target_stock.quantity < sheets_used:
+252 | …         raise ValueError(
+253 | …             f"Недостаточно материала на складе для партии {target_stock.batch_code or target_stock.id}. "
+    |                                                                                               ^^^^^^^^^^^^^
+254 | …             f"Доступно: {target_stock.quantity}, требуется: {sheets_used}"
+255 | …         )
+    |
+
+E501 Line too long (142 > 100)
+   --> src\docuflow\features\inventory\system.py:292:100
+    |
+291 | …
+292 | …uantity} {material_type.primary_unit if material_type else 'ед.'}\nПримечание: {note}"
+    |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+293 | …
+294 | …
+    |
+
+RUF001 String contains ambiguous `р` (CYRILLIC SMALL LETTER ER). Did you mean `p` (LATIN SMALL LETTER P)?
+   --> src\docuflow\features\inventory\system.py:292:124
+    |
+291 | …     # 2. Alert Broadcast via Chat
+292 | …     reorder_content = f"📦 ДОЗАКАЗ: {mat_label} — {quantity} {material_type.primary_unit if material_type else 'ед.'}\nПримечание: {…
+    |                                                                                                                           ^
+293 | …     new_alert = ChatMessage(
+294 | …         author=author,
+    |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\features\inventory\system.py:292:127
+    |
+291 | …     # 2. Alert Broadcast via Chat
+292 | …     reorder_content = f"📦 ДОЗАКАЗ: {mat_label} — {quantity} {material_type.primary_unit if material_type else 'ед.'}\nПримечание: {…
+    |                                                                                                                              ^
+293 | …     new_alert = ChatMessage(
+294 | …         author=author,
+    |
+
+RUF001 String contains ambiguous `а` (CYRILLIC SMALL LETTER A). Did you mean `a` (LATIN SMALL LETTER A)?
+   --> src\docuflow\features\inventory\system.py:292:129
+    |
+291 | …     # 2. Alert Broadcast via Chat
+292 | …     reorder_content = f"📦 ДОЗАКАЗ: {mat_label} — {quantity} {material_type.primary_unit if material_type else 'ед.'}\nПримечание: {…
+    |                                                                                                                                ^
+293 | …     new_alert = ChatMessage(
+294 | …         author=author,
+    |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\features\inventory\system.py:292:132
+    |
+291 | …
+292 | …terial_type.primary_unit if material_type else 'ед.'}\nПримечание: {note}"
+    |                                                                  ^
+293 | …
+294 | …
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\features\inventory\view.py:1:1
+   |
+ 1 | / from collections.abc import Callable
+ 2 | | from typing import Any
+ 3 | |
+ 4 | | from nicegui import ui
+ 5 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+ 6 | | from sqlmodel import select
+ 7 | |
+ 8 | | from docuflow.domain.entities.production import (
+ 9 | |     MaterialAudit,
+10 | |     MaterialStock,
+11 | |     MaterialType,
+12 | | )
+13 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+14 | | from docuflow.features.inventory.system import InventorySystem
+15 | | from docuflow.lib.base_widget import BaseDocuWidget
+16 | | from docuflow.lib.widgets.ui_utils import get_kpi_color
+   | |_______________________________________________________^
+   |
+help: Organize imports
+
+F401 [*] `collections.abc.Callable` imported but unused
+ --> src\docuflow\features\inventory\view.py:1:29
+  |
+1 | from collections.abc import Callable
+  |                             ^^^^^^^^
+2 | from typing import Any
+  |
+help: Remove unused import: `collections.abc.Callable`
+
+F401 [*] `sqlmodel.select` imported but unused
+ --> src\docuflow\features\inventory\view.py:6:22
+  |
+4 | from nicegui import ui
+5 | from docuflow.lib.widgets.ui_utils import NotifyHelper
+6 | from sqlmodel import select
+  |                      ^^^^^^
+7 |
+8 | from docuflow.domain.entities.production import (
+  |
+help: Remove unused import: `sqlmodel.select`
+
+F401 [*] `docuflow.domain.entities.production.MaterialAudit` imported but unused
+  --> src\docuflow\features\inventory\view.py:9:5
+   |
+ 8 | from docuflow.domain.entities.production import (
+ 9 |     MaterialAudit,
+   |     ^^^^^^^^^^^^^
+10 |     MaterialStock,
+11 |     MaterialType,
+   |
+help: Remove unused import
+
+F401 [*] `docuflow.domain.entities.production.MaterialStock` imported but unused
+  --> src\docuflow\features\inventory\view.py:10:5
+   |
+ 8 | from docuflow.domain.entities.production import (
+ 9 |     MaterialAudit,
+10 |     MaterialStock,
+   |     ^^^^^^^^^^^^^
+11 |     MaterialType,
+12 | )
+   |
+help: Remove unused import
+
+F401 [*] `docuflow.domain.entities.production.MaterialType` imported but unused
+  --> src\docuflow\features\inventory\view.py:11:5
+   |
+ 9 |     MaterialAudit,
+10 |     MaterialStock,
+11 |     MaterialType,
+   |     ^^^^^^^^^^^^
+12 | )
+13 | from docuflow.features.core.views import ViewInfo, ViewRegistry
+   |
+help: Remove unused import
+
+F401 [*] `docuflow.lib.widgets.ui_utils.get_kpi_color` imported but unused
+  --> src\docuflow\features\inventory\view.py:16:43
+   |
+14 | from docuflow.features.inventory.system import InventorySystem
+15 | from docuflow.lib.base_widget import BaseDocuWidget
+16 | from docuflow.lib.widgets.ui_utils import get_kpi_color
+   |                                           ^^^^^^^^^^^^^
+   |
+help: Remove unused import: `docuflow.lib.widgets.ui_utils.get_kpi_color`
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+  --> src\docuflow\features\inventory\view.py:73:43
+   |
+71 | …                     with ui.card().classes("w-full p-8 text-center glass-card"):
+72 | …                         ui.icon("check_circle", color="emerald").classes("text-6xl mb-4")
+73 | …                         ui.label("Все накормлены. Активных запросов нет.").classes(
+   |                                     ^
+74 | …                             "text-xl text-slate-400"
+75 | …                         )
+   |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\features\inventory\view.py:73:44
+   |
+71 | …                     with ui.card().classes("w-full p-8 text-center glass-card"):
+72 | …                         ui.icon("check_circle", color="emerald").classes("text-6xl mb-4")
+73 | …                         ui.label("Все накормлены. Активных запросов нет.").classes(
+   |                                      ^
+74 | …                             "text-xl text-slate-400"
+75 | …                         )
+   |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+  --> src\docuflow\features\inventory\view.py:73:45
+   |
+71 | …                     with ui.card().classes("w-full p-8 text-center glass-card"):
+72 | …                         ui.icon("check_circle", color="emerald").classes("text-6xl mb-4")
+73 | …                         ui.label("Все накормлены. Активных запросов нет.").classes(
+   |                                       ^
+74 | …                             "text-xl text-slate-400"
+75 | …                         )
+   |
+
+E501 Line too long (102 > 100)
+  --> src\docuflow\features\inventory\view.py:91:101
+   |
+90 | …                     ui.label(
+91 | …                         req_log.message.replace("[LOGISTICS_REQUEST]", "").strip()
+   |                                                                                   ^^
+92 | …                     ).classes("text-sm font-bold text-white mb-4")
+   |
+
+E501 Line too long (106 > 100)
+  --> src\docuflow\features\inventory\view.py:97:101
+   |
+95 | …                     ui.button(
+96 | …                         "ПОДАНО",
+97 | …                         on_click=lambda r=req_log: self.handle_supply_fulfillment(
+   |                                                                               ^^^^^^
+98 | …                             r, render_supply_requests
+99 | …                         ),
+   |
+
+E501 Line too long (115 > 100)
+   --> src\docuflow\features\inventory\view.py:161:101
+    |
+159 |                         """
+160 |                         <q-td :props="props">
+161 |                             <q-badge :color="props.value < 10 ? 'emerald' : (props.value < 25 ? 'orange' : 'red')">
+    |                                                                                                     ^^^^^^^^^^^^^^^
+162 |                                 {{ props.value }}%
+163 |                             </q-badge>
+    |
+
+E501 Line too long (131 > 100)
+   --> src\docuflow\features\inventory\view.py:171:101
+    |
+169 | …     """
+170 | …     <q-td :props="props">
+171 | …         <q-btn flat round dense color="indigo" icon="settings" @click="$parent.$emit('settings', props.row)" />
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+172 | …         <q-btn flat round dense color="orange" icon="shopping_cart" @click="$parent.$emit('reorder', props.row)" />
+173 | …     </q-td>
+    |
+
+E501 Line too long (135 > 100)
+   --> src\docuflow\features\inventory\view.py:172:101
+    |
+170 | …         <q-td :props="props">
+171 | …             <q-btn flat round dense color="indigo" icon="settings" @click="$parent.$emit('settings', props.row)" />
+172 | …             <q-btn flat round dense color="orange" icon="shopping_cart" @click="$parent.$emit('reorder', props.row)" />
+    |                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+173 | …         </q-td>
+174 | …     """,
+    |
+
+E501 Line too long (112 > 100)
+   --> src\docuflow\features\inventory\view.py:201:101
+    |
+199 | …                     )
+200 | …                     drift_limit = (
+201 | …                         ui.number("Drift Limit %", value=InventorySystem.DEFAULT_TIME_TOLERANCE_PCT)
+    |                                                                                           ^^^^^^^^^^^^
+202 | …                         .classes("flex-1")
+203 | …                         .props("dark standout rounded")
+    |
+
+E501 Line too long (136 > 100)
+   --> src\docuflow\features\inventory\view.py:393:101
+    |
+391 | …         """
+392 | …         <q-td :props="props">
+393 | …             <q-btn flat round dense color="green" icon="exposure_plus_1" @click="$parent.$emit('correct', props.row)" />
+    |                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+394 | …         </q-td>
+395 | …     """,
+    |
+
+E741 Ambiguous variable name: `l`
+   --> src\docuflow\features\inventory\view.py:503:70
+    |
+501 | …                     fresh_system = await req.get(InventorySystem)
+502 | …                     logs = fresh_system.get_audit_history(limit=100)
+503 | …                     audit_grid.rows[:] = [l.model_dump() for l in logs]
+    |                                                                ^
+504 | …                     audit_grid.update()
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\inventory\view.py:513:101
+    |
+511 |                             "align": "left",
+512 |                         },
+513 |                         {"name": "operation", "label": "Оп.", "field": "operation", "align": "center"},
+    |                                                                                                     ^^^
+514 |                         {
+515 |                             "name": "qty_delta",
+    |
+
+E501 Line too long (110 > 100)
+  --> src\docuflow\features\parts\system.py:41:101
+   |
+40 |         Example:
+41 |             part = system.synchronize_part_definition(sku="BASE-001", version="B", bbox_x=100.5, bbox_y=200.0)
+   |                                                                                                     ^^^^^^^^^^
+42 |         """
+43 |         db = self.db_session
+   |
+
+E501 Line too long (104 > 100)
+   --> src\docuflow\features\parts\system.py:106:101
+    |
+104 |         db = self.db_session
+105 |         actual_tolerance = (
+106 |             tolerance_percent if tolerance_percent is not None else self.DEFAULT_GEOMETRIC_TOLERANCE_PCT
+    |                                                                                                     ^^^^
+107 |         )
+108 |         tolerance_factor = actual_tolerance / 100.0
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\parts\system.py:159:101
+    |
+158 |         Example:
+159 |             system.create_part_template(sku="A1", note_message="Sharp edges", severity_level="caution")
+    |                                                                                                     ^^^
+160 |         """
+161 |         db = self.db_session
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\features\parts\view.py:1:1
+   |
+ 1 | / from typing import Any
+ 2 | |
+ 3 | | from nicegui import ui
+ 4 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+ 5 | |
+ 6 | | from docuflow.domain.entities.production import PartLibrary, PartTemplate
+ 7 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+ 8 | | from docuflow.features.parts.system import PartLibrarySystem
+ 9 | | from docuflow.lib.base_widget import BaseDocuWidget
+10 | | from docuflow.lib.widgets.part_preview import PartPreview
+   | |_________________________________________________________^
+   |
+help: Organize imports
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\features\parts\view.py:59:53
+   |
+57 |                 with ui.column().classes("gap-1"):
+58 |                     ui.label("Справочник деталей").classes("text-2xl font-bold text-zinc-100")
+59 |                     ui.label("Реестр уникальных SKU с историей использования").classes(
+   |                                                     ^
+60 |                         "text-sm text-zinc-400"
+61 |                     )
+   |
+
+E501 Line too long (122 > 100)
+  --> src\docuflow\features\parts\view.py:95:101
+   |
+93 |             with self.grid:
+94 |                 ui.label("Детали не найдены").classes(
+95 |                     "col-span-full text-center text-zinc-600 mt-12 py-8 border-2 border-dashed border-zinc-800 rounded-lg"
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+96 |                 )
+97 |             return
+   |
+
+E501 Line too long (143 > 100)
+   --> src\docuflow\features\parts\view.py:104:101
+    |
+102 | …
+103 | …
+104 | …bg-zinc-900 border-zinc-800 hover:border-blue-500/50 transition-all cursor-pointer p-3"
+    |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+105 | …
+106 | …n_part_details(p))
+    |
+
+RUF001 String contains ambiguous `×` (MULTIPLICATION SIGN). Did you mean `x` (LATIN SMALL LETTER X)?
+   --> src\docuflow\features\parts\view.py:116:54
+    |
+114 |                             "text-xs font-bold truncate text-zinc-200 group-hover:text-blue-400"
+115 |                         )
+116 |                         ui.label(f"{part.bbox_x:.1f} × {part.bbox_y:.1f} мм").classes(
+    |                                                      ^
+117 |                             "text-[10px] text-zinc-500 uppercase tracking-tighter"
+118 |                         )
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\parts\view.py:122:101
+    |
+120 |                     # Hover Overlay
+121 |                     with ui.row().classes(
+122 |                         "absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+    |                                                                                                     ^
+123 |                     ):
+124 |                         ui.icon("info", size="16px").classes("text-blue-500")
+    |
+
+E501 Line too long (110 > 100)
+   --> src\docuflow\features\parts\view.py:141:101
+    |
+139 |                     ui.label(part.sku).classes("text-xl font-bold text-zinc-100")
+140 |                     ui.label(
+141 |                         f"Версия {part.version} • Впервые замечена: {part.first_seen_at.strftime('%d.%m.%Y')}"
+    |                                                                                                     ^^^^^^^^^^
+142 |                     ).classes("text-xs text-zinc-500")
+143 |                 ui.button(icon="close", on_click=dialog.close).props("flat color=white")
+    |
+
+RUF001 String contains ambiguous `×` (MULTIPLICATION SIGN). Did you mean `x` (LATIN SMALL LETTER X)?
+   --> src\docuflow\features\parts\view.py:154:72
+    |
+152 |                             "text-xs font-bold uppercase text-zinc-500 mb-2"
+153 |                         )
+154 |                         self._stat_row("Габариты", f"{part.bbox_x:.1f} × {part.bbox_y:.1f} мм")
+    |                                                                        ^
+155 |                         self._stat_row("Контуров", str(part.contour_count or 0))
+156 |                         self._stat_row("Отверстий", str(part.hole_count or 0))
+    |
+
+RUF001 String contains ambiguous `Н` (CYRILLIC CAPITAL LETTER EN). Did you mean `H` (LATIN CAPITAL LETTER H)?
+   --> src\docuflow\features\parts\view.py:188:23
+    |
+187 |         if not items:
+188 |             ui.label("Не использовалась в заказах").classes("text-sm text-zinc-600 italic")
+    |                       ^
+189 |             return
+    |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\features\parts\view.py:188:24
+    |
+187 |         if not items:
+188 |             ui.label("Не использовалась в заказах").classes("text-sm text-zinc-600 italic")
+    |                        ^
+189 |             return
+    |
+
+E501 Line too long (113 > 100)
+   --> src\docuflow\features\production\system.py:168:101
+    |
+166 |             task_item_id=source_pallet.task_item_id,
+167 |             log_type=WorkLogType.INFO.value,
+168 |             message=f"Pallet split: {source_pallet.label_id} -> {secondary_label} ({move_quantity} units moved)",
+    |                                                                                                     ^^^^^^^^^^^^^
+169 |             author=author,
+170 |             node_id=self.config.node_id,
+    |
+
+E501 Line too long (127 > 100)
+   --> src\docuflow\features\production\system.py:219:101
+    |
+217 |             task_item_id=target_pallet.task_item_id,
+218 |             log_type=WorkLogType.INFO.value,
+219 |             message=f"Consolidated into {target_pallet.label_id}: {', '.join(merged_labels_list)} (+{cumulative_moved} units)",
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+220 |             author=author_name,
+221 |             node_id=self.config.node_id,
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> src\docuflow\features\production\view.py:1:1
+  |
+1 | / from typing import Any
+2 | | from nicegui import ui
+3 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+4 | | from sqlmodel import select
+5 | |
+6 | | from docuflow.domain.entities.production import ProductionUnit
+7 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+8 | | from docuflow.features.production.system import ProductionSystem
+9 | | from docuflow.lib.base_widget import BaseDocuWidget
+  | |___________________________________________________^
+  |
+help: Organize imports
+
+E501 Line too long (101 > 100)
+  --> src\docuflow\features\production\view.py:52:101
+   |
+51 |             self.search_term = (
+52 |                 ui.input("Поиск по номеру (label_id)").props("dark standout rounded").classes("w-64")
+   |                                                                                                     ^
+53 |             )
+   |
+
+E501 Line too long (104 > 100)
+  --> src\docuflow\features\production\view.py:64:101
+   |
+62 |                     "sortable": True,
+63 |                 },
+64 |                 {"name": "qty_produced", "label": "Кол-во", "field": "qty_produced", "align": "center"},
+   |                                                                                                     ^^^^
+65 |                 {
+66 |                     "name": "parent_label_id",
+   |
+
+E501 Line too long (105 > 100)
+  --> src\docuflow\features\production\view.py:76:101
+   |
+74 |             ]
+75 |
+76 |             self.grid = ui.table(columns=grid_cols, rows=[], row_key="id", selection="multiple").classes(
+   |                                                                                                     ^^^^^
+77 |                 "w-full glass-card text-white"
+78 |             )
+   |
+
+E501 Line too long (151 > 100)
+  --> src\docuflow\features\production\view.py:91:101
+   |
+89 | …
+90 | …
+91 | …icon="local_shipping" @click="$parent.$emit('ship', props.row)" v-if="props.row.can_ship" />
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+92 | …icon="call_split" @click="$parent.$emit('split', props.row)" />
+93 | …
+   |
+
+E501 Line too long (122 > 100)
+  --> src\docuflow\features\production\view.py:92:101
+   |
+90 | …         <q-td :props="props">
+91 | …             <q-btn flat round dense color="indigo" icon="local_shipping" @click="$parent.$emit('ship', props.row)" v-if="props.row.c…
+92 | …             <q-btn flat round dense color="orange" icon="call_split" @click="$parent.$emit('split', props.row)" />
+   |                                                                                               ^^^^^^^^^^^^^^^^^^^^^^
+93 | …         </q-td>
+94 | …     """,
+   |
+
+E501 Line too long (104 > 100)
+   --> src\docuflow\features\production\view.py:115:101
+    |
+113 | …     async def execute_split():
+114 | …         if not split_qty.value or split_qty.value >= max_qty.value:
+115 | …             NotifyHelper.warning("Некорректное количество (должно быть меньше остатка)")
+    |                                                                                       ^^^^
+116 | …             return
+117 | …         async with self.scope() as req:
+    |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+   --> src\docuflow\features\production\view.py:126:41
+    |
+124 |                         NotifyHelper.warning("Паллета успешно разделена")
+125 |
+126 |                     ui.button("ОТДЕЛИТЬ В НОВУЮ ПАЛЛЕТУ", on_click=execute_split).classes(
+    |                                         ^
+127 |                         "w-full h-12 bg-orange-600 text-white rounded-xl shadow-lg"
+128 |                     )
+    |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+   --> src\docuflow\features\production\view.py:166:28
+    |
+165 |                 ui.button(
+166 |                     "СЛИТЬ В ПЕРВУЮ ВЫБРАННУЮ")
+    |                            ^
+167 |
+168 |             # Load data on open
+    |
+
+RUF001 String contains ambiguous `Н` (CYRILLIC CAPITAL LETTER EN). Did you mean `H` (LATIN CAPITAL LETTER H)?
+   --> src\docuflow\features\production\view.py:203:38
+    |
+201 |                     "parent_label_id": u.parent_label_id or "-",
+202 |                     "created_by": u.created_by,
+203 |                     "status_label": "НА СКЛАДЕ" if u.is_stock else "ОТГРУЖЕНО",
+    |                                      ^
+204 |                     "status_color": "emerald" if u.is_stock else "slate-500",
+205 |                     "can_ship": u.is_stock,
+    |
+
+RUF001 String contains ambiguous `А` (CYRILLIC CAPITAL LETTER A). Did you mean `A` (LATIN CAPITAL LETTER A)?
+   --> src\docuflow\features\production\view.py:203:39
+    |
+201 |                     "parent_label_id": u.parent_label_id or "-",
+202 |                     "created_by": u.created_by,
+203 |                     "status_label": "НА СКЛАДЕ" if u.is_stock else "ОТГРУЖЕНО",
+    |                                       ^
+204 |                     "status_color": "emerald" if u.is_stock else "slate-500",
+205 |                     "can_ship": u.is_stock,
+    |
+
+E501 Line too long (109 > 100)
+  --> src\docuflow\features\projects\system.py:34:101
+   |
+33 |         Example:
+34 |             project = system.register_new_project(project_name="IKEA-2026", description="Living room series")
+   |                                                                                                     ^^^^^^^^^
+35 |         """
+36 |         new_project = Project(name=project_name, description=description)
+   |
+
+E501 Line too long (101 > 100)
+  --> src\docuflow\features\projects\system.py:44:101
+   |
+42 |     def reassign_production_group(self, work_item_id: int, target_project_id: int) -> WorkItem:
+43 |         """
+44 |         Moves a WorkItem (production folder) to a different project grouping for better organization.
+   |                                                                                                     ^
+45 |
+46 |         Example:
+   |
+
+E501 Line too long (109 > 100)
+  --> src\docuflow\features\projects\system.py:64:101
+   |
+62 |             work_item_id=work_item.id,
+63 |             log_type=WorkLogType.STATUS_CHANGE.value,
+64 |             message=f"Workshop: Reassigned from Project ID {previous_project_id} to '{target_project.name}'",
+   |                                                                                                     ^^^^^^^^^
+65 |             node_id=self.config.node_id,
+66 |             created_at=datetime.datetime.now(),
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> src\docuflow\features\projects\view.py:1:1
+  |
+1 | / from typing import Any
+2 | |
+3 | | from nicegui import ui
+4 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+5 | |
+6 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+7 | | from docuflow.features.projects.system import ProjectSystem
+8 | | from docuflow.features.work_items.system import WorkItemFilters, WorkItemSystem
+9 | | from docuflow.lib.base_widget import BaseDocuWidget
+  | |___________________________________________________^
+  |
+help: Organize imports
+
+E501 Line too long (102 > 100)
+  --> src\docuflow\features\projects\view.py:29:101
+   |
+28 | async def projects_view_wrapper(
+29 |     project_system: ProjectSystem, wi_system: WorkItemSystem, system_scope: Any, layout: Any, **kwargs
+   |                                                                                                     ^^
+30 | ):
+31 |     """Wrapper to instantiate and render the ProjectManagementView."""
+   |
+
+E501 Line too long (111 > 100)
+  --> src\docuflow\features\projects\view.py:76:101
+   |
+74 | …     ui.label("Переназначение нарядов (из Default)").classes("text-h6 mb-2")
+75 | …     ui.markdown(
+76 | …         "Выберите наряды в левой колонке (из проекта Default) и назначьте их в целевой проект."
+   |                                                                                       ^^^^^^^^^^^
+77 | …     )
+   |
+
+E501 Line too long (105 > 100)
+  --> src\docuflow\features\projects\view.py:91:101
+   |
+89 |                 for p in projects:
+90 |                     with ui.row().classes(
+91 |                         "w-full items-center justify-between p-2 hover:bg-blue-50 cursor-pointer rounded"
+   |                                                                                                     ^^^^^
+92 |                     ):
+93 |                         ui.label(p.name).classes("font-bold")
+   |
+
+E501 Line too long (128 > 100)
+   --> src\docuflow\features\projects\view.py:166:101
+    |
+164 |                     """
+165 |                     <q-td :props="props">
+166 |                         <q-btn flat round color="primary" icon="move_to_inbox" @click="() => $emit('reassign', props.row.id)" />
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+167 |                     </q-td>
+168 |                 """,
+    |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\reports\system.py:207:101
+    |
+205 |         return """
+206 |         <style>
+207 |             body { font-family: 'Inter', sans-serif; color: #334155; line-height: 1.5; padding: 50px; }
+    |                                                                                                     ^^^
+208 |             h1 { color: #f43f5e; border-bottom: 3px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 30px; }
+209 |             .section { margin-top: 30px; }
+    |
+
+E501 Line too long (111 > 100)
+   --> src\docuflow\features\reports\system.py:208:101
+    |
+206 |         <style>
+207 |             body { font-family: 'Inter', sans-serif; color: #334155; line-height: 1.5; padding: 50px; }
+208 |             h1 { color: #f43f5e; border-bottom: 3px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 30px; }
+    |                                                                                                     ^^^^^^^^^^^
+209 |             .section { margin-top: 30px; }
+210 |             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    |
+
+E501 Line too long (122 > 100)
+   --> src\docuflow\features\reports\system.py:212:101
+    |
+210 |             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+211 |             th, td { border: 1px solid #f1f5f9; padding: 12px; text-align: left; }
+212 |             th { background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; }
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+213 |         </style>
+214 |         <h1>SHIFT PERFORMANCE: {{ node_id }}</h1>
+    |
+
+E501 Line too long (119 > 100)
+   --> src\docuflow\features\reports\system.py:231:101
+    |
+229 |             <h2>INCIDENT LOG</h2>
+230 |             {% for entry in blocks.incident_log() %}
+231 |             <div style="border-left: 3px solid #f43f5e; padding: 10px 20px; background: #fff1f2; margin-bottom: 10px;">
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^
+232 |                 <strong>{{ entry.type }}</strong>: {{ entry.desc }} (reported by {{ entry.by }})  # type: ignore[attr-defined]
+233 |                 <br/><small>Status: {{ 'Resolved' if entry.resolved else 'UNRESOLVED' }}</small>
+    |
+
+E501 Line too long (126 > 100)
+   --> src\docuflow\features\reports\system.py:232:101
+    |
+230 |             {% for entry in blocks.incident_log() %}
+231 |             <div style="border-left: 3px solid #f43f5e; padding: 10px 20px; background: #fff1f2; margin-bottom: 10px;">
+232 |                 <strong>{{ entry.type }}</strong>: {{ entry.desc }} (reported by {{ entry.by }})  # type: ignore[attr-defined]
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+233 |                 <br/><small>Status: {{ 'Resolved' if entry.resolved else 'UNRESOLVED' }}</small>
+234 |             </div>
+    |
+
+E501 Line too long (134 > 100)
+   --> src\docuflow\features\reports\system.py:285:101
+    |
+283 |             body { font-family: 'Inter', sans-serif; color: #334155; padding: 40px; }
+284 |             h1 { color: #991b1b; border-bottom: 2px solid #fee2e2; padding-bottom: 10px; }
+285 |             .incident-card { border: 1px solid #fca5a5; background: #fff1f2; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+286 |             .meta { font-size: 11px; color: #b91c1c; font-weight: bold; margin-bottom: 5px; }
+287 |             .desc { font-size: 14px; margin-bottom: 10px; }  # type: ignore[attr-defined]
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\reports\system.py:288:101
+    |
+286 |             .meta { font-size: 11px; color: #b91c1c; font-weight: bold; margin-bottom: 5px; }
+287 |             .desc { font-size: 14px; margin-bottom: 10px; }  # type: ignore[attr-defined]
+288 |             .res { border-top: 1px solid #fecaca; padding-top: 8px; font-size: 12px; color: #15803d; }
+    |                                                                                                     ^^
+289 |         </style>
+290 |         <h1>WORKSHOP INCIDENT LOG</h1>
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\features\reports\view.py:1:1
+   |
+ 1 | / import base64
+ 2 | | from datetime import date, datetime
+ 3 | | from typing import Any
+ 4 | |
+ 5 | | from nicegui import ui
+ 6 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+ 7 | | from sqlmodel import select
+ 8 | |
+ 9 | | from docuflow.domain.entities.production import ReportTemplate
+10 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+11 | | from docuflow.features.reports.system import ReportSystem
+12 | |
+13 | |
+14 | | from docuflow.lib.base_widget import BaseDocuWidget
+   | |___________________________________________________^
+   |
+help: Organize imports
+
+F401 [*] `sqlmodel.select` imported but unused
+ --> src\docuflow\features\reports\view.py:7:22
+  |
+5 | from nicegui import ui
+6 | from docuflow.lib.widgets.ui_utils import NotifyHelper
+7 | from sqlmodel import select
+  |                      ^^^^^^
+8 |
+9 | from docuflow.domain.entities.production import ReportTemplate
+  |
+help: Remove unused import: `sqlmodel.select`
+
+F401 [*] `docuflow.domain.entities.production.ReportTemplate` imported but unused
+  --> src\docuflow\features\reports\view.py:9:49
+   |
+ 7 | from sqlmodel import select
+ 8 |
+ 9 | from docuflow.domain.entities.production import ReportTemplate
+   |                                                 ^^^^^^^^^^^^^^
+10 | from docuflow.features.core.views import ViewInfo, ViewRegistry
+11 | from docuflow.features.reports.system import ReportSystem
+   |
+help: Remove unused import: `docuflow.domain.entities.production.ReportTemplate`
+
+RUF012 Mutable default value for class attribute
+  --> src\docuflow\features\reports\view.py:44:16
+   |
+43 |       # Dashboard Theme constants
+44 |       UI_THEME = {
+   |  ________________^
+45 | |         "page_bg": "w-full h-full p-8 bg-[#020617] gap-6",
+46 | |         "card_config": "w-full p-6 rounded-2xl bg-slate-900/50 border border-white/5 gap-4",
+47 | |         "preview_bg": "flex-grow h-full bg-white rounded-xl overflow-hidden shadow-2xl relative",
+48 | |         "label_step": "text-[10px] font-black text-slate-500 tracking-widest uppercase",
+49 | |         "btn_preview": "w-full bg-indigo-600 font-bold py-3",
+50 | |         "btn_export": "w-full bg-emerald-600 font-bold py-3",
+51 | |     }
+   | |_____^
+52 |
+53 |       def __init__(self, report_system: ReportSystem, system_scope: Any, layout: Any = None):
+   |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+E501 Line too long (123 > 100)
+  --> src\docuflow\features\reports\view.py:93:101
+   |
+91 |                 with ui.column().classes(self.UI_THEME["preview_bg"]):
+92 |                     ui.label("LIVE REPORT PREVIEW").classes(
+93 |                         "absolute top-4 right-4 text-[10px] font-bold text-slate-300 tracking-tighter mix-blend-difference"
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^
+94 |                     )
+95 |                     self.html_preview_slot = ui.html("").classes(
+   |
+
+E501 Line too long (105 > 100)
+   --> src\docuflow\features\reports\view.py:130:101
+    |
+128 |                     if not self.template_selector.value and options:
+129 |                         self.template_selector.value = (
+130 |                             "shift_summary" if "shift_summary" in options else next(iter(options.keys()))
+    |                                                                                                     ^^^^^
+131 |                         )
+    |
+
+E501 Line too long (128 > 100)
+   --> src\docuflow\features\reports\view.py:165:101
+    |
+163 |             # Fallback error UX
+164 |             self.html_preview_slot.content = f"""
+165 |             <div style="color: #ef4444; padding: 40px; font-family: monospace; background: #fef2f2; border: 1px solid #fee2e2;">
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+166 |                 <h3 style="margin-top: 0;">Reporting Engine Error</h3>
+167 |                 <p>The template failed to assemble blocks: <b>{e!s}</b></p>
+    |
+
+RUF002 Docstring contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+  --> src\docuflow\features\task_board\__init__.py:9:31
+   |
+ 7 | - BatchRule — правила группировки
+ 8 | - BatchGroup — группа задач
+ 9 | - StockAlert — предупреждение о запасах
+   |                               ^
+10 | """
+   |
+
+RUF002 Docstring contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+  --> src\docuflow\features\task_board\batch_engine.py:50:23
+   |
+48 | @dataclass
+49 | class StockAlert:
+50 |     """Предупреждение о наличии детали в запасе."""
+   |                       ^
+51 |
+52 |     sku: str
+   |
+
+E712 Avoid equality comparisons to `True`; use `ProductionUnit.is_stock:` for truth checks
+   --> src\docuflow\features\task_board\batch_engine.py:156:20
+    |
+154 |         in_stock = session.exec(
+155 |             select(ProductionUnit)
+156 |             .where(ProductionUnit.is_stock == True)
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+157 |             .options(selectinload(ProductionUnit.task_item).selectinload(TaskItem.parts))
+158 |         ).all()
+    |
+help: Replace with `ProductionUnit.is_stock`
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\batch_engine.py:196:39
+    |
+194 |         task = session.get(TaskItem, task_id)
+195 |         if task is None:
+196 |             raise ValueError(f"Задача с ID {task_id} не найдена")
+    |                                       ^
+197 |
+198 |         task.batch_group_id = new_batch_group_id
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\batch_engine.py:207:45
+    |
+205 |     def create_batch(self, task_ids: list[int], session: Session | None = None) -> str:
+206 |         """
+207 |         Создаёт новый батч для списка задач с валидацией материала.
+    |                                             ^
+208 |         """
+209 |         session = session or self.session
+    |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\batch_engine.py:216:43
+    |
+214 |             task = session.get(TaskItem, tid)
+215 |             if task is None:
+216 |                 raise ValueError(f"Задача с ID {tid} не найдена")
+    |                                           ^
+217 |             loaded_tasks.append(task)
+    |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\batch_engine.py:224:68
+    |
+222 |         mat_ids = {t.mat_type_id for t in loaded_tasks}
+223 |         if len(mat_ids) > 1:
+224 |             raise ValueError("Нельзя объединять в один батч задачи с разными материалами")
+    |                                                                    ^
+225 |
+226 |         thicknesses = {t.thickness for t in loaded_tasks}
+    |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\batch_engine.py:228:68
+    |
+226 |         thicknesses = {t.thickness for t in loaded_tasks}
+227 |         if len(thicknesses) > 1:
+228 |             raise ValueError("Нельзя объединять в один батч задачи с разной толщиной")
+    |                                                                    ^
+229 |
+230 |         new_batch_id = str(uuid4())
+    |
+
+E501 Line too long (112 > 100)
+   --> src\docuflow\features\task_board\system.py:187:101
+    |
+185 | …     if sheets_done > (planned * self.SHEET_OVERAGE_TOLERANCE) and planned > 0:
+186 | …         raise ValueError(
+187 | …             f"Количество листов ({sheets_done}) значительно превышает план ({planned}). Проверьте ввод."
+    |                                                                                               ^^^^^^^^^^^^
+188 | …         )
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\system.py:339:38
+    |
+338 |     def get_matching_unassigned_tasks(self, mat_type_id: int, thickness: float) -> list[TaskItem]:
+339 |         """Ищет неназначенные задачи с таким же материалом и толщиной."""
+    |                                      ^
+340 |         with self.get_db_session() as session:
+341 |             statement = select(TaskItem).where(
+    |
+
+RUF001 String contains ambiguous `Н` (CYRILLIC CAPITAL LETTER EN). Did you mean `H` (LATIN CAPITAL LETTER H)?
+   --> src\docuflow\features\task_board\system.py:416:25
+    |
+414 |                 return "Режет"
+415 |             elif any(t.status == TaskItemStatus.ON_HOLD for t in tasks):
+416 |                 return "На паузе"
+    |                         ^
+417 |             else:
+418 |                 return "Ожидание"
+    |
+
+RUF001 String contains ambiguous `а` (CYRILLIC SMALL LETTER A). Did you mean `a` (LATIN SMALL LETTER A)?
+   --> src\docuflow\features\task_board\system.py:416:26
+    |
+414 |                 return "Режет"
+415 |             elif any(t.status == TaskItemStatus.ON_HOLD for t in tasks):
+416 |                 return "На паузе"
+    |                          ^
+417 |             else:
+418 |                 return "Ожидание"
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\features\task_board\view.py:1:1
+   |
+ 1 | / from typing import Any
+ 2 | |
+ 3 | | from nicegui import ui
+ 4 | | from sqlmodel import Session, select
+ 5 | |
+ 6 | | from docuflow.domain.entities.production import (
+ 7 | |     TaskItem,
+ 8 | |     TaskItemStatus,
+ 9 | |     WorkerBucketEntry,
+10 | | )
+11 | | from docuflow.features.core.views import ViewInfo, ViewRegistry
+12 | | from docuflow.features.core.layout import SessionContext
+13 | | from docuflow.features.task_board.batch_engine import BatchEngine
+14 | | from docuflow.features.task_board.system import TaskBoardSystem
+15 | | from docuflow.lib.base_widget import BaseDocuWidget
+16 | | from docuflow.lib.widgets import StatusBadge
+17 | | from docuflow.lib.widgets.bucket_panel import BucketPanel
+18 | | from docuflow.lib.widgets.ui_utils import get_kpi_color, get_node_status_color, NotifyHelper
+   | |____________________________________________________________________________________________^
+   |
+help: Organize imports
+
+F401 [*] `sqlmodel.select` imported but unused
+ --> src\docuflow\features\task_board\view.py:4:31
+  |
+3 | from nicegui import ui
+4 | from sqlmodel import Session, select
+  |                               ^^^^^^
+5 |
+6 | from docuflow.domain.entities.production import (
+  |
+help: Remove unused import: `sqlmodel.select`
+
+F401 [*] `docuflow.domain.entities.production.TaskItemStatus` imported but unused
+  --> src\docuflow\features\task_board\view.py:8:5
+   |
+ 6 | from docuflow.domain.entities.production import (
+ 7 |     TaskItem,
+ 8 |     TaskItemStatus,
+   |     ^^^^^^^^^^^^^^
+ 9 |     WorkerBucketEntry,
+10 | )
+   |
+help: Remove unused import: `docuflow.domain.entities.production.TaskItemStatus`
+
+E501 Line too long (104 > 100)
+  --> src\docuflow\features\task_board\view.py:76:101
+   |
+74 |                             "text-2xl font-bold text-yellow-400"
+75 |                         )
+76 |                         ui.label("Перейдите в Admin → BINDINGS для настройки").classes("text-slate-400")
+   |                                                                                                     ^^^^
+77 |                         ui.button(
+78 |                             "Открыть Admin", icon="settings", on_click=lambda: ui.navigate.to("/admin")
+   |
+
+E501 Line too long (103 > 100)
+  --> src\docuflow\features\task_board\view.py:78:101
+   |
+76 |                         ui.label("Перейдите в Admin → BINDINGS для настройки").classes("text-slate-400")
+77 |                         ui.button(
+78 |                             "Открыть Admin", icon="settings", on_click=lambda: ui.navigate.to("/admin")
+   |                                                                                                     ^^^
+79 |                         ).classes("mt-4 vibrant-btn")
+80 |                     return
+   |
+
+RUF002 Docstring contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+   --> src\docuflow\features\task_board\view.py:200:46
+    |
+199 |     async def _select_node(self, node_id: str) -> None:
+200 |         """Выбирает узел и проверяет заметки о передаче смены."""
+    |                                              ^
+201 |         if not node_id or not isinstance(node_id, str):
+202 |             return
+    |
+
+RUF003 Comment contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+   --> src\docuflow\features\task_board\view.py:210:32
+    |
+208 |             session = await req.get(Session)
+209 |
+210 |             # Проверка заметок о передаче смены
+    |                                ^
+211 |             bucket_entries = tb_system.get_bucket(node_id)
+212 |             handover_notes = [
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\view.py:230:30
+    |
+229 |     def _show_handover_alert(self, note: str) -> None:
+230 |         """Показывает диалог с заметкой от предыдущей смены."""
+    |                              ^
+231 |         with (
+232 |             ui.dialog() as dialog,
+    |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+   --> src\docuflow\features\task_board\view.py:252:78
+    |
+250 |         """Рендерит вид бригадира."""
+251 |         # Если есть фильтр наряда, открываем вкладку 'Неназначенные' по умолчанию
+252 |         default_tab_name = "Неназначенные" if self.filter_work_item_id else "Все узлы"
+    |                                                                              ^
+253 |
+254 |         with ui.tabs().classes("w-full mb-4") as tabs:
+    |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\view.py:252:79
+    |
+250 |         """Рендерит вид бригадира."""
+251 |         # Если есть фильтр наряда, открываем вкладку 'Неназначенные' по умолчанию
+252 |         default_tab_name = "Неназначенные" if self.filter_work_item_id else "Все узлы"
+    |                                                                               ^
+253 |
+254 |         with ui.tabs().classes("w-full mb-4") as tabs:
+    |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\features\task_board\view.py:252:80
+    |
+250 |         """Рендерит вид бригадира."""
+251 |         # Если есть фильтр наряда, открываем вкладку 'Неназначенные' по умолчанию
+252 |         default_tab_name = "Неназначенные" if self.filter_work_item_id else "Все узлы"
+    |                                                                                ^
+253 |
+254 |         with ui.tabs().classes("w-full mb-4") as tabs:
+    |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+   --> src\docuflow\features\task_board\view.py:255:37
+    |
+254 |         with ui.tabs().classes("w-full mb-4") as tabs:
+255 |             all_nodes_tab = ui.tab("Все узлы")
+    |                                     ^
+256 |             batching_tab = ui.tab("Батчинг")
+257 |             unassigned_tab = ui.tab("Неназначенные")
+    |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\view.py:255:38
+    |
+254 |         with ui.tabs().classes("w-full mb-4") as tabs:
+255 |             all_nodes_tab = ui.tab("Все узлы")
+    |                                      ^
+256 |             batching_tab = ui.tab("Батчинг")
+257 |             unassigned_tab = ui.tab("Неназначенные")
+    |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\features\task_board\view.py:255:39
+    |
+254 |         with ui.tabs().classes("w-full mb-4") as tabs:
+255 |             all_nodes_tab = ui.tab("Все узлы")
+    |                                       ^
+256 |             batching_tab = ui.tab("Батчинг")
+257 |             unassigned_tab = ui.tab("Неназначенные")
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\task_board\view.py:300:101
+    |
+298 |                     for batch_id, tasks in batches.items():
+299 |                         with ui.row().classes(
+300 |                             "gap-2 items-center ml-4 mb-2 hover:bg-gray-50 p-1 rounded cursor-pointer"
+    |                                                                                                     ^^
+301 |                         ):
+302 |                             StatusBadge(tasks[0].status).render() if tasks else None
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> src\docuflow\features\task_board\view.py:331:9
+    |
+329 |           """Открывает карточку наряда по ID (Deep Link)."""
+330 |           # Resolve WorkItem from session
+331 | /         from docuflow.domain.entities.production import WorkItem
+332 | |         from docuflow.features.work_items.system import WorkItemSystem
+333 | |         from docuflow.lib.widgets.work_item_card import WorkItemCard
+334 | |         from docuflow.infrastructure.config import Config
+    | |_________________________________________________________^
+335 |
+336 |           async with self.scope() as req:
+    |
+help: Organize imports
+
+F401 [*] `docuflow.features.work_items.system.WorkItemSystem` imported but unused
+   --> src\docuflow\features\task_board\view.py:332:57
+    |
+330 |         # Resolve WorkItem from session
+331 |         from docuflow.domain.entities.production import WorkItem
+332 |         from docuflow.features.work_items.system import WorkItemSystem
+    |                                                         ^^^^^^^^^^^^^^
+333 |         from docuflow.lib.widgets.work_item_card import WorkItemCard
+334 |         from docuflow.infrastructure.config import Config
+    |
+help: Remove unused import: `docuflow.features.work_items.system.WorkItemSystem`
+
+F401 [*] `docuflow.infrastructure.config.Config` imported but unused
+   --> src\docuflow\features\task_board\view.py:334:52
+    |
+332 |         from docuflow.features.work_items.system import WorkItemSystem
+333 |         from docuflow.lib.widgets.work_item_card import WorkItemCard
+334 |         from docuflow.infrastructure.config import Config
+    |                                                    ^^^^^^
+335 |
+336 |         async with self.scope() as req:
+    |
+help: Remove unused import: `docuflow.infrastructure.config.Config`
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+   --> src\docuflow\features\task_board\view.py:410:23
+    |
+408 |             ).classes("w-full")
+409 |         else:
+410 |             ui.label("Все задачи назначены или батчированы").classes("text-slate-500")
+    |                       ^
+411 |
+412 |     def _handle_selection_change(self, e):
+    |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\view.py:410:24
+    |
+408 |             ).classes("w-full")
+409 |         else:
+410 |             ui.label("Все задачи назначены или батчированы").classes("text-slate-500")
+    |                        ^
+411 |
+412 |     def _handle_selection_change(self, e):
+    |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\features\task_board\view.py:410:25
+    |
+408 |             ).classes("w-full")
+409 |         else:
+410 |             ui.label("Все задачи назначены или батчированы").classes("text-slate-500")
+    |                         ^
+411 |
+412 |     def _handle_selection_change(self, e):
+    |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+   --> src\docuflow\features\task_board\view.py:452:27
+    |
+450 |             with ui.card().classes("w-full p-8 text-center"):
+451 |                 ui.icon("check_circle").classes("text-6xl text-green-300 mb-4")
+452 |                 ui.label("Все задачи назначены").classes("text-h6 text-slate-500")
+    |                           ^
+453 |             return
+    |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\task_board\view.py:452:28
+    |
+450 |             with ui.card().classes("w-full p-8 text-center"):
+451 |                 ui.icon("check_circle").classes("text-6xl text-green-300 mb-4")
+452 |                 ui.label("Все задачи назначены").classes("text-h6 text-slate-500")
+    |                            ^
+453 |             return
+    |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\features\task_board\view.py:452:29
+    |
+450 |             with ui.card().classes("w-full p-8 text-center"):
+451 |                 ui.icon("check_circle").classes("text-6xl text-green-300 mb-4")
+452 |                 ui.label("Все задачи назначены").classes("text-h6 text-slate-500")
+    |                             ^
+453 |             return
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\task_board\view.py:510:101
+    |
+508 |     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
+509 |
+510 |     def _group_by_batch(self, session, entries: list[WorkerBucketEntry]) -> dict[str, list[TaskItem]]:
+    |                                                                                                     ^^
+511 |         """Группирует записи по batch_group_id."""
+512 |         batches: dict[str, list[TaskItem]] = {}
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\features\view_presets\system.py:26:34
+   |
+24 |     - get_active — получение активного пресета
+25 |     - set_active — установка активного пресета
+26 |     - delete — удаление пресета (с проверкой прав)
+   |                                  ^
+27 |     """
+   |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\features\view_presets\system.py:35:49
+   |
+33 |         Args:
+34 |             config: Конфигурация приложения
+35 |             session: SQLModel сессия для работы с БД
+   |                                                 ^
+36 |         """
+37 |         super().__init__(config, session)
+   |
+
+E712 Avoid equality comparisons to `True`; use `ViewPreset.is_default:` for truth checks
+   --> src\docuflow\features\view_presets\system.py:105:69
+    |
+103 |         # Сначала ищем personal active
+104 |         stmt = select(ViewPreset).where(
+105 |             ViewPreset.module == module, ViewPreset.owner == owner, ViewPreset.is_default == True
+    |                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+106 |         )
+107 |         preset = self.db_session.exec(stmt).first()
+    |
+help: Replace with `ViewPreset.is_default`
+
+E712 Avoid equality comparisons to `True`; use `ViewPreset.is_default:` for truth checks
+   --> src\docuflow\features\view_presets\system.py:114:72
+    |
+112 |         # Если нет personal active, ищем global default
+113 |         stmt = select(ViewPreset).where(
+114 |             ViewPreset.module == module, ViewPreset.owner == "global", ViewPreset.is_default == True
+    |                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+115 |         )
+116 |         return self.db_session.exec(stmt).first()
+    |
+help: Replace with `ViewPreset.is_default`
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\view_presets\system.py:146:39
+    |
+144 |         preset = self.db_session.get(ViewPreset, preset_id)
+145 |         if preset is None:
+146 |             raise ValueError(f"Пресет с ID {preset_id} не найден")
+    |                                       ^
+147 |
+148 |         if preset.module != module:
+    |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\features\view_presets\system.py:175:39
+    |
+173 |         preset = self.db_session.get(ViewPreset, preset_id)
+174 |         if preset is None:
+175 |             raise ValueError(f"Пресет с ID {preset_id} не найден")
+    |                                       ^
+176 |
+177 |         # Проверка прав: нельзя удалять global пресеты обычным пользователям
+    |
+
+RUF012 Mutable default value for class attribute
+  --> src\docuflow\features\work_items\system.py:42:69
+   |
+41 |       # Validation rules for production state transitions
+42 |       VALID_TRANSITIONS: dict[WorkItemStatus, list[WorkItemStatus]] = {
+   |  _____________________________________________________________________^
+43 | |         WorkItemStatus.NEW: [
+44 | |             WorkItemStatus.REGISTERED,
+45 | |             WorkItemStatus.IN_PROGRESS,
+46 | |             WorkItemStatus.CANCELLED,
+47 | |         ],
+48 | |         WorkItemStatus.PENDING_CUTS: [
+49 | |             WorkItemStatus.REGISTERED,
+50 | |             WorkItemStatus.BLOCKED,
+51 | |             WorkItemStatus.CANCELLED,
+52 | |         ],
+53 | |         WorkItemStatus.REGISTERED: [WorkItemStatus.IN_PROGRESS, WorkItemStatus.CANCELLED],
+54 | |         WorkItemStatus.IN_PROGRESS: [
+55 | |             WorkItemStatus.ON_HOLD,
+56 | |             WorkItemStatus.DONE,
+57 | |             WorkItemStatus.BLOCKED,
+58 | |             WorkItemStatus.CANCELLED,
+59 | |         ],
+60 | |         WorkItemStatus.ON_HOLD: [WorkItemStatus.IN_PROGRESS, WorkItemStatus.CANCELLED],
+61 | |         WorkItemStatus.BLOCKED: [WorkItemStatus.IN_PROGRESS, WorkItemStatus.CANCELLED],
+62 | |         WorkItemStatus.DONE: [WorkItemStatus.ARCHIVED],
+63 | |     }
+   | |_____^
+64 |
+65 |       def __init__(self, config: Config, session: Session, sdk: Any = None):
+   |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+S110 `try`-`except`-`pass` detected, consider logging the exception
+   --> src\docuflow\features\work_items\system.py:100:17
+    |
+ 98 |                       default_proj = proj_sys.resolve_default_workshop_project()
+ 99 |                       target_project_id = default_proj.id
+100 | /                 except Exception:
+101 | |                     # Fallback to manual resolution if SDK/System fails
+102 | |                     pass
+    | |________________________^
+103 |
+104 |           # Final fallback if still not resolved
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\features\work_items\system.py:173:101
+    |
+171 |         if criteria.search_text:
+172 |             search_pattern = f"%{criteria.search_text}%"
+173 |             # Using casting to Any to bypass Mypy column attribute errors or using the class attribute
+    |                                                                                                     ^^
+174 |             statement = statement.where(
+175 |                 WorkItem.folder_name.ilike(search_pattern)  # type: ignore[attr-defined]
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\features\work_items\system.py:188:101
+    |
+187 |         return list(
+188 |             self.db_session.exec(select(TaskItem).where(TaskItem.work_item_id == work_item_id)).all()
+    |                                                                                                     ^
+189 |         )
+    |
+
+E501 Line too long (106 > 100)
+   --> src\docuflow\features\work_items\system.py:257:101
+    |
+255 |         if new_status not in allowed_destinations:
+256 |             raise ValueError(
+257 |                 f"Illegal transition: {current_status.value} -> {new_status.value}. Check workflow rules."
+    |                                                                                                     ^^^^^^
+258 |             )
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+ --> src\docuflow\features\work_items\view.py:4:16
+  |
+2 | WorkItemsView — главный экран бригадира.
+3 |
+4 | Список нарядов с фильтрацией, карточка наряда с деталями,
+  |                ^
+5 | логом и кнопками действий.
+6 | """
+  |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+ --> src\docuflow\features\work_items\view.py:4:47
+  |
+2 | WorkItemsView — главный экран бригадира.
+3 |
+4 | Список нарядов с фильтрацией, карточка наряда с деталями,
+  |                                               ^
+5 | логом и кнопками действий.
+6 | """
+  |
+
+E501 Line too long (103 > 100)
+   --> src\docuflow\features\work_items\view.py:133:101
+    |
+131 |                 {"name": "status", "label": "Статус", "field": "status", "align": "center"},
+132 |                 {"name": "folder_name", "label": "Папка", "field": "folder_name", "align": "left"},
+133 |                 {"name": "sidra_number", "label": "Наряд №", "field": "sidra_number", "align": "left"},
+    |                                                                                                     ^^^
+134 |                 {
+135 |                     "name": "work_item_type",
+    |
+
+E501 Line too long (106 > 100)
+  --> src\docuflow\infrastructure\coordination.py:95:101
+   |
+93 |             temp_path = heartbeat_file.with_suffix(".tmp")
+94 |             logger.trace(
+95 |                 f"Coordination [{self._node_id}]: Writing heartbeat {payload['timestamp']} to {temp_path}"
+   |                                                                                                     ^^^^^^
+96 |             )
+97 |             await anyio.Path(temp_path).write_text(json.dumps(payload, indent=2))
+   |
+
+E501 Line too long (115 > 100)
+   --> src\docuflow\infrastructure\graphics\svg_generator.py:185:101
+    |
+183 |                         large_arc_flag = 1 if angle_diff > math.pi else 0
+184 |                         # SVG sweep: 0=counterclockwise (G03), 1=clockwise (G02)
+185 |                         # Wait, SVG arc sweep flag: 1 means rotation from start to end in positive angle direction.
+    |                                                                                                     ^^^^^^^^^^^^^^^
+186 |                         # SVG standard: sweep-flag=1 for clockwise?
+187 |                         # Actually: sweep-flag=1 means the arc will be drawn in a "positive-angle" direction.
+    |
+
+E501 Line too long (109 > 100)
+   --> src\docuflow\infrastructure\graphics\svg_generator.py:187:101
+    |
+185 |                         # Wait, SVG arc sweep flag: 1 means rotation from start to end in positive angle direction.
+186 |                         # SVG standard: sweep-flag=1 for clockwise?
+187 |                         # Actually: sweep-flag=1 means the arc will be drawn in a "positive-angle" direction.
+    |                                                                                                     ^^^^^^^^^
+188 |                         # In SVG (Y down), positive angle is clockwise. So G02 -> 1, G03 -> 0.
+189 |                         sweep_flag = 1 if is_clockwise else 0
+    |
+
+E501 Line too long (109 > 100)
+   --> src\docuflow\infrastructure\graphics\svg_generator.py:194:101
+    |
+192 |                         if scaled_radius > 0:
+193 |                             path_data.append(
+194 |                                 f"A {scaled_radius:.2f} {scaled_radius:.2f} 0 {large_arc_flag} {sweep_flag} "
+    |                                                                                                     ^^^^^^^^^
+195 |                                 f"{tx(current_x):.2f} {ty(current_y):.2f}"
+196 |                             )
+    |
+
+E501 Line too long (124 > 100)
+   --> src\docuflow\infrastructure\graphics\svg_generator.py:204:101
+    |
+202 |         path_str = " ".join(path_data)
+203 |         # Deep blue strokes for high premium look
+204 |         svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="100%" height="100%">
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^
+205 |   <rect width="100%" height="100%" fill="#0f172a"/>
+206 |   <path d="{path_str}" stroke="#38bdf8" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    |
+
+E501 Line too long (117 > 100)
+   --> src\docuflow\infrastructure\graphics\svg_generator.py:206:101
+    |
+204 |         svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="100%" height="100%">
+205 |   <rect width="100%" height="100%" fill="#0f172a"/>
+206 |   <path d="{path_str}" stroke="#38bdf8" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    |                                                                                                     ^^^^^^^^^^^^^^^^^
+207 | </svg>'''
+    |
+
+E501 Line too long (121 > 100)
+   --> src\docuflow\infrastructure\sync.py:112:101
+    |
+110 |                 data[key] = val.isoformat()
+111 |
+112 |         logger.info(f"DataSync: Broadcasting delta for {type(entity).__name__} (ID: {getattr(entity, 'id', 'unknown')})")
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^
+113 |         await self._orchestrator.broadcast_request(CommandType.UPSERT_USER, data)
+    |
+
+B009 [*] Do not call `getattr` with a constant attribute value. It is not any safer than normal property access.
+   --> src\docuflow\infrastructure\sync.py:172:47
+    |
+170 |         remote_obj = entity_cls.model_validate(row_data)
+171 |
+172 |         pk_names = [column.name for column in getattr(entity_cls, "__table__").primary_key]
+    |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+173 |         pk_values = tuple(getattr(remote_obj, pk) for pk in pk_names)
+    |
+help: Replace `getattr` with attribute access
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\lib\base_widget.py:40:50
+   |
+38 |     ):
+39 |         """
+40 |         Безопасно выполняет асинхронное действие с уведомлением об успехе или ошибке.
+   |                                                  ^
+41 |
+42 |         Args:
+   |
+
+RUF002 Docstring contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+  --> src\docuflow\lib\base_widget.py:40:65
+   |
+38 |     ):
+39 |         """
+40 |         Безопасно выполняет асинхронное действие с уведомлением об успехе или ошибке.
+   |                                                                 ^
+41 |
+42 |         Args:
+   |
+
+RUF002 Docstring contains ambiguous `б` (CYRILLIC SMALL LETTER BE). Did you mean `6` (DIGIT SIX)?
+  --> src\docuflow\lib\base_widget.py:40:66
+   |
+38 |     ):
+39 |         """
+40 |         Безопасно выполняет асинхронное действие с уведомлением об успехе или ошибке.
+   |                                                                  ^
+41 |
+42 |         Args:
+   |
+
+RUF002 Docstring contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+  --> src\docuflow\lib\base_widget.py:45:49
+   |
+43 |             action_fn: Асинхронная функция действия.
+44 |             success_msg: Сообщение при успехе.
+45 |             error_prefix: Префикс для сообщения об ошибке.
+   |                                                 ^
+46 |         """
+   |
+
+RUF002 Docstring contains ambiguous `б` (CYRILLIC SMALL LETTER BE). Did you mean `6` (DIGIT SIX)?
+  --> src\docuflow\lib\base_widget.py:45:50
+   |
+43 |             action_fn: Асинхронная функция действия.
+44 |             success_msg: Сообщение при успехе.
+45 |             error_prefix: Префикс для сообщения об ошибке.
+   |                                                  ^
+46 |         """
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> src\docuflow\lib\utils\os_utils.py:1:1
+  |
+1 | / import os
+2 | | import subprocess
+3 | | import time
+4 | | from loguru import logger
+  | |_________________________^
+  |
+help: Organize imports
+
+S607 Starting a process with a partial executable path
+  --> src\docuflow\lib\utils\os_utils.py:15:13
+   |
+13 |         # Use a faster check for Windows
+14 |         result = subprocess.run(
+15 |             ["netstat", "-ano", "-p", "TCP"],
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |             capture_output=True,
+17 |             text=True,
+   |
+
+S603 `subprocess` call: check for execution of untrusted input
+  --> src\docuflow\lib\utils\os_utils.py:28:25
+   |
+26 |                         logger.info(f"Port {port} is busy. Killing PID {pid}...")
+27 |                         # Using taskkill /F to ensure the process is gone
+28 |                         subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
+   |                         ^^^^^^^^^^^^^^
+29 |                         # Give Windows a moment to release the socket
+30 |                         time.sleep(0.5)
+   |
+
+S607 Starting a process with a partial executable path
+  --> src\docuflow\lib\utils\os_utils.py:28:40
+   |
+26 |                         logger.info(f"Port {port} is busy. Killing PID {pid}...")
+27 |                         # Using taskkill /F to ensure the process is gone
+28 |                         subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+29 |                         # Give Windows a moment to release the socket
+30 |                         time.sleep(0.5)
+   |
+
+E501 Line too long (108 > 100)
+  --> src\docuflow\lib\widgets\activity_stream.py:46:101
+   |
+45 |                     with ui.row().classes(
+46 |                         "w-full items-start gap-3 p-2 bg-slate-800/50 rounded-lg border border-slate-700/50"
+   |                                                                                                     ^^^^^^^^
+47 |                     ):
+48 |                         ui.icon(icon, color=color, size="16px").classes("mt-1")
+   |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\lib\widgets\batch_card.py:19:20
+   |
+17 | class BatchCard(BaseDocuWidget):
+18 |     """
+19 |     Карточка батча с задачами внутри.
+   |                    ^
+20 |
+21 |     Props:
+   |
+
+RUF003 Comment contains ambiguous `б` (CYRILLIC SMALL LETTER BE). Did you mean `6` (DIGIT SIX)?
+   --> src\docuflow\lib\widgets\batch_card.py:105:24
+    |
+103 |                 ui.label(f"⏱ {estimated_minutes} мин").classes("text-gray-300")
+104 |
+105 |             # Прогресс-бар
+    |                        ^
+106 |             progress = completed_sheets / total_sheets if total_sheets > 0 else 0
+107 |             ui.linear_progress(value=progress).props("stripe color=green").classes("mb-4")
+    |
+
+RUF003 Comment contains ambiguous `а` (CYRILLIC SMALL LETTER A). Did you mean `a` (LATIN SMALL LETTER A)?
+   --> src\docuflow\lib\widgets\batch_card.py:105:25
+    |
+103 |                 ui.label(f"⏱ {estimated_minutes} мин").classes("text-gray-300")
+104 |
+105 |             # Прогресс-бар
+    |                         ^
+106 |             progress = completed_sheets / total_sheets if total_sheets > 0 else 0
+107 |             ui.linear_progress(value=progress).props("stripe color=green").classes("mb-4")
+    |
+
+RUF003 Comment contains ambiguous `р` (CYRILLIC SMALL LETTER ER). Did you mean `p` (LATIN SMALL LETTER P)?
+   --> src\docuflow\lib\widgets\batch_card.py:105:26
+    |
+103 |                 ui.label(f"⏱ {estimated_minutes} мин").classes("text-gray-300")
+104 |
+105 |             # Прогресс-бар
+    |                          ^
+106 |             progress = completed_sheets / total_sheets if total_sheets > 0 else 0
+107 |             ui.linear_progress(value=progress).props("stripe color=green").classes("mb-4")
+    |
+
+E501 Line too long (127 > 100)
+   --> src\docuflow\lib\widgets\batch_card.py:144:101
+    |
+142 |                         with container:
+143 |                             with ui.row().classes(
+144 |                                 "w-full items-center justify-between bg-teal-900/20 p-2 mb-2 rounded border border-teal-500/30"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+145 |                             ):
+146 |                                 with ui.row().classes("items-center gap-2"):
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\lib\widgets\batch_card.py:149:101
+    |
+147 | …                         ui.icon("auto_awesome", color="teal-400")
+148 | …                         ui.label(
+149 | …                             f"Optimisation: {len(matches)} tasks in queue for this metal"
+    |                                                                                           ^
+150 | …                         ).classes("text-xs font-bold text-teal-300")
+151 | …                     ui.button("CLAIM", on_click=self._show_matching_suggestions).props(
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\lib\widgets\batch_card.py:161:30
+    |
+160 |     def _show_matching_suggestions(self) -> None:
+161 |         """Показывает диалог с подходящими задачами."""
+    |                              ^
+162 |
+163 |         async def load_and_show():
+    |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\lib\widgets\batch_card.py:184:92
+    |
+182 | …     ui.label("🧲 Подходящие задачи").classes("text-h6 mb-2")
+183 | …     ui.label(
+184 | …         "Эти задачи используют такой же материал. Вы можете забрать их себе."
+    |                                                                          ^
+185 | …     ).classes("text-sm text-slate-400 mb-4")
+    |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\lib\widgets\batch_card.py:184:93
+    |
+182 | …     ui.label("🧲 Подходящие задачи").classes("text-h6 mb-2")
+183 | …     ui.label(
+184 | …         "Эти задачи используют такой же материал. Вы можете забрать их себе."
+    |                                                                           ^
+185 | …     ).classes("text-sm text-slate-400 mb-4")
+    |
+
+RUF001 String contains ambiguous `б` (CYRILLIC SMALL LETTER BE). Did you mean `6` (DIGIT SIX)?
+   --> src\docuflow\lib\widgets\batch_card.py:184:94
+    |
+182 | …     ui.label("🧲 Подходящие задачи").classes("text-h6 mb-2")
+183 | …     ui.label(
+184 | …         "Эти задачи используют такой же материал. Вы можете забрать их себе."
+    |                                                                            ^
+185 | …     ).classes("text-sm text-slate-400 mb-4")
+    |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\lib\widgets\batch_card.py:184:95
+    |
+182 | …     ui.label("🧲 Подходящие задачи").classes("text-h6 mb-2")
+183 | …     ui.label(
+184 | …         "Эти задачи используют такой же материал. Вы можете забрать их себе."
+    |                                                                             ^
+185 | …     ).classes("text-sm text-slate-400 mb-4")
+    |
+
+E501 Line too long (119 > 100)
+   --> src\docuflow\lib\widgets\batch_card.py:190:101
+    |
+188 | …                     for task in matches:
+189 | …                         with ui.row().classes(
+190 | …                             "w-full items-center justify-between p-2 bg-gray-50 rounded border border-gray-100"
+    |                                                                                               ^^^^^^^^^^^^^^^^^^^
+191 | …                         ):
+192 | …                             with ui.column().classes("gap-0"):
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\lib\widgets\batch_card.py:202:101
+    |
+200 | …                     ui.button(
+201 | …                         icon="add_circle",
+202 | …                         on_click=lambda t=task: self._pull_suggested_task(t, dialog),
+    |                                                                                       ^
+203 | …                     ).props("flat color=green")
+    |
+
+E501 Line too long (124 > 100)
+   --> src\docuflow\lib\widgets\batch_card.py:236:101
+    |
+234 |                 wi_name = self.tasks[0].work_item.folder_name
+235 |
+236 |             message = f"[LOGISTICS_REQUEST] Требуется подача металла для {wi_name} на {self.node_id}. Оператор: {self.user}"
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^
+237 |
+238 |             NotifyHelper.warning(f"Запрос на подачу отправлен: {self._get_material_type()}")
+    |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+   --> src\docuflow\lib\widgets\batch_card.py:281:35
+    |
+279 | …                     ui.label("STOCK_ALERT").classes("text-[10px] font-bold")
+280 | …                     ui.tooltip(
+281 | …                         f"В запасе найдены детали: {', '.join(a.sku for a in alerts[:3])}..."
+    |                             ^
+282 | …                     )
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\lib\widgets\batch_card.py:281:101
+    |
+279 | …                     ui.label("STOCK_ALERT").classes("text-[10px] font-bold")
+280 | …                     ui.tooltip(
+281 | …                         f"В запасе найдены детали: {', '.join(a.sku for a in alerts[:3])}..."
+    |                                                                                               ^
+282 | …                     )
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\lib\widgets\batch_card.py:295:34
+    |
+294 |     def _render_drift_badge(self) -> None:
+295 |         """Рендерит бейдж drift% с цветовой кодировкой."""
+    |                                  ^
+296 |         from docuflow.lib.widgets.ui_utils import get_kpi_color
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\lib\widgets\batch_card.py:306:19
+    |
+304 | class TaskItemRow:
+305 |     """
+306 |     Строка задачи с прогресс-баром и кнопками действий.
+    |                   ^
+307 |     """
+    |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+   --> src\docuflow\lib\widgets\batch_card.py:362:40
+    |
+360 |                         with ui.row().classes("items-center gap-1 text-orange-600"):
+361 |                             ui.icon("inventory_2", size="xs")
+362 |                             ui.label(f"В запасе: {', '.join(a.sku for a in alerts)}").classes(
+    |                                        ^
+363 |                                 "text-[10px]"
+364 |                             )
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+ --> src\docuflow\lib\widgets\bucket_panel.py:2:33
+  |
+1 | """
+2 | BucketPanel — корзина оператора с батчами.
+  |                                 ^
+3 |
+4 | Отображает все батчи, назначенные оператору на узле.
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\lib\widgets\bucket_panel.py:7:1
+   |
+ 5 |   """
+ 6 |
+ 7 | / from typing import Any
+ 8 | |
+ 9 | | from loguru import logger
+10 | | from nicegui import ui
+11 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+12 | | from sqlmodel import Session
+13 | |
+14 | | from docuflow.domain.entities.production import (
+15 | |     TaskItem,
+16 | |     TaskItemStatus,
+17 | |     WorkerBucketEntry,
+18 | | )
+19 | | from docuflow.features.task_board.system import TaskBoardSystem
+20 | | from docuflow.lib.base_widget import BaseDocuWidget
+   | |___________________________________________________^
+   |
+help: Organize imports
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\lib\widgets\bucket_panel.py:46:36
+   |
+44 |     @ui.refreshable
+45 |     async def render(self) -> None:
+46 |         """Рендерит панель корзины с разделением на очереди."""
+   |                                    ^
+47 |         # Validate node_id
+48 |         if not self.node_id or not isinstance(self.node_id, str):
+   |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+  --> src\docuflow\lib\widgets\bucket_panel.py:81:33
+   |
+79 |                 # --- SECTION: ACTIVE ---
+80 |                 if active_batches:
+81 |                     ui.label("🔥 В РАБОТЕ СЕЙЧАС").classes(
+   |                                  ^
+82 |                         "text-xs font-black text-orange-500 tracking-widest"
+83 |                     )
+   |
+
+RUF001 String contains ambiguous `Н` (CYRILLIC CAPITAL LETTER EN). Did you mean `H` (LATIN CAPITAL LETTER H)?
+  --> src\docuflow\lib\widgets\bucket_panel.py:90:45
+   |
+88 |                 if upcoming_batches:
+89 |                     with ui.row().classes("items-center gap-2 mt-4"):
+90 |                         ui.label("⏳ ОЧЕРЕДЬ НА ПОДГОТОВКУ").classes(
+   |                                              ^
+91 |                             "text-xs font-black text-slate-500 tracking-widest"
+92 |                         )
+   |
+
+RUF001 String contains ambiguous `А` (CYRILLIC CAPITAL LETTER A). Did you mean `A` (LATIN CAPITAL LETTER A)?
+  --> src\docuflow\lib\widgets\bucket_panel.py:90:46
+   |
+88 |                 if upcoming_batches:
+89 |                     with ui.row().classes("items-center gap-2 mt-4"):
+90 |                         ui.label("⏳ ОЧЕРЕДЬ НА ПОДГОТОВКУ").classes(
+   |                                               ^
+91 |                             "text-xs font-black text-slate-500 tracking-widest"
+92 |                         )
+   |
+
+E501 Line too long (124 > 100)
+   --> src\docuflow\lib\widgets\bucket_panel.py:99:101
+    |
+ 98 |     def _render_batch_card(
+ 99 |         self, session: Session, system: TaskBoardSystem, batch_group_id: str, tasks: list[TaskItem], is_active: bool = False
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^
+100 |     ) -> None:
+101 |         """Вспомогательный метод для рендера карточки батча."""
+    |
+
+RUF003 Comment contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+   --> src\docuflow\lib\widgets\bucket_panel.py:128:64
+    |
+126 |                 ).render()
+127 |
+128 |             # Если батч не активен, даем возможность "поднять" его (приоритет)
+    |                                                                ^
+129 |             if not is_active and len(tasks) > 0:
+130 |                 with ui.row().classes("absolute -top-3 right-4"):
+    |
+
+RUF003 Comment contains ambiguous `г` (CYRILLIC SMALL LETTER GHE). Did you mean `r` (LATIN SMALL LETTER R)?
+   --> src\docuflow\lib\widgets\bucket_panel.py:128:65
+    |
+126 |                 ).render()
+127 |
+128 |             # Если батч не активен, даем возможность "поднять" его (приоритет)
+    |                                                                 ^
+129 |             if not is_active and len(tasks) > 0:
+130 |                 with ui.row().classes("absolute -top-3 right-4"):
+    |
+
+RUF003 Comment contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+   --> src\docuflow\lib\widgets\bucket_panel.py:128:66
+    |
+126 |                 ).render()
+127 |
+128 |             # Если батч не активен, даем возможность "поднять" его (приоритет)
+    |                                                                  ^
+129 |             if not is_active and len(tasks) > 0:
+130 |                 with ui.row().classes("absolute -top-3 right-4"):
+    |
+
+E501 Line too long (111 > 100)
+   --> src\docuflow\lib\widgets\bucket_panel.py:142:101
+    |
+140 |             ui.label("Нет назначенных батчей").classes("text-slate-500")
+141 |
+142 |     def _group_by_batch(self, session: Session, entries: list[WorkerBucketEntry]) -> dict[str, list[TaskItem]]:
+    |                                                                                                     ^^^^^^^^^^^
+143 |         """
+144 |         Группирует записи корзины по batch_group_id.
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\lib\widgets\bucket_panel_dialogs.py:5:1
+   |
+ 3 |   """
+ 4 |
+ 5 | / from typing import Any
+ 6 | |
+ 7 | | from nicegui import ui
+ 8 | | from docuflow.lib.widgets.ui_utils import NotifyHelper
+ 9 | |
+10 | | from docuflow.domain.entities.production import TaskItem
+11 | | from docuflow.features.task_board.system import TaskBoardSystem
+12 | | from docuflow.lib.base_widget import BaseDocuWidget
+   | |___________________________________________________^
+   |
+help: Organize imports
+
+RUF003 Comment contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+  --> src\docuflow\lib\widgets\bucket_panel_dialogs.py:38:37
+   |
+36 |             ).classes("w-full mb-4")
+37 |
+38 |             # Чекбокс для сообщения об инциденте с материалом
+   |                                     ^
+39 |             mat_issue = ui.checkbox("Проблема с материалом (брак/нехватка)").classes("mb-2")
+   |
+
+RUF003 Comment contains ambiguous `б` (CYRILLIC SMALL LETTER BE). Did you mean `6` (DIGIT SIX)?
+  --> src\docuflow\lib\widgets\bucket_panel_dialogs.py:38:38
+   |
+36 |             ).classes("w-full mb-4")
+37 |
+38 |             # Чекбокс для сообщения об инциденте с материалом
+   |                                      ^
+39 |             mat_issue = ui.checkbox("Проблема с материалом (брак/нехватка)").classes("mb-2")
+   |
+
+RUF003 Comment contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\lib\widgets\bucket_panel_dialogs.py:38:50
+   |
+36 |             ).classes("w-full mb-4")
+37 |
+38 |             # Чекбокс для сообщения об инциденте с материалом
+   |                                                  ^
+39 |             mat_issue = ui.checkbox("Проблема с материалом (брак/нехватка)").classes("mb-2")
+   |
+
+RUF001 String contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\lib\widgets\bucket_panel_dialogs.py:39:47
+   |
+38 |             # Чекбокс для сообщения об инциденте с материалом
+39 |             mat_issue = ui.checkbox("Проблема с материалом (брак/нехватка)").classes("mb-2")
+   |                                               ^
+40 |
+41 |             # Чекбокс для поломки оборудования
+   |
+
+RUF002 Docstring contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+  --> src\docuflow\lib\widgets\bucket_panel_dialogs.py:56:42
+   |
+55 |     def _confirm(self, reason: str, is_mat_issue: bool, is_breakdown: bool, dialog) -> None:
+56 |         """Подтверждает паузу и сообщает об инциденте если нужно."""
+   |                                          ^
+57 |         if not reason:
+58 |             NotifyHelper.warning("Укажите причину паузы")
+   |
+
+RUF002 Docstring contains ambiguous `б` (CYRILLIC SMALL LETTER BE). Did you mean `6` (DIGIT SIX)?
+  --> src\docuflow\lib\widgets\bucket_panel_dialogs.py:56:43
+   |
+55 |     def _confirm(self, reason: str, is_mat_issue: bool, is_breakdown: bool, dialog) -> None:
+56 |         """Подтверждает паузу и сообщает об инциденте если нужно."""
+   |                                           ^
+57 |         if not reason:
+58 |             NotifyHelper.warning("Укажите причину паузы")
+   |
+
+S603 `subprocess` call: check for execution of untrusted input
+  --> src\docuflow\lib\widgets\explorer_button.py:52:13
+   |
+50 |         try:
+51 |             # subprocess.Popen is non-blocking, so we don't need safe_action/timer here
+52 |             subprocess.Popen(["explorer.exe", str(self.path)])
+   |             ^^^^^^^^^^^^^^^^
+53 |         except Exception as e:
+54 |             NotifyHelper.error(f"Не удалось открыть проводник автоматически: {e}")
+   |
+
+S607 Starting a process with a partial executable path
+  --> src\docuflow\lib\widgets\explorer_button.py:52:30
+   |
+50 |         try:
+51 |             # subprocess.Popen is non-blocking, so we don't need safe_action/timer here
+52 |             subprocess.Popen(["explorer.exe", str(self.path)])
+   |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 |         except Exception as e:
+54 |             NotifyHelper.error(f"Не удалось открыть проводник автоматически: {e}")
+   |
+
+RUF001 String contains ambiguous `Н` (CYRILLIC CAPITAL LETTER EN). Did you mean `H` (LATIN CAPITAL LETTER H)?
+  --> src\docuflow\lib\widgets\explorer_button.py:54:34
+   |
+52 |             subprocess.Popen(["explorer.exe", str(self.path)])
+53 |         except Exception as e:
+54 |             NotifyHelper.error(f"Не удалось открыть проводник автоматически: {e}")
+   |                                  ^
+55 |             self._show_fallback_dialog(str(e))
+   |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+  --> src\docuflow\lib\widgets\explorer_button.py:54:35
+   |
+52 |             subprocess.Popen(["explorer.exe", str(self.path)])
+53 |         except Exception as e:
+54 |             NotifyHelper.error(f"Не удалось открыть проводник автоматически: {e}")
+   |                                   ^
+55 |             self._show_fallback_dialog(str(e))
+   |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\lib\widgets\explorer_button.py:58:30
+   |
+57 |     def _show_fallback_dialog(self, error_msg: str) -> None:
+58 |         """Показывает диалог с путем и кнопкой копирования при ошибке открытия."""
+   |                              ^
+59 |         with ui.dialog() as dialog, ui.card().classes("p-6 w-[500px]"):
+60 |             ui.label("📁 Путь к папке").classes("text-h6 mb-2")
+   |
+
+RUF001 String contains ambiguous `Н` (CYRILLIC CAPITAL LETTER EN). Did you mean `H` (LATIN CAPITAL LETTER H)?
+  --> src\docuflow\lib\widgets\explorer_button.py:62:18
+   |
+60 | …     ui.label("📁 Путь к папке").classes("text-h6 mb-2")
+61 | …     ui.label(
+62 | …         "Не удалось открыть проводник автоматически (возможно, сетевой диск не подключен)."
+   |            ^
+63 | …     ).classes("text-sm text-slate-500 mb-4")
+   |
+
+RUF001 String contains ambiguous `е` (CYRILLIC SMALL LETTER IE). Did you mean `e` (LATIN SMALL LETTER E)?
+  --> src\docuflow\lib\widgets\explorer_button.py:62:19
+   |
+60 | …     ui.label("📁 Путь к папке").classes("text-h6 mb-2")
+61 | …     ui.label(
+62 | …         "Не удалось открыть проводник автоматически (возможно, сетевой диск не подключен)."
+   |             ^
+63 | …     ).classes("text-sm text-slate-500 mb-4")
+   |
+
+RUF002 Docstring contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+  --> src\docuflow\lib\widgets\file_changed_alert.py:12:24
+   |
+10 | class FileChangedAlert:
+11 |     """
+12 |     Баннер уведомления об изменении файла.
+   |                        ^
+13 |
+14 |     Props:
+   |
+
+RUF002 Docstring contains ambiguous `б` (CYRILLIC SMALL LETTER BE). Did you mean `6` (DIGIT SIX)?
+  --> src\docuflow\lib\widgets\file_changed_alert.py:12:25
+   |
+10 | class FileChangedAlert:
+11 |     """
+12 |     Баннер уведомления об изменении файла.
+   |                         ^
+13 |
+14 |     Props:
+   |
+
+E501 Line too long (143 > 100)
+  --> src\docuflow\lib\widgets\scan_log_panel.py:63:101
+   |
+61 | …
+62 | …
+63 | …te/5 rounded-lg transition-colors border-l-2 border-transparent hover:border-indigo-500"
+   |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+64 | …
+65 | …
+   |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\lib\widgets\status_badge.py:58:27
+   |
+57 |     def render(self) -> ui.badge:
+58 |         """Рендерит бейдж с цветом и текстом."""
+   |                           ^
+59 |         color = self._get_color()
+60 |         label = self._get_label()
+   |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+  --> src\docuflow\lib\widgets\status_badge.py:86:42
+   |
+84 |             WorkItemStatus.DOC_NO_FOLDER: "Нет папки",
+85 |             WorkItemStatus.REGISTERED: "Зарегистрирован",
+86 |             WorkItemStatus.IN_PROGRESS: "В работе",
+   |                                          ^
+87 |             WorkItemStatus.ON_HOLD: "На паузе",
+88 |             WorkItemStatus.BLOCKED: "Заблокирован",
+   |
+
+RUF001 String contains ambiguous `Н` (CYRILLIC CAPITAL LETTER EN). Did you mean `H` (LATIN CAPITAL LETTER H)?
+  --> src\docuflow\lib\widgets\status_badge.py:87:38
+   |
+85 |             WorkItemStatus.REGISTERED: "Зарегистрирован",
+86 |             WorkItemStatus.IN_PROGRESS: "В работе",
+87 |             WorkItemStatus.ON_HOLD: "На паузе",
+   |                                      ^
+88 |             WorkItemStatus.BLOCKED: "Заблокирован",
+89 |             WorkItemStatus.DONE: "Завершён",
+   |
+
+RUF001 String contains ambiguous `а` (CYRILLIC SMALL LETTER A). Did you mean `a` (LATIN SMALL LETTER A)?
+  --> src\docuflow\lib\widgets\status_badge.py:87:39
+   |
+85 |             WorkItemStatus.REGISTERED: "Зарегистрирован",
+86 |             WorkItemStatus.IN_PROGRESS: "В работе",
+87 |             WorkItemStatus.ON_HOLD: "На паузе",
+   |                                       ^
+88 |             WorkItemStatus.BLOCKED: "Заблокирован",
+89 |             WorkItemStatus.DONE: "Завершён",
+   |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+  --> src\docuflow\lib\widgets\status_badge.py:93:42
+   |
+91 |             WorkItemStatus.ARCHIVED: "Архивирован",
+92 |             TaskItemStatus.PLANNED: "Запланирован",
+93 |             TaskItemStatus.IN_PROGRESS: "В работе",
+   |                                          ^
+94 |             TaskItemStatus.ON_HOLD: "На паузе",
+95 |             TaskItemStatus.DONE: "Завершён",
+   |
+
+RUF001 String contains ambiguous `Н` (CYRILLIC CAPITAL LETTER EN). Did you mean `H` (LATIN CAPITAL LETTER H)?
+  --> src\docuflow\lib\widgets\status_badge.py:94:38
+   |
+92 |             TaskItemStatus.PLANNED: "Запланирован",
+93 |             TaskItemStatus.IN_PROGRESS: "В работе",
+94 |             TaskItemStatus.ON_HOLD: "На паузе",
+   |                                      ^
+95 |             TaskItemStatus.DONE: "Завершён",
+96 |             TaskItemStatus.CANCELLED: "Отменён",
+   |
+
+RUF001 String contains ambiguous `а` (CYRILLIC SMALL LETTER A). Did you mean `a` (LATIN SMALL LETTER A)?
+  --> src\docuflow\lib\widgets\status_badge.py:94:39
+   |
+92 |             TaskItemStatus.PLANNED: "Запланирован",
+93 |             TaskItemStatus.IN_PROGRESS: "В работе",
+94 |             TaskItemStatus.ON_HOLD: "На паузе",
+   |                                       ^
+95 |             TaskItemStatus.DONE: "Завершён",
+96 |             TaskItemStatus.CANCELLED: "Отменён",
+   |
+
+RUF001 String contains ambiguous `Н` (CYRILLIC CAPITAL LETTER EN). Did you mean `H` (LATIN CAPITAL LETTER H)?
+   --> src\docuflow\lib\widgets\ui_utils.py:207:10
+    |
+205 |         "Свободен": "gray",
+206 |         "Режет": "green",
+207 |         "На паузе": "orange",
+    |          ^
+208 |         "Ожидание": "blue",
+209 |     }
+    |
+
+RUF001 String contains ambiguous `а` (CYRILLIC SMALL LETTER A). Did you mean `a` (LATIN SMALL LETTER A)?
+   --> src\docuflow\lib\widgets\ui_utils.py:207:11
+    |
+205 |         "Свободен": "gray",
+206 |         "Режет": "green",
+207 |         "На паузе": "orange",
+    |           ^
+208 |         "Ожидание": "blue",
+209 |     }
+    |
+
+F401 [*] `docuflow.domain.entities.production.TaskItem` imported but unused
+  --> src\docuflow\lib\widgets\work_item_card.py:13:5
+   |
+12 | from docuflow.domain.entities.production import (
+13 |     TaskItem,
+   |     ^^^^^^^^
+14 |     WorkItem,
+15 |     WorkItemStatus,
+   |
+help: Remove unused import
+
+F401 [*] `docuflow.domain.entities.production.WorkLog` imported but unused
+  --> src\docuflow\lib\widgets\work_item_card.py:16:5
+   |
+14 |     WorkItem,
+15 |     WorkItemStatus,
+16 |     WorkLog,
+   |     ^^^^^^^
+17 | )
+18 | from docuflow.features.work_items.system import WorkItemSystem
+   |
+help: Remove unused import
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+  --> src\docuflow\lib\widgets\work_item_card.py:49:40
+   |
+48 |     async def render(self) -> None:
+49 |         """Рендерит и открывает диалог с карточкой."""
+   |                                        ^
+50 |         from sqlmodel import Session
+   |
+
+E501 Line too long (106 > 100)
+  --> src\docuflow\lib\widgets\work_item_card.py:69:101
+   |
+67 |                 # Custom Header
+68 |                 with ui.row().classes(
+69 |                     "w-full items-center justify-between p-6 bg-slate-800/60 border-b border-slate-700/50"
+   |                                                                                                     ^^^^^^
+70 |                 ):
+71 |                     with ui.row().classes("items-center gap-3"):
+   |
+
+E501 Line too long (104 > 100)
+  --> src\docuflow\lib\widgets\work_item_card.py:74:101
+   |
+72 |                         ui.icon("assignment", size="32px").classes("text-teal-400")
+73 |                         with ui.column().classes("gap-0"):
+74 |                             ui.label(self.work_item.folder_name).classes("text-xl font-bold text-white")
+   |                                                                                                     ^^^^
+75 |                             ui.label(
+76 |                                 f"ID: {self.work_item.id} • {self.work_item.work_item_type.upper()}"
+   |
+
+E501 Line too long (102 > 100)
+  --> src\docuflow\lib\widgets\work_item_card.py:91:101
+   |
+89 |                     # Metadata Grid (High Contrast)
+90 |                     with ui.grid(columns=3).classes(
+91 |                         "w-full gap-6 mb-8 p-6 bg-slate-800/50 rounded-2xl border border-slate-700/50"
+   |                                                                                                     ^^
+92 |                     ):
+93 |                         self._info_item("Наряд", self.work_item.sidra_number or "—")
+   |
+
+RUF001 String contains ambiguous `Т` (CYRILLIC CAPITAL LETTER TE). Did you mean `T` (LATIN CAPITAL LETTER T)?
+  --> src\docuflow\lib\widgets\work_item_card.py:95:53
+   |
+93 |                         self._info_item("Наряд", self.work_item.sidra_number or "—")
+94 |                         self._info_item("Тип", self.work_item.work_item_type)
+95 |                         self._info_item("Шаг Сидры (Тор)", self.work_item.sidra_step or "—")
+   |                                                     ^
+96 |                         self._info_item("Проект ID", str(self.work_item.project_id))
+   |
+
+RUF001 String contains ambiguous `о` (CYRILLIC SMALL LETTER O). Did you mean `o` (LATIN SMALL LETTER O)?
+  --> src\docuflow\lib\widgets\work_item_card.py:95:54
+   |
+93 |                         self._info_item("Наряд", self.work_item.sidra_number or "—")
+94 |                         self._info_item("Тип", self.work_item.work_item_type)
+95 |                         self._info_item("Шаг Сидры (Тор)", self.work_item.sidra_step or "—")
+   |                                                      ^
+96 |                         self._info_item("Проект ID", str(self.work_item.project_id))
+   |
+
+RUF001 String contains ambiguous `р` (CYRILLIC SMALL LETTER ER). Did you mean `p` (LATIN SMALL LETTER P)?
+  --> src\docuflow\lib\widgets\work_item_card.py:95:55
+   |
+93 |                         self._info_item("Наряд", self.work_item.sidra_number or "—")
+94 |                         self._info_item("Тип", self.work_item.work_item_type)
+95 |                         self._info_item("Шаг Сидры (Тор)", self.work_item.sidra_step or "—")
+   |                                                       ^
+96 |                         self._info_item("Проект ID", str(self.work_item.project_id))
+   |
+
+RUF001 String contains ambiguous `К` (CYRILLIC CAPITAL LETTER KA). Did you mean `K` (LATIN CAPITAL LETTER K)?
+   --> src\docuflow\lib\widgets\work_item_card.py:105:44
+    |
+104 |                         with ui.column().classes("col-span-3 gap-1 mt-2"):
+105 |                             ui.label("ПУТЬ К ФАЙЛАМ").classes(
+    |                                            ^
+106 |                                 "text-[10px] text-teal-400 font-black tracking-tighter"
+107 |                             )
+    |
+
+E501 Line too long (131 > 100)
+   --> src\docuflow\lib\widgets\work_item_card.py:109:101
+    |
+107 | …                     )
+108 | …                     ui.label(self.work_item.folder_path).classes(
+109 | …                         "text-xs text-slate-300 font-mono break-all bg-slate-900/50 p-2 rounded border border-slate-700/50"
+    |                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+110 | …                     )
+    |
+
+RUF001 String contains ambiguous `К` (CYRILLIC CAPITAL LETTER KA). Did you mean `K` (LATIN CAPITAL LETTER K)?
+   --> src\docuflow\lib\widgets\work_item_card.py:123:36
+    |
+121 |                         if self.on_navigate:
+122 |                             ui.button(
+123 |                                 "🎯 К ЗАДАЧАМ",
+    |                                     ^
+124 |                                 on_click=lambda: self._go_to_task_board(dialog),
+125 |                             ).props("color=indigo-500 unelevated rounded-xl").classes("font-bold")
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\lib\widgets\work_item_card.py:127:101
+    |
+125 |                             ).props("color=indigo-500 unelevated rounded-xl").classes("font-bold")
+126 |
+127 |                         if self.work_item.status in (WorkItemStatus.NEW, WorkItemStatus.PENDING_CUTS):
+    |                                                                                                     ^^
+128 |                             ui.button(
+129 |                                 "✅ ПОЛУЧИТЬ ДОКУМЕНТ",
+    |
+
+RUF001 String contains ambiguous `С` (CYRILLIC CAPITAL LETTER ES). Did you mean `C` (LATIN CAPITAL LETTER C)?
+   --> src\docuflow\lib\widgets\work_item_card.py:135:35
+    |
+133 |                     # Tasks Section
+134 |                     with ui.column().classes("w-full gap-4"):
+135 |                         ui.label("СОСТАВ НАЗАДА (GNC ФАЙЛЫ)").classes(
+    |                                   ^
+136 |                             "text-xs font-black text-slate-500 tracking-widest"
+137 |                         )
+    |
+
+RUF001 String contains ambiguous `О` (CYRILLIC CAPITAL LETTER O). Did you mean `O` (LATIN CAPITAL LETTER O)?
+   --> src\docuflow\lib\widgets\work_item_card.py:135:36
+    |
+133 |                     # Tasks Section
+134 |                     with ui.column().classes("w-full gap-4"):
+135 |                         ui.label("СОСТАВ НАЗАДА (GNC ФАЙЛЫ)").classes(
+    |                                    ^
+136 |                             "text-xs font-black text-slate-500 tracking-widest"
+137 |                         )
+    |
+
+RUF001 String contains ambiguous `С` (CYRILLIC CAPITAL LETTER ES). Did you mean `C` (LATIN CAPITAL LETTER C)?
+   --> src\docuflow\lib\widgets\work_item_card.py:135:37
+    |
+133 |                     # Tasks Section
+134 |                     with ui.column().classes("w-full gap-4"):
+135 |                         ui.label("СОСТАВ НАЗАДА (GNC ФАЙЛЫ)").classes(
+    |                                     ^
+136 |                             "text-xs font-black text-slate-500 tracking-widest"
+137 |                         )
+    |
+
+RUF001 String contains ambiguous `Т` (CYRILLIC CAPITAL LETTER TE). Did you mean `T` (LATIN CAPITAL LETTER T)?
+   --> src\docuflow\lib\widgets\work_item_card.py:135:38
+    |
+133 |                     # Tasks Section
+134 |                     with ui.column().classes("w-full gap-4"):
+135 |                         ui.label("СОСТАВ НАЗАДА (GNC ФАЙЛЫ)").classes(
+    |                                      ^
+136 |                             "text-xs font-black text-slate-500 tracking-widest"
+137 |                         )
+    |
+
+RUF001 String contains ambiguous `А` (CYRILLIC CAPITAL LETTER A). Did you mean `A` (LATIN CAPITAL LETTER A)?
+   --> src\docuflow\lib\widgets\work_item_card.py:135:39
+    |
+133 |                     # Tasks Section
+134 |                     with ui.column().classes("w-full gap-4"):
+135 |                         ui.label("СОСТАВ НАЗАДА (GNC ФАЙЛЫ)").classes(
+    |                                       ^
+136 |                             "text-xs font-black text-slate-500 tracking-widest"
+137 |                         )
+    |
+
+RUF001 String contains ambiguous `В` (CYRILLIC CAPITAL LETTER VE). Did you mean `B` (LATIN CAPITAL LETTER B)?
+   --> src\docuflow\lib\widgets\work_item_card.py:135:40
+    |
+133 |                     # Tasks Section
+134 |                     with ui.column().classes("w-full gap-4"):
+135 |                         ui.label("СОСТАВ НАЗАДА (GNC ФАЙЛЫ)").classes(
+    |                                        ^
+136 |                             "text-xs font-black text-slate-500 tracking-widest"
+137 |                         )
+    |
+
+E501 Line too long (102 > 100)
+   --> src\docuflow\lib\widgets\work_item_card.py:151:101
+    |
+149 |                     "w-full justify-end p-4 bg-slate-800/40 border-t border-slate-700/50"
+150 |                 ):
+151 |                     ui.button("ЗАКРЫТЬ", on_click=dialog.close).props("flat color=slate-400").classes(
+    |                                                                                                     ^^
+152 |                         "text-xs font-bold"
+153 |                     )
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\lib\widgets\work_item_card.py:167:49
+    |
+165 |     @ui.refreshable
+166 |     async def _render_tasks_table(self) -> None:
+167 |         """Рендерит таблицу задач внутри наряда с возможностью захвата."""
+    |                                                 ^
+168 |         columns = [
+169 |             {"name": "file_name", "label": "Файл GNC", "field": "file_name", "align": "left"},
+    |
+
+E501 Line too long (101 > 100)
+   --> src\docuflow\lib\widgets\work_item_card.py:179:101
+    |
+177 |             tasks = wi_sys.get_tasks_for_work_item(self.work_item.id)
+178 |
+179 |             table = ui.table(columns=columns, rows=[t.model_dump() for t in tasks]).classes("w-full")
+    |                                                                                                     ^
+180 |
+181 |         # Add 'Assign to Me' action slot
+    |
+
+E501 Line too long (105 > 100)
+   --> src\docuflow\lib\widgets\work_item_card.py:201:101
+    |
+199 |                     node_id = system.config.node_id
+200 |                     await system.assign_task_to_node(task_row["id"], node_id, self.user)
+201 |                 NotifyHelper.success(f"Файл {task_row['file_name']} добавлен в вашу корзину ({node_id})")
+    |                                                                                                     ^^^^^
+202 |                 await self._render_tasks_table.refresh()
+    |
+
+RUF002 Docstring contains ambiguous `с` (CYRILLIC SMALL LETTER ES). Did you mean `c` (LATIN SMALL LETTER C)?
+   --> src\docuflow\lib\widgets\work_item_card.py:228:36
+    |
+227 |     def _go_to_task_board(self, dialog) -> None:
+228 |         """Переходит к доске задач с фильтром по текущему наряду."""
+    |                                    ^
+229 |         dialog.close()
+230 |         if self.on_navigate:
+    |
+
+F401 [*] `sys` imported but unused
+ --> src\docuflow\main.py:2:8
+  |
+1 | import os
+2 | import sys
+  |        ^^^
+3 | import traceback
+4 | from contextlib import asynccontextmanager
+  |
+help: Remove unused import: `sys`
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:12:1
+   |
+10 |     kill_port_process(_port)
+11 |
+12 | from dishka import make_async_container
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13 | from dishka.integrations.fastapi import FastapiProvider, setup_dishka
+14 | from fastapi import FastAPI
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\docuflow\main.py:12:1
+   |
+10 |       kill_port_process(_port)
+11 |
+12 | / from dishka import make_async_container
+13 | | from dishka.integrations.fastapi import FastapiProvider, setup_dishka
+14 | | from fastapi import FastAPI
+15 | | from loguru import logger
+16 | | from nicegui import ui
+17 | |
+18 | | from docuflow.features.admin.system import AdminSystem
+19 | | from docuflow.features.auth.system import AuthSystem
+20 | | from docuflow.features.auth.view import login_view
+21 | |
+22 | | from docuflow.features.core.layout import MainLayout, SessionContext, get_current_user, theme_setup
+23 | | from docuflow.features.core.search import SearchSystem
+24 | | from docuflow.infrastructure.config import Config
+25 | | from docuflow.infrastructure.di import AppProvider
+26 | | from docuflow.sdk import SDK
+   | |____________________________^
+27 |
+28 |   _config = Config()
+   |
+help: Organize imports
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:13:1
+   |
+12 | from dishka import make_async_container
+13 | from dishka.integrations.fastapi import FastapiProvider, setup_dishka
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 | from fastapi import FastAPI
+15 | from loguru import logger
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:14:1
+   |
+12 | from dishka import make_async_container
+13 | from dishka.integrations.fastapi import FastapiProvider, setup_dishka
+14 | from fastapi import FastAPI
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 | from loguru import logger
+16 | from nicegui import ui
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:15:1
+   |
+13 | from dishka.integrations.fastapi import FastapiProvider, setup_dishka
+14 | from fastapi import FastAPI
+15 | from loguru import logger
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^
+16 | from nicegui import ui
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:16:1
+   |
+14 | from fastapi import FastAPI
+15 | from loguru import logger
+16 | from nicegui import ui
+   | ^^^^^^^^^^^^^^^^^^^^^^
+17 |
+18 | from docuflow.features.admin.system import AdminSystem
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:18:1
+   |
+16 | from nicegui import ui
+17 |
+18 | from docuflow.features.admin.system import AdminSystem
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 | from docuflow.features.auth.system import AuthSystem
+20 | from docuflow.features.auth.view import login_view
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:19:1
+   |
+18 | from docuflow.features.admin.system import AdminSystem
+19 | from docuflow.features.auth.system import AuthSystem
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 | from docuflow.features.auth.view import login_view
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:20:1
+   |
+18 | from docuflow.features.admin.system import AdminSystem
+19 | from docuflow.features.auth.system import AuthSystem
+20 | from docuflow.features.auth.view import login_view
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21 |
+22 | from docuflow.features.core.layout import MainLayout, SessionContext, get_current_user, theme_setup
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:22:1
+   |
+20 | from docuflow.features.auth.view import login_view
+21 |
+22 | from docuflow.features.core.layout import MainLayout, SessionContext, get_current_user, theme_setup
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+23 | from docuflow.features.core.search import SearchSystem
+24 | from docuflow.infrastructure.config import Config
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:23:1
+   |
+22 | from docuflow.features.core.layout import MainLayout, SessionContext, get_current_user, theme_setup
+23 | from docuflow.features.core.search import SearchSystem
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 | from docuflow.infrastructure.config import Config
+25 | from docuflow.infrastructure.di import AppProvider
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:24:1
+   |
+22 | from docuflow.features.core.layout import MainLayout, SessionContext, get_current_user, theme_setup
+23 | from docuflow.features.core.search import SearchSystem
+24 | from docuflow.infrastructure.config import Config
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+25 | from docuflow.infrastructure.di import AppProvider
+26 | from docuflow.sdk import SDK
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:25:1
+   |
+23 | from docuflow.features.core.search import SearchSystem
+24 | from docuflow.infrastructure.config import Config
+25 | from docuflow.infrastructure.di import AppProvider
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+26 | from docuflow.sdk import SDK
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:26:1
+   |
+24 | from docuflow.infrastructure.config import Config
+25 | from docuflow.infrastructure.di import AppProvider
+26 | from docuflow.sdk import SDK
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 |
+28 | _config = Config()
+   |
+
+E402 Module level import not at top of file
+  --> src\docuflow\main.py:83:1
+   |
+83 | from docuflow.features.core.views import ViewRegistry
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+S104 Possible binding to all interfaces
+   --> src\docuflow\main.py:218:43
+    |
+216 | if __name__ in {"__main__", "__mp_main__"}:
+217 |     import uvicorn
+218 |     uvicorn.run("docuflow.main:app", host="0.0.0.0", port=_port, reload=False)
+    |                                           ^^^^^^^^^
+    |
+
+E501 Line too long (105 > 100)
+  --> src\docuflow\sdk.py:29:101
+   |
+27 |     - **Resource Allocation**: Resolving systems and their dependencies.
+28 |     - **Lifecycle Management**: Orchestrating the startup and shutdown of the P2P cluster.
+29 |     - **System Access**: Providing synchronous shortcuts to core components like Config and Orchestrator.
+   |                                                                                                     ^^^^^
+30 |
+31 |     Examples:
+   |
+
+E501 Line too long (103 > 100)
+  --> src\docuflow\sdk.py:65:101
+   |
+63 |             # To fix the RuntimeError, we return the cached instance if it exists.
+64 |             raise RuntimeError(
+65 |                 "SDK.orchestrator is uninitialized. Ensure on_startup() is called in the app lifespan."
+   |                                                                                                     ^^^
+66 |             )
+67 |         return self._orchestrator
+   |
+
+Found 352 errors.
+[*] 46 fixable with the `--fix` option (12 hidden fixes can be enabled with the `--unsafe-fixes` option).

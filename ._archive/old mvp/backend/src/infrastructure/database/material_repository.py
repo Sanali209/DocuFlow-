@@ -1,7 +1,6 @@
 import builtins
 
 from sqlalchemy.orm import Session
-
 from src.domain.material_interface import IMaterialRepository, IPartRepository, IStockRepository
 from src.domain.models import Consumption, Material, Part, Reservation, StockItem
 

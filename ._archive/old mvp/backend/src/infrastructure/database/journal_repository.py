@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session, subqueryload
-
 from src.domain.journal_interface import IJournalRepository
 from src.domain.models import Attachment, JournalEntry
 

@@ -2,7 +2,6 @@ from datetime import date
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
-
 from src.api.dependencies import get_document_service
 from src.application.services.document_service import DocumentService
 from src.domain.models import Document, Tag

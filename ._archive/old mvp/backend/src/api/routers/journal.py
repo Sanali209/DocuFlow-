@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-
 from src.api.dependencies import get_journal_service
 from src.application.services.journal_service import JournalService
 from src.domain.models import JournalEntry
