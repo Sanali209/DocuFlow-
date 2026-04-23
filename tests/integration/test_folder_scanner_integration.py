@@ -93,7 +93,7 @@ def mock_admin_system(mock_engine):
             node_id="node_01",
             module="folder_scanner",
             key="sidra_scan_path",
-            value="D:\\github\\DocuFlow-\\data_sample\\sidra",
+            value="D:\\github\\DocuFlow-\\assets\\fixtures\\data_sample\\sidra",
         )
         session.add(setting)
 
@@ -170,7 +170,7 @@ def test_get_settings_from_db(scanner_system):
     original_get_node_settings = scanner_system._admin.get_node_settings
     mock_get = MagicMock(
         return_value={
-            "sidra_scan_path": "D:\\github\\DocuFlow-\\data_sample\\sidra",
+            "sidra_scan_path": "D:\\github\\DocuFlow-\\assets\\fixtures\\data_sample\\sidra",
             "enabled": True,
         }
     )
@@ -181,7 +181,7 @@ def test_get_settings_from_db(scanner_system):
 
     # Verify
     mock_get.assert_called_once_with("node_01", "folder_scanner")
-    assert settings.sidra_scan_path == "D:\\github\\DocuFlow-\\data_sample\\sidra"
+    assert settings.sidra_scan_path == "D:\\github\\DocuFlow-\\assets\\fixtures\\data_sample\\sidra"
     assert settings.enabled is True
 
     # Restore

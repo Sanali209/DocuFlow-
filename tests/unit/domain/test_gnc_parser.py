@@ -4,7 +4,7 @@ from docuflow.domain.entities.production import MaterialType
 from docuflow.features.folder_scanner.parsers.gnc import GncParser
 
 # Path to the sample data as defined in the project structure
-SAMPLE_GNC_DIR = Path("data_sample/sidra/SIDRA-353203-SHLAV-2-07.07.2025")
+SAMPLE_GNC_DIR = Path("assets/fixtures/data_sample/sidra/SIDRA-353203-SHLAV-2-07.07.2025")
 
 
 def test_extract_sku_revised_logic():

@@ -2,8 +2,38 @@
 
 ## Quick orientation
 - **Product**: decentralized workshop orchestration over a shared folder (no central DB), per-node SQLite + file-based sync
-- **Ground truth order**: code → `docs/arhitecture_2/*` → older docs
+- **Ground truth order**: code → `docs/architecture_2/*` → older docs
 - **App entrypoint**: `src/docuflow/main.py`; startup orchestration: `src/docuflow/sdk.py`, `src/docuflow/application/bus/orchestrator.py`
+
+## Repository structure
+```
+DocuFlow/
+├── src/                        # Ground-truth source code
+├── tests/                      # Strictly categorized — no loose test_*.py in root
+│   ├── unit/                   # domain, features, infrastructure, lib
+│   ├── integration/
+│   ├── e2e/                    # Playwright
+│   ├── smoke/
+│   ├── ui/
+│   ├── application/
+│   ├── conftest.py, helpers.py
+├── docs/                       # One doc = one subfolder by purpose
+│   ├── arhitecture_2/          # Current architecture docs (v7)
+│   ├── analysis/               # Audit plan + categorized reports
+│   ├── Review/                 # Release reports, reviews
+│   ├── Bug track/              # Bug hunts, quick reports
+│   └── obsidian/               # Conceptual design vault
+├── scripts/                    # Categorized by purpose
+│   ├── dev/                    # seed_test_data, diagnose_scanner, check_settings
+│   ├── ops/                    # reset_cluster, port_killer, verify_guards
+│   └── test/                   # test_startup, test_sqlite_wal
+├── assets/fixtures/            # Test data (GNC samples, etc.)
+├── static/                     # NiceGUI static assets
+├── config/                     # .env.template
+├── AGENTS.md, CLAUDE.md, README.md
+└── pyproject.toml, pytest.ini, Dockerfile
+```
+**Rules**: root contains only manifests/configs. No `.db`, `.log`, or temp `.py` scripts in root.
 
 ## Developer commands
 ```bash
@@ -13,10 +43,11 @@ uv run pytest                  # run tests
 uv run ruff check . --fix      # lint
 uv run ruff format .           # format
 uv run mypy src                # typecheck
-uv run python scripts/diagnose_scanner.py  # scanner diagnostics
-uv run python scripts/check_settings.py   # check settings
-uv run python scripts/reset_cluster.py     # reset cluster state
-uv run python scripts/seed_test_data.py    # seed test data
+uv run python scripts/dev/diagnose_scanner.py  # scanner diagnostics
+uv run python scripts/dev/check_settings.py   # check settings
+uv run python scripts/ops/reset_cluster.py     # reset cluster state
+uv run python scripts/dev/seed_test_data.py    # seed test data
+uv run python scripts/ops/port_killer.py       # kill process on DOCUFLOW_PORT
 ```
 
 ## Architecture map
@@ -50,6 +81,7 @@ uv run python scripts/seed_test_data.py    # seed test data
 - **Manual session scoping in admin**: `AdminSystem` uses manual `with Session(self._engine)` instead of injected session — background P2P handlers need thread-safe direct access
 
 ## Testing conventions
-- Tests enforce named constants (no magic values): see `tests/test_code_quality.py`
+- `pytest.ini` sets `pythonpath = ["src"]` — tests import from `docuflow` directly, not the installed package
+- Tests enforce named constants (no magic values): see `tests/unit/test_code_quality.py`
 - Public/provider methods require docstrings
 - Add tests under `tests/unit` or integration area before implementing new features

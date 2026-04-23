@@ -1,5 +1,6 @@
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel.pool import StaticPool
 
 from docuflow.domain.entities.production import TaskItem, TaskItemStatus, WorkItem, WorkItemStatus
 from docuflow.features.task_board.system import TaskBoardSystem
@@ -8,7 +9,7 @@ from docuflow.infrastructure.config import Config
 
 @pytest.mark.asyncio
 async def test_auto_close_work_item():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
@@ -42,6 +43,11 @@ async def test_auto_close_work_item():
         session.commit()
 
         task_sys = TaskBoardSystem(Config(), engine, session)
+
+        # Start tasks first (required transition)
+        task_sys.start_task(t1.id)
+        task_sys.start_task(t2.id)
+        session.commit()
 
         # 1. Complete first task
         task_sys.complete_task(t1.id, sheets_done=1, qty_produced=10)

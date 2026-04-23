@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel.pool import StaticPool
 
 from docuflow.domain.entities.identity import Workplace
 from docuflow.features.admin.system import AdminSystem
@@ -11,7 +12,7 @@ from docuflow.infrastructure.config import Config
 @pytest.mark.asyncio
 async def test_get_all_workplaces():
     # Setup in-memory DB
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:

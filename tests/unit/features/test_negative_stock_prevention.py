@@ -1,5 +1,6 @@
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel.pool import StaticPool
 
 from docuflow.domain.entities.production import (
     MaterialStock,
@@ -12,7 +13,7 @@ from docuflow.infrastructure.config import Config
 
 
 def test_negative_stock_prevention():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:

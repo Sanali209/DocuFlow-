@@ -6,6 +6,7 @@ pytest.skip(
 from unittest.mock import AsyncMock, MagicMock
 
 from sqlmodel import Session, SQLModel, create_engine, select
+from sqlmodel.pool import StaticPool
 
 from docuflow.domain.entities.production import (
     MaterialAudit,
@@ -21,7 +22,7 @@ from docuflow.infrastructure.config import Config
 
 @pytest.fixture
 def engine():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
     return engine
 

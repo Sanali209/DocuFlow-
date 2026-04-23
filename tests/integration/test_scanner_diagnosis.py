@@ -127,7 +127,7 @@ class TestScannerDiagnosis:
                     node_id="node_01",
                     module="folder_scanner",
                     key="sidra_scan_path",
-                    value="D:\\github\\DocuFlow-\\data_sample\\sidra",
+                    value="D:\\github\\DocuFlow-\\assets\\fixtures\\data_sample\\sidra",
                 ),
                 NodeSetting(
                     node_id="node_01", module="folder_scanner", key="enabled", value="True"
@@ -235,7 +235,7 @@ class TestScannerDiagnosis:
 
         settings = scanner.get_settings("node_01")
 
-        assert settings.sidra_scan_path == "D:\\github\\DocuFlow-\\data_sample\\sidra", (
+        assert settings.sidra_scan_path == "D:\\github\\DocuFlow-\\assets\\fixtures\\data_sample\\sidra", (
             f"Expected sidra_scan_path to be set, got: {settings.sidra_scan_path}"
         )
         assert settings.enabled is True, f"Expected enabled to be True, got: {settings.enabled}"

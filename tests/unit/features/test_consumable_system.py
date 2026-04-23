@@ -1,5 +1,6 @@
 import pytest
 from sqlmodel import Session, SQLModel, create_engine, select
+from sqlmodel.pool import StaticPool
 
 from docuflow.domain.entities.production import (
     ChatMessage,
@@ -11,7 +12,12 @@ from docuflow.infrastructure.config import Config
 
 @pytest.fixture
 def engine():
-    engine = create_engine("sqlite:///:memory:", echo=False)
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     SQLModel.metadata.create_all(engine)
     return engine
 

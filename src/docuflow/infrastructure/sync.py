@@ -150,35 +150,37 @@ class DataSyncSystem(BaseSystem):
                 table_name = entity_cls.__tablename__
                 remote_rows = snapshot_data.get(table_name, [])
 
+                if not remote_rows:
+                    continue
+
+                pk_names = [c.name for c in entity_cls.__table__.primary_key]
+
                 for row_dict in remote_rows:
-                    self._process_remote_row(session, entity_cls, row_dict)
+                    self._process_remote_row(session, entity_cls, row_dict, pk_names)
 
             session.commit()
 
     def _process_remote_row(
-        self, session: Session, entity_cls: type[SQLModel], row_data: dict
+        self, session: Session, entity_cls: type[SQLModel], row_data: dict, pk_names: list[str]
     ) -> None:
         """Process an individual remote record and resolve local conflicts."""
-        # Restore datetime objects from ISO strings
-        for key, value in row_data.items():
+        row_copy = dict(row_data)
+        for key, value in row_copy.items():
             if isinstance(value, str) and "T" in value:
                 try:
-                    row_data[key] = datetime.datetime.fromisoformat(value)
+                    row_copy[key] = datetime.datetime.fromisoformat(value)
                 except ValueError:
                     pass
 
-        remote_obj = entity_cls.model_validate(row_data)
+        remote_obj = entity_cls.model_validate(row_copy)
 
-        pk_names = [column.name for column in entity_cls.__table__.primary_key]
         pk_values = tuple(getattr(remote_obj, pk) for pk in pk_names)
-
         local_obj = session.get(entity_cls, pk_values)
 
         if not local_obj:
             session.add(remote_obj)
         elif self._is_remote_newer(remote_obj, local_obj):
-            self._update_local_stale_record(local_obj, row_data)
-            session.add(local_obj)
+            self._update_local_stale_record(local_obj, row_copy)
 
     def _is_remote_newer(self, remote_obj: Any, local_obj: Any) -> bool:
         """Determine if a remote object has a more recent update timestamp."""

@@ -4,7 +4,7 @@ import pytest
 
 # Skip tests that require large data samples if the data_sample directory is not present
 repo_root = Path(__file__).parent.parent.parent
-if not (repo_root / "data_sample").exists():
+if not (repo_root / "assets/fixtures/data_sample").exists():
     pytest.skip(
         "data_sample not available; skipping GNC/SVG generator tests", allow_module_level=True
     )
@@ -18,7 +18,7 @@ def test_gnc_parser_collects_contours():
     repo_root = Path(__file__).parent.parent.parent
     gnc_file = (
         repo_root
-        / "data_sample/sidra/SIDRA-353203-SHLAV-2-07.07.2025/12-06-SIDRA-353203-SHLAV-2-07.07.2025-AA 5052-H32-3.GNC"
+        / "assets/fixtures/data_sample/sidra/SIDRA-353203-SHLAV-2-07.07.2025/12-06-SIDRA-353203-SHLAV-2-07.07.2025-AA 5052-H32-3.GNC"
     )
 
     parser = GncParser()
@@ -41,7 +41,7 @@ def test_generate_thumbnail_real_file(tmp_path):
     repo_root = Path(__file__).parent.parent.parent
     gnc_file = (
         repo_root
-        / "data_sample/sidra/SIDRA-353203-SHLAV-2-07.07.2025/12-06-SIDRA-353203-SHLAV-2-07.07.2025-AA 5052-H32-3.GNC"
+        / "assets/fixtures/data_sample/sidra/SIDRA-353203-SHLAV-2-07.07.2025/12-06-SIDRA-353203-SHLAV-2-07.07.2025-AA 5052-H32-3.GNC"
     )
 
     parser = GncParser()

@@ -3,6 +3,7 @@ import shutil
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel.pool import StaticPool
 
 from docuflow.domain.entities.production import ChatMessageType, Project
 from docuflow.features.chat.system import ChatSystem
@@ -11,7 +12,7 @@ from docuflow.infrastructure.config import Config
 
 @pytest.fixture
 def engine():
-    engine = create_engine("sqlite:///:memory:", echo=False)
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
     return engine
 

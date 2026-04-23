@@ -9,7 +9,7 @@ import datetime
 import json
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, ClassVar
 
 from loguru import logger
 from sqlmodel import Session, select
@@ -36,6 +36,20 @@ class TaskBoardSystem(BaseSystem):
     """
 
     SHEET_OVERAGE_TOLERANCE = 1.2
+
+    VALID_TASK_TRANSITIONS: ClassVar[dict[TaskItemStatus, list[TaskItemStatus]]] = {
+        TaskItemStatus.PLANNED: [TaskItemStatus.IN_PROGRESS, TaskItemStatus.CANCELLED],
+        TaskItemStatus.IN_PROGRESS: [
+            TaskItemStatus.ON_HOLD,
+            TaskItemStatus.DONE,
+            TaskItemStatus.BLOCKED,
+            TaskItemStatus.CANCELLED,
+        ],
+        TaskItemStatus.ON_HOLD: [TaskItemStatus.IN_PROGRESS, TaskItemStatus.CANCELLED],
+        TaskItemStatus.BLOCKED: [TaskItemStatus.IN_PROGRESS, TaskItemStatus.CANCELLED],
+        TaskItemStatus.DONE: [],
+        TaskItemStatus.CANCELLED: [],
+    }
 
     def __init__(
         self,
@@ -438,10 +452,13 @@ class TaskBoardSystem(BaseSystem):
         if not task:
             raise ValueError(f"Task {task_id} not found")
 
-        # Enforce transition rules
         current = task.status
-        if target_status == TaskItemStatus.IN_PROGRESS and current == TaskItemStatus.DONE:
-            raise ValueError(f"Invalid transition from {current} to {target_status}")
+        allowed = self.VALID_TASK_TRANSITIONS.get(current, [])
+        if target_status not in allowed:
+            raise ValueError(
+                f"Invalid transition from {current.name} to {target_status.name}. "
+                f"Allowed: {[s.name for s in allowed]}"
+            )
 
         return task
 

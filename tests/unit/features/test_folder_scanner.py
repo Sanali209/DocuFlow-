@@ -27,8 +27,8 @@ def mock_sdk(engine):
 
     config = Config(shared_path="./test_shared", node_id="test_node")
 
-    # Shared session for all services to avoid locking and connection leaks
-    shared_session = Session(engine)
+    # Create session properly managed by fixture
+    session = Session(engine)
 
     # Mock settings resolution
     settings = FolderScannerSettings(
@@ -56,6 +56,13 @@ def mock_sdk(engine):
             with Session(engine) as session:
                 return InventorySystem(config, db_session=session, sdk=sdk)
         return sdk.orchestrator
+
+    sdk.resolve_system_by_type = resolve_mock
+
+    yield sdk
+
+    # Properly close session after tests
+    session.close()
 
     sdk.resolve_system_by_type = AsyncMock(side_effect=resolve_mock)
     return sdk

@@ -1,7 +1,0 @@
-src\docuflow\features\core\search.py:22: error: Missing type arguments for generic type "dict"  [type-arg]
-src\docuflow\features\core\search.py:22: error: Incompatible types in assignment (expression has type "None", variable has type "dict[Any, Any]")  [assignment]
-src\docuflow\features\core\search.py:61: error: Argument "id" to "SearchResult" has incompatible type "int | None"; expected "int"  [arg-type]
-src\docuflow\features\core\search.py:79: error: Argument "id" to "SearchResult" has incompatible type "int | None"; expected "int"  [arg-type]
-src\docuflow\features\core\search.py:97: error: Argument "id" to "SearchResult" has incompatible type "int | None"; expected "int"  [arg-type]
-pyproject.toml: note: unused section(s): module = ['nicegui.*']
-Found 5 errors in 1 file (checked 1 source file)

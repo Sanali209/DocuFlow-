@@ -204,7 +204,7 @@ class IncidentSystem(BaseSystem):
         """Lifecycle hook to register reporting blocks in the global registry."""
         if not self.sdk:
             return
-        registry = await self.sdk.request_container.get(ReportRegistry)
+        registry = await self.sdk.resolve_system_by_type(ReportRegistry)
 
         registry.register(
             ReportDataBlock(
