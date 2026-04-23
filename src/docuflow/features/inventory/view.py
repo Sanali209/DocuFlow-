@@ -2,35 +2,19 @@ from typing import Any
 
 from nicegui import ui
 
-from docuflow.features.core.views import ViewInfo, ViewRegistry
+from docuflow.features.core.views import register_view
 from docuflow.features.inventory.system import InventorySystem
 from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.styles import Styles as S
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
-def register_warehouse_view():
-    """Register the warehouse view in the global registry."""
-    ViewRegistry.register(
-        ViewInfo(
-            name="warehouse",
-            label="Warehouse",
-            icon="inventory_2",
-            render_fn=warehouse_view_wrapper,
-            dependencies=[InventorySystem],
-            pass_system_scope=True,
-            pass_layout=True,
-            is_async=True,
-        )
-    )
-
-
-async def warehouse_view_wrapper(inventory_system: InventorySystem, system_scope: Any, layout: Any):
-    """Wrapper to instantiate and render the WarehouseView."""
-    view = WarehouseView(inventory_system, system_scope, layout)
-    await view.render()
-
-
+@register_view(
+    name="warehouse",
+    label="Warehouse",
+    icon="inventory_2",
+    dependencies=[InventorySystem],
+)
 class WarehouseView(BaseDocuWidget):
     """Provides the decentralized material stock management grid."""
 
