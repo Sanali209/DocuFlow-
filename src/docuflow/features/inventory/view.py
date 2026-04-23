@@ -5,6 +5,7 @@ from nicegui import ui
 from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.inventory.system import InventorySystem
 from docuflow.lib.base_widget import BaseDocuWidget
+from docuflow.lib.widgets.styles import Styles as S
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
@@ -40,8 +41,8 @@ class WarehouseView(BaseDocuWidget):
 
     async def render(self):
         """Render the warehouse UI."""
-        with ui.column().classes("w-full h-full p-4 gap-4"):
-            ui.label("Склад и Материалы").classes("text-3xl font-bold text-white mb-2")
+        with ui.column().classes(S.PAGE):
+            ui.label("Склад и Материалы").classes(S.HEADING_LARGE)
 
             with ui.tabs().classes("w-full text-indigo-400") as tabs:
                 catalog_tab = ui.tab("КАТАЛОГ")
@@ -60,36 +61,38 @@ class WarehouseView(BaseDocuWidget):
                             requests = fresh_system.get_active_supply_requests()
 
                         if not requests:
-                            with ui.card().classes("w-full p-8 text-center glass-card"):
+                            with ui.card().classes(f"w-full p-8 text-center {S.CARD_DARK}"):
                                 ui.icon("check_circle", color="emerald").classes("text-6xl mb-4")
                                 ui.label("Все накормлены. Активных запросов нет.").classes(
                                     "text-xl text-slate-400"
                                 )
                         else:
-                            with ui.grid(columns=3).classes("w-full gap-4"):
+                            with ui.grid(columns=3).classes(f"w-full {S.GAP_4}"):
                                 for req_log in requests:
                                     with ui.card().classes(
-                                        "glass-card p-4 border-l-4 border-orange-500"
+                                        f"{S.CARD_DARK} p-4 border-l-4 border-orange-500"
                                     ):
-                                        with ui.row().classes(
-                                            "items-center justify-between w-full mb-2"
-                                        ):
+                                        with ui.row().classes(f"{S.ROW} w-full {S.MB_2}"):
                                             ui.label(req_log.created_at.strftime("%H:%M")).classes(
                                                 "text-xs text-indigo-300"
                                             )
                                             ui.badge("СРОЧНО").props("color=orange")
 
-                                        ui.label(
-                                            req_log.message.replace("[LOGISTICS_REQUEST]", "").strip()
-                                        ).classes("text-sm font-bold text-white mb-4")
+                                        raw = req_log.message
+                                        msg = raw.replace("[LOGISTICS_REQUEST]", "").strip()
+                                        ui.label(msg).classes(
+                                            f"{S.BODY} font-bold text-white {S.MB_4}"
+                                        )
 
                                         with ui.row().classes("w-full justify-end"):
-                                            ui.button(
-                                                "ПОДАНО",
-                                                on_click=lambda r=req_log: self.handle_supply_fulfillment(
+                                            def _fulfill(r=req_log):
+                                                self.handle_supply_fulfillment(
                                                     r, render_supply_requests
-                                                ),
-                                            ).classes("bg-emerald-600 text-white rounded-lg")
+                                                )
+
+                                            ui.button("ПОДАНО", on_click=_fulfill).classes(
+                                                "bg-emerald-600 text-white rounded-lg"
+                                            )
 
                         # Safe self-perpetuating refresh tied to Layout lifecycle
                         self.layout.register_timer(
