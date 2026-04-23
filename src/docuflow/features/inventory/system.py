@@ -52,7 +52,7 @@ class InventorySystem(BaseSystem):
         Example:
             catalog = inventory.get_material_catalog()
         """
-        return list(self.session.exec(select(MaterialType)).all())
+        return self.find_all(MaterialType)
 
     def update_material_settings(self, mat_id: int, **kwargs) -> MaterialType | None:
         """Updates specific parameters of a material definition."""
@@ -64,10 +64,7 @@ class InventorySystem(BaseSystem):
             if hasattr(material, key):
                 setattr(material, key, value)
 
-        self.session.add(material)
-        self.session.commit()
-        self.session.refresh(material)
-        return material
+        return self.save(material)
 
     def create_material_definition(self, code: str, thickness: float, **kwargs) -> MaterialType:
         """
@@ -76,9 +73,7 @@ class InventorySystem(BaseSystem):
         Example:
             material = inventory.create_material_definition(code="ALU-3", thickness=3.0)
         """
-        material_type = self.session.exec(
-            select(MaterialType).where(MaterialType.code == code)
-        ).first()
+        material_type = self.find_one(MaterialType, code=code)
 
         if not material_type:
             material_type = MaterialType(code=code, thickness=thickness, **kwargs)
@@ -93,7 +88,7 @@ class InventorySystem(BaseSystem):
 
     def get_all_stock(self) -> list[MaterialStock]:
         """Retrieves all current material stock records."""
-        return list(self.session.exec(select(MaterialStock)).all())
+        return self.find_all(MaterialStock)
 
     def get_audit_history(self, limit: int = 100) -> list[MaterialAudit]:
         """Retrieves historical material movements."""
@@ -223,10 +218,7 @@ class InventorySystem(BaseSystem):
             return
 
         # 1. Search for an assigned reservation
-        reservation_query = select(Reservation).where(
-            Reservation.work_item_id == task_item.work_item_id
-        )
-        reservation = self.session.exec(reservation_query).first()
+        reservation = self.find_one(Reservation, work_item_id=task_item.work_item_id)
 
         target_stock = None
         if reservation:
