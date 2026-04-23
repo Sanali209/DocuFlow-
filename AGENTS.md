@@ -82,6 +82,11 @@ uv run python scripts/ops/port_killer.py       # kill process on DOCUFLOW_PORT
 - **Bulk recursive updates**: pass IDs downward, not ORM objects; use distinct `Session()` blocks in loops to avoid holding DB lock
 - **Manual session scoping in admin**: `AdminSystem` uses manual `with Session(self._engine)` instead of injected session — background P2P handlers need thread-safe direct access
 
+## Refactoring & consolidation
+- See `docs/analysis/reports/CODE_CONSOLIDATION_ANALYSIS.md` for identified duplication patterns and proposed helpers
+- High-impact targets: `BaseSystem` CRUD helpers, `@register_view` decorator, `styles.py` tokens, `confirm_dialog` helper
+- 151+ inline Tailwind classes in views — use shared constants
+
 ## Testing conventions
 - `pytest.ini` sets `pythonpath = ["src"]` — tests import from `docuflow` directly, not the installed package
 - Tests enforce named constants (no magic values): see `tests/unit/test_code_quality.py`
