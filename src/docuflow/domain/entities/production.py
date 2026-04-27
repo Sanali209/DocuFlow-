@@ -33,6 +33,7 @@ class TaskItemStatus(StrEnum):
     PLANNED = "planned"
     IN_PROGRESS = "in_progress"
     ON_HOLD = "on_hold"
+    SUSPENDED = "suspended"
     DONE = "done"
     CANCELLED = "cancelled"
     BLOCKED = "blocked"
@@ -199,7 +200,9 @@ class MaterialStockStatus(StrEnum):
 class MaterialType(BaseEntity, table=True):
     """Registry of material specifications and cutting parameters."""
 
-    code: str = Field(unique=True, index=True)
+    __table_args__ = (UniqueConstraint("code", "thickness"),)
+
+    code: str = Field(index=True)
     form_factor: MaterialFormFactor = Field(default=MaterialFormFactor.SHEET)
     thickness: float | None = None
     nominal_x: float | None = None
