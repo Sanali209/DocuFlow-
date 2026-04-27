@@ -77,12 +77,27 @@ class WorkItem(BaseEntity, table=True):
     # Relations
     project: Project | None = Relationship(back_populates="work_items")
     tasks: list["TaskItem"] = Relationship(back_populates="work_item")
+    task_groups: list["TaskGroup"] = Relationship(back_populates="work_item")
+
+
+class TaskGroup(BaseEntity, table=True):
+    """A group of TaskItems (replaces batch_group_id)."""
+
+    name: str | None = None
+    work_item_id: int = Field(foreign_key="workitem.id", index=True)
+    created_by: str | None = None
+    grouping_rule: str = Field(default="manual")  # "manual" | "auto_material"
+
+    # Relations
+    work_item: WorkItem | None = Relationship(back_populates="task_groups")
+    tasks: list["TaskItem"] = Relationship(back_populates="task_group")
 
 
 class TaskItem(BaseEntity, table=True):
     """Represents a single GNC file (cutting task)."""
 
     work_item_id: int = Field(foreign_key="workitem.id", index=True)
+    task_group_id: int | None = Field(default=None, foreign_key="taskgroup.id", index=True)
     mat_type_id: int | None = Field(default=None, foreign_key="materialtype.id")
 
     status: TaskItemStatus = Field(default=TaskItemStatus.PLANNED)
@@ -118,6 +133,7 @@ class TaskItem(BaseEntity, table=True):
 
     # Relations
     work_item: WorkItem | None = Relationship(back_populates="tasks")
+    task_group: TaskGroup | None = Relationship(back_populates="tasks")
     parts: list["TaskPart"] = Relationship(back_populates="task")
     # Bidirectional link to physical pellets.
     # Named 'task_item' to avoid shadowing the 'task' keyword or internal variables.
