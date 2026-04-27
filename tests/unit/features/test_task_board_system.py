@@ -206,6 +206,36 @@ class TestTaskBoardSystemPauseTask:
         assert result.status == TaskItemStatus.ON_HOLD
 
 
+class TestTaskBoardSystemSuspendTask:
+    """Тесты для метода suspend_task()."""
+
+    def test_suspend_task(
+        self,
+        system: TaskBoardSystem,
+        project_and_work_item,
+        material: MaterialType,
+        session: Session,
+    ):
+        """Приостанавливает задачу."""
+        _, work_item = project_and_work_item
+
+        task = TaskItem(
+            file_name="task.gnc",
+            file_path="/path/task.gnc",
+            work_item_id=work_item.id,
+            mat_type_id=material.id,
+            status=TaskItemStatus.IN_PROGRESS,
+        )
+        session.add(task)
+        session.commit()
+
+        result = system.suspend_task(task.id)
+        session.commit()
+        session.refresh(result)
+
+        assert result.status == TaskItemStatus.SUSPENDED
+
+
 class TestTaskBoardSystemCompleteTask:
     """Тесты для метода complete_task()."""
 

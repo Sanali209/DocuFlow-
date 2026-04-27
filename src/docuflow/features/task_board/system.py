@@ -184,6 +184,18 @@ class TaskBoardSystem(BaseSystem):
             session.refresh(task_item)
             return task_item
 
+    def suspend_task(self, task_id: int) -> TaskItem:
+        with self.get_db_session() as session:
+            task_item = self._validate_transition(task_id, TaskItemStatus.SUSPENDED, session)
+            task_item.status = TaskItemStatus.SUSPENDED
+            self._audit_task_event(
+                task_item, WorkLogType.STATUS_CHANGE, "Task suspended", session=session
+            )
+            session.add(task_item)
+            self._sync(session)
+            session.refresh(task_item)
+            return task_item
+
     def resume_task(self, task_id: int) -> TaskItem:
         with self.get_db_session() as session:
             task_item = self._validate_transition(task_id, TaskItemStatus.IN_PROGRESS, session)
