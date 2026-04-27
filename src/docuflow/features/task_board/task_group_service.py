@@ -86,3 +86,62 @@ class TaskGroupService:
         if statuses == {TaskItemStatus.PLANNED}:
             return "planned"
         return "mixed"
+
+    def move_task_to_group(self, task_id: int, group_id: int) -> None:
+        task = self.session.get(TaskItem, task_id)
+        if not task:
+            raise ValueError(f"Task {task_id} not found")
+        group = self.session.get(TaskGroup, group_id)
+        if not group:
+            raise ValueError(f"Group {group_id} not found")
+        task.task_group_id = group_id
+        self.session.add(task)
+        self.session.commit()
+
+    def split_group(self, group_id: int, task_ids_to_separate: list[int]) -> TaskGroup:
+        original = self.session.get(TaskGroup, group_id)
+        if not original:
+            raise ValueError(f"Group {group_id} not found")
+
+        new_group = TaskGroup(
+            name=f"{original.name} (split)",
+            work_item_id=original.work_item_id,
+            grouping_rule="manual",
+        )
+        self.session.add(new_group)
+        self.session.flush()
+
+        for tid in task_ids_to_separate:
+            task = self.session.get(TaskItem, tid)
+            if task and task.task_group_id == group_id:
+                task.task_group_id = new_group.id
+                self.session.add(task)
+
+        self.session.commit()
+        return new_group
+
+    def merge_groups(self, group_ids: list[int]) -> TaskGroup:
+        groups = []
+        for gid in group_ids:
+            g = self.session.get(TaskGroup, gid)
+            if g:
+                groups.append(g)
+
+        if len(groups) < 2:
+            raise ValueError("Need at least 2 groups to merge")
+
+        merged = TaskGroup(
+            name=f"Merged ({len(groups)} groups)",
+            work_item_id=groups[0].work_item_id,
+            grouping_rule="manual",
+        )
+        self.session.add(merged)
+        self.session.flush()
+
+        for g in groups:
+            for task in g.tasks:
+                task.task_group_id = merged.id
+                self.session.add(task)
+
+        self.session.commit()
+        return merged
