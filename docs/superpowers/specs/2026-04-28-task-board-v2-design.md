@@ -802,7 +802,158 @@ InventorySystem.perform_write_off(task_item, sheets_used=sheets_done, author="op
 | **Part (SKU)** | **sku, name** | **Открыть Part Library** |
 | MaterialType | code | Открыть Warehouse с фильтром |
 
-## 16. Обновлённые критерии приёмки
+## 16. Интеграция Chat, Incidents, Analytics, Reports
+
+### 16.1 Chat
+
+**Сейчас:** 3 канала (General, Supply & Orders, Failure Log). Сообщения типов MESSAGE, ORDER, INCIDENT.
+
+**Обновления:**
+
+**A. Новый тип сообщения: HANDOVER**
+```python
+class ChatMessageType(StrEnum):
+    MESSAGE = "message"
+    ORDER = "order"
+    INCIDENT = "incident"
+    HANDOVER = "handover"  # ← новый
+```
+
+При передаче смены создаётся `ChatMessage(HANDOVER)` с текстом заметки.
+
+**B. Deeplink на TaskItem в сообщениях**
+```
+[14:32] admin: Проблема с задачей #1234
+              ↓ клик
+       → Раскрыть Task Board до TaskItem 1234
+```
+
+Парсинг `#<id>` в тексте сообщения → кликабельная ссылка.
+
+**C. Новый канал: "Производство"**
+```
+[General Feed] [Supply & Orders] [Failure Log] [Производство]
+```
+
+Канал "Производство" показывает:
+- HANDOVER сообщения
+- Завершённые задачи (auto: "✅ TaskItem 1234 завершена, паллета 26-04-0015")
+- Резервирования материалов
+
+### 16.2 Incidents
+
+**Сейчас:** Таблица активных блокеров + история. Фильтр по группе (Foreman, Maintenance, Supply, IT).
+
+**Обновления:**
+
+**A. Deeplink на TaskItem**
+```
+┌─────────────────────────────────────────────────────────┐
+│ BREAKDOWN | → Maintenance | FAIL-ID: 42                │
+│ Описание: Поломка лазера                                 │
+│ Задача: #1234  ← клик → раскрыть Task Board            │
+│ [Claim] [Resolve]                                       │
+└─────────────────────────────────────────────────────────┘
+```
+
+**B. Фильтр по Project/WorkItem**
+```
+[Все проекты ▼] [Все наряды ▼] [ALL] [Foreman] [Maintenance]...
+```
+
+**C. Интеграция с Task Board**
+- Кнопка "Создать инцидент" в TaskItemRow (в дополнение к BLOCKED)
+- Инцидент автоматически привязывается к `task_item_id`
+
+### 16.3 Analytics
+
+**Сейчас:** KPI: Total Work Items, Avg Drift, Total Finished Parts, Status Distribution pie chart, 7-day output bar chart.
+
+**Новые метрики:**
+
+```python
+metrics = {
+    # Существующие
+    "total_work_items": ...,
+    "total_tasks": ...,
+    "total_pallets": ...,
+    "total_parts_produced": ...,
+    "avg_drift": ...,
+    "completion_rate": ...,
+    "status_counts": ...,
+    
+    # Новые
+    "total_task_groups": ...,           # Всего TaskGroup
+    "avg_group_size": ...,              # Среднее задач в группе
+    "groups_by_status": {               # TaskGroup по статусам
+        "planned": ..., "in_progress": ..., "done": ..., "mixed": ...
+    },
+    "node_utilization": {               # Загрузка узлов
+        "LASER_1": {"active": 2, "queued": 3, "done": 10},
+        "LASER_2": {"active": 1, "queued": 1, "done": 5},
+    },
+    "material_reservation_rate": ...,   # % нарядов с резервом
+    "pallet_by_project": {              # Паллеты по проектам
+        "SHLAV-2": 15, "VOLTAS-1": 8
+    },
+}
+```
+
+**Новые графики:**
+
+**График 3: Загрузка узлов (stacked bar)**
+```
+LASER_1  [▓▓▓░░░░░] 3/8 активных
+LASER_2  [▓░░░░░░░░] 1/5 активных
+```
+
+**График 4: TaskGroup статусы (donut)**
+```
+[PLANNED 30%] [IN_PROGRESS 20%] [DONE 40%] [MIXED 10%]
+```
+
+### 16.4 Reports
+
+**Сейчас:** Шаблоны отчётов (shift_summary), фильтры по дате, HTML preview, PDF export.
+
+**Новые ReportDataBlocks:**
+
+```python
+# task_group_summary
+{
+    "name": "task_group_summary",
+    "label": "Task Group Summary",
+    "query_fn": lambda session, params: [...]  # Список TaskGroup с задачами
+}
+
+# material_reservation_status
+{
+    "name": "material_reservation_status",
+    "label": "Material Reservations",
+    "query_fn": lambda session, params: [...]  # Резервы с привязкой к нарядам
+}
+
+# pallet_by_project
+{
+    "name": "pallet_by_project",
+    "label": "Pallets by Project",
+    "query_fn": lambda session, params: [...]  # Паллеты сгруппированные по проектам
+}
+
+# node_performance
+{
+    "name": "node_performance",
+    "label": "Node Performance",
+    "query_fn": lambda session, params: [...]  # Drift, uptime по узлам
+}
+```
+
+**Новые шаблоны:**
+- `"production_summary"` — иерархия Project→WorkItem→TaskGroup→TaskItem
+- `"material_audit"` — резервы, списания, остатки
+- `"pallet_manifest"` — список паллет с номерами и привязкой к задачам
+
+## 17. Обновлённые критерии приёмки
 
 ### Обязательные (добавленные)
 - [ ] `TaskItemStatus.SUSPENDED` — длительная приостановка
@@ -819,6 +970,10 @@ InventorySystem.perform_write_off(task_item, sheets_used=sheets_done, author="op
 - [ ] **Warehouse: новая вкладка "РЕЗЕРВЫ" с привязкой к нарядам**
 - [ ] **Production: обратный поиск по label_id в Omnisearch**
 - [ ] **Production: deeplink из паллеты в Task Board**
+- [ ] **Chat: тип HANDOVER, deeplink #<task_id>, канал "Производство"**
+- [ ] **Incidents: deeplink на TaskItem, фильтр по Project/WorkItem**
+- [ ] **Analytics: метрики TaskGroup, node_utilization, pallet_by_project**
+- [ ] **Reports: data blocks task_group_summary, material_reservation, pallet_by_project**
 
 ### Файлы (добавленные)
 - `src/docuflow/domain/entities/production.py` — добавить SUSPENDED в TaskItemStatus
