@@ -41,11 +41,17 @@ class TaskBoardSystem(BaseSystem):
         TaskItemStatus.PLANNED: [TaskItemStatus.IN_PROGRESS, TaskItemStatus.CANCELLED],
         TaskItemStatus.IN_PROGRESS: [
             TaskItemStatus.ON_HOLD,
+            TaskItemStatus.SUSPENDED,
             TaskItemStatus.DONE,
             TaskItemStatus.BLOCKED,
             TaskItemStatus.CANCELLED,
         ],
         TaskItemStatus.ON_HOLD: [TaskItemStatus.IN_PROGRESS, TaskItemStatus.CANCELLED],
+        TaskItemStatus.SUSPENDED: [
+            TaskItemStatus.IN_PROGRESS,
+            TaskItemStatus.DONE,
+            TaskItemStatus.CANCELLED,
+        ],
         TaskItemStatus.BLOCKED: [TaskItemStatus.IN_PROGRESS, TaskItemStatus.CANCELLED],
         TaskItemStatus.DONE: [],
         TaskItemStatus.CANCELLED: [],
@@ -55,10 +61,10 @@ class TaskBoardSystem(BaseSystem):
         self,
         config: Config,
         db_engine: Any,
-        session: Session = None,
-        ns_mirror=None,
-        inventory_system: InventorySystem = None,
-        production_system: ProductionSystem = None,
+        session: Session | None = None,
+        ns_mirror: Any = None,
+        inventory_system: InventorySystem | None = None,
+        production_system: ProductionSystem | None = None,
         sdk: Any = None,
     ):
         super().__init__(config, session)
@@ -86,7 +92,7 @@ class TaskBoardSystem(BaseSystem):
 
     def _sync(self, session: Session):
         """Internal helper to flush or commit based on session ownership."""
-        if self.session:
+        if self.session is not None:
             session.flush()
         else:
             session.commit()
@@ -109,6 +115,8 @@ class TaskBoardSystem(BaseSystem):
             bucket_entries = []
 
             for task_item in task_items:
+                if task_item.id is None:
+                    continue
                 bucket_entry = WorkerBucketEntry(
                     node_id=node_id,
                     assigned_user=operator,
@@ -230,10 +238,10 @@ class TaskBoardSystem(BaseSystem):
                     )
 
             # Automated unit registration
-            if create_pallet and self.production_system:
+            if create_pallet and self.production_system and task_item.id is not None:
                 try:
                     self.production_system.register_finished_pallet(
-                        task_item_id=task_item.id,
+                        task_item_id=task_item.id,  # type: ignore[arg-type]
                         quantity=qty_produced,
                         author_name="operator",
                     )
@@ -323,6 +331,10 @@ class TaskBoardSystem(BaseSystem):
             if not task:
                 raise ValueError(f"Task {task_id} not found")
 
+            task_id_val = task.id
+            if task_id_val is None:
+                raise ValueError(f"Task {task_id} has no ID")
+
             # Создаем уникальный ID батча для этой задачи (сингл-батч)
             import uuid
 
@@ -331,7 +343,7 @@ class TaskBoardSystem(BaseSystem):
             bucket_entry = WorkerBucketEntry(
                 node_id=node_id,
                 assigned_user=operator,
-                task_item_id=task.id,
+                task_item_id=task_id_val,  # type: ignore[arg-type]
                 batch_group_id=single_batch_id,
                 locked_at=datetime.datetime.now(),
             )
@@ -353,7 +365,7 @@ class TaskBoardSystem(BaseSystem):
         """Ищет неназначенные задачи с таким же материалом и толщиной."""
         with self.get_db_session() as session:
             statement = select(TaskItem).where(
-                TaskItem.assigned_to_node.is_(None),
+                TaskItem.assigned_to_node == None,  # type: ignore[attr-defined]
                 TaskItem.mat_type_id == mat_type_id,
                 TaskItem.thickness == thickness,
                 TaskItem.status.in_([TaskItemStatus.PLANNED]),  # type: ignore[attr-defined]
@@ -435,7 +447,7 @@ class TaskBoardSystem(BaseSystem):
         """Retrieves tasks that haven't been assigned to any node."""
         with self.get_db_session() as session:
             statement = select(TaskItem).where(
-                TaskItem.assigned_to_node.is_(None),
+                TaskItem.assigned_to_node == None,  # type: ignore[attr-defined]
                 TaskItem.status == TaskItemStatus.PLANNED,
             )
 
@@ -468,14 +480,14 @@ class TaskBoardSystem(BaseSystem):
         log_type: WorkLogType,
         message: str,
         payload: dict | None = None,
-        session: Session = None,
+        session: Session | None = None,
     ):
         """Создает запись в WorkLog."""
-        target_session = session or self.session
+        target_session = session or self.db_session
         work_log = WorkLog(
             work_item_id=task.work_item_id,
             task_item_id=task.id,
-            log_type=log_type.value,
+            log_type=log_type,
             message=message,
             payload=json.dumps(payload) if payload else None,
             created_at=datetime.datetime.now(),
