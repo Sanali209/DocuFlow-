@@ -349,7 +349,8 @@ class WorkerBucketEntry(BaseEntity, table=True):
     node_id: str = Field(index=True)
     assigned_user: str | None = None
     task_item_id: int = Field(foreign_key="taskitem.id", index=True)
-    batch_group_id: str | None = None  # UUID for batched tasks
+    task_group_id: int | None = Field(default=None, foreign_key="taskgroup.id")
+    # batch_group_id: str | None = None  # UUID for batched tasks — kept for Phase 9 cleanup
 
     locked_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
     handover_note: str | None = None
