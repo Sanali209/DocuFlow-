@@ -16,6 +16,7 @@ from sqlmodel import Session, select
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import (
+    ProductionUnit,
     TaskItem,
     TaskItemStatus,
     WorkerBucketEntry,
@@ -209,7 +210,7 @@ class TaskBoardSystem(BaseSystem):
             return task_item
 
     def complete_task(
-        self, task_id: int, sheets_done: int, qty_produced: int, create_pallet: bool = False
+        self, task_id: int, sheets_done: int, qty_produced: int = 0, create_pallet: bool = False
     ) -> TaskItem:
         with self.get_db_session() as session:
             task_item = self._validate_transition(task_id, TaskItemStatus.DONE, session)
@@ -224,10 +225,20 @@ class TaskBoardSystem(BaseSystem):
             if qty_produced < 0:
                 raise ValueError("Количество произведенных деталей не может быть отрицательным.")
 
+            # Auto-calculate qty_produced from TaskParts
+            if task_item.parts:
+                parts_per_sheet = sum(p.qty for p in task_item.parts)
+                auto_qty = parts_per_sheet * sheets_done
+            else:
+                auto_qty = sheets_done
+
+            # Use auto if qty_produced is 0 or not provided
+            final_qty = auto_qty if qty_produced == 0 else qty_produced
+
             task_item.status = TaskItemStatus.DONE
             task_item.completed_at = datetime.datetime.now()
             task_item.sheets_done = sheets_done
-            task_item.qty_produced = qty_produced
+            task_item.qty_produced = final_qty
 
             # Calculate actual time
             if task_item.started_at:
@@ -254,7 +265,7 @@ class TaskBoardSystem(BaseSystem):
                 try:
                     self.production_system.register_finished_pallet(
                         task_item_id=task_item.id,  # type: ignore[arg-type]
-                        quantity=qty_produced,
+                        quantity=task_item.qty_produced,
                         author_name="operator",
                     )
                 except Exception as e:
@@ -467,6 +478,59 @@ class TaskBoardSystem(BaseSystem):
                 statement = statement.where(TaskItem.work_item_id == work_item_id)
 
             return list(session.exec(statement).all())
+
+    def find_pallets_by_task(
+        self, task_id: int, session: Session | None = None
+    ) -> list[ProductionUnit]:
+        """Find all production units (pallets) linked to a specific task."""
+        if session is not None:
+            return list(
+                session.exec(
+                    select(ProductionUnit).where(ProductionUnit.task_item_id == task_id)
+                ).all()
+            )
+        with self.get_db_session() as session:
+            return list(
+                session.exec(
+                    select(ProductionUnit).where(ProductionUnit.task_item_id == task_id)
+                ).all()
+            )
+
+    def find_pallets_by_work_item(
+        self, work_item_id: int, session: Session | None = None
+    ) -> list[ProductionUnit]:
+        """Find all production units linked to tasks of a specific work item."""
+        if session is not None:
+            return list(
+                session.exec(
+                    select(ProductionUnit)
+                    .join(TaskItem)
+                    .where(TaskItem.work_item_id == work_item_id)
+                ).all()
+            )
+        with self.get_db_session() as session:
+            return list(
+                session.exec(
+                    select(ProductionUnit)
+                    .join(TaskItem)
+                    .where(TaskItem.work_item_id == work_item_id)
+                ).all()
+            )
+
+    def find_task_by_pallet_label(
+        self, label_id: str, session: Session | None = None
+    ) -> TaskItem | None:
+        """Find the task associated with a pallet by its label ID."""
+        if session is not None:
+            pallet = session.exec(
+                select(ProductionUnit).where(ProductionUnit.label_id == label_id)
+            ).first()
+            return pallet.task_item if pallet else None
+        with self.get_db_session() as session:
+            pallet = session.exec(
+                select(ProductionUnit).where(ProductionUnit.label_id == label_id)
+            ).first()
+            return pallet.task_item if pallet else None
 
     def _validate_transition(
         self, task_id: int, target_status: TaskItemStatus, session: Session

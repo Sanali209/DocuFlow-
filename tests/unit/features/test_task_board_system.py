@@ -18,6 +18,7 @@ from docuflow.domain.entities.production import (
     Project,
     TaskItem,
     TaskItemStatus,
+    TaskPart,
     WorkItem,
 )
 from docuflow.features.task_board.system import TaskBoardSystem
@@ -299,6 +300,84 @@ class TestTaskBoardSystemCompleteTask:
 
         assert result.actual_minutes is not None
         assert result.actual_minutes >= 89  # ~90 минут
+
+    def test_complete_task_auto_qty_produced(
+        self,
+        system: TaskBoardSystem,
+        project_and_work_item,
+        material: MaterialType,
+        session: Session,
+    ):
+        """Auto-calculate qty_produced from TaskParts."""
+        _, work_item = project_and_work_item
+
+        task = TaskItem(
+            file_name="test.gnc",
+            file_path="test.gnc",
+            work_item_id=work_item.id,
+            mat_type_id=material.id,
+            sheet_qty=8,
+            status=TaskItemStatus.IN_PROGRESS,
+            started_at=datetime.now(),
+        )
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+
+        assert task.id is not None
+
+        # Add TaskParts: 2 parts per sheet
+        p1 = TaskPart(task_item_id=task.id, part_sku="BASE-A", qty=2)
+        session.add(p1)
+        session.commit()
+
+        result = system.complete_task(task.id, sheets_done=4, qty_produced=0)
+        session.commit()
+        session.refresh(result)
+
+        assert result.qty_produced == 8  # 2 parts * 4 sheets
+
+    def test_complete_task_creates_pallet(
+        self,
+        system: TaskBoardSystem,
+        project_and_work_item,
+        material: MaterialType,
+        session: Session,
+    ):
+        """When create_pallet=True, a ProductionUnit is created."""
+        _, work_item = project_and_work_item
+
+        task = TaskItem(
+            file_name="test.gnc",
+            file_path="test.gnc",
+            work_item_id=work_item.id,
+            mat_type_id=material.id,
+            sheet_qty=8,
+            status=TaskItemStatus.IN_PROGRESS,
+            started_at=datetime.now(),
+        )
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+
+        assert task.id is not None
+
+        # Mock production_system to capture the call
+        calls = []
+
+        class MockProdSys:
+            def register_finished_pallet(self, task_item_id, quantity, author_name):
+                calls.append({"task_item_id": task_item_id, "quantity": quantity})
+
+        system.production_system = MockProdSys()  # type: ignore[assignment]
+
+        result = system.complete_task(task.id, sheets_done=8, qty_produced=0, create_pallet=True)
+        session.commit()
+        session.refresh(result)
+
+        assert result.status == TaskItemStatus.DONE
+        assert len(calls) == 1
+        assert calls[0]["quantity"] == 8  # auto-calculated
 
 
 class TestTaskBoardSystemGetDrift:
