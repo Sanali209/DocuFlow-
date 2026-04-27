@@ -498,3 +498,176 @@ async def get_presets(self, user_id, view_name) -> list[ViewPreset]:
 - `src/docuflow/main.py` — убрать регистрацию Projects/WorkItems views (или скрыть)
 - `src/docuflow/features/projects/view.py` — отметить deprecated
 - `src/docuflow/features/work_items/view.py` — отметить deprecated
+
+## 13. Паллет-трекинг и резервирование материалов
+
+### 13.1 Статус SUSPENDED
+
+Добавить `TaskItemStatus.SUSPENDED` для длительной приостановки задачи.
+
+```python
+class TaskItemStatus(StrEnum):
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    ON_HOLD = "on_hold"       # Кратковременная пауза (с указанием причины)
+    SUSPENDED = "suspended"   # Длительная приостановка (бригадир/оператор)
+    DONE = "done"
+    CANCELLED = "cancelled"
+    BLOCKED = "blocked"
+```
+
+**Переходы:**
+```python
+VALID_TASK_TRANSITIONS = {
+    ...
+    TaskItemStatus.IN_PROGRESS: [ON_HOLD, SUSPENDED, DONE, BLOCKED, CANCELLED],
+    TaskItemStatus.SUSPENDED: [IN_PROGRESS, DONE, CANCELLED],
+    ...
+}
+```
+
+### 13.2 Авто-расчёт произведённых деталей (qty_produced)
+
+При завершении задачи система автоматически считает количество деталей:
+
+```
+qty_produced = sum(TaskPart.qty for part in task.parts) * sheets_done
+```
+
+- `TaskPart.qty` — количество экземпляров детали в ОДНОМ листе (из GNC)
+- `sheets_done` — сколько листов реально порезано
+- Оператор НЕ вводит qty_produced вручную
+
+Если `TaskItem.parts` пустой — `qty_produced = sheets_done` (fallback).
+
+### 13.3 Диалог завершения задачи (с паллетой)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Завершить задачу 3455-11-144-A.GNC?                    │
+│                                                         │
+│ Листов сделано: 8/8                                    │
+│ Деталей произведено: 47 (авто)                         │
+│                                                         │
+│ Куда кладём?                                           │
+│ (•) Создать новую паллету                              │
+│ ( ) Добавить к существующей: [выбрать ▼]              │
+│                                                         │
+│ [ОТМЕНА]                    [ЗАВЕРШИТЬ]                │
+└─────────────────────────────────────────────────────────┘
+```
+
+**При создании новой паллеты:**
+```python
+pallet = ProductionSystem.register_finished_pallet(
+    task_item_id=task.id,
+    quantity=auto_calculated_qty_produced,
+    author_name=operator_name,
+)
+# ProductionUnit.label_id = "26-04-LASER_1-0015" (auto)
+# ProductionUnit.task_item_id = task.id
+```
+
+**При добавлении к существующей:**
+```python
+existing_pallet = session.get(ProductionUnit, selected_pallet_id)
+existing_pallet.qty_produced += auto_calculated_qty_produced
+# WorkLog: "Added to pallet X: +47 units from task Y"
+```
+
+### 13.4 Связь TaskItem ↔ ProductionUnit
+
+**Прямая связь:** `TaskItem.production_units` (One-to-Many через FK `task_item_id`)
+
+**Обратный поиск (по номеру работы/таска/проекта):**
+```python
+def find_pallets_by_task(task_id: int) -> list[ProductionUnit]:
+    return session.exec(
+        select(ProductionUnit).where(ProductionUnit.task_item_id == task_id)
+    ).all()
+
+def find_pallets_by_work_item(work_item_id: int) -> list[ProductionUnit]:
+    return session.exec(
+        select(ProductionUnit)
+        .join(TaskItem)
+        .where(TaskItem.work_item_id == work_item_id)
+    ).all()
+
+def find_pallets_by_project(project_id: int) -> list[ProductionUnit]:
+    return session.exec(
+        select(ProductionUnit)
+        .join(TaskItem)
+        .join(WorkItem)
+        .where(WorkItem.project_id == project_id)
+    ).all()
+
+def find_task_by_pallet_label(label_id: str) -> TaskItem | None:
+    pallet = session.exec(
+        select(ProductionUnit).where(ProductionUnit.label_id == label_id)
+    ).first()
+    return pallet.task_item if pallet else None
+```
+
+### 13.5 Показ паллет в иерархии
+
+**TaskItemRow (DONE):**
+```
+📄 3455-11-144-A.GNC                        [✅ Готово]
+   ST37-2 4.0mm | LASER_1 | 8/8 листов | 47 деталей
+   📦 Паллета: 26-04-LASER_1-0015
+   [Просмотр] [Найти на складе]
+```
+
+**TaskGroupRow (если есть DONE задачи):**
+```
+📦 ST37-2 4.0mm [3 задачи] [✅ Готово]
+   3/3 задач | 47 деталей | 2 паллеты
+   📦 26-04-LASER_1-0015 (47 шт) | 📦 26-04-LASER_1-0016 (12 шт)
+```
+
+**WorkItemRow (раскрытый):**
+```
+📁 3455-11-144
+   Паллеты: 26-04-LASER_1-0015, 26-04-LASER_1-0016
+   [Показать все паллеты наряда]
+```
+
+### 13.6 Резервирование и списание материалов
+
+**Резервирование (бригадир):**
+```python
+# При назначении TaskGroup на узел
+InventorySystem.create_reservation(
+    stock_item_id=selected_stock_id,
+    work_item_id=work_item_id,
+    qty=estimated_sheets,
+    is_hard=False,  # soft по умолчанию
+)
+```
+
+**Списание (авто при DONE):**
+```python
+# В TaskBoardSystem.complete_task()
+InventorySystem.perform_write_off(task_item, sheets_used=sheets_done, author="operator")
+# Приоритет: reservation → FIFO fallback
+```
+
+**Показ в UI:**
+- TaskItemRow: иконка 📦 если материал зарезервирован
+- При наведении: "Материал зарезервирован: BATCH-99 (10 листов)"
+- При списании: WorkLog запись + аудит MaterialAudit
+
+## 14. Обновлённые критерии приёмки
+
+### Обязательные (добавленные)
+- [ ] `TaskItemStatus.SUSPENDED` — длительная приостановка
+- [ ] Авто-расчёт `qty_produced` из TaskPart.qty * sheets_done
+- [ ] Диалог завершения: "Создать новую паллету" / "Добавить к существующей"
+- [ ] Связь TaskItem ↔ ProductionUnit с обратным поиском
+- [ ] Показ номера паллеты в TaskItemRow (DONE) и TaskGroupRow
+- [ ] Поиск паллет по project/work_item/task_id и обратно
+- [ ] Резервирование материала при назначении на узел
+- [ ] Авто-списание материала при DONE
+
+### Файлы (добавленные)
+- `src/docuflow/domain/entities/production.py` — добавить SUSPENDED в TaskItemStatus
