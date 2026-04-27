@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Engine
+from sqlalchemy import Engine, text
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
@@ -85,6 +85,62 @@ class AdminSystem(BaseSystem):
             )
         )
 
+    def reset_cluster_data(self) -> dict[str, int]:
+        """DEBUG ONLY: Wipes all production data while preserving identity/admin tables."""
+        tables_to_clear = [
+            "taskpart",
+            "parttemplate",
+            "workerbucketentry",
+            "productionunit",
+            "materialaudit",
+            "reservation",
+            "materialstock",
+            "consumablelog",
+            "taskitem",
+            "partlibrary",
+            "workitem",
+            "consumable",
+            "storagelocation",
+            "materialtype",
+            "project",
+            "worklog",
+            "incidentlog",
+            "chatmessage",
+            "tag",
+            "reporttemplate",
+            "viewpreset",
+            "notificationtemplate",
+        ]
+        results: dict[str, int] = {}
+        try:
+            # Disable FK checks to allow out-of-order deletion
+            self.db_session.execute(text("PRAGMA foreign_keys = OFF"))
+            for table in tables_to_clear:
+                try:
+                    result = self.db_session.execute(
+                        text(f"DELETE FROM {table}")  # noqa: S608
+                    )
+                    results[table] = result.rowcount  # type: ignore[union-attr]
+                except Exception:
+                    logger.exception(f"Failed to clear table {table}")
+                    results[table] = -1
+            # Reset autoincrement sequences (best-effort)
+            try:
+                for table in tables_to_clear:
+                    self.db_session.execute(
+                        text(
+                            f"DELETE FROM sqlite_sequence WHERE name='{table}'"  # noqa: S608
+                        )
+                    )
+            except Exception:
+                pass  # sqlite_sequence may not exist
+            self.db_session.commit()
+        finally:
+            self.db_session.execute(text("PRAGMA foreign_keys = ON"))
+            self.db_session.commit()
+        logger.warning(f"Cluster reset complete: {results}")
+        return results
+
     # --- Workplace/Node Binding Management ---
     def get_all_workplaces(self) -> list[Workplace]:
         return self.find_all(Workplace)
@@ -95,15 +151,15 @@ class AdminSystem(BaseSystem):
         return [w.node_id for w in workplaces] if workplaces else []
 
     def upsert_workplace(self, workplace_data: dict[str, Any]) -> Workplace:
-        s = self.session
+        s = self.db_session
         node_id = workplace_data.get("node_id")
         statement = select(Workplace).where(Workplace.node_id == node_id)
         workplace = s.exec(statement).first()
 
         if not workplace:
-            workplace = Workplace(node_id=node_id, name=workplace_data.get("name"))
+            workplace = Workplace(node_id=str(node_id), name=str(workplace_data.get("name")))
 
-        workplace.name = workplace_data.get("name", workplace.name)
+        workplace.name = str(workplace_data.get("name", workplace.name))
         workplace.allowed_modules = workplace_data.get("allowed_modules", workplace.allowed_modules)
 
         s.add(workplace)
@@ -124,7 +180,7 @@ class AdminSystem(BaseSystem):
 
     def delete_workplace(self, node_id: str) -> None:
         """Delete a workplace binding by node_id."""
-        s = self.session
+        s = self.db_session
         statement = select(Workplace).where(Workplace.node_id == node_id)
         workplace = s.exec(statement).first()
         if workplace:
@@ -139,8 +195,8 @@ class AdminSystem(BaseSystem):
     # --- User & Identity CRUD ---
     def get_all_users(self) -> list[User]:
         """Eagerly loads User.role to prevent DetachedInstanceError after session close."""
-        s = self.session
-        stmt = select(User).options(selectinload(User.role))
+        s = self.db_session
+        stmt = select(User).options(selectinload(User.role))  # type: ignore[arg-type]
         users = list(s.exec(stmt).all())
         return users
 
@@ -148,11 +204,13 @@ class AdminSystem(BaseSystem):
         return self.find_all(Role)
 
     def create_user(self, user_data: dict[str, Any]) -> User:
-        s = self.session
+        s = self.db_session
+        role_id_raw = user_data.get("role_id")
+        role_id = int(role_id_raw) if role_id_raw is not None else 0
         user = User(
-            username=user_data.get("username"),
-            password_hash=user_data.get("password_hash"),
-            role_id=user_data.get("role_id"),
+            username=str(user_data.get("username")),
+            password_hash=str(user_data.get("password_hash")),
+            role_id=role_id,  # type: ignore[arg-type]
             allowed_workplaces=user_data.get("allowed_workplaces", "[]"),
         )
         s.add(user)
@@ -178,8 +236,8 @@ class AdminSystem(BaseSystem):
 
         user = self.find_one(User, username=username)
         if user:
-            self.session.delete(user)
-            self.session.flush()
+            self.db_session.delete(user)
+            self.db_session.flush()
             asyncio.get_event_loop().create_task(
                 self._orchestrator.broadcast_command(
                     command=CommandType.DELETE_USER, data={"username": username}
@@ -188,9 +246,12 @@ class AdminSystem(BaseSystem):
 
     # --- Role & Permission Matrix Management ---
     def upsert_role(self, role_name: str, permissions_list: list[str]) -> Role:
-        s = self.session
+        s = self.db_session
         if self._is_admin(role_name):
-            return s.exec(select(Role).where(Role.name == "admin")).first()
+            admin_role = s.exec(select(Role).where(Role.name == "admin")).first()
+            if admin_role:
+                return admin_role
+            raise RuntimeError("Admin role not found")
 
         statement = select(Role).where(Role.name == role_name)
         role = s.exec(statement).first()
@@ -215,7 +276,7 @@ class AdminSystem(BaseSystem):
         if self._is_admin(role_name):
             return
 
-        s = self.session
+        s = self.db_session
         statement = select(Role).where(Role.name == role_name)
         role = s.exec(statement).first()
         if role:
@@ -233,7 +294,7 @@ class AdminSystem(BaseSystem):
         return {s.key: s.value for s in results}
 
     def update_node_setting(self, node_id: str, module: str, key: str, value: str):
-        s = self.session
+        s = self.db_session
         statement = select(NodeSetting).where(
             NodeSetting.node_id == node_id, NodeSetting.module == module, NodeSetting.key == key
         )
@@ -261,7 +322,7 @@ class AdminSystem(BaseSystem):
     def update_notification_template(
         self, template_id: int, text: str, enabled: bool
     ) -> NotificationTemplate | None:
-        template = self.session.get(NotificationTemplate, template_id)
+        template = self.db_session.get(NotificationTemplate, template_id)
         if template:
             template.text = text
             template.enabled = enabled
@@ -269,17 +330,19 @@ class AdminSystem(BaseSystem):
         return template
 
     # --- View Presets ---
-    def get_view_presets(self, owner: str = "global") -> list[ViewPreset]:
-        return self.find_all(ViewPreset, owner=owner)
+    def get_view_presets(self, user_id: str = "global") -> list[ViewPreset]:
+        return self.find_all(ViewPreset, user_id=user_id)
 
     def create_view_preset(
-        self, module: str, name: str, preset_json: str, owner: str = "global"
+        self, view_name: str, name: str, filters_json: str, user_id: str = "global"
     ) -> ViewPreset:
-        preset = ViewPreset(module=module, name=name, preset_json=preset_json, owner=owner)
+        preset = ViewPreset(
+            view_name=view_name, name=name, filters_json=filters_json, user_id=user_id
+        )
         return self.save(preset)
 
     def delete_view_preset(self, preset_id: int):
-        preset = self.session.get(ViewPreset, preset_id)
+        preset = self.db_session.get(ViewPreset, preset_id)
         if preset:
             self.delete(preset)
 
@@ -288,7 +351,7 @@ class AdminSystem(BaseSystem):
         from sqlmodel import desc
 
         statement = select(WorkLog).order_by(desc(WorkLog.created_at)).limit(limit)
-        return list(self.session.exec(statement).all())
+        return list(self.db_session.exec(statement).all())
 
     def seed_default_roles(self):
         """Populate the database with the core DocuFlow role matrix (Cyrillic)."""
@@ -346,7 +409,7 @@ class AdminSystem(BaseSystem):
             "Supervisor": "Бригадир",
         }
 
-        s = self.session
+        s = self.db_session
 
         # 1. Seed Cyrillic roles first so they are available for reassignment
         new_roles = {}
@@ -412,7 +475,7 @@ class AdminSyncSystem:
 
     def handle_upsert_role(self, data: dict[str, Any]):
         role_name = data.get("name")
-        if self._is_admin(role_name):
+        if not role_name or self._is_admin(str(role_name)):
             return
 
         with Session(self._engine) as session:
@@ -427,7 +490,7 @@ class AdminSyncSystem:
 
     def handle_delete_role(self, data: dict[str, Any]):
         role_name = data.get("name")
-        if self._is_admin(role_name):
+        if not role_name or self._is_admin(str(role_name)):
             return
 
         with Session(self._engine) as session:
@@ -440,9 +503,9 @@ class AdminSyncSystem:
 
     def handle_upsert_setting(self, data: dict[str, Any]):
         with Session(self._engine) as session:
-            node_id = data.get("node_id")
-            module = data.get("module")
-            key = data.get("key")
+            node_id = str(data.get("node_id"))
+            module = str(data.get("module"))
+            key = str(data.get("key"))
 
             statement = select(NodeSetting).where(
                 NodeSetting.node_id == node_id, NodeSetting.module == module, NodeSetting.key == key
@@ -457,13 +520,19 @@ class AdminSyncSystem:
 
     def handle_upsert_user(self, data: dict[str, Any]):
         username = data.get("username")
+        if not username:
+            return
+        username = str(username)
         with Session(self._engine) as session:
             statement = select(User).where(User.username == username)
             user = session.exec(statement).first()
             if not user:
-                user = User(username=username, password_hash=data.get("password_hash"))
-            user.role_id = data.get("role_id")
-            user.password_hash = data.get("password_hash", user.password_hash)
+                user = User(
+                    username=username, password_hash=str(data.get("password_hash")), role_id=0
+                )
+            role_id_raw = data.get("role_id")
+            user.role_id = int(role_id_raw) if role_id_raw is not None else 0  # type: ignore[assignment]
+            user.password_hash = str(data.get("password_hash", user.password_hash))
             user.allowed_workplaces = data.get("allowed_workplaces", "[]")
             session.add(user)
             session.commit()
@@ -471,7 +540,7 @@ class AdminSyncSystem:
 
     def handle_delete_user(self, data: dict[str, Any]):
         username = data.get("username")
-        if self._is_admin(username):
+        if not username or self._is_admin(str(username)):
             return
 
         with Session(self._engine) as session:
@@ -484,12 +553,15 @@ class AdminSyncSystem:
 
     def handle_upsert_workplace(self, data: dict[str, Any]):
         node_id = data.get("node_id")
+        if not node_id:
+            return
+        node_id = str(node_id)
         with Session(self._engine) as session:
             statement = select(Workplace).where(Workplace.node_id == node_id)
             workplace = session.exec(statement).first()
             if not workplace:
-                workplace = Workplace(node_id=node_id, name=data.get("name"))
-            workplace.name = data.get("name", workplace.name)
+                workplace = Workplace(node_id=node_id, name=str(data.get("name")))
+            workplace.name = str(data.get("name", workplace.name))
             workplace.allowed_modules = data.get("allowed_modules", workplace.allowed_modules)
             session.add(workplace)
             session.commit()

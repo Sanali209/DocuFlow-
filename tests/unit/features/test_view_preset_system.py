@@ -49,10 +49,10 @@ class TestViewPresetSystemCreate:
     def test_create_preset(self, system: ViewPresetSystem):
         """Создание нового пресета."""
         preset = system.create(
-            module="work_items",
-            owner="user1",
+            view_name="work_items",
+            user_id="user1",
             name="Мои задачи",
-            preset_json={
+            filters_json={
                 "view_type": "table",
                 "columns": ["folder_name", "status"],
                 "filters": {"status": ["NEW", "REGISTERED"]},
@@ -60,38 +60,38 @@ class TestViewPresetSystemCreate:
         )
 
         assert preset.id is not None
-        assert preset.module == "work_items"
-        assert preset.owner == "user1"
+        assert preset.view_name == "work_items"
+        assert preset.user_id == "user1"
         assert preset.name == "Мои задачи"
-        assert preset.is_default == False
+        assert not preset.is_default
 
-        # Проверяем, что preset_json валидный JSON
-        config = json.loads(preset.preset_json)
+        # Проверяем, что filters_json валидный JSON
+        config = json.loads(preset.filters_json)
         assert config["view_type"] == "table"
         assert config["columns"] == ["folder_name", "status"]
 
     def test_create_global_preset(self, system: ViewPresetSystem):
         """Создание глобального пресета."""
         preset = system.create(
-            module="work_items",
-            owner="global",
+            view_name="work_items",
+            user_id="global",
             name="Все активные",
-            preset_json={"view_type": "table", "filters": {}},
+            filters_json={"view_type": "table", "filters": {}},
         )
 
-        assert preset.owner == "global"
+        assert preset.user_id == "global"
 
     def test_create_default_preset(self, system: ViewPresetSystem):
         """Создание пресета по умолчанию."""
         preset = system.create(
-            module="work_items",
-            owner="user1",
+            view_name="work_items",
+            user_id="user1",
             name="По умолчанию",
-            preset_json={},
+            filters_json={},
             is_default=True,
         )
 
-        assert preset.is_default == True
+        assert preset.is_default
 
 
 class TestViewPresetSystemList:
@@ -100,44 +100,44 @@ class TestViewPresetSystemList:
     def test_list_personal_and_global(self, system: ViewPresetSystem):
         """Возвращает и global и personal пресеты."""
         system.create(
-            module="work_items",
-            owner="global",
+            view_name="work_items",
+            user_id="global",
             name="Все активные",
-            preset_json={},
+            filters_json={},
         )
         system.create(
-            module="work_items",
-            owner="user1",
+            view_name="work_items",
+            user_id="user1",
             name="Мои задачи",
-            preset_json={},
+            filters_json={},
         )
         system.create(
-            module="work_items",
-            owner="user2",
+            view_name="work_items",
+            user_id="user2",
             name="Задачи user2",
-            preset_json={},
+            filters_json={},
         )
 
         presets = system.list("work_items", "user1")
 
         # user1 видит global + свой, но не видит user2
         assert len(presets) == 2
-        owners = {p.owner for p in presets}
-        assert owners == {"global", "user1"}
+        user_ids = {p.user_id for p in presets}
+        assert user_ids == {"global", "user1"}
 
     def test_list_only_global(self, system: ViewPresetSystem):
         """Возвращает только global пресеты."""
         system.create(
-            module="work_items",
-            owner="global",
+            view_name="work_items",
+            user_id="global",
             name="Все активные",
-            preset_json={},
+            filters_json={},
         )
 
         presets = system.list("work_items", "user1")
 
         assert len(presets) == 1
-        assert presets[0].owner == "global"
+        assert presets[0].user_id == "global"
 
     def test_list_empty(self, system: ViewPresetSystem):
         """Возвращает пустой список, если нет пресетов."""
@@ -152,10 +152,10 @@ class TestViewPresetSystemGetActive:
     def test_get_active_personal(self, system: ViewPresetSystem):
         """Получает personal active пресет."""
         system.create(
-            module="work_items",
-            owner="user1",
+            view_name="work_items",
+            user_id="user1",
             name="Мои задачи",
-            preset_json={},
+            filters_json={},
             is_default=True,
         )
 
@@ -163,30 +163,30 @@ class TestViewPresetSystemGetActive:
 
         assert active is not None
         assert active.name == "Мои задачи"
-        assert active.is_default == True
+        assert active.is_default
 
     def test_get_active_global_fallback(self, system: ViewPresetSystem):
         """Если нет personal active, возвращает global default."""
         system.create(
-            module="work_items",
-            owner="global",
+            view_name="work_items",
+            user_id="global",
             name="Все активные",
-            preset_json={},
+            filters_json={},
             is_default=True,
         )
 
         active = system.get_active("work_items", "user1")
 
         assert active is not None
-        assert active.owner == "global"
+        assert active.user_id == "global"
 
     def test_get_active_none(self, system: ViewPresetSystem):
         """Возвращает None, если нет active пресетов."""
         system.create(
-            module="work_items",
-            owner="user1",
+            view_name="work_items",
+            user_id="user1",
             name="Мои задачи",
-            preset_json={},
+            filters_json={},
             is_default=False,
         )
 
@@ -201,52 +201,52 @@ class TestViewPresetSystemSetActive:
     def test_set_active(self, system: ViewPresetSystem):
         """Устанавливает active пресет."""
         p1 = system.create(
-            module="work_items",
-            owner="user1",
+            view_name="work_items",
+            user_id="user1",
             name="Пресет 1",
-            preset_json={},
+            filters_json={},
             is_default=True,
         )
         p2 = system.create(
-            module="work_items",
-            owner="user1",
+            view_name="work_items",
+            user_id="user1",
             name="Пресет 2",
-            preset_json={},
+            filters_json={},
         )
 
         result = system.set_active("work_items", "user1", p2.id)
 
-        assert result.is_default == True
+        assert result.is_default
         assert result.id == p2.id
 
         # Проверяем, что старый пресет больше не default
         p1_updated = system.session.get(ViewPreset, p1.id)
-        assert p1_updated.is_default == False
+        assert not p1_updated.is_default
 
     def test_set_active_not_found(self, system: ViewPresetSystem):
         """Ошибка, если пресет не найден."""
         with pytest.raises(ValueError, match="не найден"):
             system.set_active("work_items", "user1", 999999)
 
-    def test_set_active_wrong_module(self, system: ViewPresetSystem):
-        """Ошибка, если пресет не принадлежит модулю."""
+    def test_set_active_wrong_view_name(self, system: ViewPresetSystem):
+        """Ошибка, если пресет не принадлежит виду."""
         p = system.create(
-            module="task_board",
-            owner="user1",
+            view_name="task_board",
+            user_id="user1",
             name="Пресет",
-            preset_json={},
+            filters_json={},
         )
 
-        with pytest.raises(ValueError, match="не принадлежит модулю"):
+        with pytest.raises(ValueError, match="не принадлежит виду"):
             system.set_active("work_items", "user1", p.id)
 
-    def test_set_active_wrong_owner(self, system: ViewPresetSystem):
+    def test_set_active_wrong_user(self, system: ViewPresetSystem):
         """Ошибка, если пресет не принадлежит пользователю."""
         p = system.create(
-            module="work_items",
-            owner="user2",
+            view_name="work_items",
+            user_id="user2",
             name="Пресет user2",
-            preset_json={},
+            filters_json={},
         )
 
         with pytest.raises(ValueError, match="не принадлежит пользователю"):
@@ -254,18 +254,18 @@ class TestViewPresetSystemSetActive:
 
 
 class TestViewPresetSystemDelete:
-    """Тесты для метода delete()."""
+    """Тесты для метода delete_preset()."""
 
     def test_delete_personal(self, system: ViewPresetSystem):
         """Удаление personal пресета."""
         p = system.create(
-            module="work_items",
-            owner="user1",
+            view_name="work_items",
+            user_id="user1",
             name="Мои задачи",
-            preset_json={},
+            filters_json={},
         )
 
-        system.delete(p.id, owner="user1")
+        system.delete_preset(p.id, user_id="user1")
 
         deleted = system.session.get(ViewPreset, p.id)
         assert deleted is None
@@ -273,13 +273,13 @@ class TestViewPresetSystemDelete:
     def test_delete_global_by_admin(self, system: ViewPresetSystem):
         """Удаление global пресета админом."""
         p = system.create(
-            module="work_items",
-            owner="global",
+            view_name="work_items",
+            user_id="global",
             name="Все активные",
-            preset_json={},
+            filters_json={},
         )
 
-        system.delete(p.id, owner="admin")
+        system.delete_preset(p.id, user_id="admin")
 
         deleted = system.session.get(ViewPreset, p.id)
         assert deleted is None
@@ -287,31 +287,31 @@ class TestViewPresetSystemDelete:
     def test_delete_global_by_user_raises(self, system: ViewPresetSystem):
         """Ошибка при удалении global пресета обычным пользователем."""
         p = system.create(
-            module="work_items",
-            owner="global",
+            view_name="work_items",
+            user_id="global",
             name="Все активные",
-            preset_json={},
+            filters_json={},
         )
 
         with pytest.raises(PermissionError, match="глобальные пресеты"):
-            system.delete(p.id, owner="user1")
+            system.delete_preset(p.id, user_id="user1")
 
     def test_delete_other_user_raises(self, system: ViewPresetSystem):
         """Ошибка при удалении чужого пресета."""
         p = system.create(
-            module="work_items",
-            owner="user2",
+            view_name="work_items",
+            user_id="user2",
             name="Задачи user2",
-            preset_json={},
+            filters_json={},
         )
 
         with pytest.raises(PermissionError, match="чужие пресеты"):
-            system.delete(p.id, owner="user1")
+            system.delete_preset(p.id, user_id="user1")
 
     def test_delete_not_found(self, system: ViewPresetSystem):
         """Ошибка, если пресет не найден."""
         with pytest.raises(ValueError, match="не найден"):
-            system.delete(999999, owner="user1")
+            system.delete_preset(999999, user_id="user1")
 
 
 class TestViewPresetSystemGetPresetJson:
@@ -327,10 +327,10 @@ class TestViewPresetSystemGetPresetJson:
             "group_by": "project_id",
         }
         p = system.create(
-            module="work_items",
-            owner="user1",
+            view_name="work_items",
+            user_id="user1",
             name="Пресет",
-            preset_json=config,
+            filters_json=config,
         )
 
         result = system.get_preset_json(p)

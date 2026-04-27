@@ -457,13 +457,25 @@ class ReportTemplate(BaseEntity, table=True):
     last_used_at: datetime.datetime | None = None
 
 
-class ViewPreset(BaseEntity, table=True):
-    """UI configuration presets (Notion-style tabs)."""
+class ViewState(BaseEntity, table=True):
+    """Persists expansion state of hierarchy levels."""
 
-    module: str
-    owner: str  # username or "global"
-    name: str
-    preset_json: str  # JSON config
+    __table_args__ = (UniqueConstraint("user_id", "view_name", "entity_type", "entity_id"),)
+
+    user_id: str = Field(index=True)
+    view_name: str = Field(index=True)
+    entity_type: str  # "project" | "workitem" | "taskgroup"
+    entity_id: str
+    is_expanded: bool = Field(default=True)
+
+
+class ViewPreset(BaseEntity, table=True):
+    """Saved filter configurations."""
+
+    name: str = Field(index=True)
+    user_id: str = Field(index=True)
+    view_name: str = Field(index=True)
+    filters_json: str
     is_default: bool = Field(default=False)
 
 

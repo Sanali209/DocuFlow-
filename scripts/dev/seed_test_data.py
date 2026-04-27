@@ -19,7 +19,6 @@ from docuflow.domain.entities.production import (
     WorkItemStatus,
     WorkItemType,
 )
-from docuflow.features.view_presets.system import ViewPresetSystem
 
 
 def seed():
@@ -51,12 +50,16 @@ def seed():
         session.commit()
         session.refresh(material)
 
+        proj_id = project.id
+        if proj_id is None:
+            raise RuntimeError("Project was not created")
+
         # Создаём WorkItem
         work_items = [
             WorkItem(
                 folder_name="SIDRA-353203-SHLAV-2",
                 folder_path="Z:\\sidra\\SIDRA-353203-SHLAV-2",
-                project_id=project.id,
+                project_id=proj_id,  # type: ignore[arg-type]
                 work_item_type=WorkItemType.SIDRA,
                 status=WorkItemStatus.NEW,
                 sidra_number="353203",
@@ -64,7 +67,7 @@ def seed():
             WorkItem(
                 folder_name="SIDRA-353204-SHLAV-2",
                 folder_path="Z:\\sidra\\SIDRA-353204-SHLAV-2",
-                project_id=project.id,
+                project_id=proj_id,  # type: ignore[arg-type]
                 work_item_type=WorkItemType.SIDRA,
                 status=WorkItemStatus.REGISTERED,
                 sidra_number="353204",
@@ -72,7 +75,7 @@ def seed():
             WorkItem(
                 folder_name="MIHTAV-2025-07",
                 folder_path="Z:\\mihtav\\MIHTAV-2025-07",
-                project_id=project.id,
+                project_id=proj_id,  # type: ignore[arg-type]
                 work_item_type=WorkItemType.MIHTAV,
                 status=WorkItemStatus.IN_PROGRESS,
             ),
@@ -87,11 +90,18 @@ def seed():
             session.refresh(wi)
 
         # Создаём TaskItem для каждого WorkItem
+        mat_id = material.id
+        if mat_id is None:
+            raise RuntimeError("Material was not created")
+
         for wi in work_items:
+            wi_id = wi.id
+            if wi_id is None:
+                continue
             for i in range(2):
                 task = TaskItem(
-                    work_item_id=wi.id,
-                    mat_type_id=material.id,
+                    work_item_id=wi_id,  # type: ignore[arg-type]
+                    mat_type_id=mat_id,  # type: ignore[arg-type]
                     file_name=f"{wi.folder_name}_step_{i + 1}.gnc",
                     file_path=f"/path/{wi.folder_name}/step_{i + 1}.gnc",
                     status=TaskItemStatus.PLANNED,
@@ -104,23 +114,25 @@ def seed():
         session.commit()
 
         # Создаём дефолтные ViewPreset
-        preset_system = ViewPresetSystem(session)
+        from docuflow.features.view_presets.system import ViewPresetSystem
+
+        preset_system = ViewPresetSystem(session=session)  # type: ignore[call-arg]
 
         preset_system.create(
-            module="work_items",
-            owner="global",
+            view_name="work_items",
+            user_id="global",
             name="Все активные",
-            preset_json={
+            filters_json={
                 "view_type": "table",
                 "filters": {"status": ["new", "registered", "in_progress"]},
             },
         )
 
         preset_system.create(
-            module="work_items",
-            owner="global",
+            view_name="work_items",
+            user_id="global",
             name="Только новые",
-            preset_json={
+            filters_json={
                 "view_type": "table",
                 "filters": {"status": ["new"]},
             },
