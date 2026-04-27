@@ -59,6 +59,15 @@ class TestStatusBadge:
 
         assert label == "Зарегистрирован"
 
+    def test_render_suspended_status(self):
+        """Рендерит бейдж для статуса SUSPENDED."""
+        badge = StatusBadge(TaskItemStatus.SUSPENDED)
+        result = badge.render()
+
+        assert result is not None
+        assert badge._get_color() == "orange"
+        assert badge._get_label() == "Приостановлен"
+
 
 @pytest.mark.usefixtures("ui_context")
 class TestExplorerButton:

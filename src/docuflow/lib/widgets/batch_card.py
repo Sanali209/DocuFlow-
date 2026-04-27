@@ -4,6 +4,7 @@ BatchCard — карточка батча для отображения в ко�
 Показывает: материал, количество листов, estimated_minutes, drift%.
 """
 
+from collections.abc import Callable
 from typing import Any
 
 from loguru import logger
@@ -42,11 +43,11 @@ class BatchCard(BaseDocuWidget):
         node_id: str | None = None,
         user: str = "admin",
         system_scope: Any = None,
-        on_start=None,
-        on_pause=None,
-        on_resume=None,
-        on_complete=None,
-        on_block=None,
+        on_start: Callable[[int], None] | None = None,
+        on_pause: Callable[[int], None] | None = None,
+        on_resume: Callable[[int], None] | None = None,
+        on_complete: Callable[[int], None] | None = None,
+        on_block: Callable[[int], None] | None = None,
     ):
         super().__init__(system_scope)
         self.batch_group_id = batch_group_id
@@ -199,7 +200,9 @@ class BatchCard(BaseDocuWidget):
 
                                     ui.button(
                                         icon="add_circle",
-                                        on_click=lambda t=task: self._pull_suggested_task(t, dialog),
+                                        on_click=lambda t=task: self._pull_suggested_task(
+                                            t, dialog
+                                        ),
                                     ).props("flat color=green")
 
                         with ui.row().classes("w-full justify-end mt-4"):
@@ -246,7 +249,7 @@ class BatchCard(BaseDocuWidget):
                     log = WorkLog(
                         work_item_id=self.tasks[0].work_item_id,
                         task_item_id=self.tasks[0].id,
-                        log_type=WorkLogType.STATUS_CHANGE.value,
+                        log_type=WorkLogType.STATUS_CHANGE,
                         message=f"Запрошена логистика: {message}",
                         author=self.user,
                         created_at=datetime.datetime.now(),
@@ -370,28 +373,34 @@ class TaskItemRow:
         """Рендерит кнопки действий."""
         status = self.task.status
         if status == TaskItemStatus.PLANNED and self.on_start:
-            ui.button("▶ Начать", on_click=lambda: self.on_start(self.task.id)).props(
+            ui.button("▶ Начать", on_click=lambda: self.on_start(self.task.id)).props(  # type: ignore[call-arg]
                 f"size=sm color={get_action_color('start')}"
             )
         elif status == TaskItemStatus.IN_PROGRESS:
             if self.on_pause:
-                ui.button("⏸ Пауза", on_click=lambda: self.on_pause(self.task.id)).props(
+                ui.button("⏸ Пауза", on_click=lambda: self.on_pause(self.task.id)).props(  # type: ignore[call-arg]
                     f"size=sm color={get_action_color('pause')}"
                 )
             if self.on_complete:
-                ui.button("✅ Завершить", on_click=lambda: self.on_complete(self.task.id)).props(
+                ui.button("✅ Завершить", on_click=lambda: self.on_complete(self.task.id)).props(  # type: ignore[call-arg]
                     f"size=sm color={get_action_color('complete')}"
                 )
         elif status == TaskItemStatus.ON_HOLD and self.on_resume:
-            ui.button("▶ Возобновить", on_click=lambda: self.on_resume(self.task.id)).props(
+            ui.button("▶ Возобновить", on_click=lambda: self.on_resume(self.task.id)).props(  # type: ignore[call-arg]
                 f"size=sm color={get_action_color('resume')}"
             )
 
         if (
-            status not in (TaskItemStatus.DONE, TaskItemStatus.CANCELLED, TaskItemStatus.BLOCKED)
+            status
+            not in (
+                TaskItemStatus.DONE,
+                TaskItemStatus.CANCELLED,
+                TaskItemStatus.BLOCKED,
+                TaskItemStatus.SUSPENDED,
+            )
             and self.on_block
         ):
-            ui.button("🔒", on_click=lambda: self.on_block(self.task.id)).props(
+            ui.button("🔒", on_click=lambda: self.on_block(self.task.id)).props(  # type: ignore[call-arg]
                 f"size=sm color={get_action_color('block')} flat"
             )
 
