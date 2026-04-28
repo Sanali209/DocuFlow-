@@ -5,10 +5,17 @@ from typing import Any
 
 from jinja2 import BaseLoader, Environment, select_autoescape
 from loguru import logger
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from docuflow.application.base import BaseSystem
-from docuflow.domain.entities.production import ReportTemplate
+from docuflow.domain.entities.production import (
+    ProductionUnit,
+    ReportTemplate,
+    Reservation,
+    TaskGroup,
+    TaskItem,
+    TaskItemStatus,
+)
 from docuflow.infrastructure.config import Config
 
 
@@ -158,8 +165,9 @@ class ReportSystem(BaseSystem):
             return html_rendered.encode("utf-8")
 
     async def on_startup(self):
-        """Lifecycle: Seed default factory templates into the cluster DB."""
+        """Lifecycle: Seed default factory templates and register data blocks."""
         await self._seed_factory_templates()
+        self._register_data_blocks()
 
     async def _seed_factory_templates(self):
         """Internal helper to populate the database with default report layouts."""
@@ -202,101 +210,228 @@ class ReportSystem(BaseSystem):
 
     def _get_shift_summary_html(self) -> str:
         """Modularized HTML template string for shift summaries."""
-        return """
-        <style>
-            body { font-family: 'Inter', sans-serif; color: #334155; line-height: 1.5; padding: 50px; }
-            h1 { color: #f43f5e; border-bottom: 3px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 30px; }
-            .section { margin-top: 30px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border: 1px solid #f1f5f9; padding: 12px; text-align: left; }
-            th { background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; }
-        </style>
-        <h1>SHIFT PERFORMANCE: {{ node_id }}</h1>
-        <p><strong>Generated:</strong> {{ current_time.strftime('%d.%m.%Y %H:%M') }}</p>
-        <p><strong>Period:</strong> {{ params.date_from }} to {{ params.date_to }}</p>
-
-        <div class="section">
-            <h2>DOWNTIME BY CATEGORY</h2>
-            <table>
-                <tr><th>Incident Type</th><th>Cumulative Minutes</th></tr>
-                {% for category, minutes in blocks.downtime_summary().items() %}
-                <tr><td>{{ category }}</td><td>{{ minutes|round(1) }} min</td></tr>
-                {% endfor %}
-            </table>
-        </div>
-
-        <div class="section">
-            <h2>INCIDENT LOG</h2>
-            {% for entry in blocks.incident_log() %}
-            <div style="border-left: 3px solid #f43f5e; padding: 10px 20px; background: #fff1f2; margin-bottom: 10px;">
-                <strong>{{ entry.type }}</strong>: {{ entry.desc }} (reported by {{ entry.by }})  # type: ignore[attr-defined]
-                <br/><small>Status: {{ 'Resolved' if entry.resolved else 'UNRESOLVED' }}</small>
-            </div>
-            {% endfor %}
-        </div>
-        """
+        return (
+            "<style>\n"
+            "    body { font-family: 'Inter', sans-serif; color: #334155; "
+            "line-height: 1.5; padding: 50px; }\n"
+            "    h1 { color: #f43f5e; border-bottom: 3px solid #f1f5f9; "
+            "padding-bottom: 10px; margin-bottom: 30px; }\n"
+            "    .section { margin-top: 30px; }\n"
+            "    table { width: 100%; border-collapse: collapse; margin-top: 10px; }\n"
+            "    th, td { border: 1px solid #f1f5f9; padding: 12px; text-align: left; }\n"
+            "    th { background: #f8fafc; font-size: 11px; text-transform: uppercase; "
+            "letter-spacing: 0.1em; color: #64748b; }\n"
+            "</style>\n"
+            "<h1>SHIFT PERFORMANCE: {{ node_id }}</h1>\n"
+            "<p><strong>Generated:</strong> "
+            "{{ current_time.strftime('%d.%m.%Y %H:%M') }}</p>\n"
+            "<p><strong>Period:</strong> {{ params.date_from }} to {{ params.date_to }}</p>\n"
+            "\n"
+            '<div class="section">\n'
+            "    <h2>DOWNTIME BY CATEGORY</h2>\n"
+            "    <table>\n"
+            "        <tr><th>Incident Type</th><th>Cumulative Minutes</th></tr>\n"
+            "        {% for category, minutes in blocks.downtime_summary().items() %}\n"
+            "        <tr><td>{{ category }}</td><td>{{ minutes|round(1) }} min</td></tr>\n"
+            "        {% endfor %}\n"
+            "    </table>\n"
+            "</div>\n"
+            "\n"
+            '<div class="section">\n'
+            "    <h2>INCIDENT LOG</h2>\n"
+            "    {% for entry in blocks.incident_log() %}\n"
+            '    <div style="border-left: 3px solid #f43f5e; padding: 10px 20px; '
+            'background: #fff1f2; margin-bottom: 10px;">\n'
+            "        <strong>{{ entry.type }}</strong>: {{ entry.desc }} "
+            "(reported by {{ entry.by }})  # type: ignore[attr-defined]\n"
+            "        <br/><small>Status: "
+            "{{ 'Resolved' if entry.resolved else 'UNRESOLVED' }}</small>\n"
+            "    </div>\n"
+            "    {% endfor %}\n"
+            "</div>\n"
+        )
 
     def _get_material_audit_html(self) -> str:
         """HTML template for material traceability reports."""
-        return """
-        <style>
-            body { font-family: 'Inter', sans-serif; color: #334155; padding: 40px; }
-            h1 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-            th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
-            th { background: #f8fafc; color: #64748b; text-transform: uppercase; }
-            .delta-neg { color: #dc2626; font-weight: bold; }
-            .delta-pos { color: #16a34a; font-weight: bold; }
-        </style>
-        <h1>MATERIAL AUDIT LOG</h1>
-        <p>Node: {{ node_id }} | Period: {{ params.date_from }} - {{ params.date_to }}</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Operation</th>
-                    <th>Delta</th>
-                    <th>Author</th>
-                    <th>Reason / Context</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in blocks.material_usage_audit(limit=100) %}
-                <tr>
-                    <td>{{ item.date }}</td>
-                    <td>{{ item.operation.upper() }}</td>
-                    <td class="{{ 'delta-neg' if item.delta < 0 else 'delta-pos' }}">
-                        {{ item.delta }}
-                    </td>
-                    <td>{{ item.author }}</td>
-                    <td>{{ item.reason or '—' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        """
+        return (
+            """<style>
+    body { font-family: 'Inter', sans-serif; color: #334155; padding: 40px; }
+    h1 { color: #0f172a; border-bottom: 2px solid #e2e8f0; """
+            """padding-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; """
+            """margin-top: 20px; font-size: 12px; }
+    th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+    th { background: #f8fafc; color: #64748b; text-transform: uppercase; }
+    .delta-neg { color: #dc2626; font-weight: bold; }
+    .delta-pos { color: #16a34a; font-weight: bold; }
+</style>
+<h1>MATERIAL AUDIT LOG</h1>
+<p>Node: {{ node_id }} | Period: {{ params.date_from }} - {{ params.date_to }}</p>
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Operation</th>
+            <th>Delta</th>
+            <th>Author</th>
+            <th>Reason / Context</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in blocks.material_usage_audit(limit=100) %}
+        <tr>
+            <td>{{ item.date }}</td>
+            <td>{{ item.operation.upper() }}</td>
+            <td class="{{ 'delta-neg' if item.delta < 0 else 'delta-pos' }}">
+                {{ item.delta }}
+            </td>
+            <td>{{ item.author }}</td>
+            <td>{{ item.reason or '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+"""
+        )
 
     def _get_incident_log_html(self) -> str:
         """HTML template for the historical incident report."""
-        return """
-        <style>
-            body { font-family: 'Inter', sans-serif; color: #334155; padding: 40px; }
-            h1 { color: #991b1b; border-bottom: 2px solid #fee2e2; padding-bottom: 10px; }
-            .incident-card { border: 1px solid #fca5a5; background: #fff1f2; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-            .meta { font-size: 11px; color: #b91c1c; font-weight: bold; margin-bottom: 5px; }
-            .desc { font-size: 14px; margin-bottom: 10px; }  # type: ignore[attr-defined]
-            .res { border-top: 1px solid #fecaca; padding-top: 8px; font-size: 12px; color: #15803d; }
-        </style>
-        <h1>WORKSHOP INCIDENT LOG</h1>
-        {% for incident in blocks.incident_log(limit=50) %}
-        <div class="incident-card">
-            <div class="meta">{{ incident.type }} | Reported by: {{ incident.by }}</div>
-            <div class="desc">{{ incident.desc }}</div>  # type: ignore[attr-defined]
-            {% if incident.resolved %}
-            <div class="res">✓ Resolved: {{ incident.res_note }}</div>
-            {% else %}
-            <div class="res" style="color: #dc2626;">⚠ UNRESOLVED</div>
-            {% endif %}
-        </div>
-        {% endfor %}
-        """
+        return (
+            "<style>\n"
+            "    body { font-family: 'Inter', sans-serif; color: #334155; padding: 40px; }\n"
+            "    h1 { color: #991b1b; border-bottom: 2px solid #fee2e2; "
+            "padding-bottom: 10px; }\n"
+            "    .incident-card { border: 1px solid #fca5a5; background: #fff1f2; "
+            "padding: 15px; margin-bottom: 15px; border-radius: 8px; }\n"
+            "    .meta { font-size: 11px; color: #b91c1c; font-weight: bold; "
+            "margin-bottom: 5px; }\n"
+            "    .desc { font-size: 14px; margin-bottom: 10px; }  "
+            "# type: ignore[attr-defined]\n"
+            "    .res { border-top: 1px solid #fecaca; padding-top: 8px; "
+            "font-size: 12px; color: #15803d; }\n"
+            "</style>\n"
+            "<h1>WORKSHOP INCIDENT LOG</h1>\n"
+            "{% for incident in blocks.incident_log(limit=50) %}\n"
+            '<div class="incident-card">\n'
+            '    <div class="meta">{{ incident.type }} | Reported by: {{ incident.by }}</div>\n'
+            '    <div class="desc">{{ incident.desc }}</div>  '
+            "# type: ignore[attr-defined]\n"
+            "    {% if incident.resolved %}\n"
+            '    <div class="res">&#10003; Resolved: {{ incident.res_note }}</div>\n'
+            "    {% else %}\n"
+            '    <div class="res" style="color: #dc2626;">&#9888; UNRESOLVED</div>\n'
+            "    {% endif %}\n"
+            "</div>\n"
+            "{% endfor %}\n"
+        )
+
+    def _register_data_blocks(self):
+        """Register built-in report data blocks for cross-feature queries."""
+        self.registry.register(
+            ReportDataBlock(
+                name="task_group_summary",
+                label="Task Group Summary",
+                params=[],
+                query_fn=self._query_task_group_summary,
+            )
+        )
+        self.registry.register(
+            ReportDataBlock(
+                name="material_reservation_status",
+                label="Material Reservation Status",
+                params=[],
+                query_fn=self._query_material_reservation_status,
+            )
+        )
+        self.registry.register(
+            ReportDataBlock(
+                name="pallet_by_project",
+                label="Pallets by Project",
+                params=[],
+                query_fn=self._query_pallet_by_project,
+            )
+        )
+        self.registry.register(
+            ReportDataBlock(
+                name="node_performance",
+                label="Node Performance",
+                params=[],
+                query_fn=self._query_node_performance,
+            )
+        )
+
+    def _query_task_group_summary(
+        self, db_session: Session, params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
+        """Return summary of all task groups with task counts."""
+        groups = db_session.exec(select(TaskGroup)).all()
+        return [
+            {
+                "id": g.id,
+                "name": g.name,
+                "work_item": g.work_item.folder_name if g.work_item else None,
+                "task_count": len(g.tasks),
+                "grouping_rule": g.grouping_rule,
+            }
+            for g in groups
+        ]
+
+    def _query_material_reservation_status(
+        self, db_session: Session, params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
+        """Return current material reservations with stock context."""
+        reservations = db_session.exec(select(Reservation)).all()
+        return [
+            {
+                "id": r.id,
+                "work_item_id": r.work_item_id,
+                "stock_item_id": r.stock_item_id,
+                "qty_reserved": r.qty_reserved,
+                "reservation_type": r.reservation_type,
+                "material_code": (
+                    r.stock_item.material_type.code
+                    if r.stock_item and r.stock_item.material_type
+                    else None
+                ),
+                "batch_code": r.stock_item.batch_code if r.stock_item else None,
+            }
+            for r in reservations
+        ]
+
+    def _query_pallet_by_project(
+        self, db_session: Session, params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
+        """Return production units with linked work item context."""
+        units = db_session.exec(select(ProductionUnit)).all()
+        return [
+            {
+                "label_id": u.label_id,
+                "qty_produced": u.qty_produced,
+                "is_stock": u.is_stock,
+                "task_item_id": u.task_item_id,
+                "work_item": u.task_item.work_item.folder_name
+                if u.task_item and u.task_item.work_item
+                else None,
+            }
+            for u in units
+        ]
+
+    def _query_node_performance(
+        self, db_session: Session, params: dict[str, Any]
+    ) -> dict[str, dict[str, int]]:
+        """Return active/queued/done task counts per node."""
+        result: dict[str, dict[str, int]] = {}
+        rows = db_session.exec(
+            select(TaskItem.assigned_to_node, TaskItem.status, func.count(TaskItem.id))
+            .where(TaskItem.assigned_to_node.isnot(None))
+            .group_by(TaskItem.assigned_to_node, TaskItem.status)
+        ).all()
+        for node, status, count in rows:
+            result.setdefault(node, {"active": 0, "queued": 0, "done": 0})
+            if status == TaskItemStatus.IN_PROGRESS:
+                result[node]["active"] = count
+            elif status == TaskItemStatus.PLANNED:
+                result[node]["queued"] = count
+            elif status == TaskItemStatus.DONE:
+                result[node]["done"] = count
+        return result

@@ -104,3 +104,19 @@ async def test_startup_seeds_templates(report_system: ReportSystem, session: Ses
     assert len(templates) >= 1
     names = [t.name for t in templates]
     assert "shift_summary" in names
+
+
+@pytest.mark.asyncio
+async def test_startup_registers_data_blocks(report_system: ReportSystem):
+    await report_system.on_startup()
+
+    expected_blocks = [
+        "task_group_summary",
+        "material_reservation_status",
+        "pallet_by_project",
+        "node_performance",
+    ]
+    for name in expected_blocks:
+        block = report_system.registry.get_block(name)
+        assert block is not None, f"Block {name} should be registered"
+        assert block.name == name

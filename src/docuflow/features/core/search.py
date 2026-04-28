@@ -51,7 +51,10 @@ class SearchSystem:
         # 1. Поиск по Нарядам (WorkItems)
         items = self.session.exec(
             select(WorkItem)
-            .where((col(WorkItem.folder_name).ilike(pattern)) | (col(WorkItem.sidra_number).ilike(pattern)))  # type: ignore[attr-defined]
+            .where(
+                (col(WorkItem.folder_name).ilike(pattern))
+                | (col(WorkItem.sidra_number).ilike(pattern))
+            )  # type: ignore[attr-defined]
             .limit(limit)
         ).all()
 
@@ -70,7 +73,12 @@ class SearchSystem:
 
         # 2. Поиск по Деталям (PartLibrary)
         parts = self.session.exec(
-            select(PartLibrary).where(col(PartLibrary.sku).ilike(pattern)).limit(limit)  # type: ignore[attr-defined]
+            select(PartLibrary)
+            .where(
+                (col(PartLibrary.sku).ilike(pattern))  # type: ignore[attr-defined]
+                | (col(PartLibrary.name).ilike(pattern))  # type: ignore[attr-defined]
+            )
+            .limit(limit)
         ).all()
 
         for part in parts:

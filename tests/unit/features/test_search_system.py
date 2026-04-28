@@ -47,8 +47,8 @@ def search_session():
         ))
 
         # Seed parts
-        session.add(PartLibrary(sku="PLATE-10", version="A"))
-        session.add(PartLibrary(sku="PLATE-20", version="B"))
+        session.add(PartLibrary(sku="PLATE-10", version="A", name="Base Plate"))
+        session.add(PartLibrary(sku="PLATE-20", version="B", name="Cover Plate"))
 
         # Seed production units
         session.add(ProductionUnit(label_id="PALLET-A", qty_produced=10))
@@ -113,6 +113,11 @@ class TestSearchParts:
         assert part.view_name == "parts"
         assert part.icon == "extension"
         assert part.payload == {"sku": "PLATE-10"}
+
+    async def test_find_by_part_name(self, search_session):
+        system = SearchSystem(search_session)
+        results = await system.search("Base Plate")
+        assert any(r.type == "part" and r.title == "PLATE-10" for r in results)
 
 
 class TestSearchProductionUnits:

@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from typing import Any, ClassVar
 
@@ -43,7 +44,10 @@ class ChatView(BaseDocuWidget):
     UI_STYLING: ClassVar[dict[str, str]] = {
         "sidebar_bg": "bg-[#020617] border-r border-white/5 p-6 h-full gap-4",
         "feed_bg": "bg-[#020617]",
-        "input_bar": "absolute bottom-0 w-full p-4 bg-slate-900/50 backdrop-blur-xl border-t border-white/5 gap-2 items-end",
+        "input_bar": (
+            "absolute bottom-0 w-full p-4 bg-slate-900/50 backdrop-blur-xl "
+            "border-t border-white/5 gap-2 items-end"
+        ),
         "message_bubble": "w-full gap-3 p-3 rounded-xl border transition-all hover:bg-white/5",
         "label_header": "text-[10px] font-bold text-slate-500 uppercase tracking-widest",
     }
@@ -114,7 +118,8 @@ class ChatView(BaseDocuWidget):
         with (
             ui.row()
             .classes(
-                f"w-full p-2 rounded-lg cursor-pointer transition-all items-center gap-3 {bg_style} hover:bg-white/5"
+                f"w-full p-2 rounded-lg cursor-pointer transition-all "
+                f"items-center gap-3 {bg_style} hover:bg-white/5"
             )
             .on("click", lambda: self._switch_channel(channel_key))
         ):
@@ -174,7 +179,11 @@ class ChatView(BaseDocuWidget):
             return chat_system.get_global_messages()
 
         # Mapping channel keys to Database message types
-        TYPE_MAP = {"order": ChatMessageType.ORDER, "incident": ChatMessageType.INCIDENT}
+        TYPE_MAP = {
+            "order": ChatMessageType.ORDER,
+            "incident": ChatMessageType.INCIDENT,
+            "handover": ChatMessageType.HANDOVER,
+        }
         target_type = TYPE_MAP.get(self.active_channel)
 
         statement = (
@@ -202,6 +211,12 @@ class ChatView(BaseDocuWidget):
                     "icon": "error",
                     "color": "red",
                 },
+                ChatMessageType.HANDOVER: {
+                    "bg": "bg-amber-950/20",
+                    "border": "border-amber-500/20",
+                    "icon": "transfer_within_a_station",
+                    "color": "amber",
+                },
                 ChatMessageType.MESSAGE: {
                     "bg": "bg-slate-900",
                     "border": "border-white/5",
@@ -223,7 +238,20 @@ class ChatView(BaseDocuWidget):
                             "text-[10px] text-slate-500 font-mono"
                         )
 
-                    ui.label(msg.content).classes("text-sm text-slate-300 mt-1 leading-relaxed")
+                    self._render_message_content(msg.content)
+
+    def _render_message_content(self, content: str):
+        """Parse #<number> patterns and render them as clickable task links."""
+        with ui.row().classes("flex-wrap gap-1 items-baseline mt-1 leading-relaxed"):
+            parts = re.split(r"(#\d+)", content)
+            for part in parts:
+                if re.match(r"#\d+", part):
+                    task_id = int(part[1:])
+                    ui.link(part, f"/task_board?task_id={task_id}").classes(
+                        "text-blue-400 underline text-sm"
+                    )
+                else:
+                    ui.label(part).classes("text-sm text-slate-300")
 
     async def handle_message_submission(self):
         """Submit and clear the user input."""

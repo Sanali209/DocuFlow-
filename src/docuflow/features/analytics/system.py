@@ -6,6 +6,7 @@ from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import (
     IncidentLog,
     ProductionUnit,
+    TaskGroup,
     TaskItem,
     TaskItemStatus,
     WorkItem,
@@ -77,11 +78,41 @@ class AnalyticsSystem(BaseSystem):
         # 3. Task Status Distribution
         status_counts = {}
         for s in TaskItemStatus:
-            count = session.exec(
-                select(func.count(TaskItem.id)).where(TaskItem.status == s)
-            ).one()
+            count = session.exec(select(func.count(TaskItem.id)).where(TaskItem.status == s)).one()
             if count > 0:
                 status_counts[s.value.upper()] = count
+
+        # 4. Task Group Metrics
+        total_task_groups = session.exec(select(func.count(TaskGroup.id))).one() or 0
+
+        groups_by_status: dict[str, int] = {}
+        for group in session.exec(select(TaskGroup)).all():
+            statuses = {t.status for t in group.tasks}
+            if TaskItemStatus.IN_PROGRESS in statuses:
+                status = "in_progress"
+            elif statuses == {TaskItemStatus.DONE}:
+                status = "done"
+            elif statuses == {TaskItemStatus.PLANNED}:
+                status = "planned"
+            else:
+                status = "mixed"
+            groups_by_status[status] = groups_by_status.get(status, 0) + 1
+
+        # 5. Node Utilization
+        node_utilization: dict[str, dict[str, int]] = {}
+        node_rows = session.exec(
+            select(TaskItem.assigned_to_node, TaskItem.status, func.count(TaskItem.id))
+            .where(TaskItem.assigned_to_node.isnot(None))
+            .group_by(TaskItem.assigned_to_node, TaskItem.status)
+        ).all()
+        for node, status, count in node_rows:
+            node_utilization.setdefault(node, {"active": 0, "queued": 0, "done": 0})
+            if status == TaskItemStatus.IN_PROGRESS:
+                node_utilization[node]["active"] = count
+            elif status == TaskItemStatus.PLANNED:
+                node_utilization[node]["queued"] = count
+            elif status == TaskItemStatus.DONE:
+                node_utilization[node]["done"] = count
 
         return {
             "total_work_items": total_work_items,
@@ -93,4 +124,7 @@ class AnalyticsSystem(BaseSystem):
             "count_drift": count_drift,
             "completion_rate": completion_rate,
             "status_counts": status_counts,
+            "total_task_groups": total_task_groups,
+            "groups_by_status": groups_by_status,
+            "node_utilization": node_utilization,
         }
