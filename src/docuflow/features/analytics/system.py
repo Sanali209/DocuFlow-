@@ -33,7 +33,9 @@ class AnalyticsSystem(BaseSystem):
             select(func.count(col(IncidentLog.id))).where(col(IncidentLog.resolved).isnot(True))  # type: ignore[union-attr]
         ).one()  # type: ignore[arg-type]
         pallet_count = session.exec(
-            select(func.count(col(ProductionUnit.id))).where(col(ProductionUnit.is_stock).isnot(False))  # type: ignore[union-attr]
+            select(func.count(col(ProductionUnit.id))).where(
+                col(ProductionUnit.is_stock).isnot(False)
+            )  # type: ignore[union-attr]
         ).one()  # type: ignore[arg-type]
 
         return {
@@ -78,7 +80,9 @@ class AnalyticsSystem(BaseSystem):
         # 3. Task Status Distribution
         status_counts = {}
         for s in TaskItemStatus:
-            count = session.exec(select(func.count(col(TaskItem.id))).where(TaskItem.status == s)).one()  # type: ignore[arg-type]
+            count = session.exec(
+                select(func.count(col(TaskItem.id))).where(TaskItem.status == s)
+            ).one()  # type: ignore[arg-type]
             if count > 0:
                 status_counts[s.value.upper()] = count
 
@@ -101,7 +105,9 @@ class AnalyticsSystem(BaseSystem):
         # 5. Node Utilization
         node_utilization: dict[str, dict[str, int]] = {}
         node_rows = session.exec(
-            select(col(TaskItem.assigned_to_node), col(TaskItem.status), func.count(col(TaskItem.id)))  # type: ignore[arg-type]
+            select(
+                col(TaskItem.assigned_to_node), col(TaskItem.status), func.count(col(TaskItem.id))
+            )  # type: ignore[arg-type]
             .where(col(TaskItem.assigned_to_node).isnot(None))  # type: ignore[union-attr]
             .group_by(col(TaskItem.assigned_to_node), col(TaskItem.status))
         ).all()

@@ -111,9 +111,7 @@ class TaskBoardSystem(BaseSystem):
         """
         with self.get_db_session() as session:
             task_items = list(
-                session.exec(
-                    select(TaskItem).where(TaskItem.task_group_id == task_group_id)
-                ).all()
+                session.exec(select(TaskItem).where(TaskItem.task_group_id == task_group_id)).all()
             )
             bucket_entries = []
 
@@ -124,7 +122,6 @@ class TaskBoardSystem(BaseSystem):
                     node_id=node_id,
                     assigned_user=operator,
                     task_item_id=task_item.id,
-
                     locked_at=datetime.datetime.now(),
                 )
                 session.add(bucket_entry)
@@ -134,7 +131,7 @@ class TaskBoardSystem(BaseSystem):
                 session.add(task_item)
                 bucket_entries.append(bucket_entry)
 
-            # Audit trail
+                # Audit trail
                 log = WorkLog(
                     log_type=WorkLogType.INFO,
                     message=f"TaskGroup {task_group_id} locked by {operator} on {node_id}",

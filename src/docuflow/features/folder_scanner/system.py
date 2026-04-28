@@ -279,6 +279,7 @@ class FolderScannerSystem(BaseSystem):
         """Idempotently creates or updates a WorkItem entry."""
         async with self.sdk.request_scope():
             from docuflow.features.task_board.system import TaskBoardSystem as _TBS
+
             project_sys = await self.sdk.resolve_system_by_type(_TBS)
             default_project = project_sys.resolve_default_workshop_project()
 
