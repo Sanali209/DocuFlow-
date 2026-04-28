@@ -1,7 +1,9 @@
 from typing import Any
 
 from nicegui import ui
+from sqlmodel import select
 
+from docuflow.domain.entities.production import Reservation
 from docuflow.features.core.views import register_view
 from docuflow.features.inventory.system import InventorySystem
 from docuflow.lib.base_widget import BaseDocuWidget
@@ -33,6 +35,7 @@ class WarehouseView(BaseDocuWidget):
                 stock_tab = ui.tab("ОСТАТКИ")
                 supply_tab = ui.tab("ОЧЕРЕДЬ ПОДАЧИ")
                 audit_tab = ui.tab("ИСТОРИЯ")
+                reservations_tab = ui.tab("РЕЗЕРВЫ")
 
             with ui.tab_panels(tabs, value=catalog_tab).classes("w-full bg-transparent"):
                 # --- TAB: SUPPLY QUEUE (Live Requests) ---
@@ -510,6 +513,62 @@ class WarehouseView(BaseDocuWidget):
                     )
 
                     ui.timer(0.1, refresh_audit, once=True)
+
+                # --- TAB: RESERVATIONS ---
+                with ui.tab_panel(reservations_tab):
+
+                    @ui.refreshable
+                    async def render_reservations():
+                        async with self.scope() as req:
+                            fresh_system = await req.get(InventorySystem)
+                            reservations = list(
+                                fresh_system.session.exec(select(Reservation)).all()
+                            )
+
+                        if not reservations:
+                            ui.label("Нет активных резервов").classes("text-slate-500")
+                            return
+
+                        for r in reservations:
+                            with ui.card().classes("w-full mb-2 p-4"):
+                                with ui.row().classes("items-center justify-between"):
+                                    stock = r.stock_item
+                                    mat_label = (
+                                        stock.material_type.code
+                                        if stock and stock.material_type
+                                        else "Unknown"
+                                    )
+                                    label_text = (
+                                        f"{mat_label} — {r.qty_reserved} листов "
+                                        f"({r.reservation_type})"
+                                    )
+                                    ui.label(label_text).classes("font-medium")
+
+                                    def _cancel(r_id=r.id, refresh=render_reservations):
+                                        ui.timer(
+                                            0.1,
+                                            lambda rid=r_id, ref=refresh: self._cancel_reservation(  # type: ignore[arg-type]
+                                                rid, ref
+                                            ),
+                                            once=True,
+                                        )
+
+                                    ui.button(
+                                        "Снять резерв",
+                                        on_click=_cancel,
+                                    ).props("size=sm color=red flat")
+
+                    await render_reservations()
+
+    async def _cancel_reservation(self, reservation_id: int, refresh_fn):
+        try:
+            async with self.scope() as req:
+                fresh_system = await req.get(InventorySystem)
+                fresh_system.cancel_reservation(reservation_id)
+            NotifyHelper.info("Резерв снят")
+            refresh_fn.refresh()
+        except Exception as e:
+            NotifyHelper.error(f"Ошибка снятия резерва: {e}")
 
     async def handle_supply_fulfillment(self, request_log, refresh_fn):
         """Handle fulfillment of a supply request."""

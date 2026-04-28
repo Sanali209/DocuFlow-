@@ -205,6 +205,21 @@ class InventorySystem(BaseSystem):
         self.session.refresh(reservation)
         return reservation
 
+    def cancel_reservation(self, reservation_id: int) -> bool:
+        """Cancel a reservation and free up the associated stock."""
+        reservation = self.session.get(Reservation, reservation_id)
+        if not reservation:
+            return False
+
+        stock_item = self.session.get(MaterialStock, reservation.stock_item_id)
+        if stock_item and stock_item.status == MaterialStockStatus.RESERVED:
+            stock_item.status = MaterialStockStatus.AVAILABLE
+            self.session.add(stock_item)
+
+        self.session.delete(reservation)
+        self.session.flush()
+        return True
+
     # --- Production Write-offs ---
 
     def perform_write_off(self, task_item: TaskItem, sheets_used: int, author: str) -> None:

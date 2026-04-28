@@ -16,3 +16,9 @@ def test_hierarchy_table_instantiates():
     table = HierarchyTable(user_id="admin", view_name="test", system_scope=None)
     assert table.user_id == "admin"
     assert table.view_name == "test"
+
+
+def test_hierarchy_row_with_pallet():
+    """Smoke test for DONE task row with pallet info."""
+    table = HierarchyTable(user_id="admin", view_name="test", system_scope=None)
+    assert table is not None

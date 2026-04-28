@@ -134,11 +134,23 @@ class HierarchyTable(BaseDocuWidget):
 
         status_color = STATUS_COLORS.get(status, "gray")
 
+        line2 = f"Листов: {done_sheets}/{total_sheets}"
+        done_tasks = [
+            t for t in tg.tasks if t.status == TaskItemStatus.DONE and t.id is not None
+        ]
+        if done_tasks:
+            pallet_count = 0
+            for t in done_tasks:
+                if t.id is not None:
+                    pallet_count += len(tb_system.find_pallets_by_task(t.id, session))
+            if pallet_count > 0:
+                line2 += f" | {pallet_count} паллет"
+
         row = HierarchyRow(
             icon="layers",
             title=tg.name or f"Группа {tg.id}",
             badges=[(f"{len(tg.tasks)} задач", status_color), (status, status_color)],
-            line2=f"Листов: {done_sheets}/{total_sheets}",
+            line2=line2,
             is_expandable=True,
             is_expanded=False,
             indent=indent,
@@ -176,14 +188,21 @@ class HierarchyTable(BaseDocuWidget):
                 )
             )
 
+        line2 = (
+            f"{progress_str} | Узел: {task.assigned_to_node or '-'} | "
+            f"Материал: {task.mat_type_id or '-'}"
+        )
+        if task.status == TaskItemStatus.DONE:
+            pallets = tb_system.find_pallets_by_task(task.id, session)
+            if pallets:
+                pallet_labels = ", ".join(p.label_id for p in pallets)
+                line2 += f" | 📦 Паллеты: {pallet_labels}"
+
         row = HierarchyRow(
             icon="description",
             title=task.file_name,
             badges=[(task.status.value, status_color)],
-            line2=(
-                f"{progress_str} | Узел: {task.assigned_to_node or '-'} | "
-                f"Материал: {task.mat_type_id or '-'}"
-            ),
+            line2=line2,
             actions=actions,
             indent=indent,
             system_scope=self.system_scope,
