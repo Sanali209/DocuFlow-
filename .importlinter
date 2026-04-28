@@ -1,0 +1,78 @@
+[importlinter]
+root_package = docuflow
+include_external_packages = false
+
+# Contract 1: Domain layer is independent
+[importlinter:contract:domain-independence]
+name = Domain layer must not depend on outer layers
+type = forbidden
+source_modules =
+    docuflow.domain
+forbidden_modules =
+    docuflow.application
+    docuflow.infrastructure
+    docuflow.features
+    docuflow.lib
+    docuflow.sdk
+
+# Contract 2: System files must not import views within the same feature
+[importlinter:contract:no-view-in-system]
+name = System layer must not import View layer
+type = forbidden
+source_modules =
+    docuflow.features.admin.system
+    docuflow.features.analytics.system
+    docuflow.features.auth.system
+    docuflow.features.chat.system
+    docuflow.features.consumables.system
+    docuflow.features.folder_scanner.system
+    docuflow.features.inventory.system
+    docuflow.features.parts.system
+    docuflow.features.production.system
+    docuflow.features.projects.system
+    docuflow.features.reports.system
+    docuflow.features.task_board.system
+    docuflow.features.work_items.system
+forbidden_modules =
+    docuflow.features.admin.view
+    docuflow.features.analytics.view
+    docuflow.features.auth.view
+    docuflow.features.chat.view
+    docuflow.features.consumables.view
+    docuflow.features.folder_scanner.view
+    docuflow.features.inventory.view
+    docuflow.features.parts.view
+    docuflow.features.production.view
+    docuflow.features.projects.view
+    docuflow.features.reports.view
+    docuflow.features.task_board.view
+    docuflow.features.work_items.view
+
+# Contract 3: Core must not depend on other features
+[importlinter:contract:core-independence]
+name = Core layer must not depend on feature layers
+type = forbidden
+source_modules =
+    docuflow.features.core
+forbidden_modules =
+    docuflow.features.admin
+    docuflow.features.analytics
+    docuflow.features.auth
+    docuflow.features.chat
+    docuflow.features.consumables
+    docuflow.features.dashboard
+    docuflow.features.folder_scanner
+    docuflow.features.inventory
+    docuflow.features.parts
+    docuflow.features.production
+    docuflow.features.projects
+    docuflow.features.reports
+    docuflow.features.task_board
+    docuflow.features.work_items
+    docuflow.features.view_presets
+ignore_imports =
+    docuflow.lib.widgets.work_item_card -> docuflow.features.work_items.system
+    docuflow.lib.widgets.work_item_card -> docuflow.features.task_board.system
+    docuflow.features.core.layout -> docuflow.lib.widgets.work_item_card
+    docuflow.features.core.layout -> docuflow.features.work_items.system
+    docuflow.features.work_items.system -> docuflow.features.projects.system

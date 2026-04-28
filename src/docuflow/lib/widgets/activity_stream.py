@@ -12,7 +12,7 @@ class ActivityStream(BaseDocuWidget):
         super().__init__(system_scope)
         self.db_engine = db_engine
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def render(self) -> None:
         """Живая лента событий системы."""
         with ui.column().classes("w-full h-full gap-2 p-4"):
@@ -43,7 +43,8 @@ class ActivityStream(BaseDocuWidget):
                         icon = "check_circle"
 
                     with ui.row().classes(
-                        "w-full items-start gap-3 p-2 bg-slate-800/50 rounded-lg border border-slate-700/50"
+                        "w-full items-start gap-3 p-2 bg-slate-800/50 "
+                        "rounded-lg border border-slate-700/50"
                     ):
                         ui.icon(icon, color=color, size="16px").classes("mt-1")
                         with ui.column().classes("gap-0 flex-1"):

@@ -8,20 +8,21 @@ _port = int(os.getenv("DOCUFLOW_PORT", "8082"))
 if __name__ in {"__main__", "__mp_main__"}:
     kill_port_process(_port)
 
-from dishka import make_async_container
-from dishka.integrations.fastapi import FastapiProvider, setup_dishka
-from fastapi import FastAPI
-from loguru import logger
-from nicegui import ui
+from dishka import make_async_container  # noqa: E402,I001
+from dishka.integrations.fastapi import FastapiProvider, setup_dishka  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+from loguru import logger  # noqa: E402
+from nicegui import ui  # noqa: E402
 
-from docuflow.features.admin.system import AdminSystem
-from docuflow.features.auth.system import AuthSystem
-from docuflow.features.auth.view import login_view
-from docuflow.features.core.layout import MainLayout, SessionContext, get_current_user, theme_setup
-from docuflow.features.core.search import SearchSystem
-from docuflow.infrastructure.config import Config
-from docuflow.infrastructure.di import AppProvider
-from docuflow.sdk import SDK
+from docuflow.features.admin.system import AdminSystem  # noqa: E402
+from docuflow.features.auth.system import AuthSystem  # noqa: E402
+from docuflow.features.auth.view import login_view  # noqa: E402
+from docuflow.features.core.layout import MainLayout, SessionContext, get_current_user, theme_setup  # noqa: E402
+from docuflow.features.core.search import SearchSystem  # noqa: E402
+from docuflow.features.core.views import ViewRegistry  # noqa: E402
+from docuflow.infrastructure.config import Config  # noqa: E402
+from docuflow.infrastructure.di import AppProvider  # noqa: E402
+from docuflow.sdk import SDK  # noqa: E402
 
 _config = Config()
 _app_provider = AppProvider(_config)
@@ -76,9 +77,6 @@ async def lifespan(fastapi_app: FastAPI):
         raise
     yield
     await sdk_instance.on_shutdown()
-
-
-from docuflow.features.core.views import ViewRegistry
 
 
 def register_all_views():
@@ -152,6 +150,8 @@ async def index_page():
         )
 
     async def switch_view(view_name: str, **kwargs):
+        if content_area is None:
+            return
         # 0. Prevent Timer Zombies & State Leaks
         layout.clear_timers()
         content_area.clear()
@@ -171,9 +171,9 @@ async def index_page():
 
             async with system_scope() as request_container:
                 # 1. Resolve Dependencies
-                resolved_deps = []
-                for dep_type in view_info.dependencies:
-                    resolved_deps.append(await request_container.get(dep_type))
+                resolved_deps = [
+                    await request_container.get(dep_type) for dep_type in view_info.dependencies
+                ]
 
                 # 2. Add extra parameters
                 if view_info.pass_user:
@@ -214,4 +214,9 @@ ui.run_with(app, title="DocuFlow Portal", storage_secret="docuflow_nicegui_shh")
 if __name__ in {"__main__", "__mp_main__"}:
     import uvicorn
 
-    uvicorn.run("docuflow.main:app", host="0.0.0.0", port=_port, reload=False)
+    uvicorn.run(
+        "docuflow.main:app",
+        host="0.0.0.0",  # noqa: S104
+        port=_port,
+        reload=False,
+    )

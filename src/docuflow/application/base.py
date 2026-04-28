@@ -1,11 +1,9 @@
-from typing import TypeVar
+from typing import Any
 
 from sqlalchemy import func
 from sqlmodel import Session, select
 
 from docuflow.infrastructure.config import Config
-
-T = TypeVar("T")
 
 
 class BaseSystem:
@@ -48,21 +46,21 @@ class BaseSystem:
 
     # --- CRUD Helpers ---
 
-    def find_one(self, model: type[T], **filters) -> T | None:
+    def find_one(self, model: type[Any], **filters) -> Any | None:
         """Return the first row matching all filters, or None."""
         stmt = select(model)
         for key, value in filters.items():
             stmt = stmt.where(getattr(model, key) == value)
         return self.db_session.exec(stmt).first()
 
-    def find_all(self, model: type[T], **filters) -> list[T]:
+    def find_all(self, model: type[Any], **filters) -> list[Any]:
         """Return all rows matching the filters."""
         stmt = select(model)
         for key, value in filters.items():
             stmt = stmt.where(getattr(model, key) == value)
         return list(self.db_session.exec(stmt).all())
 
-    def save(self, obj: T, refresh: bool = True) -> T:
+    def save(self, obj: Any, refresh: bool = True) -> Any:
         """Persist an object and optionally refresh it from the DB."""
         self.db_session.add(obj)
         self.db_session.commit()
@@ -70,12 +68,12 @@ class BaseSystem:
             self.db_session.refresh(obj)
         return obj
 
-    def delete(self, obj: T) -> None:
+    def delete(self, obj: Any) -> None:
         """Remove an object from the database."""
         self.db_session.delete(obj)
         self.db_session.commit()
 
-    def count(self, model: type[T], **filters) -> int:
+    def count(self, model: type[Any], **filters) -> int:
         """Return the number of rows matching the filters."""
         stmt = select(func.count()).select_from(model)
         for key, value in filters.items():

@@ -38,13 +38,9 @@ class TaskFileParser:
             return True
 
         # 3. .Dsp projects (handled by suffix=True already, but good to be explicit)
-        if ".DSP" in name:
-            return True
-
         # 4. Filter out other potential variant suffixes in the future
         # (e.g. -offset1.GNC, -cut1.GNC if they appear)
-
-        return False
+        return ".DSP" in name
 
     def parse_task_filename(self, name: str) -> TaskFileMeta:
         """

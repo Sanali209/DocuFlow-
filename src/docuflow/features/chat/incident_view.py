@@ -43,7 +43,10 @@ class IncidentView(BaseDocuWidget):
     # UI Theme for the Incident Dashboard
     UI_THEME: ClassVar[dict[str, str]] = {
         "page_bg": "w-full h-full p-8 bg-[#020617] gap-6",
-        "card_active": "w-full p-4 rounded-xl border border-red-500/30 bg-red-500/5 items-center gap-4 transition-all hover:bg-red-500/10",
+        "card_active": (
+            "w-full p-4 rounded-xl border border-red-500/30 bg-red-500/5 "
+            "items-center gap-4 transition-all hover:bg-red-500/10"
+        ),
         "card_history": "w-full p-3 rounded border border-emerald-500/10 bg-emerald-500/5 gap-2",
         "label_pill": "text-[10px] font-black tracking-[0.2em] mb-2 uppercase",
         "stat_label": "text-[9px] text-slate-500 tracking-widest uppercase",
@@ -110,7 +113,7 @@ class IncidentView(BaseDocuWidget):
             for g in groups:
                 ui.tab(g)
 
-        tabs.on("change", lambda e: self._filter_by_group(e.value))
+        tabs.on("change", lambda e: self._filter_by_group(e.value))  # type: ignore[attr-defined]
 
     async def _filter_by_group(self, group_name: str):
         self.active_group_filter = group_name
@@ -204,9 +207,8 @@ class IncidentView(BaseDocuWidget):
             with self.metrics_summary_container:
                 # Critical Count
                 with ui.column().classes("items-end justify-center"):
-                    ui.label(str(active_blockers_count)).classes(
-                        f"text-3xl font-black {'text-red-500' if active_blockers_count > 0 else 'text-slate-800'}"
-                    )
+                    color_cls = "text-red-500" if active_blockers_count > 0 else "text-slate-800"
+                    ui.label(str(active_blockers_count)).classes(f"text-3xl font-black {color_cls}")
                     ui.label("ACTIVE").classes(self.UI_THEME["stat_label"])
                 # Cumulative Downtime
                 with ui.column().classes("items-end justify-center ml-4"):
@@ -266,7 +268,8 @@ class IncidentView(BaseDocuWidget):
                 with ui.column().classes("flex-grow gap-1"):
                     with ui.row().classes("items-center gap-2"):
                         ui.label(incident.incident_type).classes(
-                            "text-[9px] font-black px-2 py-0.5 rounded bg-red-500/20 text-red-100 uppercase"
+                            "text-[9px] font-black px-2 py-0.5 rounded "
+                            "bg-red-500/20 text-red-100 uppercase"
                         )
                         if incident.assigned_group:
                             ui.badge(f"➔ {incident.assigned_group}").props(
@@ -284,7 +287,10 @@ class IncidentView(BaseDocuWidget):
                     with ui.row().classes("text-[10px] text-slate-600 gap-3 mt-2"):
                         ui.label(f"Reported: {incident.created_at.strftime('%H:%M')}")
                         if incident.task_item_id:
-                            ui.label(f"Task: {incident.task_item_id}")
+                            ui.link(
+                                f"#{incident.task_item_id}",
+                                f"/task_board?task_id={incident.task_item_id}",
+                            ).classes("text-blue-400 hover:underline")
 
                 with ui.row().classes("gap-2"):
                     # Quick assign to current user's role/group if IT/Maintenance
@@ -292,7 +298,7 @@ class IncidentView(BaseDocuWidget):
                         ui.button(
                             "Claim",
                             icon="pan_tool",
-                            on_click=lambda i=incident: self._claim_incident(i),
+                            on_click=lambda *args, i=incident: self._claim_incident(i),
                         ).classes("bg-blue-600/20 text-blue-400 font-bold px-4").props(
                             "flat rounded size=sm"
                         )
@@ -300,7 +306,7 @@ class IncidentView(BaseDocuWidget):
                     ui.button(
                         "Resolve",
                         icon="done_all",
-                        on_click=lambda i=incident: self.open_resolution_dialog(i),
+                        on_click=lambda *args, i=incident: self.open_resolution_dialog(i),
                     ).classes("bg-emerald-600/20 text-emerald-400 font-bold px-4").props(
                         "flat rounded size=sm"
                     )

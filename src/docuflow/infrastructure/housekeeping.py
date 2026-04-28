@@ -56,9 +56,10 @@ class HousekeepingSystem(BaseSystem):
 
             for filename in os.listdir(folder):
                 file_path = folder / filename
-                if self._is_stale_file(file_path, now, max_age_seconds):
-                    if await self._try_delete_file(file_path):
-                        deleted_count += 1
+                if self._is_stale_file(
+                    file_path, now, max_age_seconds
+                ) and await self._try_delete_file(file_path):
+                    deleted_count += 1
 
         if deleted_count > 0:
             logger.info(f"Housekeeping: Cleaned up {deleted_count} stale bus messages")

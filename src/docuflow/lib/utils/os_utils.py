@@ -13,7 +13,7 @@ def kill_port_process(port: int):
     try:
         # Use a faster check for Windows
         result = subprocess.run(
-            ["netstat", "-ano", "-p", "TCP"],
+            ["netstat", "-ano", "-p", "TCP"],  # noqa: S607
             capture_output=True,
             text=True,
             encoding="cp866",
@@ -26,7 +26,10 @@ def kill_port_process(port: int):
                     if pid != str(os.getpid()) and pid != "0":
                         logger.info(f"Port {port} is busy. Killing PID {pid}...")
                         # Using taskkill /F to ensure the process is gone
-                        subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
+                        subprocess.run(  # noqa: S603
+                            ["taskkill", "/F", "/PID", pid],  # noqa: S607
+                            capture_output=True,
+                        )
                         # Give Windows a moment to release the socket
                         time.sleep(0.5)
     except Exception as e:

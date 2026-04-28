@@ -11,6 +11,11 @@ from docuflow.lib.widgets.styles import Styles as S
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
+def register_warehouse_view() -> None:
+    """Warehouse view is auto-registered by the @register_view decorator on import."""
+    pass
+
+
 @register_view(
     name="warehouse",
     label="Warehouse",
@@ -73,8 +78,8 @@ class WarehouseView(BaseDocuWidget):
 
                                         with ui.row().classes("w-full justify-end"):
 
-                                            def _fulfill(r=req_log):
-                                                self.handle_supply_fulfillment(
+                                            async def _fulfill(r=req_log):
+                                                await self.handle_supply_fulfillment(
                                                     r, render_supply_requests
                                                 )
 
@@ -141,7 +146,8 @@ class WarehouseView(BaseDocuWidget):
                         "body-cell-drift",
                         """
                         <q-td :props="props">
-                            <q-badge :color="props.value < 10 ? 'emerald' : (props.value < 25 ? 'orange' : 'red')">
+                            <q-badge :color="props.value < 10"
+                                ? 'emerald' : (props.value < 25 ? 'orange' : 'red')">
                                 {{ props.value }}%
                             </q-badge>
                         </q-td>
@@ -151,8 +157,10 @@ class WarehouseView(BaseDocuWidget):
                         "body-cell-actions",
                         """
                         <q-td :props="props">
-                            <q-btn flat round dense color="indigo" icon="settings" @click="$parent.$emit('settings', props.row)" />
-                            <q-btn flat round dense color="orange" icon="shopping_cart" @click="$parent.$emit('reorder', props.row)" />
+                            <q-btn flat round dense color="indigo"
+                                icon="settings" @click="$parent.$emit('settings', props.row)" />
+                            <q-btn flat round dense color="orange"
+                                icon="shopping_cart" @click="$parent.$emit('reorder', props.row)" />
                         </q-td>
                     """,
                     )
@@ -375,7 +383,9 @@ class WarehouseView(BaseDocuWidget):
                         "body-cell-actions",
                         """
                         <q-td :props="props">
-                            <q-btn flat round dense color="green" icon="exposure_plus_1" @click="$parent.$emit('correct', props.row)" />
+                            <q-btn flat round dense color="green"
+                                icon="exposure_plus_1"
+                                @click="$parent.$emit('correct', props.row)" />
                         </q-td>
                     """,
                     )

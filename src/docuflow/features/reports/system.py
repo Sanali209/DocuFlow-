@@ -157,7 +157,7 @@ class ReportSystem(BaseSystem):
         html_rendered = self.generate_html_preview(template_name, params)
 
         try:
-            from weasyprint import HTML
+            from weasyprint import HTML  # type: ignore[import-not-found]
 
             return HTML(string=html_rendered).write_pdf()
         except (ImportError, Exception) as e:
@@ -422,11 +422,13 @@ class ReportSystem(BaseSystem):
         """Return active/queued/done task counts per node."""
         result: dict[str, dict[str, int]] = {}
         rows = db_session.exec(
-            select(TaskItem.assigned_to_node, TaskItem.status, func.count(TaskItem.id))
-            .where(TaskItem.assigned_to_node.isnot(None))
+            select(TaskItem.assigned_to_node, TaskItem.status, func.count(TaskItem.id))  # type: ignore[arg-type]
+            .where(TaskItem.assigned_to_node.isnot(None))  # type: ignore[attr-defined]
             .group_by(TaskItem.assigned_to_node, TaskItem.status)
         ).all()
         for node, status, count in rows:
+            if node is None or status is None:
+                continue
             result.setdefault(node, {"active": 0, "queued": 0, "done": 0})
             if status == TaskItemStatus.IN_PROGRESS:
                 result[node]["active"] = count

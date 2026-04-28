@@ -16,6 +16,7 @@ from sqlmodel.pool import StaticPool
 from docuflow.domain.entities.production import (
     MaterialType,
     Project,
+    TaskGroup,
     TaskItem,
     TaskItemStatus,
     TaskPart,
@@ -53,7 +54,19 @@ def config_fixture():
 @pytest.fixture(name="system")
 def system_fixture(config: Config, session: Session, engine):
     """Creates a TaskBoardSystem instance."""
-    return TaskBoardSystem(config=config, db_engine=engine, session=session)
+    from unittest.mock import MagicMock
+
+    inv = MagicMock()
+    prod = MagicMock()
+    ns = MagicMock()
+    return TaskBoardSystem(
+        config=config,
+        db_engine=engine,
+        session=session,
+        inventory_system=inv,
+        production_system=prod,
+        ns_mirror=ns,
+    )
 
 
 @pytest.fixture(name="project_and_work_item")
@@ -442,3 +455,103 @@ class TestTaskBoardSystemIncrementSheets:
 
         task_updated = session.get(TaskItem, task.id)
         assert task_updated.sheets_done == 1
+
+
+class TestTaskBoardSystemMoveWorkItem:
+    """Тесты для метода move_work_item_to_project()."""
+
+    def test_move_work_item_to_project(
+        self,
+        system: TaskBoardSystem,
+        session: Session,
+    ):
+        """Перемещает WorkItem в другой проект."""
+        p1 = Project(name="P1")
+        p2 = Project(name="P2")
+        session.add_all([p1, p2])
+        session.commit()
+
+        wi = WorkItem(folder_name="WI-1", folder_path="wi1", project_id=p1.id)
+        session.add(wi)
+        session.commit()
+
+        system.move_work_item_to_project(wi.id, p2.id)
+        session.commit()
+
+        moved = session.get(WorkItem, wi.id)
+        assert moved.project_id == p2.id
+
+
+class TestTaskBoardSystemAssignTaskGroup:
+    """Тесты для метода assign_task_group_to_node()."""
+
+    def test_assign_task_group_to_node(
+        self,
+        system: TaskBoardSystem,
+        session: Session,
+    ):
+        """Назначает все задачи группы на узел."""
+        project = Project(name="Test")
+        session.add(project)
+        session.commit()
+
+        wi = WorkItem(folder_name="WI-1", folder_path="wi1", project_id=project.id)
+        session.add(wi)
+        session.commit()
+        session.refresh(wi)
+
+        tg = TaskGroup(name="TG-1", work_item_id=wi.id)
+        session.add(tg)
+        session.commit()
+        session.refresh(tg)
+
+        task = TaskItem(
+            work_item_id=wi.id,
+            task_group_id=tg.id,
+            file_name="test.gnc",
+            file_path="test.gnc",
+        )
+        session.add(task)
+        session.commit()
+
+        system.assign_task_group_to_node(tg.id, "node2")
+        session.commit()
+
+        updated = session.get(TaskItem, task.id)
+        assert updated.assigned_to_node == "node2"
+
+
+class TestTaskBoardSystemAutoReservation:
+    """Тесты для авто-резервирования материала при назначении на узел."""
+
+    def test_assign_task_group_calls_create_reservation(
+        self,
+        system: TaskBoardSystem,
+        project_and_work_item,
+        material: MaterialType,
+        session: Session,
+    ):
+        """Назначение TaskGroup на узел должно вызывать create_reservation."""
+        _, wi = project_and_work_item
+
+        tg = TaskGroup(name="TG-1", work_item_id=wi.id)
+        session.add(tg)
+        session.commit()
+        session.refresh(tg)
+
+        task = TaskItem(
+            work_item_id=wi.id,
+            task_group_id=tg.id,
+            file_name="test.gnc",
+            file_path="test.gnc",
+            mat_type_id=material.id,
+            sheet_qty=5,
+        )
+        session.add(task)
+        session.commit()
+
+        # system.inventory_system — это MagicMock из фикстуры
+        system.assign_task_group_to_node(tg.id, "LASER_1")
+
+        # Проверяем, что create_reservation был вызван
+        system.inventory_system.create_reservation.assert_called_once()

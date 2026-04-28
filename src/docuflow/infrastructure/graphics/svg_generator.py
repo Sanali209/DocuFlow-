@@ -182,16 +182,20 @@ class SVGGenerator:
 
                         large_arc_flag = 1 if angle_diff > math.pi else 0
                         # SVG sweep: 0=counterclockwise (G03), 1=clockwise (G02)
-                        # Wait, SVG arc sweep flag: 1 means rotation from start to end in positive angle direction.
+                        # Wait, SVG arc sweep flag: 1 means rotation from start to end
+                        # in positive angle direction.
                         # SVG standard: sweep-flag=1 for clockwise?
-                        # Actually: sweep-flag=1 means the arc will be drawn in a "positive-angle" direction.
-                        # In SVG (Y down), positive angle is clockwise. So G02 -> 1, G03 -> 0.
+                        # Actually: sweep-flag=1 means the arc will be drawn in a
+                        # "positive-angle" direction.
+                        # In SVG (Y down), positive angle is clockwise.
+                        # So G02 -> 1, G03 -> 0.
                         sweep_flag = 1 if is_clockwise else 0
 
                         scaled_radius = radius * scale
                         if scaled_radius > 0:
                             path_data.append(
-                                f"A {scaled_radius:.2f} {scaled_radius:.2f} 0 {large_arc_flag} {sweep_flag} "
+                                f"A {scaled_radius:.2f} {scaled_radius:.2f} 0 "
+                                f"{large_arc_flag} {sweep_flag} "
                                 f"{tx(current_x):.2f} {ty(current_y):.2f}"
                             )
                         else:
@@ -201,10 +205,14 @@ class SVGGenerator:
         # Create SVG
         path_str = " ".join(path_data)
         # Deep blue strokes for high premium look
-        svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="100%" height="100%">
-  <rect width="100%" height="100%" fill="#0f172a"/>
-  <path d="{path_str}" stroke="#38bdf8" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>'''
+        svg_content = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" '
+            f'viewBox="0 0 {width} {height}" width="100%" height="100%">\n'
+            f'  <rect width="100%" height="100%" fill="#0f172a"/>\n'
+            f'  <path d="{path_str}" stroke="#38bdf8" stroke-width="2" '
+            f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>\n'
+            f"</svg>"
+        )
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as f:

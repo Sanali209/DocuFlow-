@@ -60,7 +60,8 @@ class ScanLogPanel(BaseDocuWidget):
     def _render_log_item(self, log: WorkLog):
         """Render a single log entry with a badge."""
         with ui.row().classes(
-            "w-full items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors border-l-2 border-transparent hover:border-indigo-500"
+            "w-full items-center gap-3 p-2 hover:bg-white/5 rounded-lg "
+            "transition-colors border-l-2 border-transparent hover:border-indigo-500"
         ):
             # Timestamp
             ui.label(log.created_at.strftime("%H:%M:%S")).classes(

@@ -31,7 +31,9 @@ class ProjectSystem(BaseSystem):
         Creates a new production folder representing a specific client or internal project.
 
         Example:
-            project = system.register_new_project(project_name="IKEA-2026", description="Living room series")
+            project = system.register_new_project(
+                project_name="IKEA-2026", description="Living room series"
+            )
         """
         new_project = Project(name=project_name, description=description)
         self.db_session.add(new_project)
@@ -41,10 +43,13 @@ class ProjectSystem(BaseSystem):
 
     def reassign_production_group(self, work_item_id: int, target_project_id: int) -> WorkItem:
         """
-        Moves a WorkItem (production folder) to a different project grouping for better organization.
+        Moves a WorkItem (production folder) to a different project grouping
+        for better organization.
 
         Example:
-            updated_item = system.reassign_production_group(work_item_id=10, target_project_id=2)
+            updated_item = system.reassign_production_group(
+                work_item_id=10, target_project_id=2
+            )
         """
         work_item = self.db_session.get(WorkItem, work_item_id)
         if not work_item:
@@ -60,8 +65,11 @@ class ProjectSystem(BaseSystem):
         # Log the relocation for audit purposes
         log_entry = WorkLog(
             work_item_id=work_item.id,
-            log_type=WorkLogType.STATUS_CHANGE.value,
-            message=f"Workshop: Reassigned from Project ID {previous_project_id} to '{target_project.name}'",
+            log_type=WorkLogType.STATUS_CHANGE,
+            message=(
+                f"Workshop: Reassigned from Project ID {previous_project_id} "
+                f"to '{target_project.name}'"
+            ),
             node_id=self.config.node_id,
             created_at=datetime.datetime.now(),
         )

@@ -117,9 +117,9 @@ class WorkItemsView(BaseDocuWidget):
                 for preset in presets:
                     ui.tab(preset.name)
 
-            tabs.on("change", lambda e: self._apply_preset(e.value))
+            tabs.on_value_change(lambda e: self._apply_preset(e.value))
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def _render_table(self) -> None:
         """Рендерит таблицу нарядов."""
         async with self.scope() as req:

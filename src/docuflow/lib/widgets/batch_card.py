@@ -142,12 +142,14 @@ class BatchCard(BaseDocuWidget):
                     if matches:
                         with container:
                             with ui.row().classes(
-                                "w-full items-center justify-between bg-teal-900/20 p-2 mb-2 rounded border border-teal-500/30"
+                                "w-full items-center justify-between bg-teal-900/20 "
+                                "p-2 mb-2 rounded border border-teal-500/30"
                             ):
                                 with ui.row().classes("items-center gap-2"):
                                     ui.icon("auto_awesome", color="teal-400")
                                     ui.label(
-                                        f"Optimisation: {len(matches)} tasks in queue for this metal"
+                                        f"Optimisation: {len(matches)} tasks in queue "
+                                        f"for this metal"
                                     ).classes("text-xs font-bold text-teal-300")
                                 ui.button("CLAIM", on_click=self._show_matching_suggestions).props(
                                     "size=xs color=teal unelevated rounded"
@@ -188,7 +190,8 @@ class BatchCard(BaseDocuWidget):
                         with ui.column().classes("w-full gap-2"):
                             for task in matches:
                                 with ui.row().classes(
-                                    "w-full items-center justify-between p-2 bg-gray-50 rounded border border-gray-100"
+                                    "w-full items-center justify-between p-2 bg-gray-50 "
+                                    "rounded border border-gray-100"
                                 ):
                                     with ui.column().classes("gap-0"):
                                         ui.label(task.file_name).classes(
@@ -236,7 +239,10 @@ class BatchCard(BaseDocuWidget):
             if self.tasks and hasattr(self.tasks[0], "work_item") and self.tasks[0].work_item:
                 wi_name = self.tasks[0].work_item.folder_name
 
-            message = f"[LOGISTICS_REQUEST] Требуется подача металла для {wi_name} на {self.node_id}. Оператор: {self.user}"
+            message = (
+                f"[LOGISTICS_REQUEST] Требуется подача металла для {wi_name} "
+                f"на {self.node_id}. Оператор: {self.user}"
+            )
 
             NotifyHelper.warning(f"Запрос на подачу отправлен: {self._get_material_type()}")
             if self.tasks:
@@ -281,7 +287,8 @@ class BatchCard(BaseDocuWidget):
                             ui.icon("inventory_2", size="xs")
                             ui.label("STOCK_ALERT").classes("text-[10px] font-bold")
                             ui.tooltip(
-                                f"В запасе найдены детали: {', '.join(a.sku for a in alerts[:3])}..."
+                                f"В запасе найдены детали: "
+                                f"{', '.join(a.sku for a in alerts[:3])}..."
                             )
 
         container = ui.row().classes("items-center gap-1")
@@ -350,6 +357,8 @@ class TaskItemRow:
         """Check and render task-specific stock alerts."""
 
         async def check_alerts(container):
+            if self.system_scope is None:
+                return
             from sqlmodel import Session
 
             from docuflow.features.task_board.task_group_service import TaskGroupService
@@ -409,6 +418,6 @@ class TaskItemRow:
         if self.task.parts:
             from .part_preview import PartPreview
 
-            PartPreview(self.task.parts[0], size="sm").render()
+            PartPreview(self.task.parts[0], size="sm").render()  # type: ignore[arg-type]
         else:
             ui.icon("extension").classes("text-2xl text-gray-300 w-8 h-8")

@@ -19,7 +19,7 @@ class SearchResult:
     type: str  # 'work_item', 'part', 'pallet'
     view_name: str
     icon: str
-    payload: dict = None
+    payload: dict | None = None
 
 
 class SearchSystem:
@@ -59,6 +59,8 @@ class SearchSystem:
         ).all()
 
         for item in items:
+            if item.id is None:
+                continue
             results.append(
                 SearchResult(
                     id=item.id,
@@ -82,6 +84,8 @@ class SearchSystem:
         ).all()
 
         for part in parts:
+            if part.id is None:
+                continue
             results.append(
                 SearchResult(
                     id=part.id,
@@ -100,6 +104,8 @@ class SearchSystem:
         ).all()
 
         for unit in units:
+            if unit.id is None:
+                continue
             results.append(
                 SearchResult(
                     id=unit.id,

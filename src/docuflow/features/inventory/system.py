@@ -56,7 +56,8 @@ class InventorySystem(BaseSystem):
 
     def update_material_settings(self, mat_id: int, **kwargs) -> MaterialType | None:
         """Updates specific parameters of a material definition."""
-        material = self.session.get(MaterialType, mat_id)
+        session = self.db_session
+        material = session.get(MaterialType, mat_id)
         if not material:
             return None
 
@@ -77,9 +78,10 @@ class InventorySystem(BaseSystem):
 
         if not material_type:
             material_type = MaterialType(code=code, thickness=thickness, **kwargs)
-            self.session.add(material_type)
-            self.session.flush()
-            self.session.refresh(material_type)
+            session = self.db_session
+            session.add(material_type)
+            session.flush()
+            session.refresh(material_type)
             logger.info(f"Inventory: Registered new material type: {code}")
 
         return material_type
@@ -92,13 +94,15 @@ class InventorySystem(BaseSystem):
 
     def get_audit_history(self, limit: int = 100) -> list[MaterialAudit]:
         """Retrieves historical material movements."""
+        session = self.db_session
         statement = select(MaterialAudit).order_by(MaterialAudit.created_at.desc()).limit(limit)  # type: ignore[attr-defined]
-        return list(self.session.exec(statement).all())
+        return list(session.exec(statement).all())
 
     def get_active_supply_requests(self, hours: int = 12) -> list[WorkLog]:
         """Retrieves recent material supply requests from logs."""
         import datetime
 
+        session = self.db_session
         since = datetime.datetime.now() - datetime.timedelta(hours=hours)
         statement = (
             select(WorkLog)
@@ -108,7 +112,7 @@ class InventorySystem(BaseSystem):
             )
             .order_by(WorkLog.created_at.desc())  # type: ignore[attr-defined]
         )
-        return list(self.session.exec(statement).all())
+        return list(session.exec(statement).all())
 
     def receive_material_batch(
         self,
@@ -121,8 +125,11 @@ class InventorySystem(BaseSystem):
         Records the arrival of a new material batch into the workshop stock.
 
         Example:
-            batch = inventory.receive_material_batch(mat_type_id=1, quantity=50, batch_code="BATCH-99")
+            batch = inventory.receive_material_batch(
+                mat_type_id=1, quantity=50, batch_code="BATCH-99"
+            )
         """
+        session = self.db_session
         batch_stock = MaterialStock(
             mat_type_id=mat_type_id,
             quantity=quantity,
@@ -130,9 +137,10 @@ class InventorySystem(BaseSystem):
             location=location,
             status=MaterialStockStatus.AVAILABLE,
         )
-        self.session.add(batch_stock)
-        self.session.flush()
-        self.session.refresh(batch_stock)
+        session.add(batch_stock)
+        session.flush()
+        session.refresh(batch_stock)
+        assert batch_stock.id is not None
 
         # Audit trail for inventory tracking
         audit_entry = MaterialAudit(
@@ -142,8 +150,8 @@ class InventorySystem(BaseSystem):
             author="system",
             node_id=self.config.node_id,
         )
-        self.session.add(audit_entry)
-        self.session.flush()
+        session.add(audit_entry)
+        session.flush()
 
         logger.info(f"Inventory: Received {quantity} units of MatID {mat_type_id}")
         return batch_stock
@@ -155,15 +163,18 @@ class InventorySystem(BaseSystem):
         Manually adjust stock levels to match physical reality (Audit-logged).
 
         Example:
-            inventory.record_inventory_correction(stock_item_id=10, actual_qty=48.5, reason="Damaged")
+            inventory.record_inventory_correction(
+                stock_item_id=10, actual_qty=48.5, reason="Damaged"
+            )
         """
-        stock_item = self.session.get(MaterialStock, stock_item_id)
+        session = self.db_session
+        stock_item = session.get(MaterialStock, stock_item_id)
         if not stock_item:
             return 0.0
 
         quantity_difference = actual_qty - stock_item.quantity
         stock_item.quantity = actual_qty
-        self.session.add(stock_item)
+        session.add(stock_item)
 
         audit_entry = MaterialAudit(
             stock_item_id=stock_item_id,
@@ -173,8 +184,8 @@ class InventorySystem(BaseSystem):
             author=author,
             node_id=self.config.node_id,
         )
-        self.session.add(audit_entry)
-        self.session.flush()
+        session.add(audit_entry)
+        session.flush()
         return quantity_difference
 
     # --- Reservation Logic ---
@@ -188,11 +199,12 @@ class InventorySystem(BaseSystem):
         Example:
             reservation = inventory.create_reservation(stock_item_id=1, work_item_id=105, qty=10)
         """
-        stock_item = self.session.get(MaterialStock, stock_item_id)
+        session = self.db_session
+        stock_item = session.get(MaterialStock, stock_item_id)
 
         if is_hard and stock_item:
             stock_item.status = MaterialStockStatus.RESERVED
-            self.session.add(stock_item)
+            session.add(stock_item)
 
         reservation = Reservation(
             stock_item_id=stock_item_id,
@@ -200,24 +212,25 @@ class InventorySystem(BaseSystem):
             qty_reserved=qty,
             reservation_type="hard" if is_hard else "soft",
         )
-        self.session.add(reservation)
-        self.session.flush()
-        self.session.refresh(reservation)
+        session.add(reservation)
+        session.flush()
+        session.refresh(reservation)
         return reservation
 
     def cancel_reservation(self, reservation_id: int) -> bool:
         """Cancel a reservation and free up the associated stock."""
-        reservation = self.session.get(Reservation, reservation_id)
+        session = self.db_session
+        reservation = session.get(Reservation, reservation_id)
         if not reservation:
             return False
 
-        stock_item = self.session.get(MaterialStock, reservation.stock_item_id)
+        stock_item = session.get(MaterialStock, reservation.stock_item_id)
         if stock_item and stock_item.status == MaterialStockStatus.RESERVED:
             stock_item.status = MaterialStockStatus.AVAILABLE
-            self.session.add(stock_item)
+            session.add(stock_item)
 
-        self.session.delete(reservation)
-        self.session.flush()
+        session.delete(reservation)
+        session.flush()
         return True
 
     # --- Production Write-offs ---
@@ -229,6 +242,7 @@ class InventorySystem(BaseSystem):
         Example:
             inventory.perform_write_off(task_item_obj, sheets_used=2, author="operator-1")
         """
+        session = self.db_session
         if not task_item.mat_type_id:
             return
 
@@ -237,10 +251,10 @@ class InventorySystem(BaseSystem):
 
         target_stock = None
         if reservation:
-            target_stock = self.session.get(MaterialStock, reservation.stock_item_id)
+            target_stock = session.get(MaterialStock, reservation.stock_item_id)
             if target_stock and target_stock.status == MaterialStockStatus.RESERVED:
                 target_stock.status = MaterialStockStatus.AVAILABLE
-            self.session.delete(reservation)
+            session.delete(reservation)
         else:
             # 2. FIFO fallback: First available batch of matching type
             fifo_query = (
@@ -251,13 +265,15 @@ class InventorySystem(BaseSystem):
                 )
                 .order_by(MaterialStock.created_at.asc())  # type: ignore[attr-defined]
             )
-            target_stock = self.session.exec(fifo_query).first()
+            target_stock = session.exec(fifo_query).first()
 
         if target_stock:
+            assert target_stock.id is not None
             # FIX: Prevent negative stock
             if target_stock.quantity < sheets_used:
                 raise ValueError(
-                    f"Недостаточно материала на складе для партии {target_stock.batch_code or target_stock.id}. "
+                    f"Недостаточно материала на складе для партии "
+                    f"{target_stock.batch_code or target_stock.id}. "
                     f"Доступно: {target_stock.quantity}, требуется: {sheets_used}"
                 )
 
@@ -270,9 +286,9 @@ class InventorySystem(BaseSystem):
                 author=author,
                 node_id=self.config.node_id,
             )
-            self.session.add(audit_entry)
-            self.session.add(target_stock)
-            self.session.flush()
+            session.add(audit_entry)
+            session.add(target_stock)
+            session.flush()
 
     def request_material_reorder(self, mat_type_id: int, quantity: float, note: str, author: str):
         """
@@ -281,7 +297,8 @@ class InventorySystem(BaseSystem):
         Example:
             inventory.request_material_reorder(mat_type_id=1, quantity=100, note="Low stock")
         """
-        material_type = self.session.get(MaterialType, mat_type_id)
+        session = self.db_session
+        material_type = session.get(MaterialType, mat_type_id)
         mat_label = material_type.code if material_type else f"ID:{mat_type_id}"
 
         # 1. Permanent Audit
@@ -293,24 +310,29 @@ class InventorySystem(BaseSystem):
             author=author,
             node_id=self.config.node_id,
         )
-        self.session.add(audit_entry)
+        session.add(audit_entry)
 
         # 2. Alert Broadcast via Chat
-        reorder_content = f"📦 ДОЗАКАЗ: {mat_label} — {quantity} {material_type.primary_unit if material_type else 'ед.'}\nПримечание: {note}"
+        reorder_content = (
+            f"📦 ДОЗАКАЗ: {mat_label} — {quantity} "
+            f"{material_type.primary_unit if material_type else 'ед.'}\n"
+            f"Примечание: {note}"
+        )
         new_alert = ChatMessage(
             author=author,
             node_id=self.config.node_id,
             message_type=ChatMessageType.ORDER,
             content=reorder_content,
         )
-        self.session.add(new_alert)
-        self.session.flush()
+        session.add(new_alert)
+        session.flush()
 
         logger.info(f"Inventory: Reorder requested for {mat_label} by {author}")
 
     def resolve_supply_request(self, original_log_id: int, author: str) -> None:
         """Marks a logistics request as fulfilled by creating a resolution log."""
-        original_log = self.session.get(WorkLog, original_log_id)
+        session = self.db_session
+        original_log = session.get(WorkLog, original_log_id)
         if not original_log:
             return
 
@@ -322,8 +344,8 @@ class InventorySystem(BaseSystem):
             node_id=self.config.node_id,
             message=f"FULFILLED: {original_log.message.replace('[LOGISTICS_REQUEST]', '').strip()}",
         )
-        self.session.add(resolution_log)
-        self.session.commit()
+        session.add(resolution_log)
+        session.commit()
         logger.info(f"Inventory: Supply request {original_log_id} marked as fulfilled by {author}")
 
     # --- Analytics & Reporting Integration ---

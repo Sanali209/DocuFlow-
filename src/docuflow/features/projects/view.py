@@ -77,7 +77,8 @@ class ProjectManagementView(BaseDocuWidget):
                 with ui.card().classes("w-2/3 p-4"):
                     ui.label("Переназначение нарядов (из Default)").classes("text-h6 mb-2")
                     ui.markdown(
-                        "Выберите наряды в левой колонке (из проекта Default) и назначьте их в целевой проект."
+                        "Выберите наряды в левой колонке (из проекта Default) "
+                        "и назначьте их в целевой проект."
                     )
 
                     self.wi_table_container = ui.column().classes("w-full")
@@ -92,7 +93,8 @@ class ProjectManagementView(BaseDocuWidget):
             with self.projects_list:
                 for p in projects:
                     with ui.row().classes(
-                        "w-full items-center justify-between p-2 hover:bg-blue-50 cursor-pointer rounded"
+                        "w-full items-center justify-between p-2 hover:bg-blue-50 "
+                        "cursor-pointer rounded"
                     ):
                         ui.label(p.name).classes("font-bold")
                         if p.is_default:
@@ -105,7 +107,8 @@ class ProjectManagementView(BaseDocuWidget):
                             ui.button(icon="check", color="success").props("flat round")
                         else:
                             ui.button(
-                                icon="login", on_click=lambda p=p: self._select_project(p.id)
+                                icon="login",
+                                on_click=lambda p=p: self._select_project(p.id),  # type: ignore[attr-defined]
                             ).props("flat round")
 
     async def _select_project(self, project_id: int):
@@ -167,7 +170,8 @@ class ProjectManagementView(BaseDocuWidget):
                     "body-cell-action",
                     """
                     <q-td :props="props">
-                        <q-btn flat round color="primary" icon="move_to_inbox" @click="() => $emit('reassign', props.row.id)" />
+                        <q-btn flat round color="primary" icon="move_to_inbox"
+                            @click="() => $emit('reassign', props.row.id)" />
                     </q-td>
                 """,
                 )

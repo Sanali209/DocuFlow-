@@ -41,14 +41,14 @@ class NSMirrorStatus(BaseDocuWidget):
                 session = await req.get(Session)
                 # 1. Active Bucket Entries
                 bucket_count = session.exec(
-                    select(func.count(WorkerBucketEntry.id)).where(
+                    select(func.count(WorkerBucketEntry.id)).where(  # type: ignore[arg-type]
                         WorkerBucketEntry.node_id == self.node_id
                     )
                 ).one()
 
                 # 2. FILE_CHANGED warnings on current node
                 stale_count = session.exec(
-                    select(func.count(WorkLog.id))
+                    select(func.count(WorkLog.id))  # type: ignore[arg-type]
                     .where(WorkLog.log_type == WorkLogType.FILE_CHANGED)
                     .where(WorkLog.node_id == self.node_id)
                 ).one()

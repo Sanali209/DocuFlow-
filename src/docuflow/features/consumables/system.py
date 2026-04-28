@@ -113,7 +113,8 @@ class ConsumableSystem(BaseSystem):
         note: str | None = None,
     ) -> Consumable:
         """
-        Decrement consumable stock and log usage. Triggers a cluster alert if minimum quantity reached.
+        Decrement consumable stock and log usage.
+        Triggers a cluster alert if minimum quantity reached.
 
         Example:
             supplies.use(consumable_id=2, quantity_used=1, user="operator-5")
@@ -197,7 +198,11 @@ class ConsumableSystem(BaseSystem):
             author="System",
             node_id=self.config.node_id,
             message_type=ChatMessageType.WARNING,
-            content=f"⚠️ КРИТИЧЕСКИЙ ОСТАТОК: {consumable.name} = {consumable.quantity:.0f} {consumable.unit} (Мин: {consumable.min_quantity:.0f})",
+            content=(
+                f"⚠️ КРИТИЧЕСКИЙ ОСТАТОК: {consumable.name} = "
+                f"{consumable.quantity:.0f} {consumable.unit} "
+                f"(Мин: {consumable.min_quantity:.0f})"
+            ),
         )
         self.db_session.add(alert_entry)
         logger.warning(f"Consumable Alert: {consumable.name} is low ({consumable.quantity})")

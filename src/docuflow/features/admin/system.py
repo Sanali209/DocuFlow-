@@ -133,7 +133,7 @@ class AdminSystem(BaseSystem):
                         )
                     )
             except Exception:
-                pass  # sqlite_sequence may not exist
+                logger.debug("sqlite_sequence may not exist")
             self.db_session.commit()
         finally:
             self.db_session.execute(text("PRAGMA foreign_keys = ON"))

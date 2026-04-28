@@ -1,14 +1,24 @@
+import asyncio
+import hashlib
 from typing import Any
 
 from nicegui import ui
-from sqlmodel import Session
+from sqlmodel import Session, func, select
 
-from docuflow.domain.entities.production import WorkerBucketEntry
+from docuflow.domain.entities.production import (
+    Project,
+    TaskGroup,
+    TaskItem,
+    WorkerBucketEntry,
+    WorkItem,
+)
+from docuflow.features.admin.system import AdminSystem
 from docuflow.features.core.layout import SessionContext
 from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.task_board.system import TaskBoardSystem
 from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.bucket_panel import BucketPanel
+from docuflow.lib.widgets.filter_panel import FilterPanel
 from docuflow.lib.widgets.handover_banner import HandoverBanner
 from docuflow.lib.widgets.handover_form import HandoverForm
 from docuflow.lib.widgets.hierarchy_table import HierarchyTable
@@ -54,13 +64,36 @@ class TaskBoardView(BaseDocuWidget):
         self.node_id = node_id
         self.role = role or SessionContext.get("task_board_role", "operator")
         self.filter_work_item_id = filter_work_item_id or kwargs.get("filter_work_item_id")
+        self._refresh_timer: ui.timer | None = None
+        self._last_data_hash: str | None = None
+        self._filters: dict[str, Any] = {}
+
+    def _on_filter_apply(self, filters: dict[str, Any]) -> None:
+        self._filters = filters
+        self.render.refresh()
+
+    def _on_save_preset(self, name: str, filters: dict[str, Any]) -> None:
+        import json
+
+        async def _save() -> None:
+            async with self.scope() as req:
+                admin = await req.get(AdminSystem)
+                admin.create_view_preset(
+                    view_name="task_board_production",
+                    name=name,
+                    filters_json=json.dumps(filters),
+                    user_id=self.user,
+                )
+
+        asyncio.get_event_loop().create_task(_save())
 
     @ui.refreshable
     async def render(self) -> None:
         """Рендерит основной view."""
-        async with self.scope() as req:
-            from docuflow.features.admin.system import AdminSystem
+        if self._refresh_timer is None:
+            self._refresh_timer = ui.timer(5.0, self._check_and_refresh)
 
+        async with self.scope() as req:
             admin_system = await req.get(AdminSystem)
             nodes = admin_system.get_workplace_node_ids()
 
@@ -87,11 +120,27 @@ class TaskBoardView(BaseDocuWidget):
 
                 with ui.tab_panels(tabs, value=production_tab).classes("w-full"):
                     with ui.tab_panel(production_tab):
-                        await HierarchyTable(
+                        presets = admin_system.get_view_presets(user_id=self.user)
+                        preset_dicts = [
+                            {"id": p.id, "name": p.name, "filters_json": p.filters_json}
+                            for p in presets
+                            if p.id is not None
+                        ]
+                        filter_panel = FilterPanel(
+                            on_apply=self._on_filter_apply,
+                            system_scope=self.system_scope,
+                            initial_filters=self._filters,
+                            presets=preset_dicts,
+                            on_save_preset=self._on_save_preset,
+                        )
+                        filter_panel.render()
+                        hierarchy_table = HierarchyTable(
                             user_id=self.user,
                             view_name="task_board_production",
                             system_scope=self.system_scope,
-                        ).render()
+                            filters=self._filters,
+                        )
+                        await hierarchy_table.render()  # type: ignore[call-arg]
 
                     with ui.tab_panel(basket_tab):
                         with ui.column().classes("w-full gap-4"):
@@ -203,6 +252,27 @@ class TaskBoardView(BaseDocuWidget):
                 value=default_node,
                 on_change=lambda e: self._select_node(e.value),
             ).render().classes("w-48")
+
+    async def _check_and_refresh(self) -> None:
+        """Check if data changed and refresh if needed."""
+        current_hash = await self._get_data_hash()
+        if self._last_data_hash is not None and current_hash != self._last_data_hash:
+            self.render.refresh()
+        self._last_data_hash = current_hash
+
+    async def _get_data_hash(self) -> str:
+        """Generate a hash representing current data state."""
+        async with self.scope() as req:
+            session = await req.get(Session)
+
+            counts = {
+                "projects": session.exec(select(func.count(Project.id))).one(),  # type: ignore[arg-type]
+                "work_items": session.exec(select(func.count(WorkItem.id))).one(),  # type: ignore[arg-type]
+                "task_groups": session.exec(select(func.count(TaskGroup.id))).one(),  # type: ignore[arg-type]
+                "tasks": session.exec(select(func.count(TaskItem.id))).one(),  # type: ignore[arg-type]
+            }
+            data = "|".join(f"{k}:{v}" for k, v in counts.items())
+            return hashlib.sha256(data.encode()).hexdigest()
 
     async def _select_node(self, node_id: str) -> None:
         """Выбирает узел."""

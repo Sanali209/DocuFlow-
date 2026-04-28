@@ -152,8 +152,9 @@ class GncParser:
                 cmd_type = "G00"
             elif self.RE_G01_3.search(line):
                 m_cmd = self.RE_G01_3.search(line)
-                cmd_val = m_cmd.group(1)
-                cmd_type = f"G{int(cmd_val):02d}"
+                if m_cmd:
+                    cmd_val = m_cmd.group(1)
+                    cmd_type = f"G{int(cmd_val):02d}"
 
             if coords or cmd_type != "MODAL":
                 new_x, new_y = last_x, last_y
@@ -202,8 +203,6 @@ class GncParser:
                     )
 
                 last_x, last_y = new_x, new_y
-
-        return sheet
 
         return sheet
 

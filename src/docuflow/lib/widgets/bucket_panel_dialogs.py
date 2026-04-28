@@ -72,9 +72,9 @@ class PauseDialog(BaseDocuWidget):
             dialog.close()
             if self.on_success:
                 if hasattr(self.on_success, "refresh") and callable(self.on_success.refresh):
-                    await self.on_success.refresh()
+                    await self.on_success.refresh()  # type: ignore[misc]
                 elif callable(self.on_success):
-                    await self.on_success()
+                    await self.on_success()  # type: ignore[misc]
 
         self.safe_action(do_confirm, "Задача поставлена на паузу", "Ошибка")
 
@@ -147,9 +147,9 @@ class CompleteDialog(BaseDocuWidget):
             dialog.close()
             if self.on_success:
                 if hasattr(self.on_success, "refresh") and callable(self.on_success.refresh):
-                    await self.on_success.refresh()
+                    await self.on_success.refresh()  # type: ignore[misc]
                 elif callable(self.on_success):
-                    await self.on_success()
+                    await self.on_success()  # type: ignore[misc]
 
         self.safe_action(do_confirm, "Задача завершена", "Ошибка")
 
@@ -199,8 +199,8 @@ class BlockDialog(BaseDocuWidget):
             dialog.close()
             if self.on_success:
                 if hasattr(self.on_success, "refresh") and callable(self.on_success.refresh):
-                    await self.on_success.refresh()
+                    await self.on_success.refresh()  # type: ignore[misc]
                 elif callable(self.on_success):
-                    await self.on_success()
+                    await self.on_success()  # type: ignore[misc]
 
         self.safe_action(do_confirm, "Задача заблокирована", "Ошибка")

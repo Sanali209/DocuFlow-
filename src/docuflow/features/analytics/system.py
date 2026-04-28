@@ -26,15 +26,15 @@ class AnalyticsSystem(BaseSystem):
         """
         Calculates basic metrics for the main cluster dashboard.
         """
-        session = self.session
+        session = self.db_session
 
-        wi_count = session.exec(select(func.count(WorkItem.id))).one()
+        wi_count = session.exec(select(func.count(WorkItem.id))).one()  # type: ignore[arg-type]
         incident_count = session.exec(
-            select(func.count(IncidentLog.id)).where(IncidentLog.resolved.is_(False))
-        ).one()
+            select(func.count(IncidentLog.id)).where(IncidentLog.resolved.is_(False))  # type: ignore[attr-defined]
+        ).one()  # type: ignore[arg-type]
         pallet_count = session.exec(
-            select(func.count(ProductionUnit.id)).where(ProductionUnit.is_stock.is_(True))
-        ).one()
+            select(func.count(ProductionUnit.id)).where(ProductionUnit.is_stock.is_(True))  # type: ignore[attr-defined]
+        ).one()  # type: ignore[arg-type]
 
         return {
             "work_item_count": wi_count,
@@ -46,17 +46,17 @@ class AnalyticsSystem(BaseSystem):
         """
         Calculates key performance indicators for the main analytics dashboard.
         """
-        session = self.session
+        session = self.db_session
 
         # 1. Volume Metrics
-        total_work_items = session.exec(select(func.count(WorkItem.id))).one()
-        total_tasks = session.exec(select(func.count(TaskItem.id))).one()
+        total_work_items = session.exec(select(func.count(WorkItem.id))).one()  # type: ignore[arg-type]
+        total_tasks = session.exec(select(func.count(TaskItem.id))).one()  # type: ignore[arg-type]
         completed_tasks = session.exec(
-            select(func.count(TaskItem.id)).where(TaskItem.status == TaskItemStatus.DONE)
-        ).one()
-        total_pallets = session.exec(select(func.count(ProductionUnit.id))).one()
+            select(func.count(TaskItem.id)).where(TaskItem.status == TaskItemStatus.DONE)  # type: ignore[arg-type]
+        ).one()  # type: ignore[arg-type]
+        total_pallets = session.exec(select(func.count(ProductionUnit.id))).one()  # type: ignore[arg-type]
         total_parts_produced = (
-            session.exec(select(func.sum(ProductionUnit.qty_produced))).one() or 0
+            session.exec(select(func.sum(ProductionUnit.qty_produced))).one() or 0  # type: ignore[arg-type]
         )
 
         # 2. Performance Metrics (Drift)
@@ -78,12 +78,12 @@ class AnalyticsSystem(BaseSystem):
         # 3. Task Status Distribution
         status_counts = {}
         for s in TaskItemStatus:
-            count = session.exec(select(func.count(TaskItem.id)).where(TaskItem.status == s)).one()
+            count = session.exec(select(func.count(TaskItem.id)).where(TaskItem.status == s)).one()  # type: ignore[arg-type]
             if count > 0:
                 status_counts[s.value.upper()] = count
 
         # 4. Task Group Metrics
-        total_task_groups = session.exec(select(func.count(TaskGroup.id))).one() or 0
+        total_task_groups = session.exec(select(func.count(TaskGroup.id))).one() or 0  # type: ignore[arg-type]
 
         groups_by_status: dict[str, int] = {}
         for group in session.exec(select(TaskGroup)).all():
@@ -101,11 +101,13 @@ class AnalyticsSystem(BaseSystem):
         # 5. Node Utilization
         node_utilization: dict[str, dict[str, int]] = {}
         node_rows = session.exec(
-            select(TaskItem.assigned_to_node, TaskItem.status, func.count(TaskItem.id))
-            .where(TaskItem.assigned_to_node.isnot(None))
+            select(TaskItem.assigned_to_node, TaskItem.status, func.count(TaskItem.id))  # type: ignore[arg-type]
+            .where(TaskItem.assigned_to_node.isnot(None))  # type: ignore[attr-defined]
             .group_by(TaskItem.assigned_to_node, TaskItem.status)
         ).all()
         for node, status, count in node_rows:
+            if node is None:
+                continue
             node_utilization.setdefault(node, {"active": 0, "queued": 0, "done": 0})
             if status == TaskItemStatus.IN_PROGRESS:
                 node_utilization[node]["active"] = count
@@ -113,6 +115,22 @@ class AnalyticsSystem(BaseSystem):
                 node_utilization[node]["queued"] = count
             elif status == TaskItemStatus.DONE:
                 node_utilization[node]["done"] = count
+
+        # 6. Pallets by Project
+        pallet_by_project: dict[str, int] = {}
+        project_pallets = session.exec(
+            select(WorkItem.project_id, func.count(ProductionUnit.id))  # type: ignore[arg-type]
+            .join(TaskItem, WorkItem.id == TaskItem.work_item_id)  # type: ignore[arg-type]
+            .join(ProductionUnit, TaskItem.id == ProductionUnit.task_item_id)  # type: ignore[arg-type]
+            .group_by(WorkItem.project_id)  # type: ignore[arg-type]
+        ).all()  # type: ignore[arg-type]
+        for proj_id, count in project_pallets:
+            if proj_id is not None:
+                from docuflow.domain.entities.production import Project
+
+                proj = session.get(Project, proj_id)
+                name = proj.name if proj else f"Project-{proj_id}"
+                pallet_by_project[name] = count
 
         return {
             "total_work_items": total_work_items,
@@ -127,4 +145,5 @@ class AnalyticsSystem(BaseSystem):
             "total_task_groups": total_task_groups,
             "groups_by_status": groups_by_status,
             "node_utilization": node_utilization,
+            "pallet_by_project": pallet_by_project,
         }

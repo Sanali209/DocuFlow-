@@ -17,6 +17,8 @@ from sqlmodel import Session, select
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import (
     ProductionUnit,
+    Project,
+    TaskGroup,
     TaskItem,
     TaskItemStatus,
     WorkerBucketEntry,
@@ -219,7 +221,8 @@ class TaskBoardSystem(BaseSystem):
             planned = task_item.sheet_qty or 0
             if sheets_done > (planned * self.SHEET_OVERAGE_TOLERANCE) and planned > 0:
                 raise ValueError(
-                    f"Количество листов ({sheets_done}) значительно превышает план ({planned}). Проверьте ввод."
+                    f"Количество листов ({sheets_done}) значительно превышает "
+                    f"план ({planned}). Проверьте ввод."
                 )
 
             if qty_produced < 0:
@@ -384,11 +387,54 @@ class TaskBoardSystem(BaseSystem):
 
             return bucket_entry
 
+    def move_work_item_to_project(self, work_item_id: int, project_id: int) -> None:
+        """Move a WorkItem to a different Project."""
+        with self.get_db_session() as session:
+            wi = session.get(WorkItem, work_item_id)
+            if wi is None:
+                raise ValueError(f"WorkItem {work_item_id} not found")
+            project = session.get(Project, project_id)
+            if project is None:
+                raise ValueError(f"Project {project_id} not found")
+            wi.project_id = project_id
+            session.add(wi)
+            self._sync(session)
+
+    def assign_task_group_to_node(self, task_group_id: int, node_id: str) -> None:
+        """Assign all tasks in a TaskGroup to a node."""
+        with self.get_db_session() as session:
+            tg = session.get(TaskGroup, task_group_id)
+            if tg is None:
+                raise ValueError(f"TaskGroup {task_group_id} not found")
+            for task in tg.tasks:
+                task.assigned_to_node = node_id
+                session.add(task)
+            self._sync(session)
+
+            # Auto-create material reservation
+            if self.inventory_system is not None:
+                material_sheets: dict[int, int] = {}
+                for task in tg.tasks:
+                    if task.mat_type_id is not None:
+                        material_sheets[task.mat_type_id] = material_sheets.get(
+                            task.mat_type_id, 0
+                        ) + (task.sheet_qty or 0)
+                for mat_id, qty in material_sheets.items():
+                    try:
+                        self.inventory_system.create_reservation(
+                            stock_item_id=mat_id,
+                            work_item_id=tg.work_item_id,
+                            qty=qty,
+                            is_hard=False,
+                        )
+                    except Exception:
+                        logger.warning("Reservation failed during task assignment — continuing")
+
     def get_matching_unassigned_tasks(self, mat_type_id: int, thickness: float) -> list[TaskItem]:
         """Ищет неназначенные задачи с таким же материалом и толщиной."""
         with self.get_db_session() as session:
             statement = select(TaskItem).where(
-                TaskItem.assigned_to_node == None,  # type: ignore[attr-defined]
+                TaskItem.assigned_to_node == None,  # noqa: E711  # type: ignore[attr-defined]
                 TaskItem.mat_type_id == mat_type_id,
                 TaskItem.thickness == thickness,
                 TaskItem.status.in_([TaskItemStatus.PLANNED]),  # type: ignore[attr-defined]
@@ -470,7 +516,7 @@ class TaskBoardSystem(BaseSystem):
         """Retrieves tasks that haven't been assigned to any node."""
         with self.get_db_session() as session:
             statement = select(TaskItem).where(
-                TaskItem.assigned_to_node == None,  # type: ignore[attr-defined]
+                TaskItem.assigned_to_node == None,  # noqa: E711  # type: ignore[attr-defined]
                 TaskItem.status == TaskItemStatus.PLANNED,
             )
 
@@ -514,6 +560,29 @@ class TaskBoardSystem(BaseSystem):
                     select(ProductionUnit)
                     .join(TaskItem)
                     .where(TaskItem.work_item_id == work_item_id)
+                ).all()
+            )
+
+    def find_pallets_by_project(
+        self, project_id: int, session: Session | None = None
+    ) -> list[ProductionUnit]:
+        """Find all production units linked to tasks of a specific project."""
+        if session is not None:
+            return list(
+                session.exec(
+                    select(ProductionUnit)
+                    .join(TaskItem)
+                    .join(WorkItem)
+                    .where(WorkItem.project_id == project_id)
+                ).all()
+            )
+        with self.get_db_session() as session:
+            return list(
+                session.exec(
+                    select(ProductionUnit)
+                    .join(TaskItem)
+                    .join(WorkItem)
+                    .where(WorkItem.project_id == project_id)
                 ).all()
             )
 

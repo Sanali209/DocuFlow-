@@ -96,8 +96,10 @@ class ProductionView(BaseDocuWidget):
                 "body-cell-actions",
                 """
                 <q-td :props="props">
-                    <q-btn flat round dense color="indigo" icon="local_shipping" @click="$parent.$emit('ship', props.row)" v-if="props.row.can_ship" />
-                    <q-btn flat round dense color="orange" icon="call_split" @click="$parent.$emit('split', props.row)" />
+                    <q-btn flat round dense color="indigo" icon="local_shipping"
+                        @click="$parent.$emit('ship', props.row)" v-if="props.row.can_ship" />
+                    <q-btn flat round dense color="orange" icon="call_split"
+                        @click="$parent.$emit('split', props.row)" />
                 </q-td>
             """,
             )

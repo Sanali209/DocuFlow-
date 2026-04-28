@@ -170,8 +170,8 @@ class TaskGroupService:
 
         in_stock = self.session.exec(
             select(ProductionUnit)
-            .where(ProductionUnit.is_stock.is_(True))
-            .options(selectinload(ProductionUnit.task_item).selectinload(TaskItem.parts))
+            .where(ProductionUnit.is_stock.is_(True))  # type: ignore[attr-defined]
+            .options(selectinload(ProductionUnit.task_item).selectinload(TaskItem.parts))  # type: ignore[arg-type]
         ).all()
 
         stock_map: dict[str, list[ProductionUnit]] = {}

@@ -2,8 +2,6 @@ import datetime
 import logging
 from typing import Any, ClassVar
 
-logger = logging.getLogger("docuflow.work_items")
-
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
@@ -16,6 +14,8 @@ from docuflow.domain.entities.production import (
     WorkLogType,
 )
 from docuflow.infrastructure.config import Config
+
+logger = logging.getLogger("docuflow.work_items")
 
 
 class WorkItemFilters(BaseModel):
@@ -91,21 +91,20 @@ class WorkItemSystem(BaseSystem):
         """
         target_project_id = project_id
 
-        if not target_project_id:
+        if not target_project_id and self.sdk:
             # Try to resolve default project via ProjectSystem if SDK is available
-            if self.sdk:
-                try:
-                    from docuflow.features.projects.system import ProjectSystem
+            try:
+                from docuflow.features.projects.system import ProjectSystem
 
-                    proj_sys = self.sdk.resolve_system_by_type(ProjectSystem)
-                    default_proj = proj_sys.resolve_default_workshop_project()
-                    target_project_id = default_proj.id
-                except Exception:
-                    logger.warning(
-                        "WorkItemSystem: failed to resolve default project via SDK, "
-                        "falling back to direct DB lookup.",
-                        exc_info=True,
-                    )
+                proj_sys = self.sdk.resolve_system_by_type(ProjectSystem)
+                default_proj = proj_sys.resolve_default_workshop_project()
+                target_project_id = default_proj.id
+            except Exception:
+                logger.warning(
+                    "WorkItemSystem: failed to resolve default project via SDK, "
+                    "falling back to direct DB lookup.",
+                    exc_info=True,
+                )
 
         # Final fallback if still not resolved
         if not target_project_id:
@@ -123,6 +122,8 @@ class WorkItemSystem(BaseSystem):
                 self.db_session.add(new_default)
                 self.db_session.flush()
                 target_project_id = new_default.id
+
+        assert target_project_id is not None
 
         work_item = WorkItem(
             folder_name=folder_name,
@@ -176,10 +177,13 @@ class WorkItemSystem(BaseSystem):
 
         if criteria.search_text:
             search_pattern = f"%{criteria.search_text}%"
-            # Using casting to Any to bypass Mypy column attribute errors or using the class attribute
+            # Using casting to Any to bypass Mypy column attribute errors
+            # or using the class attribute
             statement = statement.where(
                 WorkItem.folder_name.ilike(search_pattern)  # type: ignore[attr-defined]
-                | WorkItem.sidra_number.ilike(search_pattern)  # type: ignore[union-attr]
+                | WorkItem.sidra_number.ilike(  # type: ignore[union-attr]
+                    search_pattern
+                )
             )
 
         # Execution with pagination
@@ -262,7 +266,8 @@ class WorkItemSystem(BaseSystem):
         allowed_destinations = self.VALID_TRANSITIONS.get(current_status, [])
         if new_status not in allowed_destinations:
             raise ValueError(
-                f"Illegal transition: {current_status.value} -> {new_status.value}. Check workflow rules."
+                f"Illegal transition: {current_status.value} -> {new_status.value}. "
+                f"Check workflow rules."
             )
 
         work_item.status = new_status

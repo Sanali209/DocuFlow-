@@ -111,7 +111,12 @@ class ConsumableView(BaseDocuWidget):
             "body-cell-status",
             """
             <q-td :props="props">
-                <q-icon v-if="props.row.quantity <= props.row.min_quantity" name="warning" color="red" size="xs" />
+                <q-icon
+                    v-if="props.row.quantity <= props.row.min_quantity"
+                    name="warning"
+                    color="red"
+                    size="xs"
+                />
                 <q-icon v-else name="check_circle" color="emerald" size="xs" />
             </q-td>
         """,
@@ -120,7 +125,12 @@ class ConsumableView(BaseDocuWidget):
         self.table.add_slot(
             "body-cell-name",
             """
-            <q-td :props="props" :class="props.row.quantity <= props.row.min_quantity ? 'text-red-500 font-bold' : ''">
+            <q-td
+                :props="props"
+                :class="
+                    props.row.quantity <= props.row.min_quantity ? 'text-red-500 font-bold' : ''
+                "
+            >
                 {{ props.value }}
                 <div class="text-[10px] text-zinc-500 uppercase">{{ props.row.unit }}</div>
             </q-td>
@@ -132,8 +142,18 @@ class ConsumableView(BaseDocuWidget):
             """
             <q-td :props="props">
                 <q-btn-group flat>
-                    <q-btn flat icon="remove" color="red-4" @click="$parent.$emit('use', props.row)" />
-                    <q-btn flat icon="add" color="emerald-4" @click="$parent.$emit('restock', props.row)" />
+                    <q-btn
+                        flat
+                        icon="remove"
+                        color="red-4"
+                        @click="$parent.$emit('use', props.row)"
+                    />
+                    <q-btn
+                        flat
+                        icon="add"
+                        color="emerald-4"
+                        @click="$parent.$emit('restock', props.row)"
+                    />
                     <q-btn flat icon="history" @click="$parent.$emit('history', props.row)" />
                 </q-btn-group>
             </q-td>

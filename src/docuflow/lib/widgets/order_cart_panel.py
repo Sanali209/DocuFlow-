@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
@@ -10,7 +11,7 @@ from docuflow.lib.base_widget import BaseDocuWidget
 class OrderCartPanel(BaseDocuWidget):
     """Collapsible order cart panel for Part Library."""
 
-    def __init__(self, cart: OrderCart, on_create_order: callable, system_scope: Any):
+    def __init__(self, cart: OrderCart, on_create_order: Callable[..., Any], system_scope: Any):
         super().__init__(system_scope)
         self.cart = cart
         self.on_create_order = on_create_order
@@ -30,7 +31,7 @@ class OrderCartPanel(BaseDocuWidget):
                         with ui.row().classes("items-center justify-between w-full"):
                             ui.label(f"{item.sku} — {item.name or ''}").classes("text-sm")
                             qty_input = ui.number(value=item.qty, min=1).classes("w-20")
-                            qty_input.on_change(partial(self._update_qty, item.sku))
+                            qty_input.on_change(partial(self._update_qty, item.sku))  # type: ignore[attr-defined]
                             ui.button("✕", on_click=partial(self._remove, item.sku)).props(
                                 "flat dense size=xs color=red"
                             )

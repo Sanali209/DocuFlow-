@@ -35,7 +35,7 @@ async def parts_view_wrapper(
 ):
     """Wrapper to instantiate and render the PartLibraryView."""
     view = PartLibraryView(parts_system, system_scope, layout=layout)
-    await view.render()
+    await view.render()  # type: ignore[call-arg]
 
 
 class PartLibraryView(BaseDocuWidget):
@@ -73,17 +73,19 @@ class PartLibraryView(BaseDocuWidget):
 
                 with ui.row().classes("gap-4 items-center"):
                     ui.input(
-                        placeholder="Поиск по SKU...", on_change=self.render.refresh
+                        placeholder="Поиск по SKU...",
+                        on_change=self.render.refresh,  # type: ignore[attr-defined]
                     ).bind_value(self, "search_query").classes("w-64 bg-zinc-900 border-zinc-800")
 
                     ui.button("Гео-поиск", icon="straighten", on_click=self.open_geo_search).props(
                         "flat color=primary"
                     )
 
-                    ui.button(icon="refresh", on_click=self.render.refresh).props("flat")
+                    ui.button(icon="refresh", on_click=self.render.refresh).props("flat")  # type: ignore[attr-defined]
 
             # --- Order Cart Panel ---
-            self.cart_panel.render()
+            cart_panel = self.cart_panel
+            cart_panel.render()  # type: ignore[call-arg]
 
             # --- Main Content (Grid) ---
             self.grid = ui.grid(columns=6).classes("w-full gap-4")
@@ -99,14 +101,15 @@ class PartLibraryView(BaseDocuWidget):
         """Internal helper to build the grid content."""
         async with self.scope() as req:
             parts_system = await req.get(PartLibrarySystem)
-            parts = parts_system.list_parts(
+            parts = parts_system.search_part_library(
                 sku_filter=self.search_query if len(self.search_query) >= 2 else None, limit=50
             )
 
         if not parts:
             with self.grid:
                 ui.label("Детали не найдены").classes(
-                    "col-span-full text-center text-zinc-600 mt-12 py-8 border-2 border-dashed border-zinc-800 rounded-lg"
+                    "col-span-full text-center text-zinc-600 mt-12 py-8 "
+                    "border-2 border-dashed border-zinc-800 rounded-lg"
                 )
             return
 
@@ -115,9 +118,10 @@ class PartLibraryView(BaseDocuWidget):
                 with (
                     ui.card()
                     .classes(
-                        "group relative overflow-hidden bg-zinc-900 border-zinc-800 hover:border-blue-500/50 transition-all cursor-pointer p-3"
+                        "group relative overflow-hidden bg-zinc-900 "
+                        "border-zinc-800 hover:border-blue-500/50 transition-all cursor-pointer p-3"
                     )
-                    .on("click", lambda p=part: self.open_part_details(p))
+                    .on("click", lambda *args, p=part: self.open_part_details(p))
                 ):
                     # SVG Thumbnail
                     PartPreview(part.svg_preview_path).render()
@@ -133,7 +137,8 @@ class PartLibraryView(BaseDocuWidget):
 
                     # Hover Overlay
                     with ui.row().classes(
-                        "absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        "absolute top-2 right-2 opacity-0 "
+                        "group-hover:opacity-100 transition-opacity"
                     ):
                         ui.icon("info", size="16px").classes("text-blue-500")
                         cart_btn = ui.button(
@@ -171,9 +176,10 @@ class PartLibraryView(BaseDocuWidget):
             ):
                 with ui.column().classes("gap-0"):
                     ui.label(part.sku).classes("text-xl font-bold text-zinc-100")
-                    ui.label(
-                        f"Версия {part.version} • Впервые замечена: {part.first_seen_at.strftime('%d.%m.%Y')}"
-                    ).classes("text-xs text-zinc-500")
+                    first_seen = part.first_seen_at.strftime("%d.%m.%Y")
+                    ui.label(f"Версия {part.version} • Впервые замечена: {first_seen}").classes(
+                        "text-xs text-zinc-500"
+                    )
                 ui.button(icon="close", on_click=dialog.close).props("flat color=white")
 
             with ui.row().classes("w-full p-6 gap-8"):
@@ -185,7 +191,10 @@ class PartLibraryView(BaseDocuWidget):
                         ui.label("Метрики").classes(
                             "text-xs font-bold uppercase text-zinc-500 mb-2"
                         )
-                        self._stat_row("Габариты", f"{part.bbox_x:.1f} × {part.bbox_y:.1f} мм")
+                        self._stat_row(
+                            "Габариты",
+                            f"{part.bbox_x:.1f} × {part.bbox_y:.1f} мм",
+                        )
                         self._stat_row("Контуров", str(part.contour_count or 0))
                         self._stat_row("Отверстий", str(part.hole_count or 0))
                         self._stat_row("Углов", str(part.corner_count or 0))
@@ -280,7 +289,7 @@ class PartLibraryView(BaseDocuWidget):
                     with ui.row().classes("w-full justify-between items-start"):
                         ui.label(tmpl.message).classes("text-sm text-zinc-200 w-4/5")
                         ui.button(
-                            icon="delete", on_click=lambda t=tmpl: self.delete_template(t)
+                            icon="delete", on_click=lambda *args, t=tmpl: self.delete_template(t)
                         ).props("flat small color=red")
                     ui.label(
                         f"От {tmpl.created_by} • {tmpl.created_at.strftime('%d.%m.%Y')}"

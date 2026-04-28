@@ -117,6 +117,13 @@ class FolderScannerSystem(BaseSystem):
         if self._admin_system:
             data = self._admin_system.get_node_settings(self.config.node_id, "folder_scanner")
             return FolderScannerSettings(**data)
+
+        # Fallback: use the global SettingsRegistry (initialized in main.py lifespan)
+        from docuflow.domain.settings import registry
+
+        data = registry.get_module_settings(self.config.node_id, "folder_scanner")
+        if data:
+            return FolderScannerSettings.model_validate(data)
         return FolderScannerSettings()
 
     @property
@@ -235,7 +242,9 @@ class FolderScannerSystem(BaseSystem):
 
             scan_log = WorkLog(
                 log_type=WorkLogType.INFO,
-                message=f"Scanner completed cycle. Discovered {self._items_discovered_count} items.",
+                message=(
+                    f"Scanner completed cycle. Discovered {self._items_discovered_count} items."
+                ),
                 node_id=self.config.node_id,
             )
             db_session.add(scan_log)
@@ -346,6 +355,8 @@ class FolderScannerSystem(BaseSystem):
                 select(TaskItem).where(TaskItem.file_path == relative_path)
             ).first()
             if not task:
+                if work_item.id is None:
+                    raise RuntimeError("WorkItem has no id after commit")
                 task = TaskItem(
                     work_item_id=work_item.id,
                     file_name=gnc_path.name,
@@ -360,18 +371,14 @@ class FolderScannerSystem(BaseSystem):
                     gnc_date=parsed_data.gnc_date,
                 )
                 db_session.add(task)
-                db_session.commit()
-                db_session.refresh(task)
-
-            # Synchronize systemic links
-            task.mat_type_id = mat_id
-            db_session.add(task)
-            db_session.commit()  # Atomic save before parts recursion
+                db_session.commit()  # Atomic save before parts recursion
 
             # Resolve parts: we will handle each part in its own atomic scope
             # to keep the code clean and thread-safe.
             # We pass only necessary IDs to ensure no session cross-contamination.
             task_id = task.id
+            if task_id is None:
+                raise RuntimeError("TaskItem has no id after commit")
             for part_data in parsed_data.parts:
                 await self.resolve_part_mapping(part_data, task_id, mat_id)
 
@@ -388,8 +395,10 @@ class FolderScannerSystem(BaseSystem):
             )
             return mat.id
 
-    async def resolve_part_mapping(self, part_data, task_id: int, mat_id: int):
+    async def resolve_part_mapping(self, part_data, task_id: int | None, mat_id: int | None):
         """Maps nested parts to the global library and increments task-part counts."""
+        if task_id is None:
+            raise RuntimeError("Cannot map part without task_id")
         async with self.sdk.request_scope():
             part_sys = await self.sdk.resolve_system_by_type(PartLibrarySystem)
 
@@ -400,18 +409,23 @@ class FolderScannerSystem(BaseSystem):
                     )
                 ).first()
 
-            if not part_entry:
-                bbox_x, bbox_y, svg_path = self.preview_generator.generate(part_data, part_data.sku)
-                # This has internal commit so it's safe
-                part_entry = part_sys.synchronize_part_definition(
-                    sku=part_data.sku,
-                    version=part_data.version,
-                    mat_type_id=mat_id,
-                    bbox_x=bbox_x,
-                    bbox_y=bbox_y,
-                    svg_preview_path=svg_path,
-                    contour_count=len(part_data.contours),
-                )
+                if not part_entry:
+                    db_session.commit()  # close early so synchronize can use its own session
+                    bbox_x, bbox_y, svg_path = self.preview_generator.generate(
+                        part_data, part_data.sku
+                    )
+                    part_entry = part_sys.synchronize_part_definition(
+                        sku=part_data.sku,
+                        version=part_data.version,
+                        mat_type_id=mat_id,
+                        bbox_x=bbox_x,
+                        bbox_y=bbox_y,
+                        svg_preview_path=svg_path,
+                        contour_count=len(part_data.contours),
+                    )
+
+                # Capture ID before session expires the instance
+                part_entry_id = part_entry.id
 
         # Task Link
         with Session(self.db_engine) as db_session:
@@ -429,7 +443,7 @@ class FolderScannerSystem(BaseSystem):
                     part_sku=part_data.sku,
                     version=part_data.version,
                     qty=part_data.qty,
-                    part_id=part_entry.id,
+                    part_id=part_entry_id,
                 )
                 db_session.add(mapping)
                 db_session.commit()

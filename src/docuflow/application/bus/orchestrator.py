@@ -5,6 +5,7 @@ from loguru import logger
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.messages import CommandType, P2PMessage, P2PPayload
+from docuflow.infrastructure import constants
 from docuflow.infrastructure.config import Config
 
 if TYPE_CHECKING:
@@ -74,6 +75,8 @@ class P2POrchestrator(BaseSystem):
     @property
     def is_leader(self) -> bool:
         """Check if this node is currently the cluster LEADER/MASTER."""
+        if self._coordination is None:
+            return False
         return self._coordination.is_leader
 
     async def on_startup(self) -> None:
@@ -123,6 +126,10 @@ class P2POrchestrator(BaseSystem):
 
     async def _run_orchestration_master(self) -> None:
         """Master background task that manages the lifetime of all orchestration sub-tasks."""
+        if self._cancel_scope is None:
+            raise RuntimeError("Orchestrator cancel scope is not initialized")
+        if self._coordination is None:
+            raise RuntimeError("Orchestrator coordination is not initialized")
         with self._cancel_scope:
             async with anyio.create_task_group() as tg:
                 # 1. Coordination Loop (Leader Election / Heartbeats)
@@ -151,21 +158,30 @@ class P2POrchestrator(BaseSystem):
 
     async def _polling_worker(self) -> None:
         """Periodic worker to check for and process inbox/outbox messages."""
+        if self._bus is None or self._dispatcher is None:
+            logger.warning("Orchestrator: Bus or dispatcher not initialized, skipping polling.")
+            return
         logger.info("Orchestrator: Polling worker started.")
         while self._is_running:
             logger.trace(
-                f"Orchestrator [{self.config.node_id}]: Polling bus (interval: {self.config.bus_poll_interval}s)"
+                f"Orchestrator [{self.config.node_id}]: "
+                f"Polling bus (interval: {self.config.bus_poll_interval}s)"
             )
             try:
                 # In Iteration 3, we route these messages to domain handlers
                 messages = await self._bus.poll_messages()
                 for msg_data in messages:
+                    filename = msg_data.get("_filename")
                     try:
                         # 1. Parse raw message
                         p2p_msg = P2PMessage.model_validate(msg_data)
 
                         # 2. Dispatch to domain handlers (includes security check)
                         self._dispatcher.dispatch(p2p_msg)
+
+                        # 3. Delete successfully processed message
+                        if filename:
+                            await self._bus.delete_message(constants.BUS_INBOX_DIR, filename)
                     except Exception as msg_error:
                         logger.warning(f"Orchestrator: Failed to process message: {msg_error}")
 
@@ -181,6 +197,8 @@ class P2POrchestrator(BaseSystem):
             command: The type of operation to perform.
             data: The command-specific payload.
         """
+        if self._signer is None or self._bus is None:
+            raise RuntimeError("Orchestrator signer or bus not initialized")
         import time
 
         self._outbound_sequence += 1
@@ -204,12 +222,19 @@ class P2POrchestrator(BaseSystem):
 
     async def _maintenance_worker(self) -> None:
         """Periodic worker for leader-based synchronization and housekeeping."""
+        if self._coordination is None or self._sync is None or self._housekeeping is None:
+            logger.warning(
+                "Orchestrator: Coordination, sync, or housekeeping not initialized, "
+                "skipping maintenance."
+            )
+            return
         logger.info("Orchestrator: Maintenance worker started.")
         while self._is_running:
             try:
                 if self._coordination.is_leader:
                     logger.trace(
-                        f"Orchestrator [{self.config.node_id}]: PEER LEADER - Running maintenance..."
+                        f"Orchestrator [{self.config.node_id}]: "
+                        "PEER LEADER - Running maintenance..."
                     )
                     # 1. Database Sync (Master Snapshot)
                     await self._sync.create_master_snapshot()
@@ -229,6 +254,9 @@ class P2POrchestrator(BaseSystem):
         Args:
             data: Payload containing 'cooldown' (optional).
         """
+        if self._coordination is None:
+            logger.warning("Orchestrator: Cannot step down, coordination not initialized.")
+            return
         cooldown = data.get("cooldown", 30.0)
         logger.warning(f"[{self.config.node_id}] Orchestrator: Received FORCE_STEP_DOWN command.")
         await self._coordination.step_down(cooldown=float(cooldown))

@@ -69,7 +69,7 @@ class AuthSystem(BaseSystem):
                 User(
                     username="admin",
                     password_hash=self.hash_password(default_password or "admin"),
-                    role_id=admin_role.id,
+                    role_id=admin_role.id,  # type: ignore[arg-type]
                     allowed_workplaces="[]",
                 )
             )

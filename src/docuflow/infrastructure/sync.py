@@ -79,7 +79,7 @@ class DataSyncSystem(BaseSystem):
         snapshot_content = await anyio.Path(snapshot_path).read_text()
         snapshot_data = json.loads(snapshot_content)
 
-        await anyio.to_thread.run_sync(self._merge_snapshot_data, snapshot_data)
+        await anyio.to_thread.run_sync(self._merge_snapshot_data, snapshot_data)  # type: ignore[attr-defined]
         logger.info(f"DataSync: Applied snapshot {snapshot_path.name}")
 
     def set_orchestrator(self, orchestrator: Any) -> None:
@@ -110,7 +110,8 @@ class DataSyncSystem(BaseSystem):
                 data[key] = val.isoformat()
 
         logger.info(
-            f"DataSync: Broadcasting delta for {type(entity).__name__} (ID: {getattr(entity, 'id', 'unknown')})"
+            f"DataSync: Broadcasting delta for {type(entity).__name__} "
+            f"(ID: {getattr(entity, 'id', 'unknown')})"
         )
         await self._orchestrator.broadcast_request(CommandType.UPSERT_USER, data)
 
@@ -132,7 +133,7 @@ class DataSyncSystem(BaseSystem):
                     data_map[table_name] = [r.model_dump() for r in records]
             return data_map
 
-        return await anyio.to_thread.run_sync(_sync_extract)
+        return await anyio.to_thread.run_sync(_sync_extract)  # type: ignore[attr-defined]
 
     async def _write_snapshot_atomically(self, path: Path, data: dict) -> None:
         """Serialize data to JSON and write to the shared drive."""
@@ -155,7 +156,7 @@ class DataSyncSystem(BaseSystem):
                 if not remote_rows:
                     continue
 
-                pk_names = [c.name for c in entity_cls.__table__.primary_key]
+                pk_names = [c.name for c in entity_cls.__table__.primary_key]  # type: ignore[attr-defined]
 
                 for row_dict in remote_rows:
                     self._process_remote_row(session, entity_cls, row_dict, pk_names)

@@ -266,7 +266,9 @@ class MainLayout:
                     return (
                         ui.button(label, icon=icon, on_click=lambda: switch_view_fn(view_name))
                         .classes(
-                            "w-full justify-start normal-case text-slate-300 hover:text-white px-4 py-3 rounded-xl hover:bg-white/5 transition-all"
+                            "w-full justify-start normal-case text-slate-300 "
+                            "hover:text-white px-4 py-3 rounded-xl "
+                            "hover:bg-white/5 transition-all"
                         )
                         .props("flat")
                     )
@@ -319,6 +321,8 @@ class MainLayout:
             results_menu = ui.menu().props("no-parent-event fit")
 
             async def handle_search(e):
+                if self.search_system is None:
+                    return
                 query = e.value
                 if not query or len(query) < 2:
                     results_menu.close()

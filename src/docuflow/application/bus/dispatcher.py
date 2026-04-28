@@ -62,7 +62,8 @@ class SecureDispatcher(BaseSystem):
         signable_content = message.to_signable_content()
         if not self._signer.verify(signable_content, message.signature):
             logger.warning(
-                f"[{self.config.node_id}] Dispatcher: Security alert! Invalid signature from {message.sender_id}"
+                f"[{self.config.node_id}] Dispatcher: Security alert! "
+                f"Invalid signature from {message.sender_id}"
             )
             raise ValueError("Invalid message signature")
 
@@ -70,7 +71,8 @@ class SecureDispatcher(BaseSystem):
         last_seq = self._last_sequences.get(message.sender_id, -1)
         if message.sequence <= last_seq:
             logger.warning(
-                f"[{self.config.node_id}] Dispatcher: Replay detected! Node {message.sender_id} seq {message.sequence} <= {last_seq}"
+                f"[{self.config.node_id}] Dispatcher: Replay detected! "
+                f"Node {message.sender_id} seq {message.sequence} <= {last_seq}"
             )
             raise ValueError(
                 f"Duplicate or out-of-order sequence (prev: {last_seq}, got: {message.sequence})"
@@ -90,6 +92,7 @@ class SecureDispatcher(BaseSystem):
         self._last_sequences[message.sender_id] = message.sequence
 
         logger.info(
-            f"[{self.config.node_id}] Dispatcher: Executing {command} from {message.sender_id} (seq: {message.sequence})"
+            f"[{self.config.node_id}] Dispatcher: Executing {command} "
+            f"from {message.sender_id} (seq: {message.sequence})"
         )
         return handler(message.payload.data)

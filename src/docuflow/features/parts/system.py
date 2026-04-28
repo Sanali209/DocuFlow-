@@ -38,7 +38,9 @@ class PartLibrarySystem(BaseSystem):
         Idempotently creates or updates a part specification in the global library.
 
         Example:
-            part = system.synchronize_part_definition(sku="BASE-001", version="B", bbox_x=100.5, bbox_y=200.0)
+            part = system.synchronize_part_definition(
+                sku="BASE-001", version="B", bbox_x=100.5, bbox_y=200.0
+            )
         """
         db = self.db_session
         statement = select(PartLibrary).where(
@@ -110,10 +112,10 @@ class PartLibrarySystem(BaseSystem):
         tolerance_factor = actual_tolerance / 100.0
 
         statement = select(PartLibrary).where(
-            PartLibrary.bbox_x.between(
+            PartLibrary.bbox_x.between(  # type: ignore[attr-defined]
                 x_dimension * (1 - tolerance_factor), x_dimension * (1 + tolerance_factor)
             ),
-            PartLibrary.bbox_y.between(
+            PartLibrary.bbox_y.between(  # type: ignore[attr-defined]
                 y_dimension * (1 - tolerance_factor), y_dimension * (1 + tolerance_factor)
             ),
         )
@@ -128,8 +130,8 @@ class PartLibrarySystem(BaseSystem):
         db = self.db_session
         statement = (
             select(WorkItem)
-            .join(TaskItem, WorkItem.id == TaskItem.work_item_id)
-            .join(TaskPart, TaskItem.id == TaskPart.task_item_id)
+            .join(TaskItem, WorkItem.id == TaskItem.work_item_id)  # type: ignore[arg-type]
+            .join(TaskPart, TaskItem.id == TaskPart.task_item_id)  # type: ignore[arg-type]
             .where(TaskPart.part_sku == sku)
             .distinct()
         )
@@ -142,8 +144,8 @@ class PartLibrarySystem(BaseSystem):
         db = self.db_session
         statement = (
             select(ProductionUnit)
-            .join(TaskItem, ProductionUnit.task_item_id == TaskItem.id)
-            .join(TaskPart, TaskItem.id == TaskPart.task_item_id)
+            .join(TaskItem, ProductionUnit.task_item_id == TaskItem.id)  # type: ignore[arg-type]
+            .join(TaskPart, TaskItem.id == TaskPart.task_item_id)  # type: ignore[arg-type]
             .where(TaskPart.part_sku == sku)
             .distinct()
         )
@@ -158,7 +160,9 @@ class PartLibrarySystem(BaseSystem):
         Attaches a reusable warning or informational template to a part SKU.
 
         Example:
-            system.create_part_template(sku="A1", note_message="Sharp edges", severity_level="caution")
+            system.create_part_template(
+                sku="A1", note_message="Sharp edges", severity_level="caution"
+            )
         """
         db = self.db_session
         template = PartTemplate(

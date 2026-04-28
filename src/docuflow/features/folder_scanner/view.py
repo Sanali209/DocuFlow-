@@ -59,7 +59,7 @@ class ScannerView(BaseDocuWidget):
         self.engine = engine
         self.layout = layout
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def render(self):
         """Render the scanner management interface."""
         async with self.scope() as req:
@@ -170,7 +170,8 @@ class ScannerView(BaseDocuWidget):
                         with ui.column().classes("gap-1 text-xs text-slate-400"):
                             if latest_mirror_log:
                                 ui.label(
-                                    f"Last sync: {latest_mirror_log.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+                                    f"Last sync: "
+                                    f"{latest_mirror_log.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
                                 )
                             else:
                                 ui.label("Last sync: Never")
@@ -232,7 +233,8 @@ class ScannerView(BaseDocuWidget):
                                 "text-slate-300"
                             )
                         with ui.row().classes(
-                            "w-full justify-between items-center text-xs pt-2 border-t border-white/5"
+                            "w-full justify-between items-center text-xs pt-2 "
+                            "border-t border-white/5"
                         ):
                             ui.label("LOCAL NS MIRROR").classes("text-indigo-400 font-bold")
                             ui.label(settings.local_ns_path or "OFF").classes(

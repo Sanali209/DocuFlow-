@@ -54,9 +54,11 @@ class ChatSystem(BaseSystem):
         """
         Create and record a new message, then broadcast to peers via FileBus.
         """
+        session = self.db_session
+
         # Perform context inheritance if replying to a thread
         if parent_message_id and not any([ref_project_id, ref_work_item_id, ref_task_item_id]):
-            parent_msg = self.session.get(ChatMessage, parent_message_id)
+            parent_msg = session.get(ChatMessage, parent_message_id)
             if parent_msg:
                 ref_project_id = parent_msg.ref_project_id
                 ref_work_item_id = parent_msg.ref_work_item_id
@@ -75,9 +77,9 @@ class ChatSystem(BaseSystem):
             is_read=False,
         )
 
-        self.session.add(new_message)
-        self.session.commit()  # Ensure data is committed
-        self.session.refresh(new_message)
+        session.add(new_message)
+        session.commit()  # Ensure data is committed
+        session.refresh(new_message)
 
         # P2P Notification via FileBus
         if self.sdk:
@@ -142,6 +144,7 @@ class ChatSystem(BaseSystem):
             ref_type: One of 'project', 'work_item', 'task_item'.
             ref_id: Database identity of the linked entity.
         """
+        session = self.db_session
         FIELD_MAP = {
             "project": ChatMessage.ref_project_id,
             "work_item": ChatMessage.ref_work_item_id,
@@ -158,13 +161,14 @@ class ChatSystem(BaseSystem):
             .limit(limit)
         )
 
-        return list(self.session.exec(statement).all())
+        return list(session.exec(statement).all())
 
     def get_recursive_thread(self, root_message_id: int) -> list[ChatMessage]:
         """
         Assembles all children of a message into a single linear discussion list.
         """
-        root_msg = self.session.get(ChatMessage, root_message_id)
+        session = self.db_session
+        root_msg = session.get(ChatMessage, root_message_id)
         if not root_msg:
             return []
 
@@ -177,10 +181,11 @@ class ChatSystem(BaseSystem):
                 .order_by(ChatMessage.created_at.asc())  # type: ignore[attr-defined]
             )
 
-            children = self.session.exec(children_statement).all()
+            children = session.exec(children_statement).all()
             for child in children:
                 results.append(child)
-                _fetch_children(child.id)
+                if child.id is not None:
+                    _fetch_children(child.id)
 
         _fetch_children(root_message_id)
         return results
@@ -189,16 +194,17 @@ class ChatSystem(BaseSystem):
         """
         Retrieves the most recent broadcast messages that are not linked to a project or task.
         """
+        session = self.db_session
         statement = (
             select(ChatMessage)
-            .where(ChatMessage.ref_project_id.is_(None))
-            .where(ChatMessage.ref_work_item_id.is_(None))
-            .where(ChatMessage.ref_task_item_id.is_(None))
+            .where(ChatMessage.ref_project_id.is_(None))  # type: ignore[attr-defined]
+            .where(ChatMessage.ref_work_item_id.is_(None))  # type: ignore[attr-defined]
+            .where(ChatMessage.ref_task_item_id.is_(None))  # type: ignore[attr-defined]
             .order_by(ChatMessage.created_at.desc())  # type: ignore[attr-defined]
             .limit(limit)
         )
 
-        return list(self.session.exec(statement).all())
+        return list(session.exec(statement).all())
 
     # --- File Management ---
 
@@ -223,7 +229,8 @@ class ChatSystem(BaseSystem):
         self, message_id: int, filename: str, full_path: Path, size_bytes: int
     ):
         """Internal: Update ChatMessage metadata with file pointer."""
-        chat_msg = self.session.get(ChatMessage, message_id)
+        session = self.db_session
+        chat_msg = session.get(ChatMessage, message_id)
         if not chat_msg:
             return
 
@@ -236,8 +243,8 @@ class ChatSystem(BaseSystem):
         )
 
         chat_msg.attachments = json.dumps(existing_attachments)
-        self.session.add(chat_msg)
-        self.session.flush()
+        session.add(chat_msg)
+        session.flush()
 
     def get_physical_path(self, relative_attachment_path: str) -> Path:
         """Resolve a metadata path string to a real Local Path for downloading."""

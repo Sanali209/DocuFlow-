@@ -48,7 +48,6 @@ class AnalyticsView(BaseDocuWidget):
                     metrics = system.get_dashboard_metrics()
 
                     total_work_items = metrics["total_work_items"]
-                    total_tasks = metrics["total_tasks"]
                     total_pallets = metrics["total_pallets"]
                     total_parts_produced = metrics["total_parts_produced"]
                     avg_drift = metrics["avg_drift"]

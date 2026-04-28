@@ -49,12 +49,12 @@ class ExplorerButton(BaseDocuWidget):
         """Открывает папку в проводнике или показывает путь при ошибке."""
         try:
             # subprocess.Popen is non-blocking, so we don't need safe_action/timer here
-            subprocess.Popen(["explorer.exe", str(self.path)])
+            subprocess.Popen(["explorer.exe", str(self.path)])  # noqa: S603,S607
         except Exception as e:
             NotifyHelper.error(f"Не удалось открыть проводник автоматически: {e}")
-            self._show_fallback_dialog(str(e))
+            self._show_fallback_dialog()
 
-    def _show_fallback_dialog(self, error_msg: str) -> None:
+    def _show_fallback_dialog(self) -> None:
         """Показывает диалог с путем и кнопкой копирования при ошибке открытия."""
         with ui.dialog() as dialog, ui.card().classes("p-6 w-[500px]"):
             ui.label("📁 Путь к папке").classes("text-h6 mb-2")

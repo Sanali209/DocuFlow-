@@ -86,7 +86,8 @@ class ReportsView(BaseDocuWidget):
                 # 2. Live Preview Panel
                 with ui.column().classes(self.UI_THEME["preview_bg"]):
                     ui.label("LIVE REPORT PREVIEW").classes(
-                        "absolute top-4 right-4 text-[10px] font-bold text-slate-300 tracking-tighter mix-blend-difference"
+                        "absolute top-4 right-4 text-[10px] font-bold text-slate-300 "
+                        "tracking-tighter mix-blend-difference"
                     )
                     self.html_preview_slot = ui.html("").classes(
                         "w-full h-full p-8 overflow-y-auto"
@@ -160,7 +161,8 @@ class ReportsView(BaseDocuWidget):
         except Exception as e:
             # Fallback error UX
             self.html_preview_slot.content = f"""
-            <div style="color: #ef4444; padding: 40px; font-family: monospace; background: #fef2f2; border: 1px solid #fee2e2;">
+            <div style="color: #ef4444; padding: 40px; font-family: monospace;
+                background: #fef2f2; border: 1px solid #fee2e2;">
                 <h3 style="margin-top: 0;">Reporting Engine Error</h3>
                 <p>The template failed to assemble blocks: <b>{e!s}</b></p>
                 <hr style="border-top:1px solid #fee2e2; margin: 20px 0;"/>

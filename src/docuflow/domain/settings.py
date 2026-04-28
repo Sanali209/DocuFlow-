@@ -43,7 +43,7 @@ class SettingsRegistry:
 
     def init(self, admin_system: Any) -> None:
         """Initialize registry with admin system for database access."""
-        self._admin = admin_system
+        self._admin = admin_system  # type: ignore[misc]
         logger = logging.getLogger(__name__)
         logger.info(f"SettingsRegistry.init: admin_system set to {type(admin_system).__name__}")
 
@@ -68,7 +68,8 @@ class SettingsRegistry:
         filtered_fields = []
         for name, field in schema.model_fields.items():
             # Check for scope in json_schema_extra
-            extra = field.json_schema_extra or {}
+            extra_raw = field.json_schema_extra
+            extra = extra_raw if isinstance(extra_raw, dict) else {}
             if extra.get("scope") == scope:
                 filtered_fields.append(name)
         return filtered_fields

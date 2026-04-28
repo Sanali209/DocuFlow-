@@ -1,23 +1,35 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.6
+    rev: v0.15.12
     hooks:
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--fix]
+        files: ^src/
       - id: ruff-format
+        files: ^src/
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.16.0
+  - repo: local
     hooks:
-      - id: mypy
-        args: [--config-file=mypy.ini, src/]
-        additional_dependencies: [sqlmodel, pydantic]
+      - id: pyright
+        name: pyright
+        entry: uv run pyright src/
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^src/
 
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-added-large-files
-        args: ['--maxkb=500']
+      - id: import-linter
+        name: import-linter
+        entry: uv run lint-imports
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^src/
+
+      - id: vulture
+        name: vulture
+        entry: uv run vulture src/ --min-confidence 80
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^src/

@@ -42,10 +42,13 @@ class DocumentationPortal:
 # DocuFlow System Administration Guide
 
 ## 1. P2P Cluster Monitoring
-Administrative nodes can monitor the health of the entire cluster via the **Health Registry**. Every node emits a heartbeat every 30 seconds to the shared network.
+Administrative nodes can monitor the health of the entire cluster via the
+**Health Registry**. Every node emits a heartbeat every 30 seconds to the
+shared network.
 
 ## 2. Identity Management
-User accounts and roles are decentralized. Updates to the **Identity Registry** are broadcast across the P2P bus using HMAC signatures.
+User accounts and roles are decentralized. Updates to the **Identity
+Registry** are broadcast across the P2P bus using HMAC signatures.
 
 ## 3. Emergency Step-Down
 In case of leader failure, utilize the 'EMERGENCY STEP DOWN' command to trigger a new election.
@@ -57,10 +60,12 @@ In case of leader failure, utilize the 'EMERGENCY STEP DOWN' command to trigger 
 # DocuFlow Warehouse User Manual
 
 ## 1. Material Stock Tracking
-The Warehouse module uses absolute-value synchronization. Changes to physical stock are immediately reflected across all nodes.
+The Warehouse module uses absolute-value synchronization. Changes to
+physical stock are immediately reflected across all nodes.
 
 ## 2. Access Authorization
-Your sidebar will dynamicall update based on your **Role** and the **Workplace** binding of the current node.
+Your sidebar will dynamicall update based on your **Role** and the
+**Workplace** binding of the current node.
             """)
 
     def build_portal(self):

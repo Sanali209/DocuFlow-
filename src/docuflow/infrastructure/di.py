@@ -97,7 +97,7 @@ class AppProvider(Provider):
         )
 
         @event.listens_for(engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, connection_record):
+        def set_sqlite_pragma(dbapi_connection, _connection_record):
             """Apply performance-tuning PRAGMAs to each new SQLite connection."""
             cursor = dbapi_connection.cursor()
             try:

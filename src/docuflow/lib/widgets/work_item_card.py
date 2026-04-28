@@ -13,7 +13,6 @@ from docuflow.domain.entities.production import (
     WorkItem,
     WorkItemStatus,
 )
-from docuflow.features.work_items.system import WorkItemSystem
 from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
@@ -64,7 +63,8 @@ class WorkItemCard(BaseDocuWidget):
             ):
                 # Custom Header
                 with ui.row().classes(
-                    "w-full items-center justify-between p-6 bg-slate-800/60 border-b border-slate-700/50"
+                    "w-full items-center justify-between p-6 bg-slate-800/60 "
+                    "border-b border-slate-700/50"
                 ):
                     with ui.row().classes("items-center gap-3"):
                         ui.icon("assignment", size="32px").classes("text-teal-400")
@@ -88,7 +88,8 @@ class WorkItemCard(BaseDocuWidget):
                 with ui.scroll_area().classes("h-[70vh] w-full p-6"):
                     # Metadata Grid (High Contrast)
                     with ui.grid(columns=3).classes(
-                        "w-full gap-6 mb-8 p-6 bg-slate-800/50 rounded-2xl border border-slate-700/50"
+                        "w-full gap-6 mb-8 p-6 bg-slate-800/50 "
+                        "rounded-2xl border border-slate-700/50"
                     ):
                         self._info_item("Наряд", self.work_item.sidra_number or "—")
                         self._info_item("Тип", self.work_item.work_item_type)
@@ -106,7 +107,8 @@ class WorkItemCard(BaseDocuWidget):
                                 "text-[10px] text-teal-400 font-black tracking-tighter"
                             )
                             ui.label(self.work_item.folder_path).classes(
-                                "text-xs text-slate-300 font-mono break-all bg-slate-900/50 p-2 rounded border border-slate-700/50"
+                                "text-xs text-slate-300 font-mono break-all bg-slate-900/50 "
+                                "p-2 rounded border border-slate-700/50"
                             )
 
                     # Action Buttons
@@ -138,14 +140,14 @@ class WorkItemCard(BaseDocuWidget):
                         ui.label("СОСТАВ НАЗАДА (GNC ФАЙЛЫ)").classes(
                             "text-xs font-black text-slate-500 tracking-widest"
                         )
-                        await self._render_tasks_table()
+                        await self._render_tasks_table()  # type: ignore[call-arg]
 
                     # History Section
                     ui.separator().classes("my-8 bg-slate-700/50")
                     ui.label("ЖУРНАЛ СОБЫТИЙ").classes(
                         "text-xs font-black text-slate-500 tracking-widest mb-4"
                     )
-                    await self._render_work_log()
+                    await self._render_work_log()  # type: ignore[call-arg]
 
                 # Footer
                 with ui.row().classes(
@@ -168,6 +170,9 @@ class WorkItemCard(BaseDocuWidget):
     @ui.refreshable
     async def _render_tasks_table(self) -> None:
         """Рендерит таблицу задач внутри наряда с возможностью захвата."""
+        # Import deferred to avoid lib -> features dependency at module load
+        from docuflow.features.work_items.system import WorkItemSystem
+
         columns = [
             {"name": "file_name", "label": "Файл GNC", "field": "file_name", "align": "left"},
             {"name": "sheet_qty", "label": "Листов", "field": "sheet_qty"},
@@ -215,6 +220,9 @@ class WorkItemCard(BaseDocuWidget):
     @ui.refreshable
     async def _render_work_log(self) -> None:
         """Рендерит лог аудита."""
+        # Import deferred to avoid lib -> features dependency at module load
+        from docuflow.features.work_items.system import WorkItemSystem
+
         async with self.scope() as req:
             wi_sys = await req.get(WorkItemSystem)
             logs = wi_sys.get_logs_for_work_item(self.work_item.id)
@@ -234,10 +242,11 @@ class WorkItemCard(BaseDocuWidget):
     def _go_to_task_board(self, dialog) -> None:
         """Переходит к доске задач с фильтром по текущему наряду."""
         dialog.close()
-        if self.on_navigate:
+        on_navigate = self.on_navigate
+        if on_navigate is not None:
             ui.timer(
                 0.1,
-                lambda: self.on_navigate("task_board", filter_work_item=self.work_item.id),
+                lambda: on_navigate("task_board", filter_work_item=self.work_item.id),
                 once=True,
             )
 
@@ -246,6 +255,9 @@ class WorkItemCard(BaseDocuWidget):
 
         async def do_register():
             async with self.scope() as req:
+                # Import deferred to avoid lib -> features dependency at module load
+                from docuflow.features.work_items.system import WorkItemSystem
+
                 system = await req.get(WorkItemSystem)
                 # Ensure we update the instance within the fresh session
                 self.work_item = system.register_document(self.work_item.id, self.user)
@@ -258,6 +270,9 @@ class WorkItemCard(BaseDocuWidget):
 
         async def do_block():
             async with self.scope() as req:
+                # Import deferred to avoid lib -> features dependency at module load
+                from docuflow.features.work_items.system import WorkItemSystem
+
                 system = await req.get(WorkItemSystem)
                 system.update_status(
                     self.work_item.id,

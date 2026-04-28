@@ -42,7 +42,7 @@ class AdminView(BaseDocuWidget):
         self.admin_system = admin_system
         self.layout = layout
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def render_user_registry(self) -> None:
         """Renders the Identity Registry list."""
         try:
@@ -62,7 +62,8 @@ class AdminView(BaseDocuWidget):
                         is_root_admin = u.username.strip().lower() == "admin"
                         with ui.row().classes(
                             "w-full items-center justify-between p-4 bg-white/5 "
-                            "rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all"
+                            "rounded-xl border border-white/5 "
+                            "hover:border-indigo-500/30 transition-all"
                         ):
                             with ui.row().classes("items-center gap-4"):
                                 ui.avatar(u.username[0].upper(), color="indigo").classes(
@@ -90,7 +91,7 @@ class AdminView(BaseDocuWidget):
             ui.label("Registry Offline...").classes("text-red-400 italic")
             logger.exception(f"render_user_registry failed: {e}")
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def render_role_matrix(self) -> None:
         """Renders the Permission Matrix."""
         MODULES = [
@@ -197,14 +198,15 @@ class AdminView(BaseDocuWidget):
                                     )
                                     ui.button(f"{mod}:{perm_type}", on_click=_toggle).classes(
                                         f"text-[10px] uppercase font-bold rounded-lg px-3 py-1 "
-                                        f"bg-{color}-500/20 text-{color}-400 border border-{color}-500/30"
+                                        f"bg-{color}-500/20 text-{color}-400 "
+                                        f"border border-{color}-500/30"
                                     ).props("flat dense")
 
         except Exception as e:
             ui.label("Role Matrix Offline...").classes("text-red-400 italic")
             logger.exception(f"render_role_matrix failed: {e}")
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def render_settings_form(
         self,
         module: str,
@@ -233,7 +235,9 @@ class AdminView(BaseDocuWidget):
                 current = admin_system.get_node_settings(node_id or "global", module)
 
                 logger.debug(
-                    f"render_settings_form: scope={scope_type}, fields_count={len(fields) if fields else 0}, current_keys={list(current.keys()) if current else []}"
+                    f"render_settings_form: scope={scope_type}, "
+                    f"fields_count={len(fields) if fields else 0}, "
+                    f"current_keys={list(current.keys()) if current else []}"
                 )
 
                 with ui.column().classes(
@@ -281,7 +285,7 @@ class AdminView(BaseDocuWidget):
             ui.label("Syncing Property Grid...").classes("text-slate-500 italic")
             logger.exception(f"render_settings_form failed: {e}")
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def render_notifications_form(self) -> None:
         """Renders the notification templates form."""
         try:
@@ -297,7 +301,8 @@ class AdminView(BaseDocuWidget):
                 with ui.column().classes("w-full mt-4 gap-4"):
                     for tmpl in tmpls:
                         with ui.row().classes(
-                            "w-full items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10"
+                            "w-full items-center justify-between p-4 bg-white/5 "
+                            "rounded-xl border border-white/10"
                         ):
                             with ui.column().classes("gap-1 flex-1"):
                                 ui.label(tmpl.key).classes("text-lg font-bold text-indigo-400")
@@ -334,7 +339,7 @@ class AdminView(BaseDocuWidget):
         except Exception as e:
             ui.label(f"Notif Error: {e}").classes("text-red-400")
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def render_presets_form(self) -> None:
         """Renders the global view presets form."""
         try:
@@ -392,7 +397,8 @@ class AdminView(BaseDocuWidget):
 
                     for preset in presets:
                         with ui.row().classes(
-                            "w-full items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10"
+                            "w-full items-center justify-between p-4 bg-white/5 "
+                            "rounded-xl border border-white/10"
                         ):
                             with ui.column().classes("gap-1"):
                                 ui.label(f"{preset.name} ({preset.module})").classes(
@@ -412,7 +418,7 @@ class AdminView(BaseDocuWidget):
         except Exception as e:
             ui.label(f"Preset Error: {e}").classes("text-red-400")
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def render_bindings_panel(self) -> None:
         """Displays all workplace bindings."""
         try:
@@ -489,14 +495,15 @@ class AdminView(BaseDocuWidget):
                             ui.button(
                                 "Delete", icon="delete", on_click=delete_confirm.open
                             ).classes(
-                                "rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-xs py-2 px-4"
+                                "rounded-xl bg-red-500/20 border border-red-500/30 "
+                                "text-red-400 text-xs py-2 px-4"
                             )
 
         except Exception as e:
             ui.label(f"Binding Error: {e}").classes("text-red-400")
             logger.exception(f"Bindings panel failed: {e}")
 
-    @ui.refreshable
+    @ui.refreshable_method
     async def render_system_audit(self) -> None:
         """Renders a global timeline of system events."""
         try:
@@ -511,7 +518,9 @@ class AdminView(BaseDocuWidget):
                 with ui.column().classes("w-full gap-2"):
                     for log in logs:
                         with ui.row().classes(
-                            "w-full items-start gap-4 p-4 bg-white/5 rounded-xl border border-white/5 hover:border-indigo-500/20 transition-all"
+                            "w-full items-start gap-4 p-4 bg-white/5 "
+                            "rounded-xl border border-white/5 "
+                            "hover:border-indigo-500/20 transition-all"
                         ):
                             # Time and Type
                             with ui.column().classes("w-24 gap-0"):
@@ -756,7 +765,8 @@ class AdminView(BaseDocuWidget):
                     "text-xl font-bold text-indigo-400 mb-2"
                 )
                 ui.label(
-                    "Changing these parameters will broadcast signed P2P updates across the cluster."
+                    "Changing these parameters will broadcast signed P2P "
+                    "updates across the cluster."
                 ).classes("text-xs text-slate-500 mb-6")
 
                 from docuflow.domain.settings import registry
@@ -804,7 +814,8 @@ class AdminView(BaseDocuWidget):
                         node_id = target_node.value
                         scope = "global" if node_id is None else "local"
                         logger.debug(
-                            f"Config refresh: module={mod_select.value}, scope={scope}, node={node_id}"
+                            f"Config refresh: module={mod_select.value}, "
+                            f"scope={scope}, node={node_id}"
                         )
                         await self.render_settings_form.refresh(mod_select.value, node_id, [])
 

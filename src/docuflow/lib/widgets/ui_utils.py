@@ -5,6 +5,7 @@ Functional design improvements for better UX.
 """
 
 from collections.abc import Callable
+from typing import Any
 
 from nicegui import ui
 
@@ -138,7 +139,7 @@ class ConfirmDialog:
         self.on_confirm = on_confirm
         self.on_cancel = on_cancel
 
-    def render(self) -> None:
+    def render(self) -> Any:
         """Renders confirmation dialog."""
         with ui.dialog() as dialog, ui.card().classes("card p-6 w-[400px]"):
             ui.label(self.title).classes("text-xl font-bold text-white mb-4")

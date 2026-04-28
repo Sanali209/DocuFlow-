@@ -31,15 +31,16 @@ class ProductionSystem(BaseSystem):
             label = system.create_unique_pallet_label()
             # Output: 26-04-NODE_1-0015
         """
+        session = self.db_session
         now = datetime.datetime.now()
         prefix = f"{now.strftime('%y-%m')}-{self.config.node_id}"
 
         if sequence_number is None:
             # Atomic fetch of the next sequence number for this month/node
-            count = self.session.exec(
-                select(func.count(ProductionUnit.id)).where(
-                    ProductionUnit.label_id.startswith(f"{now.strftime('%y-%m')}")
-                )
+            count = session.exec(
+                select(func.count())
+                .select_from(ProductionUnit)
+                .where(ProductionUnit.label_id.startswith(f"{now.strftime('%y-%m')}"))
             ).one()
             sequence_number = count + 1
 
@@ -58,7 +59,7 @@ class ProductionSystem(BaseSystem):
         Example:
             pallet = system.register_finished_pallet(task_item_id=50, quantity=100, storage_id=1)
         """
-        db = self.session
+        db = self.db_session
         unique_label = self.create_unique_pallet_label()
 
         pallet_unit = ProductionUnit(
@@ -76,7 +77,7 @@ class ProductionSystem(BaseSystem):
             log_entry = WorkLog(
                 work_item_id=task_record.work_item_id,
                 task_item_id=task_item_id,
-                log_type=WorkLogType.INFO.value,
+                log_type=WorkLogType.INFO,
                 message=f"Pallet generated: {unique_label} ({quantity} units)",
                 author=author_name,
                 node_id=self.config.node_id,
@@ -97,7 +98,7 @@ class ProductionSystem(BaseSystem):
 
     def mark_as_shipped(self, pallet_id: int, author: str) -> ProductionUnit:
         """Marks a pallet as shipped/dispatched from the workshop."""
-        db = self.session
+        db = self.db_session
         pallet = db.get(ProductionUnit, pallet_id)
         if not pallet:
             raise ValueError(f"Pallet {pallet_id} not found")
@@ -110,7 +111,7 @@ class ProductionSystem(BaseSystem):
         log_entry = WorkLog(
             work_item_id=pallet.task_item.work_item_id if pallet.task_item else 0,
             task_item_id=pallet.task_item_id,
-            log_type=WorkLogType.INFO.value,
+            log_type=WorkLogType.INFO,
             message=f"Pallet SHIPPED: {pallet.label_id}",
             author=author,
             node_id=self.config.node_id,
@@ -123,9 +124,10 @@ class ProductionSystem(BaseSystem):
         """
         Lists recently registered production units for dashboard monitoring.
         """
+        session = self.db_session
         actual_limit = limit if limit is not None else self.DEFAULT_RECENT_LIMIT
         statement = select(ProductionUnit).order_by(ProductionUnit.id.desc()).limit(actual_limit)  # type: ignore[attr-defined]
-        return list(self.session.exec(statement).all())
+        return list(session.exec(statement).all())
 
     def split_production_unit(
         self, original_pallet_id: int, move_quantity: int, author: str
@@ -136,7 +138,7 @@ class ProductionSystem(BaseSystem):
         Example:
             new_pallet = system.split_production_unit(original_pallet_id=1, move_quantity=50)
         """
-        db = self.session
+        db = self.db_session
         source_pallet = db.get(ProductionUnit, original_pallet_id)
         if not source_pallet:
             raise ValueError(f"Source pallet {original_pallet_id} not found")
@@ -164,8 +166,11 @@ class ProductionSystem(BaseSystem):
         log_entry = WorkLog(
             work_item_id=source_pallet.task_item.work_item_id if source_pallet.task_item else 0,
             task_item_id=source_pallet.task_item_id,
-            log_type=WorkLogType.INFO.value,
-            message=f"Pallet split: {source_pallet.label_id} -> {secondary_label} ({move_quantity} units moved)",
+            log_type=WorkLogType.INFO,
+            message=(
+                f"Pallet split: {source_pallet.label_id} -> {secondary_label} "
+                f"({move_quantity} units moved)"
+            ),
             author=author,
             node_id=self.config.node_id,
         )
@@ -184,7 +189,7 @@ class ProductionSystem(BaseSystem):
         Example:
             system.merge_production_units(source_pallet_ids=[1, 2], target_pallet_id=3)
         """
-        db = self.session
+        db = self.db_session
         target_pallet = db.get(ProductionUnit, target_pallet_id)
         if not target_pallet:
             raise ValueError(f"Target pallet {target_pallet_id} not found")
@@ -215,8 +220,11 @@ class ProductionSystem(BaseSystem):
         log_entry = WorkLog(
             work_item_id=target_pallet.task_item.work_item_id if target_pallet.task_item else 0,
             task_item_id=target_pallet.task_item_id,
-            log_type=WorkLogType.INFO.value,
-            message=f"Consolidated into {target_pallet.label_id}: {', '.join(merged_labels_list)} (+{cumulative_moved} units)",
+            log_type=WorkLogType.INFO,
+            message=(
+                f"Consolidated into {target_pallet.label_id}: "
+                f"{', '.join(merged_labels_list)} (+{cumulative_moved} units)"
+            ),
             author=author_name,
             node_id=self.config.node_id,
         )

@@ -54,6 +54,8 @@ class IncidentSystem(BaseSystem):
         """
         Record a new workshop failure and broadcast a high-priority alert to Chat.
         """
+        session = self.db_session
+
         # 1. Create the persistent log entry
         incident_log = IncidentLog(
             incident_type=incident_type,
@@ -67,9 +69,9 @@ class IncidentSystem(BaseSystem):
             resolved=False,
         )
 
-        self.session.add(incident_log)
-        self.session.commit()  # Ensure persistent storage
-        self.session.refresh(incident_log)
+        session.add(incident_log)
+        session.commit()  # Ensure persistent storage
+        session.refresh(incident_log)
 
         # 2. Automatically notify the workshop via ChatSystem dependency
         await self._broadcast_incident_alert(incident_log)
@@ -79,25 +81,26 @@ class IncidentSystem(BaseSystem):
 
     def assign_incident(self, incident_id: int, group_name: str, author: str):
         """Assign or reassign an incident to a specific workshop group."""
-        incident = self.session.get(IncidentLog, incident_id)
+        session = self.db_session
+        incident = session.get(IncidentLog, incident_id)
         if not incident:
             return
 
         incident.assigned_group = group_name
-        self.session.add(incident)
+        session.add(incident)
 
         # Log assignment
         from docuflow.domain.entities.production import WorkLog, WorkLogType
 
         log = WorkLog(
-            log_type=WorkLogType.INFO.value,
+            log_type=WorkLogType.INFO,
             message=f"Incident {incident_id} assigned to group: {group_name}",
             author=author,
             node_id=self.config.node_id,
             work_item_id=incident.work_item_id,
         )
-        self.session.add(log)
-        self.session.commit()
+        session.add(log)
+        session.commit()
         logger.info(f"Incident {incident_id} assigned to {group_name} by {author}")
 
     async def _broadcast_incident_alert(self, incident: IncidentLog):
@@ -122,9 +125,14 @@ class IncidentSystem(BaseSystem):
         Mark a failure as fixed and calculate total workshop downtime.
 
         Example:
-            system.resolve_incident(incident_id=1, resolved_by="maintenance", resolution_note="Replaced belt")
+            system.resolve_incident(
+                incident_id=1,
+                resolved_by="maintenance",
+                resolution_note="Replaced belt",
+            )
         """
-        incident = self.session.get(IncidentLog, incident_id)
+        session = self.db_session
+        incident = session.get(IncidentLog, incident_id)
         if not incident or incident.resolved:
             return
 
@@ -134,37 +142,45 @@ class IncidentSystem(BaseSystem):
         incident.resolution_note = resolution_note
 
         # Determine total time lost in minutes
-        delta_time = incident.resolved_at - incident.created_at
+        resolved_at = incident.resolved_at
+        assert resolved_at is not None
+        delta_time = resolved_at - incident.created_at
         incident.downtime_minutes = max(0.0, delta_time.total_seconds() / 60.0)
 
         # Log the fix to the WorkLog for legal/audit purposes
         self._audit_resolution(incident)
 
-        self.session.add(incident)
-        self.session.commit()
+        session.add(incident)
+        session.commit()
         logger.info(
-            f"Incident {incident_id} resolved. Downtime: {incident.downtime_minutes:.1f} min"
+            f"Incident {incident_id} resolved. Downtime: {incident.downtime_minutes or 0.0:.1f} min"
         )
 
     def _audit_resolution(self, incident: IncidentLog):
         """
         Create a persistent WorkLog audit trail for this resolution.
         """
+        session = self.db_session
         audit_log = WorkLog(
-            log_type=WorkLogType.INFO.value,
-            message=f"Incident {incident.id} ({incident.incident_type}) resolved by {incident.resolved_by}. Downtime: {incident.downtime_minutes:.1f} min.",
+            log_type=WorkLogType.INFO,
+            message=(
+                f"Incident {incident.id} ({incident.incident_type}) "
+                f"resolved by {incident.resolved_by}. "
+                f"Downtime: {incident.downtime_minutes or 0.0:.1f} min."
+            ),
             node_id=self.config.node_id,
             work_item_id=incident.work_item_id,
             task_item_id=incident.task_item_id,
         )
-        self.session.add(audit_log)
+        session.add(audit_log)
 
     # --- Analytics & Reporting Queries (Used by ReportSystem) ---
 
     def get_summary_stats(self) -> dict[str, float]:
         """Aggregate downtime metrics by incident category."""
-        statement = select(IncidentLog).where(IncidentLog.resolved.is_(True))
-        resolved_incidents = self.session.exec(statement).all()
+        session = self.db_session
+        statement = select(IncidentLog).where(IncidentLog.resolved.is_(True))  # type: ignore[attr-defined]
+        resolved_incidents = session.exec(statement).all()
 
         stats: dict[str, float] = {}
         for incident in resolved_incidents:
@@ -176,12 +192,13 @@ class IncidentSystem(BaseSystem):
 
     def get_active_failures(self) -> list[IncidentLog]:
         """Retrieve all currently unresolved workshop failures."""
+        session = self.db_session
         statement = (
             select(IncidentLog)
-            .where(IncidentLog.resolved.is_(False))
+            .where(IncidentLog.resolved.is_(False))  # type: ignore[attr-defined]
             .order_by(IncidentLog.created_at.desc())  # type: ignore[attr-defined]
         )
-        return list(self.session.exec(statement).all())
+        return list(session.exec(statement).all())
 
     def get_recent_history(self, limit: int = 20) -> list[IncidentLog]:
         """
@@ -190,13 +207,14 @@ class IncidentSystem(BaseSystem):
         Example:
             history = system.get_recent_history(limit=5)
         """
+        session = self.db_session
         statement = (
             select(IncidentLog)
-            .where(IncidentLog.resolved.is_(True))
+            .where(IncidentLog.resolved.is_(True))  # type: ignore[attr-defined]
             .order_by(IncidentLog.resolved_at.desc())  # type: ignore[attr-defined]
             .limit(limit)
         )
-        return list(self.session.exec(statement).all())
+        return list(session.exec(statement).all())
 
     # --- System Startup & Registration ---
 
@@ -230,6 +248,8 @@ class IncidentSystem(BaseSystem):
         Query helper for registration block.
         """
         row_limit = report_params.get("limit", 50)
+        if not isinstance(row_limit, int):
+            row_limit = 50
         statement = select(IncidentLog).order_by(IncidentLog.created_at.desc()).limit(row_limit)  # type: ignore[attr-defined]
         incidents = db_session.exec(statement).all()
         return [

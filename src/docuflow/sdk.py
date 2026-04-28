@@ -25,8 +25,10 @@ class SDK:
 
     Key Responsibilities:
     - **Resource Allocation**: Resolving systems and their dependencies.
-    - **Lifecycle Management**: Orchestrating the startup and shutdown of the P2P cluster.
-    - **System Access**: Providing synchronous shortcuts to core components like Config and Orchestrator.
+        - **Lifecycle Management**: Orchestrating the startup and shutdown of
+          the P2P cluster.
+    - **System Access**: Providing synchronous shortcuts to core components like
+      Config and Orchestrator.
 
     Examples:
         >>> sdk = await init_sdk()
@@ -62,7 +64,8 @@ class SDK:
             # started or if we assume the caller handles the cold state.
             # To fix the RuntimeError, we return the cached instance if it exists.
             raise RuntimeError(
-                "SDK.orchestrator is uninitialized. Ensure on_startup() is called in the app lifespan."
+                "SDK.orchestrator is uninitialized. "
+                "Ensure on_startup() is called in the app lifespan."
             )
         return self._orchestrator
 
