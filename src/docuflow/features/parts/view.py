@@ -1,11 +1,16 @@
+from functools import partial
 from typing import Any
 
 from nicegui import ui
 
 from docuflow.domain.entities.production import PartLibrary, PartTemplate
 from docuflow.features.core.views import ViewInfo, ViewRegistry
+from docuflow.features.parts.order_cart import OrderCart
+from docuflow.features.parts.rework_generator import ReworkGenerator
 from docuflow.features.parts.system import PartLibrarySystem
+from docuflow.features.projects.system import ProjectSystem
 from docuflow.lib.base_widget import BaseDocuWidget
+from docuflow.lib.widgets.order_cart_panel import OrderCartPanel
 from docuflow.lib.widgets.part_preview import PartPreview
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
@@ -47,6 +52,12 @@ class PartLibraryView(BaseDocuWidget):
         self.mat_filter: Any = None
         self.bbox_x_min = 0
         self.bbox_x_max = 2000
+        self.cart = OrderCart()
+        self.cart_panel = OrderCartPanel(
+            self.cart,
+            on_create_order=self._create_rework_order,
+            system_scope=system_scope,
+        )
 
     @ui.refreshable
     async def render(self):
@@ -70,6 +81,9 @@ class PartLibraryView(BaseDocuWidget):
                     )
 
                     ui.button(icon="refresh", on_click=self.render.refresh).props("flat")
+
+            # --- Order Cart Panel ---
+            self.cart_panel.render()
 
             # --- Main Content (Grid) ---
             self.grid = ui.grid(columns=6).classes("w-full gap-4")
@@ -122,6 +136,26 @@ class PartLibraryView(BaseDocuWidget):
                         "absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     ):
                         ui.icon("info", size="16px").classes("text-blue-500")
+                        cart_btn = ui.button(
+                            icon="add_shopping_cart",
+                            on_click=partial(self._add_to_cart, part),
+                        ).props("flat dense round size=xs color=green")
+                        cart_btn.on("click", js_handler="(e) => e.stopPropagation()")
+
+    def _add_to_cart(self, part: PartLibrary) -> None:
+        self.cart.add(part.sku, name=part.name or part.sku, qty=1)
+        self.cart_panel.render.refresh()
+        NotifyHelper.success(f"Добавлено: {part.sku}")
+
+    async def _create_rework_order(self, name: str, items: list) -> None:
+        async with self.scope() as req:
+            project_system = await req.get(ProjectSystem)
+            project = project_system.resolve_default_workshop_project()
+            parts_system = await req.get(PartLibrarySystem)
+            gen = ReworkGenerator(parts_system.db_session, parts_system.config.shared_path)
+            gen.generate(name, project.id, items)
+        NotifyHelper.success(f"Заказ {name} создан")
+        self.render.refresh()
 
     async def open_part_details(self, part: PartLibrary):
         """Open detailed modal for a specific part."""
