@@ -117,8 +117,8 @@ class SVGGenerator:
 
             for cmd in contour.commands:
                 # Store previous position for arc calculations
-                prev_x = current_x
-                prev_y = current_y
+                prev_x: float | None = current_x
+                prev_y: float | None = current_y
 
                 # Update current position
                 if cmd.x is not None:

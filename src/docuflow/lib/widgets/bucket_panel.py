@@ -61,8 +61,8 @@ class BucketPanel(BaseDocuWidget):
                 self._render_empty_bucket()
                 return
 
-            # Группируем по batch_group_id
-            batches = self._group_by_batch(session, bucket_entries)
+            # Группируем по task_group_id
+            batches = self._group_by_task_group(session, bucket_entries)
 
             # Разделяем на Активные (есть хоть одна задача IN_PROGRESS) и Предстоящие
             active_batches = {}
@@ -98,14 +98,14 @@ class BucketPanel(BaseDocuWidget):
         self,
         session: Session,
         system: TaskBoardSystem,
-        batch_group_id: str,
+        task_group_id: str,
         tasks: list[TaskItem],
         is_active: bool = False,
     ) -> None:
-        """Вспомогательный метод для рендера карточки батча."""
+        """Вспомогательный метод для рендера карточки группы задач."""
         drift = self._calculate_batch_drift(tasks)
 
-        # Lazy import
+        # Ленивый импорт
         from .batch_card import BatchCard
 
         with ui.column().classes("w-full relative"):
@@ -116,7 +116,7 @@ class BucketPanel(BaseDocuWidget):
 
             with ui.card().classes(card_classes):
                 BatchCard(
-                    batch_group_id=batch_group_id,
+                    task_group_id=task_group_id,
                     tasks=tasks,
                     drift_percent=drift,
                     node_id=self.node_id,
@@ -143,7 +143,7 @@ class BucketPanel(BaseDocuWidget):
             ui.label("Корзина пуста").classes("text-h6 text-slate-300")
             ui.label("Нет назначенных батчей").classes("text-slate-500")
 
-    def _group_by_batch(
+    def _group_by_task_group(
         self, session: Session, entries: list[WorkerBucketEntry]
     ) -> dict[str, list[TaskItem]]:
         """
@@ -157,10 +157,10 @@ class BucketPanel(BaseDocuWidget):
         for entry in entries:
             task = session.get(TaskItem, entry.task_item_id)
             if task:
-                batch_id = str(task.task_group_id) if task.task_group_id else f"single_{task.id}"
-                if batch_id not in batches:
-                    batches[batch_id] = []
-                batches[batch_id].append(task)
+                group_id = str(task.task_group_id) if task.task_group_id else f"single_{task.id}"
+                if group_id not in batches:
+                    batches[group_id] = []
+                batches[group_id].append(task)
 
         return batches
 

@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import (
@@ -28,12 +28,12 @@ class AnalyticsSystem(BaseSystem):
         """
         session = self.db_session
 
-        wi_count = session.exec(select(func.count(WorkItem.id))).one()  # type: ignore[arg-type]
+        wi_count = session.exec(select(func.count(col(WorkItem.id)))).one()  # type: ignore[arg-type]
         incident_count = session.exec(
-            select(func.count(IncidentLog.id)).where(IncidentLog.resolved.is_(False))  # type: ignore[attr-defined]
+            select(func.count(col(IncidentLog.id))).where(col(IncidentLog.resolved).isnot(True))  # type: ignore[union-attr]
         ).one()  # type: ignore[arg-type]
         pallet_count = session.exec(
-            select(func.count(ProductionUnit.id)).where(ProductionUnit.is_stock.is_(True))  # type: ignore[attr-defined]
+            select(func.count(col(ProductionUnit.id))).where(col(ProductionUnit.is_stock).isnot(False))  # type: ignore[union-attr]
         ).one()  # type: ignore[arg-type]
 
         return {
@@ -49,14 +49,14 @@ class AnalyticsSystem(BaseSystem):
         session = self.db_session
 
         # 1. Volume Metrics
-        total_work_items = session.exec(select(func.count(WorkItem.id))).one()  # type: ignore[arg-type]
-        total_tasks = session.exec(select(func.count(TaskItem.id))).one()  # type: ignore[arg-type]
+        total_work_items = session.exec(select(func.count(col(WorkItem.id)))).one()  # type: ignore[arg-type]
+        total_tasks = session.exec(select(func.count(col(TaskItem.id)))).one()  # type: ignore[arg-type]
         completed_tasks = session.exec(
-            select(func.count(TaskItem.id)).where(TaskItem.status == TaskItemStatus.DONE)  # type: ignore[arg-type]
+            select(func.count(col(TaskItem.id))).where(TaskItem.status == TaskItemStatus.DONE)  # type: ignore[arg-type]
         ).one()  # type: ignore[arg-type]
-        total_pallets = session.exec(select(func.count(ProductionUnit.id))).one()  # type: ignore[arg-type]
-        total_parts_produced = (
-            session.exec(select(func.sum(ProductionUnit.qty_produced))).one() or 0  # type: ignore[arg-type]
+        total_pallets = session.exec(select(func.count(col(ProductionUnit.id)))).one()  # type: ignore[arg-type]
+        total_parts_produced: int = (
+            session.exec(select(func.sum(col(ProductionUnit.qty_produced)))).one() or 0  # type: ignore[arg-type]
         )
 
         # 2. Performance Metrics (Drift)
@@ -78,12 +78,12 @@ class AnalyticsSystem(BaseSystem):
         # 3. Task Status Distribution
         status_counts = {}
         for s in TaskItemStatus:
-            count = session.exec(select(func.count(TaskItem.id)).where(TaskItem.status == s)).one()  # type: ignore[arg-type]
+            count = session.exec(select(func.count(col(TaskItem.id))).where(TaskItem.status == s)).one()  # type: ignore[arg-type]
             if count > 0:
                 status_counts[s.value.upper()] = count
 
         # 4. Task Group Metrics
-        total_task_groups = session.exec(select(func.count(TaskGroup.id))).one() or 0  # type: ignore[arg-type]
+        total_task_groups = session.exec(select(func.count(col(TaskGroup.id)))).one() or 0  # type: ignore[arg-type]
 
         groups_by_status: dict[str, int] = {}
         for group in session.exec(select(TaskGroup)).all():
@@ -101,9 +101,9 @@ class AnalyticsSystem(BaseSystem):
         # 5. Node Utilization
         node_utilization: dict[str, dict[str, int]] = {}
         node_rows = session.exec(
-            select(TaskItem.assigned_to_node, TaskItem.status, func.count(TaskItem.id))  # type: ignore[arg-type]
-            .where(TaskItem.assigned_to_node.isnot(None))  # type: ignore[attr-defined]
-            .group_by(TaskItem.assigned_to_node, TaskItem.status)
+            select(col(TaskItem.assigned_to_node), col(TaskItem.status), func.count(col(TaskItem.id)))  # type: ignore[arg-type]
+            .where(col(TaskItem.assigned_to_node).isnot(None))  # type: ignore[union-attr]
+            .group_by(col(TaskItem.assigned_to_node), col(TaskItem.status))
         ).all()
         for node, status, count in node_rows:
             if node is None:
@@ -119,10 +119,10 @@ class AnalyticsSystem(BaseSystem):
         # 6. Pallets by Project
         pallet_by_project: dict[str, int] = {}
         project_pallets = session.exec(
-            select(WorkItem.project_id, func.count(ProductionUnit.id))  # type: ignore[arg-type]
+            select(col(WorkItem.project_id), func.count(col(ProductionUnit.id)))  # type: ignore[arg-type]
             .join(TaskItem, WorkItem.id == TaskItem.work_item_id)  # type: ignore[arg-type]
             .join(ProductionUnit, TaskItem.id == ProductionUnit.task_item_id)  # type: ignore[arg-type]
-            .group_by(WorkItem.project_id)  # type: ignore[arg-type]
+            .group_by(col(WorkItem.project_id))  # type: ignore[arg-type]
         ).all()  # type: ignore[arg-type]
         for proj_id, count in project_pallets:
             if proj_id is not None:

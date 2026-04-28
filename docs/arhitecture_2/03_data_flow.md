@@ -1,6 +1,7 @@
 # DocuFlow — Data Flow Document
 
-> **Версия:** 2.0 (на основе Master Plan v7)
+> **Версия:** 2.1 (Task Board v2 — на основе Master Plan v7)
+> **Спецификация:** [Task Board v2 Design](../superpowers/specs/2026-04-28-task-board-v2-design.md)
 > Описывает движение данных между источниками, системами и хранилищами.
 
 ---
@@ -76,6 +77,7 @@
           ├─ file_hash = md5(gnc_file)
           ├─ sheet_x, sheet_y, thickness, sheet_qty
           ├─ estimated_minutes
+          ├─ task_group_id = NULL (на момент сканирования)
           └─ IF hash изменился → check_file_changes()
 
         TaskPart.upsert() per PART NAME
@@ -88,6 +90,11 @@
           ├─ bbox_y = data_h
           ├─ contour_count, hole_count, corner_count
           └─ svg_preview_path
+
+        TaskGroupService.auto_group_by_material(work_item_id)
+          ├─ GROUP BY: mat_type_id + thickness
+          ├─ CREATE TaskGroup(name="ST37-2 4.0mm", work_item_id=..., grouping_rule='auto_material')
+          └─ UPDATE TaskItem.task_group_id = TaskGroup.id
 
 [SQLite DB — локальная на мастере]
   → через FileBus Snapshot → синхронизируется на slave-узлы
@@ -195,20 +202,18 @@ WorkItemSystem.register_document(work_item_id, user)
 
 ---
 
-## 6. Поток: Создание и выполнение батча
+## 6. Поток: Создание и выполнение TaskGroup
 
 ```
-[Бригадир — task_board/view.py]
+[Бригадир — task_board/view.py, таб "Производство"]
       │
-      ├─ BatchEngine.compute(tasks[], DEFAULT_RULE) → batches[]
-      │      DEFAULT_RULE: match_same_material=True, match_same_thickness=True,
-      │                    match_same_sheet_size=True, match_same_project=False,
-      │                    max_items_per_batch=10
-      │      GROUP BY: mat_type_id + thickness + sheet_x + sheet_y
-      │      per batch: batch_group_id = uuid4()
+      ├─ TaskGroupService.auto_group_by_material(work_item_id) → TaskGroup[]
+      │      DEFAULT: GROUP BY: mat_type_id + thickness
+      │      grouping_rule = 'auto_material'
+      │      UPDATE TaskItem.task_group_id = TaskGroup.id
       │
       ├─ STOCK_ALERT проверка:
-      │      FOR each task IN batch:
+      │      FOR each task IN group:
       │        FOR each part IN task.task_parts:
       │          IF ProductionUnit(is_stock=True, part_sku=part.sku) EXISTS:
       │            WorkLog(STOCK_ALERT, "Деталь {sku} есть в запасе!")
@@ -219,49 +224,70 @@ WorkItemSystem.register_document(work_item_id, user)
       │      TaskItem.status = BLOCKED
       │      TaskItem.block_reason = "Ждём новый раскрой" / "Нет материала" / ...
       │
-      └─ Бригадир вручную редактирует: drag&drop тасков между батчами
-
-[Оператор — WorkerBucket]
-  резервирует батч (lock_batch):
+      ├─ Бригадир редактирует группы: разбить, объединить, переместить задачу
       │
-      ├─ FileBus.REQ(lock_batch, {batch_group_id, node_id=LASER_1})
+      └─ Назначение на узел + резервирование материала:
+           InventorySystem.create_reservation(
+               stock_item_id=selected_stock_id,
+               work_item_id=work_item_id,
+               qty=estimated_sheets, is_hard=False
+           )
+
+[Оператор — WorkerBucket, таб "Моя корзина"]
+  резервирует TaskGroup (lock_taskgroup):
+      │
+      ├─ FileBus.REQ(lock_taskgroup, {task_group_id, node_id=LASER_1})
       ├─ Мастер:
-      │    WorkerBucketEntry.create() per task in batch
+      │    WorkerBucketEntry.create() per task in group
       │    NSMirrorService → запускает копирование GNC в NS
       └─ TaskItem.status = IN_PROGRESS, started_at = now
 
 [Оператор — обновляет прогресс]
   sheets_done++ → TaskItem.sheets_done (UI: прогресс-бар "5 из 8 листов")
   on_hold: pause_reason (обязательно) → WorkLog(ON_HOLD)
-  done:    qty_produced → TaskItem.qty_produced
-           TaskItem.status = DONE, completed_at = now
-           actual_minutes = (completed_at - started_at) - Σ(on_hold durations)
-           drift_pct = (actual - estimated) / estimated * 100
-           MaterialAudit(write_off, qty=sheets_done, ref=task_item)
-           ConsumableLog(use, ref=task_item)  ← если списаны расходники
+  suspended: причина → WorkLog(ON_HOLD) + TaskItem.status = SUSPENDED
+  done:
+     ├─ Авто-расчёт: qty_produced = sum(TaskPart.qty) * sheets_done
+     ├─ Диалог "Куда кладём?":
+     │    Новая паллета: ProductionUnit(label_id=..., task_item_id=task.id, qty=qty_produced)
+     │    К существующей: ProductionUnit.qty_produced += qty_produced
+     ├─ TaskItem.status = DONE, completed_at = now
+     ├─ actual_minutes = (completed_at - started_at) - Σ(on_hold durations)
+     ├─ drift_pct = (actual - estimated) / estimated * 100
+     ├─ MaterialAudit(write_off, qty=sheets_done, ref=task_item)
+     │    Приоритет: reservation → FIFO fallback
+     └─ ConsumableLog(use, ref=task_item)  ← если списаны расходники
 ```
 
 ---
 
-## 7. Поток: Создание ProductionUnit
+## 7. Поток: Создание ProductionUnit (завершение TaskItem)
 
 ```
-[Оператор — task_board/view.py]
-  TaskItem.done → диалог "Куда кладём?"
+[Оператор — task_board/view.py, TaskItem Modal]
+  TaskItem.done → диалог "Завершить задачу"
+      │
+      ├─ Авто-расчёт qty_produced:
+      │    qty_produced = sum(TaskPart.qty for part in task.parts) * sheets_done
+      │    fallback: если parts пустой → qty_produced = sheets_done
       │
       ├─ Новая паллета:
       │      label_id = generate_human_id():
-      │        year     = str(now.year)[-2:]   # "25"
-      │        month    = f"{now.month:02d}"   # "07"
-      │        node     = workplace.code        # "А"
-      │        seq      = next_seq(node, month) # "042"
-      │        → "25-07-А-042"
-      │      ProductionUnit.create(label_id, task_item_id, qty_produced, is_stock=False)
+      │        year     = str(now.year)[-2:]   # "26"
+      │        month    = f"{now.month:02d}"   # "04"
+      │        node     = workplace.code        # "LASER_1"
+      │        seq      = next_seq(node, month) # "0015"
+      │        → "26-04-LASER_1-0015"
+      │      ProductionUnit.create(
+      │          label_id, task_item_id=task.id,
+      │          qty_produced=auto_calculated, is_stock=False
+      │      )
       │      Оператор выбирает / создаёт StorageLocation
       │
       └─ К существующей паллете (live search ≥2 символа):
-             UI: "07-А" → ["25-07-А-001", "25-07-А-002", ...]
-             ProductionUnit.qty_produced += qty_new
+             UI: "LASER_1-001" → ["26-04-LASER_1-0015", ...]
+             existing_pallet.qty_produced += auto_calculated_qty
+             WorkLog: "Added to pallet X: +N units from task Y"
 
 ДО-СИСТЕМНЫЕ ПАЛЛЕТЫ:
   Кладовщик/Бригадир → ProductionUnit.create(
@@ -284,9 +310,12 @@ MERGE паллет:
 ПОИСК паллеты:
   по label_id (partial, live search)  → ProductionUnit
   по SKU детали → TaskPart → TaskItem → ProductionUnit[]
+  по task_item_id (прямая связь) → ProductionUnit[]
   по work_item  → TaskItem[] → ProductionUnit[]
+  по project    → WorkItem[] → TaskItem[] → ProductionUnit[]
   по материалу  → MaterialType → TaskItem[] → ProductionUnit[]
   по location   → StorageLocation → ProductionUnit[]
+  ОБРАТНЫЙ: label_id → ProductionUnit → TaskItem (через FK)
 ```
 
 ---
@@ -376,7 +405,46 @@ MERGE паллет:
 
 ---
 
-## 11. Поток: Генерация отчёта
+## 11. Поток: ViewState и ViewPreset
+
+```
+[Пользователь — task_board/view.py, таб "Производство"]
+  Клик на ▼/▶ раскрытия уровня:
+      │
+      ▼
+  ViewStateSystem.save_expansion_state(
+      user_id=current_user.id,
+      view_name='task_board_production',
+      states={
+          ('project', 'SHLAV-2'): True,
+          ('workitem', '3455-11-144'): True,
+          ('taskgroup', 'ST37-2 4.0mm'): True,
+      }
+  )
+  → SQLite (viewstate table)
+
+  При возвращении на вкладку:
+  ViewStateSystem.load_expansion_state(user_id, 'task_board_production')
+  → восстанавливает раскрытие иерархии
+
+[Пользователь — FilterPanel]
+  Применяет фильтры → [Сохранить пресет]
+      │
+      ▼
+  ViewPresetSystem.save_preset(
+      user_id=current_user.id,
+      name="Мои срочные",
+      view_name="task_board_production",
+      filters={status: ['IN_PROGRESS'], urgent: True, node: 'LASER_1'}
+  )
+  → SQLite (viewpreset table)
+
+  Быстрый выбор пресета из dropdown → применяет фильтры
+```
+
+---
+
+## 12. Поток: Генерация отчёта
 
 ```
 [Начальник — reports/view.py]
@@ -397,8 +465,18 @@ ReportSystem.generate(template, params):
       → WorkItemSystem.report_work_items_summary(params)
         → SELECT ... FROM workitem WHERE ...
 
+    {{ blocks.task_group_summary(date_from=..., date_to=...) }}
+      → TaskBoardSystem.report_task_group_summary(params)
+        → SELECT ... FROM taskgroup JOIN taskitem ...
+
     {{ blocks.shift_completion(node_id=...) }}
       → TaskBoardSystem.report_shift_completion(params)
+
+    {{ blocks.material_reservation_status() }}
+      → InventorySystem.report_reservation_status(params)
+
+    {{ blocks.pallet_by_project() }}
+      → ProductionSystem.report_pallets_by_project(params)
 
     {{ blocks.downtime_summary(date_from=...) }}
       → IncidentSystem.report_downtime_summary(params)
@@ -408,8 +486,9 @@ ReportSystem.generate(template, params):
 
 Встроенные шаблоны:
   "Отчёт по смене"     → shift_completion + incident_log
-  "Ход наряда"         → work_item_detail + tasks_by_node
-  "Движение материала" → material_usage + stock_snapshot
+  "Ход наряда"         → work_item_detail + tasks_by_node + task_group_summary
+  "Движение материала" → material_usage + stock_snapshot + material_reservation_status
   "Инциденты"          → incident_log + downtime_summary
   "План vs Факт"       → shift_completion + estimated vs actual drift
+  "Паллеты по проектам"→ pallet_by_project
 ```

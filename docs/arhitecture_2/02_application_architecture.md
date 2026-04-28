@@ -1,6 +1,7 @@
 # DocuFlow — Application Architecture Document
 
-> **Версия:** 2.0 (на основе Master Plan v7)
+> **Версия:** 2.1 (Task Board v2 — на основе Master Plan v7)
+> **Спецификация:** [Task Board v2 Design](../superpowers/specs/2026-04-28-task-board-v2-design.md)
 > **Стек:** Python 3.12 · NiceGUI · SQLModel · SQLite · FileBus (file-based P2P)
 
 ---
@@ -57,14 +58,18 @@ src/docuflow/
 │   │   ├── system.py               # WorkItemSystem: CRUD + lifecycle + register_document
 │   │   └── view.py                 # Список + карточка + WorkLog + PartTemplate alerts
 │   │
-│   ├── task_board/                 # 🔧 Фаза 2
-│   │   ├── batch_engine.py         # BatchEngine + BatchRule + DEFAULT_RULE
-│   │   ├── system.py               # TaskBoardSystem: bucket, status, time tracking, drift%
-│   │   └── view.py                 # Оператор: корзина | Бригадир: все узлы
+│   ├── task_board/                 # 🔧 Task Board v2
+│   │   ├── task_group_service.py   # TaskGroupService: авто/ручная группировка (замена BatchEngine)
+│   │   ├── system.py               # TaskBoardSystem: иерархия, фильтры, пресеты, bucket, drift%
+│   │   └── view.py                 # Единый Task Board: 2 таба (Производство + Моя корзина)
 │   │
 │   ├── part_library/               # 🔩 Фаза 3
 │   │   ├── system.py               # PartLibrarySystem: upsert, find_by_bbox±tol, обратный поиск
-│   │   └── view.py                 # Таблица + SVG превью + PartTemplate + bbox range slider
+│   │   └── view.py                 # Таблица + SVG превью + PartTemplate + bbox range slider + корзина заказа
+│   │
+│   ├── parts/                      # 🛒 Task Board v2 — корзина заказа деталей
+│   │   ├── order_cart.py           # OrderCart (сессионная корзина)
+│   │   └── rework_generator.py     # Генерация nest + WorkItem из корзины
 │   │
 │   ├── inventory/                 # 🏭 Фаза 3
 │   │   ├── system.py               # MaterialSystem + аудит + резервирование
@@ -99,21 +104,29 @@ src/docuflow/
 │
 ├── lib/
 │   └── widgets/                    # Переиспользуемые NiceGUI компоненты
-│       ├── status_badge.py         # Бейджи всех статусов (WorkItem, TaskItem)
-│       ├── work_item_card.py       # Карточка наряда (тип/статус/дата/chat_count)
-│       ├── task_item_row.py        # Строка таска (приоритет/материал/прогресс/urgent)
-│       ├── material_chip.py        # Чип "AA 5052-H32 / 3mm"
-│       ├── part_preview.py         # SVG из SVGGenerator (bbox + превью)
-│       ├── scan_log_panel.py       # Лог сканера (live scroll)
-│       ├── file_changed_alert.py   # Диалог: GNC изменился — Обновить/Оставить/Напомнить
-│       ├── chat_thread.py          # Дерево сообщений (рекурсивный виджет)
-│       ├── chat_compose.py         # Composer с типами + шаблоны + вложения
-│       ├── bucket_panel.py         # Корзина оператора (батчи → таски)
-│       ├── batch_card.py           # Карточка батча с drag&drop
-│       ├── report_builder.py       # Конструктор отчётов
-│       ├── view_preset_switcher.py # Notion-like вкладки пресетов
-│       ├── explorer_button.py      # "📂 Открыть в Explorer" + fallback с текстом пути
-│       └── ns_mirror_status.py     # Индикатор синхронизации NS (OK/Pending/Alert)
+│   ├── status_badge.py         # Бейджи всех статусов (WorkItem, TaskItem, TaskGroup)
+│   ├── work_item_card.py       # Карточка наряда (тип/статус/дата/chat_count)
+│   ├── task_item_row.py        # Строка таска (приоритет/материал/прогресс/urgent/паллета)
+│   ├── task_group_row.py       # Строка TaskGroup с агрегированным статусом и прогрессом
+│   ├── hierarchy_table.py      # Древовидная таблица с раскрытием уровней (новый)
+│   ├── hierarchy_row.py        # Двухстрочная строка иерархии (новый)
+│   ├── material_chip.py        # Чип "AA 5052-H32 / 3mm"
+│   ├── part_preview.py         # SVG из SVGGenerator (bbox + превью)
+│   ├── nest_preview.py         # Превью раскладки деталей на листе (новый)
+│   ├── scan_log_panel.py       # Лог сканера (live scroll)
+│   ├── file_changed_alert.py   # Диалог: GNC изменился — Обновить/Оставить/Напомнить
+│   ├── chat_thread.py          # Дерево сообщений (рекурсивный виджет)
+│   ├── chat_compose.py         # Composer с типами + шаблоны + вложения
+│   ├── bucket_panel.py         # Корзина оператора (TaskGroup → таски)
+│   ├── batch_card.py           # Карточка батча с drag&drop (deprecated → task_group_row)
+│   ├── filter_panel.py         # Панель комплексных фильтров с пресетами (новый)
+│   ├── handover_form.py        # Раскрывающаяся форма передачи смены (новый)
+│   ├── handover_banner.py      # Баннер входящей передачи смены (новый)
+│   ├── report_builder.py       # Конструктор отчётов
+│   ├── view_preset_switcher.py # Notion-like вкладки пресетов
+│   ├── explorer_button.py      # "📂 Открыть в Explorer" + fallback с текстом пути
+│   ├── ns_mirror_status.py     # Индикатор синхронизации NS (OK/Pending/Alert)
+│   └── order_cart_panel.py     # Панель корзины Part Library (новый)
 │
 └── sdk.py                          # SDK Facade (точка входа для фич)
 ```
@@ -127,14 +140,17 @@ src/docuflow/
 ```
 Project
   ├── WorkItem[] (SIDRA / MIHTAV / REWORK)
-  │     ├── TaskItem[] (один GNC файл)
-  │     │     ├── TaskPart[] (деталь + qty)
-  │     │     │     └── PartLibrary (справочник)
-  │     │     │           └── PartTemplate[] (предупреждения)
-  │     │     ├── ProductionUnit[] (паллета)
-  │     │     │     └── StorageLocation
-  │     │     ├── WorkLog[]
-  │     │     └── WorkerBucketEntry[]
+  │     ├── TaskGroup[] (группа по материалу+толщине)
+  │     │     ├── TaskItem[] (один GNC файл)
+  │     │     │     ├── TaskPart[] (деталь + qty)
+  │     │     │     │     └── PartLibrary (справочник)
+  │     │     │     │           └── PartTemplate[] (предупреждения)
+  │     │     │     ├── ProductionUnit[] (паллета)
+  │     │     │     │     └── StorageLocation
+  │     │     │     ├── WorkLog[]
+  │     │     │     └── WorkerBucketEntry[]
+  │     │     └── WorkLog[]
+  │     ├── Document[] (любые файлы в папке WorkItem)
   │     ├── Reservation[] → MaterialStock
   │     └── WorkLog[]
   │
@@ -177,7 +193,8 @@ DOC_NO_FOLDER ←── нет папки ──┘                          │
 ### 3.3 Ключевые статусы TaskItem
 
 ```
-PLANNED → IN_PROGRESS → ON_HOLD (с причиной) → IN_PROGRESS → DONE
+PLANNED → IN_PROGRESS → ON_HOLD (кратковременная, с причиной) → IN_PROGRESS → DONE
+                     → SUSPENDED (длительная приостановка) → IN_PROGRESS
                      → BLOCKED (внешняя блокировка бригадиром)
                      → CANCELLED
 ```
@@ -188,7 +205,8 @@ PLANNED → IN_PROGRESS → ON_HOLD (с причиной) → IN_PROGRESS → DO
 |---|---|---|
 | Project | project | Контейнер верхнего уровня |
 | WorkItem | workitem | Наряд / письмо / доработка |
-| TaskItem | taskitem | Один GNC файл. sheets_done, estimated/actual minutes |
+| TaskGroup | taskgroup | Группа TaskItem по материалу+толщине. grouping_rule: auto_material / manual. Нет собственного статуса (агрегирует) |
+| TaskItem | taskitem | Один GNC файл. sheets_done, estimated/actual minutes, task_group_id (FK) |
 | TaskPart | taskpart | Деталь (SKU + version + version_suffix + qty) в TaskItem |
 | PartLibrary | partlibrary | Справочник деталей (SKU → bbox из SVGGenerator) |
 | PartTemplate | parttemplate | Шаблон предупреждения для проблемной детали |
@@ -199,14 +217,15 @@ PLANNED → IN_PROGRESS → ON_HOLD (с причиной) → IN_PROGRESS → DO
 | Consumable | consumable | Расходник (сопла, линзы, лента...) |
 | ConsumableLog | consumablelog | Движения расходников |
 | StorageLocation | storagelocation | Место складирования (стеллаж) |
-| ProductionUnit | productionunit | Паллета. label_id="25-07-А-042". Split/merge |
-| WorkerBucketEntry | workerbucketentry | Корзина оператора. Handover поддержка |
+| ProductionUnit | productionunit | Паллета. label_id="25-07-А-042". task_item_id (FK, nullable). Split/merge |
+| WorkerBucketEntry | workerbucketentry | Корзина оператора. task_group_id (FK, replaces batch_group_id). Handover поддержка |
 | WorkLog | worklog | Журнал трассировки всех событий |
 | IncidentLog | incidentlog | Инциденты + вложения (JSON paths) |
-| ChatMessage | chatmessage | Чат (дерево ответов + типы + вложения) |
+| ChatMessage | chatmessage | Чат (дерево ответов + типы + вложения). HANDOVER тип |
 | Tag | tag | Тег (Срочно/Внимание/Брак) |
 | ReportTemplate | reporttemplate | Шаблон отчёта (Jinja2 HTML) |
-| ViewPreset | viewpreset | Notion-подобный пресет вида |
+| ViewPreset | viewpreset | Notion-подобный пресет вида. view_name: 'task_board_production' и др. |
+| ViewState | viewstate | Состояние раскрытия уровней иерархии (user_id + view_name + entity_type + entity_id) |
 | NotificationTemplate | notificationtemplate | Настраиваемые тексты уведомлений |
 
 ---
@@ -297,28 +316,51 @@ background loop (check_interval=60s, copy_timeout=30s):
     WorkLog(NS_MIRROR, "Удалён из NS")
 ```
 
-### 4.6 BatchEngine
+### 4.6 TaskGroupService (замена BatchEngine)
 
 ```python
-# Стандартное правило (DEFAULT_RULE):
-DEFAULT_RULE = BatchRule(
-    name="Standard",
-    match_same_material=True,
-    match_same_thickness=True,
-    match_same_sheet_size=True,
-    match_same_project=False,   # из разных нарядов — допустимо
-    max_items_per_batch=10,
-)
+class TaskGroupService:
+    def auto_group_by_material(self, work_item_id) -> list[TaskGroup]:
+        """Группировка TaskItem по материалу+толщине."""
+        pass
 
-# Алгоритм:
-BatchEngine.compute(tasks[], rule) → batches[]:
-  GROUP BY: mat_type_id + thickness + sheet_x + sheet_y (+ project если нужно)
-  per batch: batch_group_id = uuid4()
+    def create_manual_group(self, task_ids, name=None) -> TaskGroup:
+        """Ручная группировка задач."""
+        pass
 
-# Рекомендации при редактировании батча:
+    def move_task_to_group(self, task_id, group_id) -> None:
+        """Переместить задачу в другую группу."""
+        pass
+
+    def split_group(self, group_id, task_ids) -> TaskGroup:
+        """Разделить группу на две."""
+        pass
+
+    def merge_groups(self, group_ids) -> TaskGroup:
+        """Объединить несколько групп."""
+        pass
+
+    def get_group_status(self, group: TaskGroup) -> TaskGroupStatus:
+        """Агрегация статуса из задач.
+        IN_PROGRESS если хоть одна IN_PROGRESS.
+        DONE если все DONE.
+        PLANNED если все PLANNED.
+        MIXED иначе.
+        """
+        pass
+
+    def get_group_progress(self, group: TaskGroup) -> float:
+        """Средний прогресс задач в группе."""
+        pass
+```
+
+**Правило авто-группировки (DEFAULT):**
+- GROUP BY: mat_type_id + thickness (+ sheet_x + sheet_y опционально)
+- grouping_rule = 'auto_material'
+
+**Рекомендации при редактировании группы:**
   → TaskItem из других нарядов с совпадающим MAT (предложить добавить)
   → STOCK_ALERT если task_parts содержат детали из is_stock=True ProductionUnit
-```
 
 ### 4.7 Временные оценки (TaskItem)
 
@@ -351,10 +393,11 @@ class ReportDataBlock:
 
 # Зарегистрированные блоки:
 #   work_items:  "work_items_summary", "work_item_detail"
-#   task_board:  "tasks_by_node", "shift_completion"
-#   material:    "material_usage", "stock_snapshot"
+#   task_board:  "tasks_by_node", "shift_completion", "task_group_summary"
+#   material:    "material_usage", "stock_snapshot", "material_reservation_status"
 #   incidents:   "incident_log", "downtime_summary"
 #   part_lib:    "parts_produced"
+#   production:  "pallet_by_project", "node_performance"
 
 def generate(template: ReportTemplate, params: dict) -> bytes:
     context = {"blocks": BlockProxy(registry, params), "params": params}
@@ -363,7 +406,31 @@ def generate(template: ReportTemplate, params: dict) -> bytes:
     return pdf   # → ui.download()
 ```
 
-### 4.9 Поиск деталей
+### 4.9 Omnisearch (сквозной поиск)
+
+```python
+class Omnisearch:
+    def search(self, query):
+        # Поиск по Project, WorkItem, TaskItem, Document, ProductionUnit, Part
+        # Возвращает типизированные результаты
+        pass
+
+    def navigate_to_result(self, result):
+        # Переключить таб, раскрыть уровни (ViewState), выделить элемент
+        pass
+```
+
+| Тип результата | Поля поиска | Действие при клике |
+|----------------|-------------|-------------------|
+| Project | name, description | Раскрыть проект в табе "Производство" |
+| WorkItem | folder_name, sidra_number | Раскрыть наряд в табе "Производство" |
+| TaskItem | file_name, file_path | Раскрыть TaskGroup + выделить задачу |
+| Document | file_name (любой файл в папке WorkItem) | Перейти в таб "Производство", раскрыть WorkItem |
+| ProductionUnit | label_id | Показать TaskItem + паллету |
+| Part (SKU) | sku, name | Открыть Part Library с фильтром |
+| MaterialType | code | Открыть Warehouse с фильтром |
+
+### 4.10 Поиск деталей
 
 ```sql
 -- Прямой: деталь X в наряде Y
@@ -455,7 +522,10 @@ class FolderScannerSettings(BaseModuleSettings):
 │                ┌──────────────────────────────────┐   │
 │                │  ViewPreset tabs (Notion-style)   │   │
 │                ├──────────────────────────────────┤   │
-│                │  Content (table/kanban/cards)     │   │
+│                │  Content                           │   │
+│                │  • Task Board: 2 таба              │   │
+│                │    [Производство] [Моя корзина]    │   │
+│                │  • HierarchyTable / FilterPanel    │   │
 │                └──────────────────────────────────┘   │
 └──────────────────────────────────────────────────────┘
 ```
@@ -469,7 +539,20 @@ workplace_modules = set(workplace.allowed_modules)
 visible = user_modules ∩ workplace_modules
 ```
 
-### 6.3 ViewPreset система
+### 6.3 ViewState система
+
+```python
+class ViewStateSystem:
+    async def save_expansion_state(self, user_id, view_name, states: dict):
+        """Сохранить состояние раскрытия уровней иерархии."""
+        pass
+
+    async def load_expansion_state(self, user_id, view_name) -> dict:
+        """Загрузить состояние раскрытия (Project/WorkItem/TaskGroup)."""
+        pass
+```
+
+### 6.4 ViewPreset система
 
 ```
 Каждый модуль имеет именованные пресеты:
@@ -479,9 +562,13 @@ visible = user_modules ∩ workplace_modules
 Личные: owner = username
 Общие:  owner = "global" (создаёт бригадир/начальник)
 UI: вкладки переключателя вверху таблицы (как в Notion)
+
+Комплексные фильтры Task Board:
+  Проект, Статус Наряда/Группы/Задачи, Узел, Материал, Толщина,
+  Дата, Только срочные
 ```
 
-### 6.4 NotificationTemplate
+### 6.5 NotificationTemplate
 
 ```
 NotificationTemplate:

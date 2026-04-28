@@ -1,7 +1,7 @@
 from typing import Any
 
 from loguru import logger
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import (
@@ -181,7 +181,7 @@ class ConsumableSystem(BaseSystem):
         statement = (
             select(ConsumableLog)
             .where(ConsumableLog.consumable_id == consumable_id)
-            .order_by(ConsumableLog.id.desc())  # type: ignore[attr-defined]
+            .order_by(col(ConsumableLog.id).desc())  # type: ignore[union-attr]
             .limit(limit)
         )
         return list(self.db_session.exec(statement).all())

@@ -38,6 +38,7 @@ dev = [
     "vulture>=2.14",
     "radon>=6.0",
     "xenon>=0.9",
+    "types-passlib>=1.7.7.20260211",
 ]
 
 [tool.ruff]
@@ -55,6 +56,7 @@ ignore = [
     "ASYNC240", "ASYNC230",  # Sync file I/O is intentional in background loops
     "SIM105",  # try/except/pass is used intentionally (reservation fallback, etc.)
 ]
+exclude = ["._archive/**"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
@@ -71,6 +73,19 @@ max-complexity = 15
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 ignoreMissingImports = true
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+disable_error_code = ["no-any-return"]
+exclude = [
+    "._archive/",
+    ".*_archive/",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

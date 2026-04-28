@@ -102,6 +102,7 @@ class ChatView(BaseDocuWidget):
                 self._render_channel_link("General Feed", "forum", "global")
                 self._render_channel_link("Supply & Orders", "shopping_cart", "order")
                 self._render_channel_link("Failure Log", "report_problem", "incident")
+                self._render_channel_link("Производство", "construction", "production")
 
             ui.separator().classes("bg-white/5 my-4")
             ui.label("QUICK ACTIONS").classes(self.UI_STYLING["label_header"])
@@ -183,6 +184,7 @@ class ChatView(BaseDocuWidget):
             "order": ChatMessageType.ORDER,
             "incident": ChatMessageType.INCIDENT,
             "handover": ChatMessageType.HANDOVER,
+            "production": ChatMessageType.HANDOVER,  # Production channel shows HANDOVER + task events
         }
         target_type = TYPE_MAP.get(self.active_channel)
 

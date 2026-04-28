@@ -1,6 +1,6 @@
 import os
-import sys
 import time
+
 from playwright.sync_api import sync_playwright
 
 BASE_URL = "http://localhost:8082"
@@ -33,7 +33,7 @@ def check_log_for_errors():
     """Check the app log file for Python tracebacks since last check."""
     if not os.path.exists(LOG_PATH):
         return []
-    with open(LOG_PATH, "r", encoding="utf-8", errors="ignore") as f:
+    with open(LOG_PATH, encoding="utf-8", errors="ignore") as f:
         content = f.read()
     # Simple traceback detection
     errors = []
@@ -66,9 +66,7 @@ def main():
 
         # Collect console errors
         def handle_console(msg):
-            if msg.type == "error":
-                console_errors.append(f"[{msg.type}] {msg.text}")
-            elif msg.type == "warning":
+            if msg.type == "error" or msg.type == "warning":
                 console_errors.append(f"[{msg.type}] {msg.text}")
         page.on("console", handle_console)
 
@@ -131,7 +129,7 @@ def main():
                     }
                     if label in alt_labels:
                         button = page.locator(f"button:has-text('{alt_labels[label]}')").first
-                
+
                 if button.count() == 0:
                     print(f"  WARNING: Button '{label}' not found, skipping")
                     failed_views.append((label, "Button not found"))
@@ -154,7 +152,7 @@ def main():
                     for tb in tbs:
                         python_tracebacks.append((label, tb))
                 else:
-                    print(f"  No Python tracebacks")
+                    print("  No Python tracebacks")
 
                 successful_views.append(label)
 

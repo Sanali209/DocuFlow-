@@ -98,19 +98,24 @@ def material_fixture(session: Session):
     return mat
 
 
-class TestTaskBoardSystemLockBatch:
-    """Тесты для метода lock_batch()."""
+class TestTaskBoardSystemAssignTaskGroup:
+    """Тесты для метода assign_task_to_node()."""
 
     @pytest.mark.asyncio
-    async def test_lock_batch_creates_entries(
+    async def test_assign_creates_bucket_entries(
         self,
         system: TaskBoardSystem,
         project_and_work_item,
         material: MaterialType,
         session: Session,
     ):
-        """Создаёт записи в корзине при блокировке батча."""
+        """Создаёт записи в корзине при назначении группы задач."""
         _, work_item = project_and_work_item
+
+        # Create TaskGroup and Tasks
+        tg = TaskGroup(name="Steel 4mm", work_item_id=work_item.id)
+        session.add(tg)
+        session.flush()
 
         tasks = [
             TaskItem(
@@ -118,7 +123,7 @@ class TestTaskBoardSystemLockBatch:
                 file_path=f"/path/task_{i}.gnc",
                 work_item_id=work_item.id,
                 mat_type_id=material.id,
-                batch_group_id="test_batch",
+                task_group_id=tg.id,
             )
             for i in range(3)
         ]
@@ -126,14 +131,16 @@ class TestTaskBoardSystemLockBatch:
             session.add(task)
         session.commit()
 
-        entries = await system.lock_batch("test_batch", "LASER_1", "operator1")
-        session.commit()  # Sync session after system call
+        # Assign TaskGroup to node
+        system.assign_task_group_to_node(tg.id, "LASER_1")
+        session.commit()
 
+        # Check bucket entries
+        entries = system.get_bucket("LASER_1")
         assert len(entries) == 3
         for e in entries:
             session.refresh(e)
             assert e.node_id == "LASER_1"
-            assert e.assigned_user == "operator1"
 
 
 class TestTaskBoardSystemStartTask:

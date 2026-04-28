@@ -179,7 +179,7 @@ class IncidentSystem(BaseSystem):
     def get_summary_stats(self) -> dict[str, float]:
         """Aggregate downtime metrics by incident category."""
         session = self.db_session
-        statement = select(IncidentLog).where(IncidentLog.resolved.is_(True))  # type: ignore[attr-defined]
+        statement = select(IncidentLog).where(IncidentLog.resolved.isnot(False))  # type: ignore[union-attr]
         resolved_incidents = session.exec(statement).all()
 
         stats: dict[str, float] = {}
@@ -190,13 +190,14 @@ class IncidentSystem(BaseSystem):
 
         return stats
 
-    def get_active_failures(self) -> list[IncidentLog]:
+    def get_active_failures(self, limit: int = 20) -> list[IncidentLog]:
         """Retrieve all currently unresolved workshop failures."""
         session = self.db_session
         statement = (
             select(IncidentLog)
-            .where(IncidentLog.resolved.is_(False))  # type: ignore[attr-defined]
-            .order_by(IncidentLog.created_at.desc())  # type: ignore[attr-defined]
+            .where(IncidentLog.resolved.isnot(True))  # type: ignore[union-attr]
+            .order_by(IncidentLog.resolved_at.desc())  # type: ignore[union-attr]
+            .limit(limit)
         )
         return list(session.exec(statement).all())
 
@@ -210,8 +211,8 @@ class IncidentSystem(BaseSystem):
         session = self.db_session
         statement = (
             select(IncidentLog)
-            .where(IncidentLog.resolved.is_(True))  # type: ignore[attr-defined]
-            .order_by(IncidentLog.resolved_at.desc())  # type: ignore[attr-defined]
+            .where(IncidentLog.resolved.is_(True))  # type: ignore[union-attr]
+            .order_by(IncidentLog.resolved_at.desc())  # type: ignore[union-attr]
             .limit(limit)
         )
         return list(session.exec(statement).all())

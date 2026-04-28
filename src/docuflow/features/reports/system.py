@@ -159,7 +159,8 @@ class ReportSystem(BaseSystem):
         try:
             from weasyprint import HTML  # type: ignore[import-not-found]
 
-            return HTML(string=html_rendered).write_pdf()
+            result: bytes = HTML(string=html_rendered).write_pdf()
+            return result
         except (ImportError, Exception) as e:
             logger.error(f"Reports: PDF Engine failure ({e}). Falling back to HTML bytes.")
             return html_rendered.encode("utf-8")
@@ -423,7 +424,7 @@ class ReportSystem(BaseSystem):
         result: dict[str, dict[str, int]] = {}
         rows = db_session.exec(
             select(TaskItem.assigned_to_node, TaskItem.status, func.count(TaskItem.id))  # type: ignore[arg-type]
-            .where(TaskItem.assigned_to_node.isnot(None))  # type: ignore[attr-defined]
+            .where(TaskItem.assigned_to_node.is_not(None))  # type: ignore[union-attr]
             .group_by(TaskItem.assigned_to_node, TaskItem.status)
         ).all()
         for node, status, count in rows:

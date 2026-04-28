@@ -112,10 +112,10 @@ class PartLibrarySystem(BaseSystem):
         tolerance_factor = actual_tolerance / 100.0
 
         statement = select(PartLibrary).where(
-            PartLibrary.bbox_x.between(  # type: ignore[attr-defined]
+            PartLibrary.bbox_x.between(  # type: ignore[union-attr]
                 x_dimension * (1 - tolerance_factor), x_dimension * (1 + tolerance_factor)
             ),
-            PartLibrary.bbox_y.between(  # type: ignore[attr-defined]
+            PartLibrary.bbox_y.between(  # type: ignore[union-attr]
                 y_dimension * (1 - tolerance_factor), y_dimension * (1 + tolerance_factor)
             ),
         )

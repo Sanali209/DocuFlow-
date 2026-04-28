@@ -126,7 +126,7 @@ class ProductionSystem(BaseSystem):
         """
         session = self.db_session
         actual_limit = limit if limit is not None else self.DEFAULT_RECENT_LIMIT
-        statement = select(ProductionUnit).order_by(ProductionUnit.id.desc()).limit(actual_limit)  # type: ignore[attr-defined]
+        statement = select(ProductionUnit).order_by(ProductionUnit.id.desc()).limit(actual_limit)  # type: ignore[union-attr]
         return list(session.exec(statement).all())
 
     def split_production_unit(

@@ -1,6 +1,7 @@
 # DocuFlow — C4 & ArchiMate Diagrams
 
-> **Версия:** 2.0 (на основе Master Plan v7)
+> **Версия:** 2.1 (Task Board v2 — на основе Master Plan v7)
+> **Спецификация:** [Task Board v2 Design](../superpowers/specs/2026-04-28-task-board-v2-design.md)
 > Все диаграммы в Mermaid. Открываются в Obsidian / GitHub / любом Mermaid-рендерере.
 
 ---
@@ -160,7 +161,8 @@ C4Component
 
     Component(project,   "Project",   "SQLModel", "Контейнер: 'SHLAV-2' / 'Default'.\nis_default=True для одного проекта.")
     Component(workitem,  "WorkItem",  "SQLModel", "Наряд/письмо/доработка.\nСтатусы: NEW/PENDING_CUTS/FOLDER_NO_DOC/\nDOC_NO_FOLDER/REGISTERED/IN_PROGRESS/\nON_HOLD/BLOCKED/DONE/CANCELLED/ARCHIVED.\nfolder_found_at, doc_received_at.")
-    Component(taskitem,  "TaskItem",  "SQLModel", "Один GNC файл.\nsheets_done, estimated/actual minutes.\nfile_hash MD5 для детекции изменений.\nblock_reason если BLOCKED.\ndrift% = (actual-estimated)/estimated.")
+    Component(taskgroup, "TaskGroup", "SQLModel", "Группа задач по материалу+толщине.\nНет собственного статуса (агрегирует из задач).\ngrouping_rule: auto_material | manual.\nЗаменяет batch_group_id (UUID).")
+    Component(taskitem,  "TaskItem",  "SQLModel", "Один GNC файл.\nsheets_done, estimated/actual minutes.\nfile_hash MD5 для детекции изменений.\nblock_reason если BLOCKED.\ndrift% = (actual-estimated)/estimated.\nСтатусы: PLANNED/IN_PROGRESS/ON_HOLD/\nSUSPENDED/BLOCKED/DONE/CANCELLED.")
     Component(taskpart,  "TaskPart",  "SQLModel", "Деталь (SKU + version + version_suffix + qty).\nversion_suffix сохраняется, назначение TBD.")
     Component(partlib,   "PartLibrary",  "SQLModel", "Справочник деталей.\nbbox_x/y из SVGGenerator (НЕ PART SIZE!).\ncontour_count, hole_count, corner_count.")
     Component(parttempl, "PartTemplate", "SQLModel", "Шаблон предупреждения.\nseverity: info|warning|critical.\nПоказывается оператору при открытии TaskItem.")
@@ -170,20 +172,22 @@ C4Component
     Component(mataudit,  "MaterialAudit","SQLModel", "Аудит движений: income/write_off/correction/defect/reorder.\nqty_delta + qty_kg_delta (параллельный учёт).")
     Component(consumable,"Consumable",   "SQLModel", "Расходник: сопла, линзы, лента, газ.\nmin_quantity → алерт при критическом остатке.")
     Component(conslog,   "ConsumableLog","SQLModel", "Движения расходников: use/restock/write_off.")
-    Component(produnit,  "ProductionUnit","SQLModel","Паллета. label_id='25-07-А-042'.\nSplit → parent_label_id, is_pre_system.\nMerge → архивирует оба источника.")
+    Component(produnit,  "ProductionUnit","SQLModel","Паллета. label_id='26-04-LASER_1-0015'.\ntask_item_id FK (nullable).\nSplit → parent_label_id, is_pre_system.\nMerge → архивирует оба источника.")
     Component(storloc,   "StorageLocation","SQLModel","Стеллаж / место 'A-02-3'.")
-    Component(bucket,    "WorkerBucketEntry","SQLModel","Корзина оператора. batch_group_id (UUID).\nHandover: note, from, at.")
+    Component(bucket,    "WorkerBucketEntry","SQLModel","Корзина оператора. task_group_id (FK).\nHandover: note, from, at.")
     Component(worklog,   "WorkLog",     "SQLModel", "Полный аудит: INFO/WARNING/FILE_CHANGED/\nSTATUS_CHANGE/ON_HOLD/HANDOVER/STOCK_ALERT/\nSCAN_ERROR/BLOCKED/EMPTY_FOLDER/NS_MIRROR.")
     Component(incident,  "IncidentLog", "SQLModel", "Инциденты: laser_failure/part_defect/\nmaterial_defect/waiting_crane/other.\nresolved, resolved_by, resolved_at.\nattachments (JSON paths).")
     Component(chat,      "ChatMessage", "SQLModel", "Чат. Дерево ответов (parent_message_id).\nТипы: MESSAGE/INFO/WARNING/URGENT/\nORDER/INCIDENT/HANDOVER/REPORT.\nattachments (JSON paths).")
     Component(tag,       "Tag",         "SQLModel", "Теги для проектов/нарядов/тасков.")
     Component(report,    "ReportTemplate","SQLModel","Jinja2 HTML шаблон отчёта.")
-    Component(viewpreset,"ViewPreset",  "SQLModel", "Notion-подобный пресет вида.\nowner: username | 'global'.\nview_type: table|kanban|list|cards.")
+    Component(viewpreset,"ViewPreset",  "SQLModel", "Notion-подобный пресет вида.\nowner: username | 'global'.\nview_name: 'task_board_production' и др.\nview_type: table|kanban|list|cards.")
+    Component(viewstate, "ViewState",   "SQLModel", "Состояние раскрытия уровней.\nuser_id + view_name + entity_type + entity_id.\nis_expanded: bool.")
     Component(notiftempl,"NotificationTemplate","SQLModel","Настраиваемые тексты уведомлений.\nkey → text с {переменными}.\nCRUD через Admin Panel.")
   }
 
   Rel(project,  workitem,  "1 → *")
-  Rel(workitem, taskitem,  "1 → *")
+  Rel(workitem, taskgroup, "1 → *")
+  Rel(taskgroup, taskitem, "1 → *")
   Rel(taskitem, taskpart,  "1 → *")
   Rel(taskpart, partlib,   "* → 1 (part_sku FK)")
   Rel(partlib,  parttempl, "1 → *")
@@ -193,6 +197,7 @@ C4Component
   Rel(taskitem, produnit,  "1 → * (task_item_id nullable)")
   Rel(produnit, storloc,   "* → 1")
   Rel(taskitem, bucket,    "1 → *")
+  Rel(taskgroup, bucket,   "1 → *")
   Rel(workitem, worklog,   "1 → *")
   Rel(taskitem, worklog,   "1 → *")
   Rel(taskitem, incident,  "? → *")
@@ -287,12 +292,14 @@ graph TB
   end
 
   subgraph "Domain Layer"
-    B1[SQLModel Entities<br/>production.py<br/>22 сущности]
+    B1[SQLModel Entities<br/>production.py<br/>24+ сущности]
     B2[GncParser + FolderNameParser<br/>+ TaskFileParser<br/>SIDRA_REGEX + extract_sku]
-    B3[BatchEngine + BatchRule<br/>DEFAULT_RULE]
+    B3[TaskGroupService<br/>авто/ручная группировка<br/>replace BatchEngine]
     B4[SVGGenerator<br/>calculate_bounds bbox из G-кода<br/>generate_thumbnail → data_w, data_h]
     B5[ReportRegistry + ReportSystem<br/>Jinja2 BlockProxy + weasyprint]
     B6[PartLibrarySystem<br/>find_by_bbox ±tolerance<br/>прямой + обратный поиск]
+    B7[Omnisearch<br/>поиск по всем уровням<br/>+ ProductionUnit + Part SKU]
+    B8[ViewStateSystem + ViewPresetSystem<br/>состояние раскрытия + фильтры]
   end
 
   subgraph "Infrastructure Layer"
@@ -371,12 +378,12 @@ sequenceDiagram
   Foreman ->> UI: Регистрирует бумажный документ
   UI ->> DB: WorkItem(REGISTERED), doc_received_at=now
 
-  Foreman ->> UI: Запускает BatchEngine (DEFAULT_RULE)
-  UI ->> DB: TaskItem[] → batch_group_id (UUID) assigned
+  Foreman ->> UI: Запускает TaskGroupService (auto_material)
+  UI ->> DB: CREATE TaskGroup[] + UPDATE TaskItem.task_group_id
   Note over UI: STOCK_ALERT проверка → TaskItem(BLOCKED) если деталь в запасе
 
-  Operator ->> UI: Резервирует батч за собой
-  UI ->> Bus: REQ lock_batch {batch_group_id, LASER_1}
+  Operator ->> UI: Резервирует TaskGroup (таб "Моя корзина")
+  UI ->> Bus: REQ lock_taskgroup {task_group_id, LASER_1}
   Bus ->> DB: WorkerBucketEntry.create() per task
   DB ->> NS: NSMirrorService копирует GNC файлы (60s loop, timeout=30s)
 
@@ -388,8 +395,9 @@ sequenceDiagram
   Bus ->> UI: Диалог "Обновить NS / Оставить / Напомнить позже"
   Operator ->> UI: Подтверждает → NS обновляется (atomic_write)
 
-  Operator ->> UI: TaskItem → DONE, qty_produced=150, sheets_done=7
-  UI ->> DB: ProductionUnit("25-07-А-042"), StorageLocation="A-03-2"
+  Operator ->> UI: TaskItem → DONE, sheets_done=7
+  Note over UI: Авто-расчёт qty_produced = sum(TaskPart.qty) * sheets_done
+  UI ->> DB: ProductionUnit("26-04-LASER_1-0015"), StorageLocation="A-03-2"
   UI ->> DB: MaterialAudit(write_off, qty=7), ConsumableLog(use)
   Note over DB: actual_minutes = (completed_at - started_at) - Σ(on_hold)
   Note over DB: drift% = (actual - estimated) / estimated * 100

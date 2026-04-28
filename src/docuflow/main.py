@@ -91,14 +91,11 @@ def register_all_views():
     from docuflow.features.inventory.view import register_warehouse_view
     from docuflow.features.parts.view import register_parts_view
     from docuflow.features.production.view import register_production_view
-    from docuflow.features.projects.view import register_projects_view
     from docuflow.features.reports.view import register_reports_view
     from docuflow.features.task_board.view import register_task_board_view
-    from docuflow.features.work_items.view import register_work_items_view
 
     register_dashboard_view()
     register_warehouse_view()
-    register_work_items_view()
     register_admin_view()
     register_task_board_view()
     register_scanner_view()
@@ -109,7 +106,6 @@ def register_all_views():
     register_reports_view()
     register_analytics_view()
     register_production_view()
-    register_projects_view()
     register_docs_view()
 
 

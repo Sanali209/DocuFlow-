@@ -3,6 +3,7 @@
 > **Формат:** Псевдокод. Детали реализации уточняются по мере разработки.
 > **Приоритет:** Текущий код > этот план > документация Obsidian.
 > **История:** v3 → v4 → v5 → v6 → **v7 (финальный, полный)**
+> **Актуализация:** См. [Task Board v2 Design](../superpowers/specs/2026-04-28-task-board-v2-design.md) — единый производственный центр с TaskGroup (замена batch_group_id).
 
 ---
 
@@ -124,9 +125,11 @@
 СТАТУСЫ ВМЕСТО СТАРТ/СТОП:
   Оператор меняет статус TaskItem:
     planned → in_progress (с причиной если нужно)
-    in_progress → on_hold (обязательна причина + description)
+    in_progress → on_hold (кратковременная, обязательна причина + description)
+    in_progress → suspended (длительная приостановка)
     on_hold → in_progress
-    in_progress → done (+ указать qty_produced + sheets_done)
+    suspended → in_progress | done | cancelled
+    in_progress → done (+ автоматический qty_produced + sheets_done)
 
 ТРЕКИНГ ЛИСТОВ:
   TaskItem.sheets_done: int  # Сколько листов уже порезано
@@ -174,26 +177,33 @@ NS-ЗЕРКАЛО (критично):
 
 ```
 TaskItem → DONE:
-  оператор вводит qty_produced (факт)
+  автоматический расчёт qty_produced:
+    qty_produced = sum(TaskPart.qty for part in task.parts) * sheets_done
+    fallback: если parts пустой → qty_produced = sheets_done
   диалог "Куда кладём?":
     Вариант A: Новая паллета
-      → ProductionUnit(label_id = generate_human_id())
+      → ProductionUnit(
+          label_id = generate_human_id(),
+          task_item_id = task.id,
+          qty_produced = auto_calculated
+        )
       → оператор выбирает или создаёт StorageLocation
     Вариант B: К существующей
       → live search по label_id (partial match)
-      → пример: ввёл "07-А" → показывает ["2025-07-А-001", "2025-07-А-002", ...]
+      → пример: ввёл "LASER_1-001" → показывает ["26-04-LASER_1-0015", ...]
       → выбирает → qty добавляется к существующей
     (Нет QR-сканера → только ввод + поиск)
 
   Списание материала:
     MaterialAudit(write_off, qty=sheets_done, ref=task_item)
+    Приоритет: reservation → FIFO fallback
 
 generate_human_id():
-  year = now.year[-2:]  # "25"
-  month = now.month     # "07"
-  node_code = workplace.code  # "А" (короткий код узла)
-  seq = next_seq_for(node, month)  # 001, 002 ...
-  return f"{year}-{month:02d}-{node_code}-{seq:03d}"  # "25-07-А-042"
+  year = now.year[-2:]       # "26"
+  month = now.month          # "04"
+  node_code = workplace.code # "LASER_1" (код узла)
+  seq = next_seq_for(node, month)  # 0015 ...
+  return f"{year}-{month:02d}-{node_code}-{seq:04d}"  # "26-04-LASER_1-0015"
 ```
 
 ### C6. Складирование
@@ -439,12 +449,20 @@ WorkItem
 
   folder_found_at, doc_received_at?, started_at?, completed_at?, last_scanned_at?
 
-  → task_items[], logs[], reservations[], tags[], comments[]
+  → task_groups[], logs[], reservations[], tags[], comments[]
+
+TaskGroup
+  id, work_item_id
+  name: str?            # например "ST37-2 4.0mm"
+  grouping_rule: str    # 'auto_material' | 'manual'
+  created_by?: str
+  created_at: timestamp
+  → task_items[]
 
 TaskItem
-  id, work_item_id, mat_type_id?
+  id, work_item_id, task_group_id?, mat_type_id?
 
-  status: PLANNED|IN_PROGRESS|ON_HOLD|DONE|CANCELLED|BLOCKED
+  status: PLANNED|IN_PROGRESS|ON_HOLD|SUSPENDED|DONE|CANCELLED|BLOCKED
   priority: 0-2
   is_urgent: bool
 
@@ -455,8 +473,8 @@ TaskItem
   gnc_date?      # DATE строка из GNC
 
   # Прогресс трекинг
-  sheets_done: int = 0       # сколько листов порезано
-  qty_produced?: int          # финальный факт
+  sheets_done: int = 0       # сколько листов уже порезано
+  qty_produced?: int          # финальный факт (авто: sum(TaskPart.qty) * sheets_done)
 
   # Оценка времени
   estimated_minutes?: int    # из GNC парсера + коэффициент
@@ -556,7 +574,7 @@ ProductionUnit
 ```
 WorkerBucketEntry
   id, node_id (idx), assigned_user?
-  task_item_id, batch_group_id?   # UUID группы (батча)
+  task_item_id, task_group_id?   # FK на TaskGroup (замена batch_group_id UUID)
   locked_at
   handover_note?, handover_at?, handover_from?
 
@@ -593,11 +611,18 @@ ReportTemplate
   last_used_at?
 
 ViewPreset                  # Notion-подобные пресеты вида
-  id, module: str           # "work_items" | "task_board" | ...
+  id, view_name: str        # "task_board_production" | "task_board_bucket" | ...
   owner: str                # username или "global"
   name: str
-  preset_json: JSON         # фильтры, сортировка, группировка, колонки
+  filters_json: JSON        # фильтры, сортировка, группировка, колонки
   is_default: bool
+
+ViewState                   # Состояние раскрытия уровней иерархии
+  id, user_id: str
+  view_name: str            # "task_board_production"
+  entity_type: str          # "project" | "workitem" | "taskgroup"
+  entity_id: str
+  is_expanded: bool = True
 ```
 
 ---
@@ -631,35 +656,29 @@ NSMirrorService (background task на каждом узле):
     delete(local_file)   # Убираем из NS после завершения
 ```
 
-### G2. Batching Engine
+### G2. TaskGroupService (замена BatchEngine)
 
 ```
-BatchRule (настраиваемые правила):
-  name, active: bool
-  match_same_material: bool  # "AA 5052-H32"
-  match_same_thickness: bool # 3.0mm
-  match_same_sheet_size: bool # 3250x1250
-  match_same_project: bool   # только из одного проекта
-  max_items_per_batch?: int
-  max_sheets_per_batch?: int
+TaskGroup — полноценная DB-сущность (заменяет batch_group_id UUID):
+  id, work_item_id, name, grouping_rule, created_by, created_at
+  grouping_rule: 'auto_material' | 'manual'
 
-# Стандартное правило по умолчанию (из v3/v4):
-DEFAULT_RULE = BatchRule(
-    name="Standard",
-    match_same_material=True,
-    match_same_thickness=True,
-    match_same_sheet_size=True,
-    match_same_project=False,   # из разных нарядов — ок!
-    max_items_per_batch=10,
-)
+Авто-группировка (DEFAULT):
+  GROUP BY: mat_type_id + thickness (+ sheet_x + sheet_y опционально)
+  grouping_rule = 'auto_material'
+  UPDATE TaskItem.task_group_id = TaskGroup.id
 
-BatchEngine.compute(task_items[], rule) → batches[]:
-  группирует task_items по критериям rule
-  каждому батчу присваивает batch_group_id (UUID)
-  бригадир может потом вручную перетасовать
+TaskGroupService:
+  auto_group_by_material(work_item_id) → TaskGroup[]
+  create_manual_group(task_ids, name) → TaskGroup
+  move_task_to_group(task_id, group_id)
+  split_group(group_id, task_ids) → TaskGroup
+  merge_groups(group_ids) → TaskGroup
+  get_group_status(group) → TaskGroupStatus  # агрегация из задач
+  get_group_progress(group) → float          # средний прогресс
 
-Рекомендации при редактировании батча:
-  "Добавить в батч?" → TaskItem из других нарядов с тем же MAT
+Рекомендации при редактировании группы:
+  "Добавить в группу?" → TaskItem из других нарядов с тем же MAT
   "⚠️ Деталь в запасе!" → если is_stock=True для части task_parts
 ```
 
@@ -847,14 +866,18 @@ features/
     system.py         #   WorkItemSystem: CRUD + lifecycle + doc registration
     view.py           #   Список + карточка + WorkLog + PartTemplates alerts
 
-  task_board/         # ФАЗА 2
-    batch_engine.py   #   BatchEngine + BatchRule + DEFAULT_RULE
-    system.py         #   TaskBoardSystem: bucket, status, time tracking
-    view.py           #   Оператор: корзина | Бригадир: все узлы
+  task_board/         # ФАЗА 2 → Task Board v2
+    task_group_service.py  # TaskGroupService: авто/ручная группировка (замена BatchEngine)
+    system.py              # TaskBoardSystem: иерархия, фильтры, пресеты, bucket, drift%
+    view.py                # Единый Task Board: 2 таба (Производство + Моя корзина)
 
   part_library/       # ФАЗА 3
-    system.py         #   PartLibrarySystem: поиск (SKU / bbox±tol / holes) + SVG
-    view.py           #   Таблица + превью + шаблоны предупреждений
+    system.py         # PartLibrarySystem: поиск (SKU / bbox±tol / holes) + SVG
+    view.py           # Таблица + превью + шаблоны предупреждений + корзина заказа
+
+  parts/              # 🛒 Task Board v2 — корзина заказа деталей
+    order_cart.py     # OrderCart (сессионная корзина)
+    rework_generator.py  # Генерация nest + WorkItem из корзины
 
   material_stock/     # ФАЗА 3
     system.py         #   MaterialSystem + аудит + резервирование
@@ -890,19 +913,26 @@ features/
 lib/widgets/
   status_badge.py
   work_item_card.py
-  task_item_row.py
+  task_item_row.py         # + паллета (DONE), прогресс, быстрые действия
+  task_group_row.py        # Агрегированный статус и прогресс группы
+  hierarchy_table.py       # Древовидная таблица с раскрытием уровней
+  hierarchy_row.py         # Двухстрочная строка иерархии
   material_chip.py
   part_preview.py          # SVGGenerator интеграция
+  nest_preview.py          # Превью раскладки деталей на листе
   scan_log_panel.py
   file_changed_alert.py    # Диалог: GNC изменился!
   chat_thread.py           # Дерево сообщений (рекурсивный виджет)
   chat_compose.py          # Composer с типами + шаблоны
-  bucket_panel.py          # Корзина оператора (батчи → таски)
-  batch_card.py
-  report_builder.py
-  view_preset_switcher.py
+  bucket_panel.py          # Корзина оператора (TaskGroup → таски)
+  filter_panel.py          # Панель комплексных фильтров с пресетами
+  handover_form.py         # Форма передачи смены
+  handover_banner.py       # Баннер входящей передачи смены
+  report_builder.py        # Конструктор отчётов
+  view_preset_switcher.py  # Notion-like вкладки пресетов
   explorer_button.py       # "📂 Открыть в Explorer"
   ns_mirror_status.py      # Индикатор синхронизации NS
+  order_cart_panel.py      # Панель корзины Part Library
 ```
 
 ---
@@ -957,8 +987,8 @@ lib/widgets/
 [ ] WorkItemSystem + work_items/view.py
     → регистрация физического документа
     → статус PENDING_CUTS + оповещение
-[ ] TaskBoardSystem + bucket + batch_engine (с DEFAULT_RULE)
-[ ] task_board/view.py: Оператор (корзина) + Бригадир (все узлы)
+[ ] TaskBoardSystem + bucket + TaskGroupService (замена batch_engine)
+[ ] task_board/view.py: Единый Task Board — 2 таба (Производство + Моя корзина)
 [ ] Трекинг листов (sheets_done / sheet_qty) + прогресс-бар
 [ ] Временные оценки (estimated/actual/drift) + параметры MaterialType
 [ ] Базовые виджеты: status_badge, bucket_panel, batch_card
@@ -982,6 +1012,31 @@ lib/widgets/
 [ ] Обратный поиск: деталь → паллета → стеллаж
 [ ] explorer_button.py (subprocess → explorer.exe)
 [ ] Регистрация до-системных паллет (is_pre_system)
+```
+
+### Фаза 4.5 — Task Board v2 (Единый производственный центр)
+```
+[ ] TaskGroup entity + миграция batch_group_id → task_group_id
+[ ] TaskGroupService: авто/ручная группировка, split/merge
+[ ] Единый Task Board view: 2 таба (Производство + Моя корзина)
+[ ] HierarchyTable + HierarchyRow (двухстрочные строки)
+[ ] ViewState: сохранение раскрытия уровней в БД
+[ ] ViewPreset: комплексные фильтры с пресетами
+[ ] Omnisearch v2: поиск по всем уровням + паллеты + детали
+[ ] Авто-расчёт qty_produced = sum(TaskPart.qty) * sheets_done
+[ ] Диалог завершения: "Создать новую паллету" / "Добавить к существующей"
+[ ] Связь TaskItem ↔ ProductionUnit с обратным поиском
+[ ] Резервирование материала при назначении на узел
+[ ] Авто-списание материала при DONE (reservation → FIFO)
+[ ] Интеграция Part Library: клик на деталь → модальное окно
+[ ] Интеграция Warehouse: резервирование из Task Board, вкладка РЕЗЕРВЫ
+[ ] Интеграция Chat: HANDOVER тип, deeplink #<task_id>, канал Производство
+[ ] Интеграция Incidents: deeplink на TaskItem, фильтр по Project/WorkItem
+[ ] Интеграция Analytics: метрики TaskGroup, node_utilization, pallet_by_project
+[ ] Интеграция Reports: task_group_summary, material_reservation, pallet_by_project
+[ ] Модальные окна: Project, WorkItem, TaskGroup, TaskItem, Pallet
+[ ] Превью неста: SVG раскладка деталей на листе
+[ ] Part Library: корзина заказа + генерация rework nests
 ```
 
 ### Фаза 5 — Аналитика + Отчёты
@@ -1014,3 +1069,30 @@ lib/widgets/
 | 14 | F2: Параметры времени резки в `MaterialType` (cut_speed, pierce_time, idle_speed, tolerance) | v6 — перенесено в DDL |
 | 15 | J: Открытые вопросы (Q1–Q4) — не закрыты с v4, нужна фиксация решения | v4 |
 | 16 | I: Таблица переиспользования из MVP (явная, с `is_variant` dedup) | v3/v4 |
+
+---
+
+## M. Сводка изменений Task Board v2 (v7.1)
+
+| # | Что изменено | Примечание |
+|---|---|---|
+| 1 | TaskGroup entity | Заменяет batch_group_id (UUID). FK task_group_id в TaskItem и WorkerBucketEntry. |
+| 2 | TaskGroupService | Заменяет BatchEngine. Авто/ручная группировка, split/merge, агрегация статуса. |
+| 3 | Единый Task Board | 2 таба: "Производство" (иерархия) + "Моя корзина" (оператор). |
+| 4 | ViewState | Сохранение раскрытия уровней Project/WorkItem/TaskGroup в БД. |
+| 5 | ViewPreset | Комплексные фильтры + пресеты для таба "Производство". |
+| 6 | TaskItemStatus.SUSPENDED | Длительная приостановка (бригадир/оператор). |
+| 7 | Авто-qty_produced | qty_produced = sum(TaskPart.qty) * sheets_done. Оператор НЕ вводит вручную. |
+| 8 | Связь TaskItem ↔ ProductionUnit | Прямой FK task_item_id. Обратный поиск по label_id. |
+| 9 | Резервирование материалов | InventorySystem.create_reservation при назначении TaskGroup на узел. |
+| 10 | Авто-списание при DONE | MaterialAudit(write_off) с приоритетом: reservation → FIFO. |
+| 11 | Omnisearch v2 | + ProductionUnit.label_id + Part.sku + MaterialType.code. |
+| 12 | Интеграция Part Library | Клик на деталь в TaskItem → модальное окно. Корзина + rework nests. |
+| 13 | Интеграция Warehouse | Резервирование из Task Board. Новая вкладка "РЕЗЕРВЫ" в Warehouse. |
+| 14 | Интеграция Chat | Тип HANDOVER, deeplink #<task_id>, канал "Производство". |
+| 15 | Интеграция Incidents | Deeplink на TaskItem, фильтр по Project/WorkItem. |
+| 16 | Интеграция Analytics | Метрики TaskGroup, node_utilization, pallet_by_project. |
+| 17 | Интеграция Reports | Новые data blocks: task_group_summary, material_reservation, pallet_by_project. |
+| 18 | Модальные окна | Project, WorkItem, TaskGroup, TaskItem, Pallet с полным просмотром/редактированием. |
+| 19 | Превью неста | SVG-рендеринг раскладки деталей на листе в TaskItem Modal. |
+| 20 | Новые виджеты | hierarchy_table, hierarchy_row, filter_panel, handover_form, handover_banner, nest_preview, order_cart_panel. |

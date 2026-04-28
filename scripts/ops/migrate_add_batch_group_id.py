@@ -4,6 +4,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
+
 def migrate(db_path: Path) -> None:
     print(f"Migrating {db_path} ...")
     conn = sqlite3.connect(db_path)

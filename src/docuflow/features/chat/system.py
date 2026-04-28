@@ -197,9 +197,9 @@ class ChatSystem(BaseSystem):
         session = self.db_session
         statement = (
             select(ChatMessage)
-            .where(ChatMessage.ref_project_id.is_(None))  # type: ignore[attr-defined]
-            .where(ChatMessage.ref_work_item_id.is_(None))  # type: ignore[attr-defined]
-            .where(ChatMessage.ref_task_item_id.is_(None))  # type: ignore[attr-defined]
+            .where(ChatMessage.ref_project_id.is_(None))  # type: ignore[union-attr]
+            .where(ChatMessage.ref_work_item_id.is_(None))  # type: ignore[union-attr]
+            .where(ChatMessage.ref_task_item_id.is_(None))  # type: ignore[union-attr]
             .order_by(ChatMessage.created_at.desc())  # type: ignore[attr-defined]
             .limit(limit)
         )

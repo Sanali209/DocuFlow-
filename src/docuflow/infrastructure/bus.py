@@ -6,7 +6,7 @@ from typing import Any
 
 import anyio
 from loguru import logger
-from watchdog.events import DirCreatedEvent, FileCreatedEvent, FileSystemEventHandler
+from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver
 
 from docuflow.application.base import BaseSystem
@@ -27,7 +27,7 @@ class InboxHandler(FileSystemEventHandler):
     def __init__(self, system: "FileBusSystem"):
         self.system = system
 
-    def on_created(self, event: FileCreatedEvent | DirCreatedEvent) -> None:
+    def on_created(self, event: Any) -> None:  # type: ignore[override]
         """Triggered when a new file is detected in the monitored folder."""
         if event.is_directory:
             return

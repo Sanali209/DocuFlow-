@@ -88,7 +88,7 @@ def test_group_by_task_group_instead_of_batch_group_id(session: Session):
 
     # Act: use BucketPanel grouping logic
     panel = BucketPanel(node_id="LASER_1", user="admin", system_scope=None)
-    result = panel._group_by_batch(session, [e1, e2, e3])
+    result = panel._group_by_task_group(session, [e1, e2, e3])
 
     # Assert: grouped by task_group_id, NOT by batch_group_id
     # tg1 has 2 tasks, tg2 has 1 task

@@ -54,7 +54,7 @@ class AdminSystem(BaseSystem):
     def get_cluster_nodes(self) -> list[dict[str, Any]]:
         """Aggregating the health status of all nodes in the decentralized cluster."""
         heartbeats_path = Path(self._config.shared_path) / constants.COORDINATOR_HEARTBEATS_DIR
-        nodes = []
+        nodes: list[dict[str, Any]] = []
 
         if not heartbeats_path.exists():
             return nodes
@@ -120,7 +120,7 @@ class AdminSystem(BaseSystem):
                     result = self.db_session.execute(
                         text(f"DELETE FROM {table}")  # noqa: S608
                     )
-                    results[table] = result.rowcount  # type: ignore[union-attr]
+                    results[table] = result.rowcount  # type: ignore[attr-defined]
                 except Exception:
                     logger.exception(f"Failed to clear table {table}")
                     results[table] = -1
@@ -435,7 +435,7 @@ class AdminSystem(BaseSystem):
                 user_stmt = select(User).where(User.role_id == legacy_role.id)
                 users = s.exec(user_stmt).all()
                 for user in users:
-                    user.role_id = target_role.id
+                    user.role_id = target_role.id  # type: ignore[assignment]
                     s.add(user)
 
                 s.flush()  # ensure updates before deleting old role

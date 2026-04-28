@@ -17,11 +17,11 @@ from docuflow.lib.widgets.ui_utils import NotifyHelper, get_action_color
 
 class BatchCard(BaseDocuWidget):
     """
-    Карточка батча с задачами внутри.
+    Карточка группы задач с задачами внутри.
 
     Props:
-        batch_group_id: str — ID батча
-        tasks: list[TaskItem] — задачи в батче
+        task_group_id: str — ID группы задач
+        tasks: list[TaskItem] — задачи в группе
         drift_percent: float — отклонение от оценки (%)
         session: Session — сессия БД для проверки STOCK_ALERT
         node_id: str — ID узла (лазера)
@@ -36,7 +36,7 @@ class BatchCard(BaseDocuWidget):
 
     def __init__(
         self,
-        batch_group_id: str,
+        task_group_id: str,
         tasks: list[TaskItem],
         drift_percent: float = 0.0,
         session=None,
@@ -50,7 +50,7 @@ class BatchCard(BaseDocuWidget):
         on_block: Callable[[int], None] | None = None,
     ):
         super().__init__(system_scope)
-        self.batch_group_id = batch_group_id
+        self.task_group_id = task_group_id
         self.tasks = tasks
         self.drift_percent = drift_percent
         self.node_id = node_id

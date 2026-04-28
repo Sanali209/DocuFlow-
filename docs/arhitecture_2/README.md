@@ -2,6 +2,7 @@
 
 > Все документы основаны на **Master Plan v7** и эволюции через версии v3–v7.
 > Приоритет: **Текущий код > эти документы > Obsidian канвас.**
+> **Актуальная спецификация:** [Task Board v2 Design](../superpowers/specs/2026-04-28-task-board-v2-design.md) — единый производственный центр (Project→WorkItem→TaskGroup→TaskItem).
 > **Полный индекс:** смотри [docs/index.md](../index.md)
 
 ---
@@ -46,3 +47,4 @@
 | v5 | ChatMessage типы, PartTemplate, IncidentLog, Consumable, SVGGenerator подтверждён. human-readable label_id. merge() паллет |
 | v6 | Псевдокод формат. PENDING_CUTS, NSMirrorService, NS Mirror, time params в MaterialType, ReportRegistry, ViewPreset, NotificationTemplate, Explorer на всех узлах |
 | **v7** | **Финальный.** Восстановлено из v3/v4/v5: формат GNC с sample, SIDRA_REGEX код, SKU extraction (version_letter + version_suffix), compute_hash + atomic_write, идемпотентный upsert, DEFAULT_RULE батчинга, явный раздел поиска деталей (прямой+обратный+bbox), SVGGenerator вызов, файловые блокировки (filelock), merge() паллет, учёт расходников в цикле, открытые вопросы Q1–Q4 |
+| **v7.1** | **Task Board v2.** Единый Task Board с 2 табами (Производство + Моя корзина). TaskGroup заменяет batch_group_id. ViewState + ViewPreset. Интеграция Part Library, Warehouse, Production, Chat, Incidents, Analytics, Reports. TaskItemStatus.SUSPENDED. Авто-расчёт qty_produced. Паллет-трекинг и резервирование материалов. |

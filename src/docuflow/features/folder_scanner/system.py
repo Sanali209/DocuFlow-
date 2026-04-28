@@ -27,7 +27,6 @@ from docuflow.features.folder_scanner.settings import FolderScannerSettings
 from docuflow.features.inventory.system import InventorySystem
 from docuflow.features.notifications.system import NotificationService
 from docuflow.features.parts.system import PartLibrarySystem
-from docuflow.features.projects.system import ProjectSystem
 from docuflow.infrastructure.config import Config
 
 logger = logging.getLogger(__name__)
@@ -279,7 +278,8 @@ class FolderScannerSystem(BaseSystem):
     ) -> WorkItem:
         """Idempotently creates or updates a WorkItem entry."""
         async with self.sdk.request_scope():
-            project_sys = await self.sdk.resolve_system_by_type(ProjectSystem)
+            from docuflow.features.task_board.system import TaskBoardSystem as _TBS
+            project_sys = await self.sdk.resolve_system_by_type(_TBS)
             default_project = project_sys.resolve_default_workshop_project()
 
             with Session(self.db_engine) as db_session:

@@ -100,19 +100,19 @@ class TaskBoardSystem(BaseSystem):
         else:
             session.commit()
 
-    async def lock_batch(
+    async def lock_task_group(
         self,
-        batch_group_id: str,
+        task_group_id: int,
         node_id: str,
         operator: str,
     ) -> list[WorkerBucketEntry]:
         """
-        Marks a group of tasks as 'PLANNED' and assigns them to a specific node/worker.
+        Marks a task group's tasks as 'PLANNED' and assigns them to a specific node/worker.
         """
         with self.get_db_session() as session:
             task_items = list(
                 session.exec(
-                    select(TaskItem).where(TaskItem.batch_group_id == batch_group_id)
+                    select(TaskItem).where(TaskItem.task_group_id == task_group_id)
                 ).all()
             )
             bucket_entries = []
@@ -124,7 +124,7 @@ class TaskBoardSystem(BaseSystem):
                     node_id=node_id,
                     assigned_user=operator,
                     task_item_id=task_item.id,
-                    batch_group_id=batch_group_id,
+
                     locked_at=datetime.datetime.now(),
                 )
                 session.add(bucket_entry)
@@ -135,11 +135,11 @@ class TaskBoardSystem(BaseSystem):
                 bucket_entries.append(bucket_entry)
 
             # Audit trail
-            log = WorkLog(
-                log_type=WorkLogType.INFO,
-                message=f"Batch {batch_group_id} locked by {operator} on {node_id}",
-                node_id=self.config.node_id,
-            )
+                log = WorkLog(
+                    log_type=WorkLogType.INFO,
+                    message=f"TaskGroup {task_group_id} locked by {operator} on {node_id}",
+                    node_id=self.config.node_id,
+                )
             session.add(log)
             self._sync(session)
 
@@ -370,13 +370,12 @@ class TaskBoardSystem(BaseSystem):
                 node_id=node_id,
                 assigned_user=operator,
                 task_item_id=task_id_val,  # type: ignore[arg-type]
-                batch_group_id=single_batch_id,
+                task_group_id=task.task_group_id,
                 locked_at=datetime.datetime.now(),
             )
             session.add(bucket_entry)
 
             task.assigned_to_node = node_id
-            task.batch_group_id = single_batch_id
             task.status = TaskItemStatus.PLANNED
             session.add(task)
 
