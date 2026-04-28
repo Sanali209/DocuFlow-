@@ -12,6 +12,8 @@ from .button import GhostBtn, PrimaryBtn, SecondaryBtn
 from .card import Card
 from .explorer_button import ExplorerButton
 from .file_changed_alert import FileChangedAlert
+from .hierarchy_row import HierarchyRow
+from .hierarchy_table import HierarchyTable
 from .info_row import InfoGrid, InfoPair, InfoRow
 from .input import CheckboxLabel, InputLabel, SelectLabel, SwitchLabel, TextareaLabel
 from .kpi_card import KPICard, KPIGrid
@@ -43,6 +45,8 @@ __all__ = [
     "ExplorerButton",
     "FileChangedAlert",
     "GhostBtn",
+    "HierarchyRow",
+    "HierarchyTable",
     "InfoGrid",
     "InfoPair",
     # Data display

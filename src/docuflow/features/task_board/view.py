@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any
 
 from nicegui import ui
@@ -14,6 +15,7 @@ from docuflow.features.task_board.system import TaskBoardSystem
 from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets import StatusBadge
 from docuflow.lib.widgets.bucket_panel import BucketPanel
+from docuflow.lib.widgets.hierarchy_table import HierarchyTable
 from docuflow.lib.widgets.ui_utils import NotifyHelper, get_kpi_color, get_node_status_color
 
 
@@ -36,7 +38,7 @@ def register_task_board_view():
 async def task_board_view_wrapper(user: str, system_scope: Any, layout: Any, **kwargs):
     """Wrapper to instantiate and render the TaskBoardView."""
     view = TaskBoardView(system_scope, user=user, layout=layout, **kwargs)
-    await view.render()
+    await view.render()  # type: ignore[call-arg]
 
 
 class TaskBoardView(BaseDocuWidget):
@@ -62,6 +64,7 @@ class TaskBoardView(BaseDocuWidget):
         """Рендерит основной view."""
         async with self.scope() as req:
             from docuflow.features.admin.system import AdminSystem
+
             admin_system = await req.get(AdminSystem)
             nodes = admin_system.get_workplace_node_ids()
 
@@ -72,19 +75,41 @@ class TaskBoardView(BaseDocuWidget):
                         ui.label("⚠️ Рабочие места не настроены").classes(
                             "text-2xl font-bold text-yellow-400"
                         )
-                        ui.label("Перейдите в Admin → BINDINGS для настройки").classes("text-slate-400")
+                        ui.label("Перейдите в Admin → BINDINGS для настройки").classes(
+                            "text-slate-400"
+                        )
                         ui.button(
-                            "Открыть Admin", icon="settings", on_click=lambda: ui.navigate.to("/admin")
+                            "Открыть Admin",
+                            icon="settings",
+                            on_click=lambda: ui.navigate.to("/admin"),
                         ).classes("mt-4 vibrant-btn")
                     return
 
-                # Переключатель роли
-                self._render_role_switcher()
+                with ui.tabs().classes("w-full mb-4") as tabs:
+                    production_tab = ui.tab("Производство")
+                    basket_tab = ui.tab("Моя корзина")
 
-                if self.role == "operator":
-                    await self._render_operator_view(req, nodes)
-                else:
-                    await self._render_foreman_view(req, nodes)
+                with ui.tab_panels(tabs, value=production_tab).classes("w-full"):
+                    with ui.tab_panel(production_tab):
+                        await HierarchyTable(
+                            user_id=self.user,
+                            view_name="task_board_production",
+                            system_scope=self.system_scope,
+                        ).render()
+
+                    with ui.tab_panel(basket_tab):
+                        self._render_node_selector(nodes)
+                        BucketPanel(
+                            node_id=self.node_id if self.node_id else "UNKNOWN",
+                            user=self.user,
+                            system_scope=self.system_scope,
+                        ).render()  # type: ignore[call-arg]
+                        with ui.row().classes("w-full justify-end mt-4"):
+                            ui.button(
+                                "Сдать смену",
+                                icon="swap_horiz",
+                                on_click=self._show_handover_dialog,
+                            ).props("color=orange rounded-xl")
 
     def _render_role_switcher(self) -> None:
         """Рендерит переключатель роли."""
@@ -126,7 +151,7 @@ class TaskBoardView(BaseDocuWidget):
                 node_id=self.node_id if self.node_id else "UNKNOWN",
                 user=self.user,
                 system_scope=self.system_scope,
-            ).render()
+            ).render()  # type: ignore[call-arg]
 
             # Передача смены
             with ui.row().classes("w-full justify-end mt-4"):
@@ -190,7 +215,7 @@ class TaskBoardView(BaseDocuWidget):
 
             SelectLabel(
                 label="",
-                options=[(n, n) for n in nodes],
+                options=nodes,
                 value=default_node,
                 on_change=lambda e: self._select_node(e.value),
             ).render().classes("w-48")
@@ -296,15 +321,17 @@ class TaskBoardView(BaseDocuWidget):
                 if batches:
                     for batch_id, tasks in batches.items():
                         with ui.row().classes(
-                            "gap-2 items-center ml-4 mb-2 hover:bg-gray-50 p-1 rounded cursor-pointer"
+                            "gap-2 items-center ml-4 mb-2 "
+                            "hover:bg-gray-50 p-1 rounded cursor-pointer"
                         ):
                             StatusBadge(tasks[0].status).render() if tasks else None
 
                             # Deep Link to WorkItem
                             if tasks and tasks[0].work_item_id:
-                                ui.link(f"Наряд: {tasks[0].work_item_id}", "#").on(
+                                wi_id = tasks[0].work_item_id
+                                ui.link(f"Наряд: {wi_id}", "#").on(
                                     "click",
-                                    lambda t=tasks[0]: self._show_work_item_by_id(t.work_item_id),
+                                    partial(self._show_work_item_by_id, wi_id),
                                 ).classes("font-bold text-blue-600")
 
                             ui.label(f"Батч {batch_id[:8]}...").classes("text-sm text-slate-500")
@@ -460,9 +487,10 @@ class TaskBoardView(BaseDocuWidget):
 
                     StatusBadge(task.status).render()
 
+                    tid = task.id
                     ui.button(
                         "📥 Взять в корзину",
-                        on_click=lambda t=task: self._assign_task_to_node(t.id),
+                        on_click=partial(self._assign_task_to_node, tid),
                     ).props("size=sm color=blue")
 
     async def _run_auto_batching(self) -> None:
@@ -504,7 +532,9 @@ class TaskBoardView(BaseDocuWidget):
 
     # ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
 
-    def _group_by_batch(self, session, entries: list[WorkerBucketEntry]) -> dict[str, list[TaskItem]]:
+    def _group_by_batch(
+        self, session, entries: list[WorkerBucketEntry]
+    ) -> dict[str, list[TaskItem]]:
         """Группирует записи по batch_group_id."""
         batches: dict[str, list[TaskItem]] = {}
 
