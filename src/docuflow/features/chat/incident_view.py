@@ -67,6 +67,8 @@ class IncidentView(BaseDocuWidget):
         self.recent_history_container: Any = None
         self.metrics_summary_container: Any = None
         self.active_group_filter = "ALL"
+        self.active_project_filter: int | None = None
+        self.active_work_item_filter: int | None = None
 
     async def render_dashboard(self):
         """
@@ -119,6 +121,23 @@ class IncidentView(BaseDocuWidget):
         self.active_group_filter = group_name
         await self.refresh_active_feed()
 
+    def _matches_filters(self, incident: IncidentLog) -> bool:
+        """Check if incident matches active project/work_item/group filters."""
+        if (
+            self.active_group_filter != "ALL"
+            and incident.assigned_group != self.active_group_filter
+        ):
+            return False
+        if (
+            self.active_project_filter is not None
+            and incident.project_id != self.active_project_filter
+        ):
+            return False
+        return not (
+            self.active_work_item_filter is not None
+            and incident.work_item_id != self.active_work_item_filter
+        )
+
     def _render_header_section(self):
         """Builds the top bar with title, metrics slot, and actions."""
         with ui.row().classes("w-full items-center justify-between mb-2"):
@@ -165,7 +184,8 @@ class IncidentView(BaseDocuWidget):
                 return
 
             for incident in active_list:
-                self._render_active_incident_card(incident)
+                if self._matches_filters(incident):
+                    self._render_active_incident_card(incident)
 
     async def refresh_history_feed(self):
         """Reload the list of recently resolved failures."""

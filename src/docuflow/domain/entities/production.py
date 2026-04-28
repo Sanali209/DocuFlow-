@@ -393,6 +393,7 @@ class IncidentLog(BaseEntity, table=True):
 
     task_item_id: int | None = Field(default=None, foreign_key="taskitem.id")
     work_item_id: int | None = Field(default=None, foreign_key="workitem.id")
+    project_id: int | None = Field(default=None, foreign_key="project.id")
     node_id: str | None = None
     incident_type: str
     description: str
