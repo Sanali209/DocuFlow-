@@ -15,6 +15,8 @@ from docuflow.features.task_board.system import TaskBoardSystem
 from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets import StatusBadge
 from docuflow.lib.widgets.bucket_panel import BucketPanel
+from docuflow.lib.widgets.handover_banner import HandoverBanner
+from docuflow.lib.widgets.handover_form import HandoverForm
 from docuflow.lib.widgets.hierarchy_table import HierarchyTable
 from docuflow.lib.widgets.ui_utils import NotifyHelper, get_kpi_color, get_node_status_color
 
@@ -98,18 +100,20 @@ class TaskBoardView(BaseDocuWidget):
                         ).render()
 
                     with ui.tab_panel(basket_tab):
-                        self._render_node_selector(nodes)
-                        BucketPanel(
-                            node_id=self.node_id if self.node_id else "UNKNOWN",
-                            user=self.user,
-                            system_scope=self.system_scope,
-                        ).render()  # type: ignore[call-arg]
-                        with ui.row().classes("w-full justify-end mt-4"):
-                            ui.button(
-                                "Сдать смену",
-                                icon="swap_horiz",
-                                on_click=self._show_handover_dialog,
-                            ).props("color=orange rounded-xl")
+                        with ui.column().classes("w-full gap-4"):
+                            self._render_node_selector(nodes)
+                            await self._render_handover_banner(req)
+                            BucketPanel(
+                                node_id=self.node_id if self.node_id else "UNKNOWN",
+                                user=self.user,
+                                system_scope=self.system_scope,
+                            ).render()  # type: ignore[call-arg]
+                            HandoverForm(
+                                node_id=self.node_id if self.node_id else "UNKNOWN",
+                                on_submit=self._execute_handover,
+                                on_toggle=self.render.refresh,
+                                system_scope=self.system_scope,
+                            ).render()
 
     def _render_role_switcher(self) -> None:
         """Рендерит переключатель роли."""
@@ -138,64 +142,50 @@ class TaskBoardView(BaseDocuWidget):
         SessionContext.set("task_board_role", role)
         self.render.refresh()
 
-    # ==================== ВИД ОПЕРАТОРА ====================
+    async def _render_handover_banner(self, req: Any) -> None:
+        """Рендерит баннер входящей заметки о передаче смены."""
+        if not self.node_id:
+            return
+        tb_system = await req.get(TaskBoardSystem)
+        bucket_entries = tb_system.get_bucket(self.node_id)
 
-    async def _render_operator_view(self, req, nodes) -> None:
-        """Рендерит вид оператора."""
-        with ui.column().classes("w-full gap-4"):
-            # Выбираем узел (инициализирует self.node_id)
-            self._render_node_selector(nodes)
+        for entry in bucket_entries:
+            if entry.handover_note and entry.assigned_user == self.user:
 
-            # Корзина оператора - передаем явно node_id
-            BucketPanel(
-                node_id=self.node_id if self.node_id else "UNKNOWN",
-                user=self.user,
-                system_scope=self.system_scope,
-            ).render()  # type: ignore[call-arg]
+                async def do_accept(e: WorkerBucketEntry = entry) -> None:
+                    async with self.scope() as req2:
+                        session = await req2.get(Session)
+                        e.handover_note = None
+                        session.add(e)
+                        session.commit()
+                    self.render.refresh()
 
-            # Передача смены
-            with ui.row().classes("w-full justify-end mt-4"):
-                ui.button(
-                    "Сдать смену", icon="swap_horiz", on_click=self._show_handover_dialog
-                ).props("color=orange rounded-xl")
+                HandoverBanner(
+                    from_operator=entry.handover_from or "Unknown",
+                    note=entry.handover_note,
+                    on_accept=do_accept,
+                    system_scope=self.system_scope,
+                ).render()
 
-    def _show_handover_dialog(self):
-        from docuflow.lib.widgets.input import InputLabel, TextareaLabel
-
-        with ui.dialog() as dialog, ui.card().classes("p-6 w-[400px] gap-4"):
-            ui.label("Сдача смены").classes("text-xl font-bold text-orange-400")
-
-            recv_operator_widget = InputLabel(
-                label="Имя сменщика (кому передать)", placeholder="Введите имя..."
-            ).render()
-
-            note_widget = TextareaLabel(
-                label="Заметка по работе / материалу", placeholder="Добавьте детали..."
-            ).render()
-
-            with ui.row().classes("w-full justify-between items-center"):
-                ui.button("Отмена", on_click=dialog.close).props("flat text-color=slate-400")
-                ui.button(
-                    "ПОДТВЕРДИТЬ СДАЧУ",
-                    on_click=lambda: self._execute_handover(
-                        recv_operator_widget.value, note_widget.value, dialog
-                    ),
-                ).props("color=orange rounded-xl").classes("font-bold")
-        dialog.open()
-
-    async def _execute_handover(self, recv_operator: str, note: str, dialog):
+    async def _execute_handover(self, recv_operator: str, note: str) -> None:
+        """Выполняет передачу смены."""
         if not recv_operator:
             NotifyHelper.warning("Укажите кому сдаете смену")
+            return
+
+        if not self.node_id:
+            NotifyHelper.warning("Рабочее место не выбрано")
             return
 
         async with self.scope() as req:
             tb_system = await req.get(TaskBoardSystem)
             tb_system.handover(
-                self.node_id, recv_operator, str(note) if note else "Смена закрыта без комментариев"
+                self.node_id,
+                recv_operator,
+                note if note else "Смена закрыта без комментариев",
             )
 
         NotifyHelper.success("Смена успешно передана")
-        dialog.close()
         self.render.refresh()
 
     def _render_node_selector(self, nodes) -> None:
@@ -221,52 +211,12 @@ class TaskBoardView(BaseDocuWidget):
             ).render().classes("w-48")
 
     async def _select_node(self, node_id: str) -> None:
-        """Выбирает узел и проверяет заметки о передаче смены."""
+        """Выбирает узел."""
         if not node_id or not isinstance(node_id, str):
             return
 
         self.node_id = node_id
-
-        async with self.scope() as req:
-            tb_system = await req.get(TaskBoardSystem)
-            session = await req.get(Session)
-
-            # Проверка заметок о передаче смены
-            bucket_entries = tb_system.get_bucket(node_id)
-            handover_notes = [
-                e.handover_note
-                for e in bucket_entries
-                if e.handover_note and e.assigned_user == self.user
-            ]
-
-            if handover_notes:
-                self._show_handover_alert(handover_notes[0])
-                # Очищаем заметки после прочтения, чтобы не показывать снова
-                for e in bucket_entries:
-                    if e.handover_note:
-                        e.handover_note = None
-                        session.add(e)
-                session.commit()
-
         self.render.refresh()
-
-    def _show_handover_alert(self, note: str) -> None:
-        """Показывает диалог с заметкой от предыдущей смены."""
-        with (
-            ui.dialog() as dialog,
-            ui.card().classes("p-6 w-[450px] bg-orange-50 border-2 border-orange-200"),
-        ):
-            with ui.row().classes("items-center gap-2 mb-2"):
-                ui.icon("info", color="orange").classes("text-2xl")
-                ui.label("Заметка от предыдущей смены").classes("text-lg font-bold text-orange-800")
-
-            ui.label(note).classes("text-body1 text-orange-900 mb-4 whitespace-pre-wrap italic")
-
-            with ui.row().classes("w-full justify-end"):
-                ui.button("ПРИНЯТО", on_click=dialog.close).props(
-                    "color=orange rounded-xl"
-                ).classes("font-bold")
-        dialog.open()
 
     # ==================== ВИД БРИГАДИРА ====================
 
