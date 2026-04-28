@@ -329,7 +329,9 @@ class IncidentView(BaseDocuWidget):
                 label="Resolution Note", placeholder="Replaced motor / Repaired leak..."
             ).classes("w-full")
             tech_name = (
-                ui.input(label="Technician ID").classes("w-full").props(f'value="{self.current_user}"')
+                ui.input(label="Technician ID")
+                .classes("w-full")
+                .props(f'value="{self.current_user}"')
             )
 
             async def submit():
@@ -337,7 +339,9 @@ class IncidentView(BaseDocuWidget):
                     return
                 async with self.scope() as req:
                     fresh_incident_sys = await req.get(IncidentSystem)
-                    await fresh_incident_sys.resolve_incident(incident.id, tech_name.value, note.value)
+                    await fresh_incident_sys.resolve_incident(
+                        incident.id, tech_name.value, note.value
+                    )
                 dialog.close()
                 await self.full_refresh()
                 NotifyHelper.info(f"Incident {incident.id} cleared.")

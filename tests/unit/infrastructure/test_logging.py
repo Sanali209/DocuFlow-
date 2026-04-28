@@ -3,8 +3,6 @@
 Coverage target: infrastructure/logging.py
 """
 
-import pytest
-
 from docuflow.infrastructure.logging import setup_logging
 
 

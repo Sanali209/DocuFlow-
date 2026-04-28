@@ -266,12 +266,12 @@ class BatchCard(BaseDocuWidget):
         async def check_alerts(container):
             from sqlmodel import Session
 
-            from docuflow.features.task_board.batch_engine import BatchEngine
+            from docuflow.features.task_board.task_group_service import TaskGroupService
 
             async with self.scope() as req:
                 session = await req.get(Session)
-                engine = BatchEngine(session)
-                alerts = engine.check_stock_alerts(self.tasks)
+                service = TaskGroupService(session)
+                alerts = service.check_stock_alerts(self.tasks)
 
                 if alerts:
                     with container:
@@ -352,12 +352,12 @@ class TaskItemRow:
         async def check_alerts(container):
             from sqlmodel import Session
 
-            from docuflow.features.task_board.batch_engine import BatchEngine
+            from docuflow.features.task_board.task_group_service import TaskGroupService
 
             async with self.system_scope() as req:
                 session = await req.get(Session)
-                engine = BatchEngine(session)
-                alerts = engine.check_stock_alerts([self.task])
+                service = TaskGroupService(session)
+                alerts = service.check_stock_alerts([self.task])
                 if alerts:
                     with container:
                         with ui.row().classes("items-center gap-1 text-orange-600"):

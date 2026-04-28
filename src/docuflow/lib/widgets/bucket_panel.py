@@ -96,7 +96,12 @@ class BucketPanel(BaseDocuWidget):
                         self._render_batch_card(session, system, bid, tasks, is_active=False)
 
     def _render_batch_card(
-        self, session: Session, system: TaskBoardSystem, batch_group_id: str, tasks: list[TaskItem], is_active: bool = False
+        self,
+        session: Session,
+        system: TaskBoardSystem,
+        batch_group_id: str,
+        tasks: list[TaskItem],
+        is_active: bool = False,
     ) -> None:
         """Вспомогательный метод для рендера карточки батча."""
         drift = self._calculate_batch_drift(tasks)
@@ -139,7 +144,9 @@ class BucketPanel(BaseDocuWidget):
             ui.label("Корзина пуста").classes("text-h6 text-slate-300")
             ui.label("Нет назначенных батчей").classes("text-slate-500")
 
-    def _group_by_batch(self, session: Session, entries: list[WorkerBucketEntry]) -> dict[str, list[TaskItem]]:
+    def _group_by_batch(
+        self, session: Session, entries: list[WorkerBucketEntry]
+    ) -> dict[str, list[TaskItem]]:
         """
         Группирует записи корзины по batch_group_id.
 

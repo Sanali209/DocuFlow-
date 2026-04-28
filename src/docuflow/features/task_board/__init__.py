@@ -3,19 +3,15 @@
 
 Экспортирует:
 - TaskBoardSystem — система управления задачами операторов
-- BatchEngine — движок группировки задач
-- BatchRule — правила группировки
-- BatchGroup — группа задач
+- TaskGroupService — сервис группировки задач
 - StockAlert — предупреждение о запасах
 """
 
-from .batch_engine import BatchEngine, BatchGroup, BatchRule, StockAlert
 from .system import TaskBoardSystem
+from .task_group_service import StockAlert, TaskGroupService
 
 __all__ = [
-    "BatchEngine",
-    "BatchGroup",
-    "BatchRule",
     "StockAlert",
     "TaskBoardSystem",
+    "TaskGroupService",
 ]

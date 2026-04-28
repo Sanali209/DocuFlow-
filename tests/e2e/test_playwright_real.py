@@ -79,7 +79,9 @@ class TestLoginFlow:
 
         # Проверяем что остались на странице логина (не редиректнуло)
         time.sleep(1)
-        assert "/login" in page.url or page.url == app_url, "Should stay on login page with wrong credentials"
+        assert "/login" in page.url or page.url == app_url, (
+            "Should stay on login page with wrong credentials"
+        )
 
 
 class TestMainPortal:
@@ -122,10 +124,7 @@ class TestServerLogs:
         errors = check_server_logs_for_errors()
 
         # Фильтруем только критические ошибки
-        critical_errors = [
-            e for e in errors
-            if any(x in e for x in ["500", "Exception", "ERROR"])
-        ]
+        critical_errors = [e for e in errors if any(x in e for x in ["500", "Exception", "ERROR"])]
 
         if critical_errors:
             pytest.fail("Server errors found:\n" + "\n".join(critical_errors))
@@ -156,7 +155,9 @@ class TestSPAViews:
         # Ищем кнопку Dashboard в sidebar
         try:
             # Пробуем найти по тексту
-            dashboard_btn = page.locator("text=Dashboard, [aria-label='Dashboard'], .q-item:has-text('Dashboard')").first
+            dashboard_btn = page.locator(
+                "text=Dashboard, [aria-label='Dashboard'], .q-item:has-text('Dashboard')"
+            ).first
             if dashboard_btn.is_visible():
                 dashboard_btn.click()
                 time.sleep(2)

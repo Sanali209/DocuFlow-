@@ -110,7 +110,9 @@ class AnalyticsView(BaseDocuWidget):
                                         "borderWidth": 2,
                                     },
                                     "label": {"show": False},
-                                    "data": [{"value": v, "name": k} for k, v in status_counts.items()],
+                                    "data": [
+                                        {"value": v, "name": k} for k, v in status_counts.items()
+                                    ],
                                 }
                             ],
                         }

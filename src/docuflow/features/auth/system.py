@@ -60,9 +60,7 @@ class AuthSystem(BaseSystem):
         # 1. Ensure Admin role exists
         admin_role = self.find_one(Role, name="Admin")
         if not admin_role:
-            admin_role = self.save(
-                Role(name="Admin", permissions=json.dumps(["*:full"]))
-            )
+            admin_role = self.save(Role(name="Admin", permissions=json.dumps(["*:full"])))
 
         # 2. Ensure admin user exists
         admin_user = self.find_one(User, username="admin")

@@ -122,10 +122,14 @@ class AdminView(BaseDocuWidget):
                     for r in roles:
                         is_admin_role = r.name.strip().lower() == "admin"
                         border = "border-indigo-500/40" if is_admin_role else "border-white/5"
-                        with ui.column().classes(f"w-full p-6 bg-white/5 rounded-2xl border {border}"):
+                        with ui.column().classes(
+                            f"w-full p-6 bg-white/5 rounded-2xl border {border}"
+                        ):
                             with ui.row().classes("w-full justify-between items-center mb-4"):
                                 with ui.column().classes("gap-0"):
-                                    label_color = "text-indigo-400" if is_admin_role else "text-white"
+                                    label_color = (
+                                        "text-indigo-400" if is_admin_role else "text-white"
+                                    )
                                     ui.label(r.name).classes(f"text-xl font-bold {label_color}")
                                     ui.label(f"Role ID: {r.id}").classes(
                                         "text-[10px] text-slate-500 font-mono"
@@ -151,7 +155,9 @@ class AdminView(BaseDocuWidget):
                                     is_on = module_perm is not None
                                     perm_type = module_perm.split(":")[1] if is_on else "none"
 
-                                    async def _toggle(m=mod, r_name=r.name, active=is_on, mp=module_perm):
+                                    async def _toggle(
+                                        m=mod, r_name=r.name, active=is_on, mp=module_perm
+                                    ):
                                         if r_name.strip().lower() == "admin":
                                             return
 
@@ -161,13 +167,18 @@ class AdminView(BaseDocuWidget):
                                             from sqlmodel import select
 
                                             from docuflow.domain.entities.identity import Role
-                                            r_ref = fresh_system.session.exec(select(Role).where(Role.name == r_name)).first()
+
+                                            r_ref = fresh_system.session.exec(
+                                                select(Role).where(Role.name == r_name)
+                                            ).first()
 
                                             if not r_ref:
                                                 return
 
                                             remaining = [
-                                                p for p in r_ref.permissions_list if not p.startswith(f"{m}:")
+                                                p
+                                                for p in r_ref.permissions_list
+                                                if not p.startswith(f"{m}:")
                                             ]
                                             if not active:
                                                 remaining.append(f"{m}:read")
@@ -306,7 +317,8 @@ class AdminView(BaseDocuWidget):
                                     .classes("w-full text-slate-300")
                                 )
                                 txt_input.on(
-                                    "change", lambda e, tid=tmpl.id, en=tmpl.enabled: update_text(e, tid, en)
+                                    "change",
+                                    lambda e, tid=tmpl.id, en=tmpl.enabled: update_text(e, tid, en),
                                 )
 
                             with ui.column().classes("ml-8 items-end w-32"):
@@ -345,7 +357,9 @@ class AdminView(BaseDocuWidget):
                                 .classes("w-full")
                             )
                             p_name = (
-                                ui.input("Название").props("dark rounded standout").classes("w-full")
+                                ui.input("Название")
+                                .props("dark rounded standout")
+                                .classes("w-full")
                             )
                             p_json = (
                                 ui.input("Пресет (JSON)", value="{}")
@@ -428,7 +442,9 @@ class AdminView(BaseDocuWidget):
                                     "Allowed Modules (comma-sep)", value=w.allowed_modules or ""
                                 ).props("dark rounded standout")
 
-                                async def _update_binding(wp_name=w.name, nid=new_nid, allow=allowed):
+                                async def _update_binding(
+                                    wp_name=w.name, nid=new_nid, allow=allowed
+                                ):
                                     async with self.scope() as req2:
                                         fresh_system = await req2.get(AdminSystem)
                                         fresh_system.upsert_workplace(
@@ -470,7 +486,9 @@ class AdminView(BaseDocuWidget):
 
                         with ui.row().classes("gap-2"):
                             ui.button("Edit")
-                            ui.button("Delete", icon="delete", on_click=delete_confirm.open).classes(
+                            ui.button(
+                                "Delete", icon="delete", on_click=delete_confirm.open
+                            ).classes(
                                 "rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-xs py-2 px-4"
                             )
 
@@ -511,12 +529,16 @@ class AdminView(BaseDocuWidget):
                             with ui.column().classes("flex-grow gap-1"):
                                 ui.label(log.message).classes("text-slate-200 text-sm")
                                 if log.payload and len(log.payload) > 2:
-                                    ui.label(log.payload).classes("text-[9px] text-slate-600 font-mono")
+                                    ui.label(log.payload).classes(
+                                        "text-[9px] text-slate-600 font-mono"
+                                    )
 
                             # Author and Node
                             with ui.column().classes("items-end w-32 gap-0"):
                                 if log.author:
-                                    ui.label(log.author).classes("text-xs text-indigo-400 font-bold")
+                                    ui.label(log.author).classes(
+                                        "text-xs text-indigo-400 font-bold"
+                                    )
                                 ui.label(log.node_id or "system").classes(
                                     "text-[10px] text-slate-500"
                                 )
@@ -549,7 +571,12 @@ class AdminView(BaseDocuWidget):
                 cols = [
                     {"name": "node_id", "label": "Identifier", "field": "node_id", "align": "left"},
                     {"name": "status", "label": "State", "field": "status", "align": "center"},
-                    {"name": "is_leader", "label": "Leader", "field": "is_leader", "align": "center"},
+                    {
+                        "name": "is_leader",
+                        "label": "Leader",
+                        "field": "is_leader",
+                        "align": "center",
+                    },
                     {
                         "name": "last_active",
                         "label": "Last Activity",
@@ -581,8 +608,7 @@ class AdminView(BaseDocuWidget):
                         fresh_system.force_global_step_down()
                         NotifyHelper.warning("Step down command broadcasted")
 
-                ui.button(
-                    "EMERGENCY STEP DOWN")
+                ui.button("EMERGENCY STEP DOWN")
 
             # ── USERS ──────────────────────────────────────────────
             with ui.tab_panel(t_users):
@@ -591,9 +617,13 @@ class AdminView(BaseDocuWidget):
 
                     with ui.dialog().classes("glass-card p-4 rounded-3xl") as user_dialog:
                         with ui.column().classes("gap-4 w-[350px] p-6"):
-                            ui.label("Register New Identity").classes("text-xl font-bold text-white")
+                            ui.label("Register New Identity").classes(
+                                "text-xl font-bold text-white"
+                            )
                             u_name = (
-                                ui.input("Username").props("dark rounded standout").classes("w-full")
+                                ui.input("Username")
+                                .props("dark rounded standout")
+                                .classes("w-full")
                             )
                             u_pass = (
                                 ui.input("Password", password=True)
@@ -650,7 +680,9 @@ class AdminView(BaseDocuWidget):
                         with ui.column().classes("gap-4 w-[350px] p-6"):
                             ui.label("Create Custom Role").classes("text-xl font-bold text-white")
                             r_name = (
-                                ui.input("Role Name").props("dark rounded standout").classes("w-full")
+                                ui.input("Role Name")
+                                .props("dark rounded standout")
+                                .classes("w-full")
                             )
 
                             async def _create_role():
@@ -686,7 +718,9 @@ class AdminView(BaseDocuWidget):
 
                             async def _create_binding():
                                 if not wp_name.value or len(wp_name.value) < 3:
-                                    NotifyHelper.warning("Workplace name must be at least 3 characters")
+                                    NotifyHelper.warning(
+                                        "Workplace name must be at least 3 characters"
+                                    )
                                     return
                                 if not wp_node.value:
                                     NotifyHelper.warning("Hardware Node ID is required")

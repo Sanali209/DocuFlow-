@@ -111,7 +111,9 @@ class TestSidebarNavigation:
     ]
 
     @pytest.mark.parametrize("view_name,button_text,expected_text", views)
-    def test_view_navigation(self, logged_in_page: Page, app_url: str, view_name, button_text, expected_text):
+    def test_view_navigation(
+        self, logged_in_page: Page, app_url: str, view_name, button_text, expected_text
+    ):
         """Проверка перехода в каждый view."""
         page = logged_in_page
 
@@ -129,7 +131,9 @@ class TestSidebarNavigation:
         assert "404" not in content or "not found" not in content.lower()
 
         # Проверяем наличие ожидаемого текста
-        assert expected_text.lower() in content.lower(), f"Expected '{expected_text}' in {view_name}"
+        assert expected_text.lower() in content.lower(), (
+            f"Expected '{expected_text}' in {view_name}"
+        )
 
     def test_admin_view_accessible_for_admin(self, logged_in_page: Page, app_url: str):
         """Admin view доступен для admin."""
@@ -174,12 +178,14 @@ class TestHeader:
 
         # Ищем кнопку logout (иконка в header)
         # В header есть кнопка с icon="logout"
-        logout_buttons = page.locator('button').all()
+        logout_buttons = page.locator("button").all()
         logout_btn = None
 
         for btn in logout_buttons:
             try:
-                if btn.is_visible() and ("logout" in btn.get_attribute("icon") or "logout" in btn.inner_html().lower()):
+                if btn.is_visible() and (
+                    "logout" in btn.get_attribute("icon") or "logout" in btn.inner_html().lower()
+                ):
                     logout_btn = btn
                     break
             except:
@@ -187,7 +193,7 @@ class TestHeader:
 
         if not logout_btn:
             # Пробуем найти по HTML
-            buttons = page.locator('button').all()
+            buttons = page.locator("button").all()
             for btn in buttons:
                 try:
                     html = btn.inner_html()

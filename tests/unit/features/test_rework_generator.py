@@ -29,8 +29,6 @@ def test_generate_rework_work_item(session):
     session.commit()
 
     gen = ReworkGenerator(session, shared_path="/tmp")
-    result = gen.generate(
-        "REWORK-001", project.id, [CartItem(sku="BASE-001", qty=4)]
-    )
+    result = gen.generate("REWORK-001", project.id, [CartItem(sku="BASE-001", qty=4)])
 
     assert result.folder_name == "REWORK-001"

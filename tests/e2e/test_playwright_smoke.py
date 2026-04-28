@@ -76,6 +76,7 @@ class TestPagePerformance:
     def test_home_page_load_time(self, page: Page, app_url: str):
         """Проверка времени загрузки главной страницы."""
         import time
+
         start = time.time()
         page.goto(app_url)
         page.wait_for_load_state("networkidle")

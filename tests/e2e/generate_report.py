@@ -54,6 +54,7 @@ def analyze_logs():
 
     return stats
 
+
 def generate_report():
     """Генерирует полный отчёт."""
     print("=" * 70)
@@ -111,6 +112,7 @@ def generate_report():
         print("     (возможно, тесты ходили на несуществующие пути)")
     else:
         print("   - Нет критических проблем")
+
 
 if __name__ == "__main__":
     generate_report()

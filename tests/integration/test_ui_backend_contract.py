@@ -1,7 +1,6 @@
 import pytest
 from sqlmodel import Session, create_engine
 
-from docuflow.features.task_board.batch_engine import BatchEngine
 from docuflow.features.task_board.system import TaskBoardSystem
 from docuflow.features.work_items.system import WorkItemSystem
 from docuflow.infrastructure.config import Config
@@ -55,11 +54,3 @@ class TestUIBackendContract:
 
         for method in expected_methods:
             assert hasattr(system, method), f"TaskBoardSystem должен иметь метод {method}"
-
-    def test_batch_engine_contract(self, session):
-        """Проверка контракта BatchEngine (используется в BatchCard)."""
-        engine = BatchEngine(session=session)
-
-        assert hasattr(engine, "check_stock_alerts"), (
-            "BatchEngine должен иметь метод check_stock_alerts"
-        )

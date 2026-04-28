@@ -7,6 +7,7 @@ from playwright.sync_api import sync_playwright
 
 BASE_URL = "http://localhost:8082"
 
+
 def take_screenshots():
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -44,7 +45,9 @@ def take_screenshots():
 
         browser.close()
 
+
 if __name__ == "__main__":
     import os
+
     os.makedirs("tests/e2e/screenshots", exist_ok=True)
     take_screenshots()

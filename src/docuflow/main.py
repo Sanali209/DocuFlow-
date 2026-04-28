@@ -213,4 +213,5 @@ ui.run_with(app, title="DocuFlow Portal", storage_secret="docuflow_nicegui_shh")
 
 if __name__ in {"__main__", "__mp_main__"}:
     import uvicorn
+
     uvicorn.run("docuflow.main:app", host="0.0.0.0", port=_port, reload=False)

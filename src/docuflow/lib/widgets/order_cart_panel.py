@@ -39,7 +39,7 @@ class OrderCartPanel(BaseDocuWidget):
                         ui.button("Очистить", on_click=self._clear).props("flat")
                         ui.button(
                             "СОЗДАТЬ ЗАКАЗ ▼",
-                            on_click=self._show_order_form,  # noqa: RUF001
+                            on_click=self._show_order_form,
                         ).props("color=primary")
 
     def _toggle(self) -> None:

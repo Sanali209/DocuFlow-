@@ -191,7 +191,9 @@ class WorkItemSystem(BaseSystem):
         from docuflow.domain.entities.production import TaskItem
 
         return list(
-            self.db_session.exec(select(TaskItem).where(TaskItem.work_item_id == work_item_id)).all()
+            self.db_session.exec(
+                select(TaskItem).where(TaskItem.work_item_id == work_item_id)
+            ).all()
         )
 
     def get_logs_for_work_item(self, work_item_id: int) -> list[WorkLog]:

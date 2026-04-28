@@ -1,0 +1,5 @@
+2026-04-28 04:20:24.223 | INFO     | docuflow.infrastructure.logging:setup_logging:23 - Logging initialized with level: [bold blue]DEBUG[/]
+2026-04-28 04:20:24.231 | INFO     | docuflow.infrastructure.logging:setup_logging:23 - Logging initialized with level: [bold blue]INFO[/]
+2026-04-28 04:20:24.237 | INFO     | docuflow.infrastructure.logging:setup_logging:23 - Logging initialized with level: [bold blue]WARNING[/]
+2026-04-28 04:20:24.808 | DEBUG    | docuflow.infrastructure.di:get_sdk:182 - AppProvider: created SDK instance id=2584387755936
+2026-04-28 04:20:24.904 | WARNING  | docuflow.infrastructure.bus:_cleanup_temp_files:248 - FileBus: Removed stale temp file: C:\Users\sanal\AppData\Local\Temp\pytest-of-sanal\pytest-347\test_cleanup_temp_files_remove0\BUS\INBOX\TEMP_old.json

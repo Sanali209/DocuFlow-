@@ -26,7 +26,11 @@ def register_projects_view():
 
 
 async def projects_view_wrapper(
-    project_system: ProjectSystem, wi_system: WorkItemSystem, system_scope: Any, layout: Any, **kwargs
+    project_system: ProjectSystem,
+    wi_system: WorkItemSystem,
+    system_scope: Any,
+    layout: Any,
+    **kwargs,
 ):
     """Wrapper to instantiate and render the ProjectManagementView."""
     await ProjectManagementView(project_system, wi_system, system_scope, layout=layout).render()

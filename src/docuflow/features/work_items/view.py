@@ -130,7 +130,12 @@ class WorkItemsView(BaseDocuWidget):
             columns = [
                 {"name": "status", "label": "Статус", "field": "status", "align": "center"},
                 {"name": "folder_name", "label": "Папка", "field": "folder_name", "align": "left"},
-                {"name": "sidra_number", "label": "Наряд №", "field": "sidra_number", "align": "left"},
+                {
+                    "name": "sidra_number",
+                    "label": "Наряд №",
+                    "field": "sidra_number",
+                    "align": "left",
+                },
                 {
                     "name": "work_item_type",
                     "label": "Тип",

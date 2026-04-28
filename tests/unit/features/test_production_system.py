@@ -18,7 +18,9 @@ from docuflow.infrastructure.config import Config
 
 @pytest.fixture
 def engine():
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     SQLModel.metadata.create_all(engine)
     return engine
 

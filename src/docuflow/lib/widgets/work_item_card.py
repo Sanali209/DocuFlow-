@@ -69,7 +69,9 @@ class WorkItemCard(BaseDocuWidget):
                     with ui.row().classes("items-center gap-3"):
                         ui.icon("assignment", size="32px").classes("text-teal-400")
                         with ui.column().classes("gap-0"):
-                            ui.label(self.work_item.folder_name).classes("text-xl font-bold text-white")
+                            ui.label(self.work_item.folder_name).classes(
+                                "text-xl font-bold text-white"
+                            )
                             ui.label(
                                 f"ID: {self.work_item.id} • {self.work_item.work_item_type.upper()}"
                             ).classes("text-[10px] text-slate-500 uppercase tracking-widest")
@@ -122,7 +124,10 @@ class WorkItemCard(BaseDocuWidget):
                                 on_click=lambda: self._go_to_task_board(dialog),
                             ).props("color=indigo-500 unelevated rounded-xl").classes("font-bold")
 
-                        if self.work_item.status in (WorkItemStatus.NEW, WorkItemStatus.PENDING_CUTS):
+                        if self.work_item.status in (
+                            WorkItemStatus.NEW,
+                            WorkItemStatus.PENDING_CUTS,
+                        ):
                             ui.button(
                                 "✅ ПОЛУЧИТЬ ДОКУМЕНТ",
                                 on_click=lambda: self._register_document(dialog),
@@ -146,9 +151,9 @@ class WorkItemCard(BaseDocuWidget):
                 with ui.row().classes(
                     "w-full justify-end p-4 bg-slate-800/40 border-t border-slate-700/50"
                 ):
-                    ui.button("ЗАКРЫТЬ", on_click=dialog.close).props("flat color=slate-400").classes(
-                        "text-xs font-bold"
-                    )
+                    ui.button("ЗАКРЫТЬ", on_click=dialog.close).props(
+                        "flat color=slate-400"
+                    ).classes("text-xs font-bold")
 
             dialog.open()
 
@@ -174,7 +179,9 @@ class WorkItemCard(BaseDocuWidget):
             wi_sys = await req.get(WorkItemSystem)
             tasks = wi_sys.get_tasks_for_work_item(self.work_item.id)
 
-            table = ui.table(columns=columns, rows=[t.model_dump() for t in tasks]).classes("w-full")
+            table = ui.table(columns=columns, rows=[t.model_dump() for t in tasks]).classes(
+                "w-full"
+            )
 
         # Add 'Assign to Me' action slot
         table.add_slot(
@@ -196,7 +203,9 @@ class WorkItemCard(BaseDocuWidget):
                     system = await req.get(TaskBoardSystem)
                     node_id = system.config.node_id
                     await system.assign_task_to_node(task_row["id"], node_id, self.user)
-                NotifyHelper.success(f"Файл {task_row['file_name']} добавлен в вашу корзину ({node_id})")
+                NotifyHelper.success(
+                    f"Файл {task_row['file_name']} добавлен в вашу корзину ({node_id})"
+                )
                 await self._render_tasks_table.refresh()
 
             self.safe_action(do_pull, error_prefix="Ошибка захвата")

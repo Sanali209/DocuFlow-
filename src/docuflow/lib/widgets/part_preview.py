@@ -16,9 +16,7 @@ class PartPreview(BaseDocuWidget):
     - consistent sizing for grids and modals.
     """
 
-    def __init__(
-        self, svg_path: str | None = None, size: str = "120px", system_scope: Any = None
-    ):
+    def __init__(self, svg_path: str | None = None, size: str = "120px", system_scope: Any = None):
         super().__init__(system_scope)
         self.svg_path = svg_path
         self.size = size

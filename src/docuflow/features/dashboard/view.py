@@ -74,7 +74,9 @@ class DashboardView(BaseDocuWidget):
                 ui.label("CLUSTERS NODES").classes(
                     "text-slate-400 font-bold text-xs tracking-tighter"
                 )
-                ui.label(f"{len(nodes)} ONLINE").classes("text-emerald-400 text-4xl font-black mt-2")
+                ui.label(f"{len(nodes)} ONLINE").classes(
+                    "text-emerald-400 text-4xl font-black mt-2"
+                )
                 ui.label("P2P Mesh Synchronized").classes(
                     "text-slate-500 text-[10px] mt-4 uppercase font-bold"
                 )

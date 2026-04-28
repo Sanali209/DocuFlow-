@@ -21,13 +21,14 @@ with sync_playwright() as p:
 
     # Ищем input поля
     import re
-    inputs = re.findall(r'<input[^>]*>', html)
+
+    inputs = re.findall(r"<input[^>]*>", html)
     print("Input поля на странице:")
     for inp in inputs:
         print(f"  {inp}")
 
     # Ищем кнопки
-    buttons = re.findall(r'<button[^>]*>.*?</button>', html, re.DOTALL)
+    buttons = re.findall(r"<button[^>]*>.*?</button>", html, re.DOTALL)
     print("\nКнопки на странице:")
     for btn in buttons[:5]:
         print(f"  {btn[:100]}")

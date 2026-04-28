@@ -24,27 +24,33 @@ def search_session():
         session.refresh(project)
 
         # Seed work items
-        session.add(WorkItem(
-            project_id=project.id,
-            folder_name="SIDRA-123",
-            folder_path="./SIDRA-123",
-            sidra_number="123",
-            work_item_type="SIDRA",
-        ))
-        session.add(WorkItem(
-            project_id=project.id,
-            folder_name="SIDRA-456",
-            folder_path="./SIDRA-456",
-            sidra_number="456",
-            work_item_type="SIDRA",
-        ))
-        session.add(WorkItem(
-            project_id=project.id,
-            folder_name="OTHER-001",
-            folder_path="./OTHER-001",
-            sidra_number="999",
-            work_item_type="REWORK",
-        ))
+        session.add(
+            WorkItem(
+                project_id=project.id,
+                folder_name="SIDRA-123",
+                folder_path="./SIDRA-123",
+                sidra_number="123",
+                work_item_type="SIDRA",
+            )
+        )
+        session.add(
+            WorkItem(
+                project_id=project.id,
+                folder_name="SIDRA-456",
+                folder_path="./SIDRA-456",
+                sidra_number="456",
+                work_item_type="SIDRA",
+            )
+        )
+        session.add(
+            WorkItem(
+                project_id=project.id,
+                folder_name="OTHER-001",
+                folder_path="./OTHER-001",
+                sidra_number="999",
+                work_item_type="REWORK",
+            )
+        )
 
         # Seed parts
         session.add(PartLibrary(sku="PLATE-10", version="A", name="Base Plate"))

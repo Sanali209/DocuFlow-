@@ -65,7 +65,9 @@ class LoginView(BaseDocuWidget):
             ):
                 with ui.column().classes("items-center gap-4"):
                     ui.icon("waves", size="64px", color="teal-400").classes("")
-                    ui.label("DocuFlow").classes("text-4xl font-extrabold tracking-tight text-white")
+                    ui.label("DocuFlow").classes(
+                        "text-4xl font-extrabold tracking-tight text-white"
+                    )
                     ui.label("P2P ORCHESTRATION ENGINE").classes(
                         "text-[10px] tracking-[0.4em] text-slate-500 font-bold"
                     )

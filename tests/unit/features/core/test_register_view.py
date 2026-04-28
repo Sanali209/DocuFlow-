@@ -3,8 +3,6 @@
 Target: features/core/views.py
 """
 
-import pytest
-
 from docuflow.features.core.views import ViewRegistry, register_view
 
 
@@ -27,9 +25,7 @@ class TestRegisterViewDecorator:
         class FakeSystem:
             pass
 
-        @register_view(
-            name="dep_view", label="Dep", icon="settings", dependencies=[FakeSystem]
-        )
+        @register_view(name="dep_view", label="Dep", icon="settings", dependencies=[FakeSystem])
         class DepView:
             async def render(self):
                 pass

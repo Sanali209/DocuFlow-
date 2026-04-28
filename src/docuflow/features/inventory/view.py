@@ -72,6 +72,7 @@ class WarehouseView(BaseDocuWidget):
                                         )
 
                                         with ui.row().classes("w-full justify-end"):
+
                                             def _fulfill(r=req_log):
                                                 self.handle_supply_fulfillment(
                                                     r, render_supply_requests
@@ -180,7 +181,10 @@ class WarehouseView(BaseDocuWidget):
                                     .props("dark standout rounded")
                                 )
                                 drift_limit = (
-                                    ui.number("Drift Limit %", value=InventorySystem.DEFAULT_TIME_TOLERANCE_PCT)
+                                    ui.number(
+                                        "Drift Limit %",
+                                        value=InventorySystem.DEFAULT_TIME_TOLERANCE_PCT,
+                                    )
                                     .classes("flex-1")
                                     .props("dark standout rounded")
                                 )
@@ -308,8 +312,7 @@ class WarehouseView(BaseDocuWidget):
                                         )
                                     create_mat_dialog.close()
                                     await refresh_catalog()
-                                    NotifyHelper.warning(
-                                        f"Материал {mat_code.value} добавлен")
+                                    NotifyHelper.warning(f"Материал {mat_code.value} добавлен")
 
                             ui.button("ЗАРЕГИСТРИРОВАТЬ", on_click=handle_create_mat).classes(
                                 "w-full h-12 vibrant-btn text-white rounded-xl shadow-lg"
@@ -492,7 +495,12 @@ class WarehouseView(BaseDocuWidget):
                             "field": "created_at",
                             "align": "left",
                         },
-                        {"name": "operation", "label": "Оп.", "field": "operation", "align": "center"},
+                        {
+                            "name": "operation",
+                            "label": "Оп.",
+                            "field": "operation",
+                            "align": "center",
+                        },
                         {
                             "name": "qty_delta",
                             "label": "Дельта",

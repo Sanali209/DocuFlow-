@@ -69,7 +69,9 @@ class ScannerView(BaseDocuWidget):
             # --- HEADER SECTION ---
             with ui.row().classes("w-full items-center justify-between"):
                 with ui.column().classes("gap-1"):
-                    ui.label("Folder Ingestion & NC Mirror").classes("text-3xl font-bold text-white")
+                    ui.label("Folder Ingestion & NC Mirror").classes(
+                        "text-3xl font-bold text-white"
+                    )
                     with ui.row().classes("items-center gap-2"):
                         # Pulsing indicator for Master status
                         is_master = self.sdk.orchestrator.is_leader
@@ -121,7 +123,9 @@ class ScannerView(BaseDocuWidget):
                             ui.label("Last scan: Never")
                         ui.label(f"Files found: {status['items_found']}")
                         ui.label(
-                            "Status: Scanning SIDRA folder" if status["is_active"] else "Status: Idle"
+                            "Status: Scanning SIDRA folder"
+                            if status["is_active"]
+                            else "Status: Idle"
                         )
 
                 # NS Mirror Status Card
@@ -179,7 +183,9 @@ class ScannerView(BaseDocuWidget):
                     ui.label("CURRENT BUCKET STATUS").classes(
                         "text-xs font-bold text-slate-500 uppercase tracking-widest mb-4"
                     )
-                    mirror_status = NSMirrorStatus(self.engine, self.config.node_id, system_scope=self.system_scope)
+                    mirror_status = NSMirrorStatus(
+                        self.engine, self.config.node_id, system_scope=self.system_scope
+                    )
                     mirror_status.render()
 
                 # Scan Settings Snippet - READ FROM DATABASE

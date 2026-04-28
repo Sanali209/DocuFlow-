@@ -4,7 +4,6 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from docuflow.domain.entities.production import (
     MaterialType,
-    TaskGroup,
     TaskItem,
     TaskItemStatus,
     WorkItem,
@@ -67,8 +66,12 @@ def test_move_task_to_group(session):
     session.add(wi)
     session.flush()
 
-    t1 = TaskItem(work_item_id=wi.id, file_name="a.gnc", file_path="a.gnc", status=TaskItemStatus.PLANNED)
-    t2 = TaskItem(work_item_id=wi.id, file_name="b.gnc", file_path="b.gnc", status=TaskItemStatus.PLANNED)
+    t1 = TaskItem(
+        work_item_id=wi.id, file_name="a.gnc", file_path="a.gnc", status=TaskItemStatus.PLANNED
+    )
+    t2 = TaskItem(
+        work_item_id=wi.id, file_name="b.gnc", file_path="b.gnc", status=TaskItemStatus.PLANNED
+    )
     session.add_all([t1, t2])
     session.commit()
 
@@ -85,8 +88,12 @@ def test_split_group(session):
     session.add(wi)
     session.flush()
 
-    t1 = TaskItem(work_item_id=wi.id, file_name="a.gnc", file_path="a.gnc", status=TaskItemStatus.PLANNED)
-    t2 = TaskItem(work_item_id=wi.id, file_name="b.gnc", file_path="b.gnc", status=TaskItemStatus.PLANNED)
+    t1 = TaskItem(
+        work_item_id=wi.id, file_name="a.gnc", file_path="a.gnc", status=TaskItemStatus.PLANNED
+    )
+    t2 = TaskItem(
+        work_item_id=wi.id, file_name="b.gnc", file_path="b.gnc", status=TaskItemStatus.PLANNED
+    )
     session.add_all([t1, t2])
     session.commit()
 
@@ -103,8 +110,12 @@ def test_merge_groups(session):
     session.add(wi)
     session.flush()
 
-    t1 = TaskItem(work_item_id=wi.id, file_name="a.gnc", file_path="a.gnc", status=TaskItemStatus.PLANNED)
-    t2 = TaskItem(work_item_id=wi.id, file_name="b.gnc", file_path="b.gnc", status=TaskItemStatus.PLANNED)
+    t1 = TaskItem(
+        work_item_id=wi.id, file_name="a.gnc", file_path="a.gnc", status=TaskItemStatus.PLANNED
+    )
+    t2 = TaskItem(
+        work_item_id=wi.id, file_name="b.gnc", file_path="b.gnc", status=TaskItemStatus.PLANNED
+    )
     session.add_all([t1, t2])
     session.commit()
 

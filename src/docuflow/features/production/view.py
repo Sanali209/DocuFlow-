@@ -50,7 +50,9 @@ class ProductionView(BaseDocuWidget):
             )
 
             self.search_term = (
-                ui.input("Поиск по номеру (label_id)").props("dark standout rounded").classes("w-64")
+                ui.input("Поиск по номеру (label_id)")
+                .props("dark standout rounded")
+                .classes("w-64")
             )
 
             grid_cols = [
@@ -62,7 +64,12 @@ class ProductionView(BaseDocuWidget):
                     "align": "left",
                     "sortable": True,
                 },
-                {"name": "qty_produced", "label": "Кол-во", "field": "qty_produced", "align": "center"},
+                {
+                    "name": "qty_produced",
+                    "label": "Кол-во",
+                    "field": "qty_produced",
+                    "align": "center",
+                },
                 {
                     "name": "parent_label_id",
                     "label": "Родитель",
@@ -74,9 +81,9 @@ class ProductionView(BaseDocuWidget):
                 {"name": "actions", "label": "", "field": "id", "align": "right"},
             ]
 
-            self.grid = ui.table(columns=grid_cols, rows=[], row_key="id", selection="multiple").classes(
-                "w-full glass-card text-white"
-            )
+            self.grid = ui.table(
+                columns=grid_cols, rows=[], row_key="id", selection="multiple"
+            ).classes("w-full glass-card text-white")
             self.grid.add_slot(
                 "body-cell-status",
                 """
@@ -113,7 +120,9 @@ class ProductionView(BaseDocuWidget):
 
                     async def execute_split():
                         if not split_qty.value or split_qty.value >= max_qty.value:
-                            NotifyHelper.warning("Некорректное количество (должно быть меньше остатка)")
+                            NotifyHelper.warning(
+                                "Некорректное количество (должно быть меньше остатка)"
+                            )
                             return
                         async with self.scope() as req:
                             system = await req.get(ProductionSystem)
@@ -163,8 +172,7 @@ class ProductionView(BaseDocuWidget):
                     await self.refresh_grid()
                     NotifyHelper.info(f"Паллеты слиты в {selected[0]['label_id']}")
 
-                ui.button(
-                    "СЛИТЬ В ПЕРВУЮ ВЫБРАННУЮ")
+                ui.button("СЛИТЬ В ПЕРВУЮ ВЫБРАННУЮ")
 
             # Load data on open
             ui.timer(0.1, self.refresh_grid, once=True)

@@ -103,7 +103,9 @@ class PartLibrarySystem(BaseSystem):
         """
         db = self.db_session
         actual_tolerance = (
-            tolerance_percent if tolerance_percent is not None else self.DEFAULT_GEOMETRIC_TOLERANCE_PCT
+            tolerance_percent
+            if tolerance_percent is not None
+            else self.DEFAULT_GEOMETRIC_TOLERANCE_PCT
         )
         tolerance_factor = actual_tolerance / 100.0
 

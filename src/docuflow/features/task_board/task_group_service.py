@@ -1,8 +1,24 @@
 """TaskGroupService — manages TaskGroup lifecycle, replaces BatchEngine."""
 
+from dataclasses import dataclass
+
 from sqlmodel import Session, select
 
-from docuflow.domain.entities.production import MaterialType, TaskGroup, TaskItem, TaskItemStatus
+from docuflow.domain.entities.production import (
+    MaterialType,
+    ProductionUnit,
+    TaskGroup,
+    TaskItem,
+    TaskItemStatus,
+)
+
+
+@dataclass
+class StockAlert:
+    """Предупреждение о наличии детали в запасе."""
+
+    sku: str
+    units: list[ProductionUnit]
 
 
 class TaskGroupService:
@@ -145,3 +161,31 @@ class TaskGroupService:
 
         self.session.commit()
         return merged
+
+    def check_stock_alerts(self, tasks: list[TaskItem]) -> list[StockAlert]:
+        """Проверяет наличие деталей в запасе."""
+        alerts: list[StockAlert] = []
+
+        from sqlalchemy.orm import selectinload
+
+        in_stock = self.session.exec(
+            select(ProductionUnit)
+            .where(ProductionUnit.is_stock.is_(True))
+            .options(selectinload(ProductionUnit.task_item).selectinload(TaskItem.parts))
+        ).all()
+
+        stock_map: dict[str, list[ProductionUnit]] = {}
+
+        for u in in_stock:
+            if u.task_item:
+                for tp in u.task_item.parts:
+                    stock_map.setdefault(tp.part_sku, []).append(u)
+
+        for task in tasks:
+            for part in task.parts:
+                matching_units = stock_map.get(part.part_sku, [])
+
+                if matching_units:
+                    alerts.append(StockAlert(sku=part.part_sku, units=matching_units))
+
+        return alerts

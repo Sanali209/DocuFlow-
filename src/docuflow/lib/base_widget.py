@@ -47,6 +47,7 @@ class BaseDocuWidget:
 
         async def wrapped_action():
             from docuflow.lib.widgets.ui_utils import NotifyHelper
+
             try:
                 await action_fn()
                 if success_msg:

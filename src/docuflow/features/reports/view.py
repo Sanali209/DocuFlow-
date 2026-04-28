@@ -123,7 +123,9 @@ class ReportsView(BaseDocuWidget):
                     self.template_selector.options = options
                     if not self.template_selector.value and options:
                         self.template_selector.value = (
-                            "shift_summary" if "shift_summary" in options else next(iter(options.keys()))
+                            "shift_summary"
+                            if "shift_summary" in options
+                            else next(iter(options.keys()))
                         )
 
             self.template_selector = ui.select({}, label="Template Type").classes("w-full")

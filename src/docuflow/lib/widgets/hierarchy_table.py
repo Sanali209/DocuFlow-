@@ -135,9 +135,7 @@ class HierarchyTable(BaseDocuWidget):
         status_color = STATUS_COLORS.get(status, "gray")
 
         line2 = f"Листов: {done_sheets}/{total_sheets}"
-        done_tasks = [
-            t for t in tg.tasks if t.status == TaskItemStatus.DONE and t.id is not None
-        ]
+        done_tasks = [t for t in tg.tasks if t.status == TaskItemStatus.DONE and t.id is not None]
         if done_tasks:
             pallet_count = 0
             for t in done_tasks:

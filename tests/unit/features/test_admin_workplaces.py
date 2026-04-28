@@ -12,7 +12,9 @@ from docuflow.infrastructure.config import Config
 @pytest.mark.asyncio
 async def test_get_all_workplaces():
     # Setup in-memory DB
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:

@@ -13,7 +13,9 @@ from docuflow.infrastructure.config import Config
 
 
 def test_negative_stock_prevention():
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:

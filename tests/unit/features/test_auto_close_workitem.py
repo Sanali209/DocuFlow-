@@ -9,7 +9,9 @@ from docuflow.infrastructure.config import Config
 
 @pytest.mark.asyncio
 async def test_auto_close_work_item():
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:

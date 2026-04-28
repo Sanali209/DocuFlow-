@@ -24,7 +24,9 @@ def register_consumables_view():
     )
 
 
-async def consumables_view_wrapper(system: ConsumableSystem, system_scope: Any, layout: Any, **kwargs):
+async def consumables_view_wrapper(
+    system: ConsumableSystem, system_scope: Any, layout: Any, **kwargs
+):
     """Wrapper to instantiate and render the ConsumableView."""
     view = ConsumableView(system, system_scope, layout=layout)
     await view.render()
@@ -198,15 +200,21 @@ class ConsumableView(BaseDocuWidget):
                     f"w-full bg-zinc-900/50 border-l-2 border-{color} p-2 gap-0 shadow-none"
                 ):
                     with ui.row().classes("w-full justify-between items-start"):
-                        ui.label(log.operation.upper()).classes(f"text-[9px] font-bold text-{color}")
-                        ui.label(log.created_at.strftime("%H:%M")).classes("text-[9px] text-zinc-600")
+                        ui.label(log.operation.upper()).classes(
+                            f"text-[9px] font-bold text-{color}"
+                        )
+                        ui.label(log.created_at.strftime("%H:%M")).classes(
+                            "text-[9px] text-zinc-600"
+                        )
 
                     ui.label(f"{'+' if log.qty_delta > 0 else ''}{log.qty_delta:.1f}").classes(
                         "text-lg font-mono text-zinc-200 mt-1"
                     )
                     if log.note:
                         ui.label(log.note).classes("text-[10px] text-zinc-500 mt-1 italic")
-                    ui.label(f"От: {log.author}").classes("text-[8px] text-zinc-700 text-right w-full")
+                    ui.label(f"От: {log.author}").classes(
+                        "text-[8px] text-zinc-700 text-right w-full"
+                    )
 
     def open_op_dialog(self, row: dict, op_type: str):
         """Dialog for adding/removing stock."""
