@@ -6,6 +6,7 @@ from nicegui import ui
 from sqlmodel import Session, select
 
 from docuflow.domain.entities.production import (
+    ProductionUnit,
     Project,
     TaskGroup,
     TaskItem,
@@ -77,11 +78,13 @@ class HierarchyTable(BaseDocuWidget):
 
         is_expanded = self._get_expansion_state(session, "project", project.id or 0)
 
+        project_id = project.id or 0
+
         def toggle(expanded: bool) -> None:
             async def _save() -> None:
                 async with self.scope() as req:
                     s = await req.get(Session)
-                    self._save_expansion_state(s, "project", project.id or 0, expanded)
+                    self._save_expansion_state(s, "project", project_id, expanded)
 
             asyncio.get_event_loop().create_task(_save())
 
@@ -171,25 +174,35 @@ class HierarchyTable(BaseDocuWidget):
             for task in ungrouped:
                 self._render_taskitem(session, tb_system, task, indent=indent + 1)
 
+    def _build_taskgroup_line2(
+        self, session: Session, tb_system: TaskBoardSystem, tg: TaskGroup
+    ) -> str:
+        """Build the line2 metadata string for a TaskGroup row."""
+        total_sheets = sum(t.sheet_qty or 0 for t in tg.tasks)
+        done_sheets = sum(t.sheets_done or 0 for t in tg.tasks)
+
+        line2 = f"Листов: {done_sheets}/{total_sheets}"
+        done_tasks = [t for t in tg.tasks if t.status == TaskItemStatus.DONE and t.id is not None]
+        if done_tasks:
+            pallets: list[ProductionUnit] = []
+            for t in done_tasks:
+                if t.id is not None:
+                    pallets.extend(tb_system.find_pallets_by_task(t.id, session))
+            if pallets:
+                pallet_details = " | ".join(
+                    f"📦 {p.label_id} ({p.qty_produced} шт)" for p in pallets
+                )
+                line2 += f" | {pallet_details}"
+        return line2
+
     def _render_taskgroup(
         self, session: Session, tb_system: TaskBoardSystem, tg: TaskGroup, indent: int
     ) -> None:
         tg_service = TaskGroupService(session)
         status = tg_service.get_group_status(tg)
-        total_sheets = sum(t.sheet_qty or 0 for t in tg.tasks)
-        done_sheets = sum(t.sheets_done or 0 for t in tg.tasks)
-
         status_color = STATUS_COLORS.get(status, "gray")
 
-        line2 = f"Листов: {done_sheets}/{total_sheets}"
-        done_tasks = [t for t in tg.tasks if t.status == TaskItemStatus.DONE and t.id is not None]
-        if done_tasks:
-            pallet_count = 0
-            for t in done_tasks:
-                if t.id is not None:
-                    pallet_count += len(tb_system.find_pallets_by_task(t.id, session))
-            if pallet_count > 0:
-                line2 += f" | {pallet_count} паллет"
+        line2 = self._build_taskgroup_line2(session, tb_system, tg)
 
         is_expanded = self._get_expansion_state(session, "taskgroup", tg.id or 0)
 

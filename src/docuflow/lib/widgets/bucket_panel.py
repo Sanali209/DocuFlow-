@@ -35,7 +35,6 @@ class BucketPanel(BaseDocuWidget):
         node_id: str,
         user: str,
         system_scope: Any,
-        **kwargs,
     ):
         super().__init__(system_scope)
         self.node_id = node_id
@@ -148,17 +147,17 @@ class BucketPanel(BaseDocuWidget):
         self, session: Session, entries: list[WorkerBucketEntry]
     ) -> dict[str, list[TaskItem]]:
         """
-        Группирует записи корзины по batch_group_id.
+        Группирует записи корзины по task_group_id (через TaskItem).
 
         Returns:
-            dict[batch_group_id, list[TaskItem]]
+            dict[task_group_id_str, list[TaskItem]]
         """
         batches: dict[str, list[TaskItem]] = {}
 
         for entry in entries:
             task = session.get(TaskItem, entry.task_item_id)
             if task:
-                batch_id = entry.batch_group_id or f"single_{task.id}"
+                batch_id = str(task.task_group_id) if task.task_group_id else f"single_{task.id}"
                 if batch_id not in batches:
                     batches[batch_id] = []
                 batches[batch_id].append(task)

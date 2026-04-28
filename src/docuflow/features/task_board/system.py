@@ -610,6 +610,8 @@ class TaskBoardSystem(BaseSystem):
             raise ValueError(f"Task {task_id} not found")
 
         current = task.status
+        if target_status == current:
+            return task
         allowed = self.VALID_TASK_TRANSITIONS.get(current, [])
         if target_status not in allowed:
             raise ValueError(

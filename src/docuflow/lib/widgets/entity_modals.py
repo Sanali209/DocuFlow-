@@ -157,9 +157,22 @@ class TaskGroupModal:
 class TaskItemModal:
     """Modal dialog for viewing a TaskItem and performing actions."""
 
-    def __init__(self, task_item: TaskItem, on_action: Callable, system_scope: Any):
+    def __init__(
+        self,
+        task_item: TaskItem,
+        on_action: Callable | None = None,
+        on_start: Callable[[int], None] | None = None,
+        on_pause: Callable[[int], None] | None = None,
+        on_complete: Callable[[int, bool, int | None], None] | None = None,
+        on_incident: Callable[[int], None] | None = None,
+        system_scope: Any = None,
+    ):
         self.task_item = task_item
         self.on_action = on_action
+        self.on_start = on_start
+        self.on_pause = on_pause
+        self.on_complete = on_complete
+        self.on_incident = on_incident
         self.system_scope = system_scope
 
     def render(self) -> None:
@@ -196,6 +209,30 @@ class TaskItemModal:
 
             ui.separator()
 
+            # Action buttons based on status
+            with ui.row().classes("w-full justify-start gap-2"):
+                if self.on_start and self.task_item.status.value == "planned":
+                    ui.button("▶ Старт", on_click=lambda: self._start(dialog)).props("color=green")
+                if self.on_pause and self.task_item.status.value == "in_progress":
+                    ui.button("⏸ Пауза", on_click=lambda: self._pause(dialog)).props("color=orange")
+                if self.on_complete and self.task_item.status.value in (
+                    "in_progress",
+                    "on_hold",
+                ):
+                    ui.button("✓ Завершить", on_click=lambda: self._complete(dialog)).props(
+                        "color=primary"
+                    )
+                if self.on_incident:
+                    ui.button("⚠️ Инцидент", on_click=lambda: self._incident(dialog)).props(
+                        "color=negative"
+                    )
+                if self.on_action:
+                    ui.button("Действие", on_click=lambda: self._action(dialog)).props(
+                        "color=primary"
+                    )
+
+            ui.separator()
+
             ui.label("Превью раскроя:").classes("font-bold")
             if self.system_scope:
                 preview = NestPreview(self.task_item, system_scope=self.system_scope)
@@ -205,10 +242,6 @@ class TaskItemModal:
 
             with ui.row().classes("w-full justify-end gap-2 mt-2"):
                 ui.button("Закрыть", on_click=dialog.close).props("flat")
-                ui.button(
-                    "Действие",
-                    on_click=lambda: self._action(dialog),
-                ).props("color=primary")
         dialog.open()
 
     def _render_preview(self, preview: NestPreview) -> None:
@@ -218,7 +251,28 @@ class TaskItemModal:
         ui.timer(0.1, _do, once=True)
 
     def _action(self, dialog: ui.dialog) -> None:
-        self.on_action(task_item_id=self.task_item.id)
+        if self.on_action:
+            self.on_action(task_item_id=self.task_item.id)
+        dialog.close()
+
+    def _start(self, dialog: ui.dialog) -> None:
+        if self.on_start and self.task_item.id is not None:
+            self.on_start(self.task_item.id)
+        dialog.close()
+
+    def _pause(self, dialog: ui.dialog) -> None:
+        if self.on_pause and self.task_item.id is not None:
+            self.on_pause(self.task_item.id)
+        dialog.close()
+
+    def _complete(self, dialog: ui.dialog) -> None:
+        if self.on_complete and self.task_item.id is not None:
+            self.on_complete(self.task_item.id, True, None)
+        dialog.close()
+
+    def _incident(self, dialog: ui.dialog) -> None:
+        if self.on_incident and self.task_item.id is not None:
+            self.on_incident(self.task_item.id)
         dialog.close()
 
 
