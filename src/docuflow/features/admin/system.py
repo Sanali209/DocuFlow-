@@ -49,7 +49,7 @@ class AdminSystem(BaseSystem):
 
     def _create_background_task(self, coro: Any, name: str = "") -> asyncio.Task:
         """Create a tracked background task with exception handling."""
-        task: asyncio.Task = asyncio.get_event_loop().create_task(
+        task: asyncio.Task = asyncio.get_running_loop().create_task(
             self._safe_background_task(coro, name)
         )
         self._background_tasks.append(task)

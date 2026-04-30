@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 from typing import Any
 
@@ -19,7 +20,7 @@ class ProductionSystem(BaseSystem):
 
     DEFAULT_RECENT_LIMIT = 50
 
-    def __init__(self, config: Config, session: Session, sdk: Any = None):
+    def __init__(self, config: Config, session: Session, sdk: Any = None) -> None:
         super().__init__(config, session)
         self.sdk = sdk
 
@@ -31,13 +32,13 @@ class ProductionSystem(BaseSystem):
             label = system.create_unique_pallet_label()
             # Output: 26-04-NODE_1-0015
         """
-        session = self.db_session
-        now = datetime.datetime.now()
-        prefix = f"{now.strftime('%y-%m')}-{self.config.node_id}"
+        session: Session = self.db_session
+        now: datetime.datetime = datetime.datetime.now()
+        prefix: str = f"{now.strftime('%y-%m')}-{self.config.node_id}"
 
         if sequence_number is None:
             # Atomic fetch of the next sequence number for this month/node
-            count = session.exec(
+            count: int = session.exec(
                 select(func.count())
                 .select_from(ProductionUnit)
                 .where(ProductionUnit.label_id.startswith(f"{now.strftime('%y-%m')}"))
@@ -59,10 +60,10 @@ class ProductionSystem(BaseSystem):
         Example:
             pallet = system.register_finished_pallet(task_item_id=50, quantity=100, storage_id=1)
         """
-        db = self.db_session
-        unique_label = self.create_unique_pallet_label()
+        db: Session = self.db_session
+        unique_label: str = self.create_unique_pallet_label()
 
-        pallet_unit = ProductionUnit(
+        pallet_unit: ProductionUnit = ProductionUnit(
             label_id=unique_label,
             task_item_id=task_item_id,
             qty_produced=quantity,
@@ -72,9 +73,9 @@ class ProductionSystem(BaseSystem):
         db.add(pallet_unit)
 
         # Log the palletization event for traceability
-        task_record = db.get(TaskItem, task_item_id)
+        task_record: TaskItem | None = db.get(TaskItem, task_item_id)
         if task_record:
-            log_entry = WorkLog(
+            log_entry: WorkLog = WorkLog(
                 work_item_id=task_record.work_item_id,
                 task_item_id=task_item_id,
                 log_type=WorkLogType.INFO,
@@ -89,17 +90,19 @@ class ProductionSystem(BaseSystem):
 
         # Broadcast discovery of new physical unit
         if self.sdk and hasattr(self.sdk, "orchestrator") and self.sdk.orchestrator:
-            self.sdk.orchestrator.broadcast_command(
-                command="SYNC_PALLET",
-                data={"label_id": unique_label, "qty": quantity, "task_id": task_item_id},
+            asyncio.get_running_loop().create_task(
+                self.sdk.orchestrator.broadcast_command(
+                    command="SYNC_PALLET",
+                    data={"label_id": unique_label, "qty": quantity, "task_id": task_item_id},
+                )
             )
 
         return pallet_unit
 
     def mark_as_shipped(self, pallet_id: int, author: str) -> ProductionUnit:
         """Marks a pallet as shipped/dispatched from the workshop."""
-        db = self.db_session
-        pallet = db.get(ProductionUnit, pallet_id)
+        db: Session = self.db_session
+        pallet: ProductionUnit | None = db.get(ProductionUnit, pallet_id)
         if not pallet:
             raise ValueError(f"Pallet {pallet_id} not found")
 
@@ -108,7 +111,7 @@ class ProductionSystem(BaseSystem):
         db.add(pallet)
 
         # Log shipment
-        log_entry = WorkLog(
+        log_entry: WorkLog = WorkLog(
             work_item_id=pallet.task_item.work_item_id if pallet.task_item else 0,
             task_item_id=pallet.task_item_id,
             log_type=WorkLogType.INFO,
@@ -124,9 +127,13 @@ class ProductionSystem(BaseSystem):
         """
         Lists recently registered production units for dashboard monitoring.
         """
-        session = self.db_session
-        actual_limit = limit if limit is not None else self.DEFAULT_RECENT_LIMIT
-        statement = select(ProductionUnit).order_by(ProductionUnit.id.desc()).limit(actual_limit)  # type: ignore[union-attr]
+        session: Session = self.db_session
+        actual_limit: int = limit if limit is not None else self.DEFAULT_RECENT_LIMIT
+        statement: Any = (
+            select(ProductionUnit)
+            .order_by(ProductionUnit.id.desc())  # type: ignore[union-attr]
+            .limit(actual_limit)
+        )
         return list(session.exec(statement).all())
 
     def split_production_unit(
@@ -138,8 +145,8 @@ class ProductionSystem(BaseSystem):
         Example:
             new_pallet = system.split_production_unit(original_pallet_id=1, move_quantity=50)
         """
-        db = self.db_session
-        source_pallet = db.get(ProductionUnit, original_pallet_id)
+        db: Session = self.db_session
+        source_pallet: ProductionUnit | None = db.get(ProductionUnit, original_pallet_id)
         if not source_pallet:
             raise ValueError(f"Source pallet {original_pallet_id} not found")
 
@@ -151,8 +158,8 @@ class ProductionSystem(BaseSystem):
         db.add(source_pallet)
 
         # 2. Create secondary pallet
-        secondary_label = self.create_unique_pallet_label()
-        secondary_unit = ProductionUnit(
+        secondary_label: str = self.create_unique_pallet_label()
+        secondary_unit: ProductionUnit = ProductionUnit(
             label_id=secondary_label,
             task_item_id=source_pallet.task_item_id,
             qty_produced=move_quantity,
@@ -163,7 +170,7 @@ class ProductionSystem(BaseSystem):
         db.add(secondary_unit)
 
         # 3. Log traceability trail
-        log_entry = WorkLog(
+        log_entry: WorkLog = WorkLog(
             work_item_id=source_pallet.task_item.work_item_id if source_pallet.task_item else 0,
             task_item_id=source_pallet.task_item_id,
             log_type=WorkLogType.INFO,
@@ -189,24 +196,25 @@ class ProductionSystem(BaseSystem):
         Example:
             system.merge_production_units(source_pallet_ids=[1, 2], target_pallet_id=3)
         """
-        db = self.db_session
-        target_pallet = db.get(ProductionUnit, target_pallet_id)
+        db: Session = self.db_session
+        target_pallet: ProductionUnit | None = db.get(ProductionUnit, target_pallet_id)
         if not target_pallet:
             raise ValueError(f"Target pallet {target_pallet_id} not found")
 
-        cumulative_moved = 0
-        merged_labels_list = []
+        cumulative_moved: int = 0
+        merged_labels_list: list[str] = []
 
+        source_id: int
         for source_id in source_pallet_ids:
             if source_id == target_pallet_id:
                 continue
 
-            source_pallet = db.get(ProductionUnit, source_id)
+            source_pallet: ProductionUnit | None = db.get(ProductionUnit, source_id)
             if not source_pallet:
                 continue
 
             # Transfer entire quantity
-            batch_qty = source_pallet.qty_produced
+            batch_qty: int = source_pallet.qty_produced
             target_pallet.qty_produced += batch_qty
             cumulative_moved += batch_qty
             merged_labels_list.append(source_pallet.label_id)
@@ -217,7 +225,7 @@ class ProductionSystem(BaseSystem):
         db.add(target_pallet)
 
         # Log consolidation
-        log_entry = WorkLog(
+        log_entry: WorkLog = WorkLog(
             work_item_id=target_pallet.task_item.work_item_id if target_pallet.task_item else 0,
             task_item_id=target_pallet.task_item_id,
             log_type=WorkLogType.INFO,
