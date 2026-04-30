@@ -1,5 +1,6 @@
 import datetime
 import json
+from collections.abc import Sequence
 from typing import Any
 
 from loguru import logger
@@ -33,7 +34,9 @@ class IncidentSystem(BaseSystem):
     TYPE_MAINTENANCE = "MAINTENANCE"
     TYPE_OTHER = "OTHER"
 
-    def __init__(self, config: Config, session: Session, chat_system: ChatSystem, sdk: Any = None):
+    def __init__(
+        self, config: Config, session: Session, chat_system: ChatSystem, sdk: Any = None
+    ) -> None:
         """
         Initialize the incident tracking system.
         """
@@ -54,10 +57,10 @@ class IncidentSystem(BaseSystem):
         """
         Record a new workshop failure and broadcast a high-priority alert to Chat.
         """
-        session = self.db_session
+        session: Session = self.db_session
 
         # 1. Create the persistent log entry
-        incident_log = IncidentLog(
+        incident_log: IncidentLog = IncidentLog(
             incident_type=incident_type,
             description=description,
             reported_by=reported_by,
@@ -79,10 +82,10 @@ class IncidentSystem(BaseSystem):
         logger.warning(f"Incident {incident_log.id} reported: {incident_type} by {reported_by}")
         return incident_log
 
-    def assign_incident(self, incident_id: int, group_name: str, author: str):
+    def assign_incident(self, incident_id: int, group_name: str, author: str) -> None:
         """Assign or reassign an incident to a specific workshop group."""
-        session = self.db_session
-        incident = session.get(IncidentLog, incident_id)
+        session: Session = self.db_session
+        incident: IncidentLog | None = session.get(IncidentLog, incident_id)
         if not incident:
             return
 
@@ -92,7 +95,7 @@ class IncidentSystem(BaseSystem):
         # Log assignment
         from docuflow.domain.entities.production import WorkLog, WorkLogType
 
-        log = WorkLog(
+        log: WorkLog = WorkLog(
             log_type=WorkLogType.INFO,
             message=f"Incident {incident_id} assigned to group: {group_name}",
             author=author,
@@ -103,12 +106,12 @@ class IncidentSystem(BaseSystem):
         session.commit()
         logger.info(f"Incident {incident_id} assigned to {group_name} by {author}")
 
-    async def _broadcast_incident_alert(self, incident: IncidentLog):
+    async def _broadcast_incident_alert(self, incident: IncidentLog) -> None:
         """
         Internal helper to format and send the ChatMessage alert.
         """
-        context_info = f" [Task: {incident.task_item_id}]" if incident.task_item_id else ""
-        alert_content = (
+        context_info: str = f" [Task: {incident.task_item_id}]" if incident.task_item_id else ""
+        alert_content: str = (
             f"⚡ ИНЦИДЕНТ [{incident.incident_type}]: {incident.description}{context_info}"
         )
 
@@ -120,7 +123,9 @@ class IncidentSystem(BaseSystem):
             ref_work_item_id=incident.work_item_id,
         )
 
-    async def resolve_incident(self, incident_id: int, resolved_by: str, resolution_note: str):
+    async def resolve_incident(
+        self, incident_id: int, resolved_by: str, resolution_note: str
+    ) -> None:
         """
         Mark a failure as fixed and calculate total workshop downtime.
 
@@ -131,8 +136,8 @@ class IncidentSystem(BaseSystem):
                 resolution_note="Replaced belt",
             )
         """
-        session = self.db_session
-        incident = session.get(IncidentLog, incident_id)
+        session: Session = self.db_session
+        incident: IncidentLog | None = session.get(IncidentLog, incident_id)
         if not incident or incident.resolved:
             return
 
@@ -142,9 +147,9 @@ class IncidentSystem(BaseSystem):
         incident.resolution_note = resolution_note
 
         # Determine total time lost in minutes
-        resolved_at = incident.resolved_at
+        resolved_at: datetime.datetime = incident.resolved_at
         assert resolved_at is not None
-        delta_time = resolved_at - incident.created_at
+        delta_time: datetime.timedelta = resolved_at - incident.created_at
         incident.downtime_minutes = max(0.0, delta_time.total_seconds() / 60.0)
 
         # Log the fix to the WorkLog for legal/audit purposes
@@ -156,12 +161,12 @@ class IncidentSystem(BaseSystem):
             f"Incident {incident_id} resolved. Downtime: {incident.downtime_minutes or 0.0:.1f} min"
         )
 
-    def _audit_resolution(self, incident: IncidentLog):
+    def _audit_resolution(self, incident: IncidentLog) -> None:
         """
         Create a persistent WorkLog audit trail for this resolution.
         """
-        session = self.db_session
-        audit_log = WorkLog(
+        session: Session = self.db_session
+        audit_log: WorkLog = WorkLog(
             log_type=WorkLogType.INFO,
             message=(
                 f"Incident {incident.id} ({incident.incident_type}) "
@@ -178,11 +183,14 @@ class IncidentSystem(BaseSystem):
 
     def get_summary_stats(self) -> dict[str, float]:
         """Aggregate downtime metrics by incident category."""
-        session = self.db_session
-        statement = select(IncidentLog).where(IncidentLog.resolved.isnot(False))  # type: ignore[union-attr]
-        resolved_incidents = session.exec(statement).all()
+        session: Session = self.db_session
+        statement = select(IncidentLog).where(
+            IncidentLog.resolved.is_(True)  # type: ignore[union-attr]
+        )
+        resolved_incidents: Sequence[IncidentLog] = session.exec(statement).all()
 
         stats: dict[str, float] = {}
+        incident: IncidentLog
         for incident in resolved_incidents:
             stats[incident.incident_type] = stats.get(incident.incident_type, 0.0) + (
                 incident.downtime_minutes or 0.0
@@ -192,11 +200,11 @@ class IncidentSystem(BaseSystem):
 
     def get_active_failures(self, limit: int = 20) -> list[IncidentLog]:
         """Retrieve all currently unresolved workshop failures."""
-        session = self.db_session
+        session: Session = self.db_session
         statement = (
             select(IncidentLog)
-            .where(IncidentLog.resolved.isnot(True))  # type: ignore[union-attr]
-            .order_by(IncidentLog.resolved_at.desc())  # type: ignore[union-attr]
+            .where(IncidentLog.resolved.is_(False))  # type: ignore[union-attr]
+            .order_by(IncidentLog.created_at.desc())  # type: ignore[attr-defined]
             .limit(limit)
         )
         return list(session.exec(statement).all())
@@ -208,7 +216,7 @@ class IncidentSystem(BaseSystem):
         Example:
             history = system.get_recent_history(limit=5)
         """
-        session = self.db_session
+        session: Session = self.db_session
         statement = (
             select(IncidentLog)
             .where(IncidentLog.resolved.is_(True))  # type: ignore[union-attr]
@@ -219,11 +227,11 @@ class IncidentSystem(BaseSystem):
 
     # --- System Startup & Registration ---
 
-    async def on_startup(self):
+    async def on_startup(self) -> None:
         """Lifecycle hook to register reporting blocks in the global registry."""
         if not self.sdk:
             return
-        registry = await self.sdk.resolve_system_by_type(ReportRegistry)
+        registry: ReportRegistry = await self.sdk.resolve_system_by_type(ReportRegistry)
 
         registry.register(
             ReportDataBlock(
@@ -248,11 +256,15 @@ class IncidentSystem(BaseSystem):
         """
         Query helper for registration block.
         """
-        row_limit = report_params.get("limit", 50)
+        row_limit: Any = report_params.get("limit", 50)
         if not isinstance(row_limit, int):
             row_limit = 50
-        statement = select(IncidentLog).order_by(IncidentLog.created_at.desc()).limit(row_limit)  # type: ignore[attr-defined]
-        incidents = db_session.exec(statement).all()
+        statement = (
+            select(IncidentLog)
+            .order_by(IncidentLog.created_at.desc())  # type: ignore[attr-defined]
+            .limit(row_limit)
+        )
+        incidents: Sequence[IncidentLog] = db_session.exec(statement).all()
         return [
             {
                 "type": incident.incident_type,
