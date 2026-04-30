@@ -19,7 +19,7 @@ class SecureDispatcher(BaseSystem):
     (sequence) of every message before delegating execution to domain-specific handlers.
     """
 
-    def __init__(self, config: Config, signer: HMACSigner):
+    def __init__(self, config: Config, signer: HMACSigner) -> None:
         """Initialize the dispatcher with security and coordination requirements.
 
         Args:
@@ -27,7 +27,7 @@ class SecureDispatcher(BaseSystem):
             signer: HMAC security root for signature verification.
         """
         super().__init__(config)
-        self._signer = signer
+        self._signer: HMACSigner = signer
         self._handlers: dict[CommandType, HandlerFunc] = {}
 
         # Track the last processed sequence per sender to prevent replay attacks
@@ -59,7 +59,7 @@ class SecureDispatcher(BaseSystem):
         if not message.signature:
             raise ValueError(f"Dispatcher: Missing signature in message from {message.sender_id}")
 
-        signable_content = message.to_signable_content()
+        signable_content: str = message.to_signable_content()
         if not self._signer.verify(signable_content, message.signature):
             logger.warning(
                 f"[{self.config.node_id}] Dispatcher: Security alert! "
@@ -68,7 +68,7 @@ class SecureDispatcher(BaseSystem):
             raise ValueError("Invalid message signature")
 
         # 2. Sequence Validation (Replay Protection)
-        last_seq = self._last_sequences.get(message.sender_id, -1)
+        last_seq: int = self._last_sequences.get(message.sender_id, -1)
         if message.sequence <= last_seq:
             logger.warning(
                 f"[{self.config.node_id}] Dispatcher: Replay detected! "
@@ -79,20 +79,23 @@ class SecureDispatcher(BaseSystem):
             )
 
         # 3. Routing
-        command = message.payload.command
-        handler = self._handlers.get(command)
+        command: CommandType = message.payload.command
+        handler: HandlerFunc | None = self._handlers.get(command)
 
         if not handler:
             logger.warning(
                 f"[{self.config.node_id}] Dispatcher: No handler registered for {command}"
             )
+            # Update sequence even for unhandled commands to prevent replay
+            self._last_sequences[message.sender_id] = message.sequence
             return None
-
-        # 4. Successful processing: Update sequence tracker
-        self._last_sequences[message.sender_id] = message.sequence
 
         logger.info(
             f"[{self.config.node_id}] Dispatcher: Executing {command} "
             f"from {message.sender_id} (seq: {message.sequence})"
         )
-        return handler(message.payload.data)
+
+        # 4. Execute handler — update sequence ONLY after successful execution
+        result = handler(message.payload.data)
+        self._last_sequences[message.sender_id] = message.sequence
+        return result

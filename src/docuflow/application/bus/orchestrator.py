@@ -58,9 +58,6 @@ class P2POrchestrator(BaseSystem):
         self._signer: HMACSigner = signer  # type: ignore[assignment]
         self._admin_sync: AdminSyncSystem = admin_sync  # type: ignore[assignment]
 
-        if self._admin_sync and self._dispatcher:
-            self._admin_sync.register_handlers(self._dispatcher)
-
         self._cancel_scope: anyio.CancelScope | None = None
         self._is_running: bool = False
 
