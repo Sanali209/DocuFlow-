@@ -188,7 +188,12 @@ class DataSyncSystem(BaseSystem):
         key: str
         value: Any
         for key, value in row_copy.items():
-            if isinstance(value, str) and "T" in value:
+            if (
+                isinstance(value, str)
+                and len(value) >= 10
+                and value[4:5] == "-"
+                and value[7:8] == "-"
+            ):
                 try:
                     row_copy[key] = datetime.datetime.fromisoformat(value)
                 except ValueError:

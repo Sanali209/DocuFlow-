@@ -2,7 +2,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 import anyio
 from loguru import logger
@@ -24,22 +24,22 @@ class InboxHandler(FileSystemEventHandler):
         system: The FileBusSystem instance to notify of new messages.
     """
 
-    def __init__(self, system: "FileBusSystem"):
-        self.system = system
+    def __init__(self, system: "FileBusSystem") -> None:
+        self.system: FileBusSystem = system
 
     def on_created(self, event: Any) -> None:  # type: ignore[override]
         """Triggered when a new file is detected in the monitored folder."""
         if event.is_directory:
             return
 
-        filename = os.path.basename(os.fsdecode(event.src_path))
+        filename: str = os.path.basename(os.fsdecode(event.src_path))
         if self._is_valid_new_message(filename):
             logger.trace(f"FileBus: Valid new message detected: {filename}")
 
     def _is_valid_new_message(self, filename: str) -> bool:
         """Check if a filename represents a finalized protocol message."""
-        is_json = filename.endswith(constants.BUS_EXTENSION)
-        is_not_temp = not filename.startswith(constants.BUS_TEMP_PREFIX)
+        is_json: bool = filename.endswith(constants.BUS_EXTENSION)
+        is_not_temp: bool = not filename.startswith(constants.BUS_TEMP_PREFIX)
         return is_json and is_not_temp
 
 
@@ -55,16 +55,18 @@ class FileBusSystem(BaseSystem):
         or `send_response()` from an async context.
     """
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self._node_id = config.node_id
-        self._bus_path = Path(config.shared_path) / constants.BUS_DIR_NAME
-        self._inbox = self._bus_path / constants.BUS_INBOX_DIR
-        self._outbox = self._bus_path / constants.BUS_OUTBOX_DIR
+        self._node_id: str = config.node_id
+        self._bus_path: Path = Path(config.shared_path) / constants.BUS_DIR_NAME
+        self._inbox: Path = self._bus_path / constants.BUS_INBOX_DIR
+        self._outbox: Path = self._bus_path / constants.BUS_OUTBOX_DIR
 
         # Observer tuned for network share stability
-        self._observer = PollingObserver(timeout=constants.OBSERVER_POLLING_INTERVAL)
-        self._handler = InboxHandler(self)
+        self._observer: PollingObserver = PollingObserver(
+            timeout=constants.OBSERVER_POLLING_INTERVAL
+        )
+        self._handler: InboxHandler = InboxHandler(self)
 
     async def on_startup(self) -> None:
         """Initialize the bus directory structure and start file monitoring."""
@@ -95,11 +97,11 @@ class FileBusSystem(BaseSystem):
         Returns:
             The unique ID generated for this request.
         """
-        request_id = self._generate_unique_id()
-        filename = self._build_filename(
+        request_id: str = self._generate_unique_id()
+        filename: str = self._build_filename(
             constants.BUS_PREFIX_REQ, self._node_id, target_id, request_id
         )
-        payload = self._build_payload(target_id, request_id, command, data)
+        payload: dict[str, Any] = self._build_payload(target_id, request_id, command, data)
 
         await self._atomic_write(self._inbox, filename, payload)
         return request_id
@@ -118,10 +120,10 @@ class FileBusSystem(BaseSystem):
         Returns:
             The unique ID generated for this response (matches request_id).
         """
-        filename = self._build_filename(
+        filename: str = self._build_filename(
             constants.BUS_PREFIX_RES, self._node_id, target_id, request_id
         )
-        payload = self._build_payload(target_id, request_id, command, data)
+        payload: dict[str, Any] = self._build_payload(target_id, request_id, command, data)
 
         await self._atomic_write(self._outbox, filename, payload)
         return request_id
@@ -135,16 +137,19 @@ class FileBusSystem(BaseSystem):
         Returns:
             A list of parsed message dictionaries, including '_filename' metadata.
         """
-        target_dir = self._resolve_folder_path(folder)
+        target_dir: Path = self._resolve_folder_path(folder)
         if not target_dir.exists():
             return []
 
-        received_messages = []
+        received_messages: list[dict[str, Any]] = []
+        filename: str
         for filename in os.listdir(target_dir):
             if not self._is_relevant_message(filename, folder):
                 continue
 
-            message_data = await self._try_read_message(target_dir / filename)
+            message_data: dict[str, Any] | None = await self._try_read_message(
+                target_dir / filename
+            )
             if message_data:
                 message_data["_filename"] = filename
                 received_messages.append(message_data)
@@ -153,8 +158,8 @@ class FileBusSystem(BaseSystem):
 
     async def delete_message(self, folder: str, filename: str) -> None:
         """Permanently remove a processed message from the shared folder."""
-        target_dir = self._resolve_folder_path(folder)
-        file_path = target_dir / filename
+        target_dir: Path = self._resolve_folder_path(folder)
+        file_path: Path = target_dir / filename
         await anyio.Path(file_path).unlink(missing_ok=True)
 
     async def write_message(self, payload: dict[str, Any]) -> str:
@@ -163,8 +168,8 @@ class FileBusSystem(BaseSystem):
         Returns:
             The generated protocol message id used in the filename.
         """
-        message_id = self._generate_unique_id()
-        filename = self._build_broadcast_filename(self._node_id, message_id)
+        message_id: str = self._generate_unique_id()
+        filename: str = self._build_broadcast_filename(self._node_id, message_id)
         await self._atomic_write(self._inbox, filename, payload)
         return message_id
 
@@ -172,6 +177,7 @@ class FileBusSystem(BaseSystem):
 
     def _ensure_directories_exist(self) -> None:
         """Create necessary bus folders if they are missing."""
+        path: Path
         for path in [self._inbox, self._outbox]:
             path.mkdir(parents=True, exist_ok=True)
 
@@ -225,23 +231,25 @@ class FileBusSystem(BaseSystem):
             except Exception:
                 older_than_seconds = constants.GC_STALE_BUS_AGE_SECONDS
 
-        now = time.time()
-        examined = 0
-        removed = 0
+        now: float = time.time()
+        examined: int = 0
+        removed: int = 0
+        folder: Path
         for folder in (self._inbox, self._outbox):
             try:
                 if not folder.exists():
                     continue
+                entry: Path
                 for entry in folder.iterdir():
                     if not entry.is_file():
                         continue
-                    name = entry.name
+                    name: str = entry.name
                     if not name.startswith(constants.BUS_TEMP_PREFIX):
                         continue
                     examined += 1
                     try:
-                        mtime = entry.stat().st_mtime
-                        age = now - mtime
+                        mtime: float = entry.stat().st_mtime
+                        age: float = now - mtime
                         if age >= older_than_seconds:
                             entry.unlink(missing_ok=True)
                             removed += 1
@@ -265,39 +273,47 @@ class FileBusSystem(BaseSystem):
         ):
             return True
 
-        # Protocol check: {TYPE}_{FROM}_{TO}_{ID}.json
-        # Check if current node_id is in the 'TO' position
-        # We look for _{node_id}_ to account for underscores in IDs
-        is_addressed_to_me = (
-            f"{constants.BUS_DELIMITER}{self._node_id}{constants.BUS_DELIMITER}" in filename
-        )
-
-        prefix = (
+        prefix: str = (
             constants.BUS_PREFIX_REQ
             if folder_name == constants.BUS_INBOX_DIR
             else constants.BUS_PREFIX_RES
         )
-        return is_addressed_to_me and filename.startswith(prefix)
+        if not filename.startswith(prefix):
+            return False
+
+        # Parse filename: {PREFIX}{FROM}{DELIM}{TO}{DELIM}{ID}.json
+        # Strip prefix and extension to get the stem, e.g. "SENDER_STATION_A_001"
+        stem: str = filename[len(prefix) : -len(constants.BUS_EXTENSION)]
+        # Remove ID (rightmost segment) first so node IDs containing the delimiter
+        # are handled correctly (unique IDs are ms timestamps — no delimiter).
+        without_id: str
+        without_id, _, _ = stem.rpartition(constants.BUS_DELIMITER)
+        # Remaining: "{FROM}{DELIM}{TO}" — split once from the left to get FROM, TO
+        _from: str
+        to_id: str
+        _from, _, to_id = without_id.partition(constants.BUS_DELIMITER)
+        return to_id == self._node_id
 
     async def _try_read_message(self, file_path: Path) -> dict[str, Any] | None:
         """Attempt to read and parse a JSON message from disk."""
         try:
-            content_bytes = await anyio.Path(file_path).read_bytes()
+            content_bytes: bytes = await anyio.Path(file_path).read_bytes()
             return json.loads(content_bytes)
         except (json.JSONDecodeError, OSError):
             return None
 
     async def _atomic_write(self, target_dir: Path, filename: str, payload: dict[str, Any]) -> None:
         """Perform a collision-safe write using temp files and atomic rename."""
-        temp_path = target_dir / f"{constants.BUS_TEMP_PREFIX}{filename}"
-        final_path = target_dir / filename
+        temp_path: Path = target_dir / f"{constants.BUS_TEMP_PREFIX}{filename}"
+        final_path: Path = target_dir / filename
 
         # 1. Write content to the staging (TEMP_) file using binary write,
         #    flush and fsync to ensure data hits the underlying storage.
-        data = json.dumps(payload, indent=2).encode("utf-8")
+        data: bytes = json.dumps(payload, indent=2).encode("utf-8")
 
         try:
             # Use a blocking file write here to be able to call flush/fsync.
+            f: BinaryIO
             with open(temp_path, "wb") as f:
                 f.write(data)
                 f.flush()
