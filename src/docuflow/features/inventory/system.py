@@ -31,7 +31,7 @@ class InventorySystem(BaseSystem):
 
     DEFAULT_TIME_TOLERANCE_PCT = 15.0
 
-    def __init__(self, config: Config, session: Session, sdk: Any = None):
+    def __init__(self, config: Config, session: Session, sdk: Any = None) -> None:
         """
         Initialize the inventory management system.
 
@@ -54,10 +54,10 @@ class InventorySystem(BaseSystem):
         """
         return self.find_all(MaterialType)
 
-    def update_material_settings(self, mat_id: int, **kwargs) -> MaterialType | None:
+    def update_material_settings(self, mat_id: int, **kwargs: Any) -> MaterialType | None:
         """Updates specific parameters of a material definition."""
-        session = self.db_session
-        material = session.get(MaterialType, mat_id)
+        session: Session = self.db_session
+        material: MaterialType | None = session.get(MaterialType, mat_id)
         if not material:
             return None
 
@@ -67,18 +67,20 @@ class InventorySystem(BaseSystem):
 
         return self.save(material)
 
-    def create_material_definition(self, code: str, thickness: float, **kwargs) -> MaterialType:
+    def create_material_definition(
+        self, code: str, thickness: float, **kwargs: Any
+    ) -> MaterialType:
         """
         Create or synchronize a material specification in the local catalog.
 
         Example:
             material = inventory.create_material_definition(code="ALU-3", thickness=3.0)
         """
-        material_type = self.find_one(MaterialType, code=code)
+        material_type: MaterialType | None = self.find_one(MaterialType, code=code)
 
         if not material_type:
             material_type = MaterialType(code=code, thickness=thickness, **kwargs)
-            session = self.db_session
+            session: Session = self.db_session
             session.add(material_type)
             session.flush()
             session.refresh(material_type)
@@ -94,17 +96,21 @@ class InventorySystem(BaseSystem):
 
     def get_audit_history(self, limit: int = 100) -> list[MaterialAudit]:
         """Retrieves historical material movements."""
-        session = self.db_session
-        statement = select(MaterialAudit).order_by(MaterialAudit.created_at.desc()).limit(limit)  # type: ignore[attr-defined]
+        session: Session = self.db_session
+        statement: Any = (
+            select(MaterialAudit)
+            .order_by(MaterialAudit.created_at.desc())  # type: ignore[attr-defined]
+            .limit(limit)
+        )
         return list(session.exec(statement).all())
 
     def get_active_supply_requests(self, hours: int = 12) -> list[WorkLog]:
         """Retrieves recent material supply requests from logs."""
         import datetime
 
-        session = self.db_session
-        since = datetime.datetime.now() - datetime.timedelta(hours=hours)
-        statement = (
+        session: Session = self.db_session
+        since: datetime.datetime = datetime.datetime.now() - datetime.timedelta(hours=hours)
+        statement: Any = (
             select(WorkLog)
             .where(
                 WorkLog.message.contains("[LOGISTICS_REQUEST]"),  # type: ignore[attr-defined]
@@ -129,8 +135,8 @@ class InventorySystem(BaseSystem):
                 mat_type_id=1, quantity=50, batch_code="BATCH-99"
             )
         """
-        session = self.db_session
-        batch_stock = MaterialStock(
+        session: Session = self.db_session
+        batch_stock: MaterialStock = MaterialStock(
             mat_type_id=mat_type_id,
             quantity=quantity,
             batch_code=batch_code,
@@ -143,7 +149,7 @@ class InventorySystem(BaseSystem):
         assert batch_stock.id is not None
 
         # Audit trail for inventory tracking
-        audit_entry = MaterialAudit(
+        audit_entry: MaterialAudit = MaterialAudit(
             stock_item_id=batch_stock.id,
             operation="income",
             qty_delta=quantity,
@@ -167,16 +173,16 @@ class InventorySystem(BaseSystem):
                 stock_item_id=10, actual_qty=48.5, reason="Damaged"
             )
         """
-        session = self.db_session
-        stock_item = session.get(MaterialStock, stock_item_id)
+        session: Session = self.db_session
+        stock_item: MaterialStock | None = session.get(MaterialStock, stock_item_id)
         if not stock_item:
             return 0.0
 
-        quantity_difference = actual_qty - stock_item.quantity
+        quantity_difference: float = actual_qty - stock_item.quantity
         stock_item.quantity = actual_qty
         session.add(stock_item)
 
-        audit_entry = MaterialAudit(
+        audit_entry: MaterialAudit = MaterialAudit(
             stock_item_id=stock_item_id,
             operation="correction",
             qty_delta=quantity_difference,
@@ -199,14 +205,14 @@ class InventorySystem(BaseSystem):
         Example:
             reservation = inventory.create_reservation(stock_item_id=1, work_item_id=105, qty=10)
         """
-        session = self.db_session
-        stock_item = session.get(MaterialStock, stock_item_id)
+        session: Session = self.db_session
+        stock_item: MaterialStock | None = session.get(MaterialStock, stock_item_id)
 
         if is_hard and stock_item:
             stock_item.status = MaterialStockStatus.RESERVED
             session.add(stock_item)
 
-        reservation = Reservation(
+        reservation: Reservation = Reservation(
             stock_item_id=stock_item_id,
             work_item_id=work_item_id,
             qty_reserved=qty,
@@ -219,12 +225,12 @@ class InventorySystem(BaseSystem):
 
     def cancel_reservation(self, reservation_id: int) -> bool:
         """Cancel a reservation and free up the associated stock."""
-        session = self.db_session
-        reservation = session.get(Reservation, reservation_id)
+        session: Session = self.db_session
+        reservation: Reservation | None = session.get(Reservation, reservation_id)
         if not reservation:
             return False
 
-        stock_item = session.get(MaterialStock, reservation.stock_item_id)
+        stock_item: MaterialStock | None = session.get(MaterialStock, reservation.stock_item_id)
         if stock_item and stock_item.status == MaterialStockStatus.RESERVED:
             stock_item.status = MaterialStockStatus.AVAILABLE
             session.add(stock_item)
@@ -242,14 +248,16 @@ class InventorySystem(BaseSystem):
         Example:
             inventory.perform_write_off(task_item_obj, sheets_used=2, author="operator-1")
         """
-        session = self.db_session
+        session: Session = self.db_session
         if not task_item.mat_type_id:
             return
 
         # 1. Search for an assigned reservation
-        reservation = self.find_one(Reservation, work_item_id=task_item.work_item_id)
+        reservation: Reservation | None = self.find_one(
+            Reservation, work_item_id=task_item.work_item_id
+        )
 
-        target_stock = None
+        target_stock: MaterialStock | None = None
         if reservation:
             target_stock = session.get(MaterialStock, reservation.stock_item_id)
             if target_stock and target_stock.status == MaterialStockStatus.RESERVED:
@@ -257,7 +265,7 @@ class InventorySystem(BaseSystem):
             session.delete(reservation)
         else:
             # 2. FIFO fallback: First available batch of matching type
-            fifo_query = (
+            fifo_query: Any = (
                 select(MaterialStock)
                 .where(
                     MaterialStock.mat_type_id == task_item.mat_type_id,
@@ -278,7 +286,7 @@ class InventorySystem(BaseSystem):
                 )
 
             target_stock.quantity -= sheets_used
-            audit_entry = MaterialAudit(
+            audit_entry: MaterialAudit = MaterialAudit(
                 stock_item_id=target_stock.id,
                 operation="write_off",
                 qty_delta=-sheets_used,
@@ -290,35 +298,37 @@ class InventorySystem(BaseSystem):
             session.add(target_stock)
             session.flush()
 
-    def request_material_reorder(self, mat_type_id: int, quantity: float, note: str, author: str):
+    def request_material_reorder(
+        self, mat_type_id: int, quantity: float, note: str, author: str
+    ) -> None:
         """
         Creates a formal reorder audit and broadcasts a request to the Workshop Chat.
 
         Example:
             inventory.request_material_reorder(mat_type_id=1, quantity=100, note="Low stock")
         """
-        session = self.db_session
-        material_type = session.get(MaterialType, mat_type_id)
-        mat_label = material_type.code if material_type else f"ID:{mat_type_id}"
+        session: Session = self.db_session
+        material_type: MaterialType | None = session.get(MaterialType, mat_type_id)
+        mat_label: str = material_type.code if material_type else f"ID:{mat_type_id}"
 
-        # 1. Permanent Audit
-        audit_entry = MaterialAudit(
-            stock_item_id=0,
-            operation="reorder",
-            qty_delta=quantity,
-            reason=note,
+        # 1. Permanent Audit — WorkLog, not MaterialAudit: no specific stock item for a reorder
+        from docuflow.domain.entities.production import WorkLogType
+
+        audit_log: WorkLog = WorkLog(
+            log_type=WorkLogType.INFO,
+            message=f"[REORDER_REQUEST] {mat_label} qty={quantity} note={note}",
             author=author,
             node_id=self.config.node_id,
         )
-        session.add(audit_entry)
+        session.add(audit_log)
 
         # 2. Alert Broadcast via Chat
-        reorder_content = (
+        reorder_content: str = (
             f"📦 ДОЗАКАЗ: {mat_label} — {quantity} "
             f"{material_type.primary_unit if material_type else 'ед.'}\n"
             f"Примечание: {note}"
         )
-        new_alert = ChatMessage(
+        new_alert: ChatMessage = ChatMessage(
             author=author,
             node_id=self.config.node_id,
             message_type=ChatMessageType.ORDER,
@@ -331,12 +341,12 @@ class InventorySystem(BaseSystem):
 
     def resolve_supply_request(self, original_log_id: int, author: str) -> None:
         """Marks a logistics request as fulfilled by creating a resolution log."""
-        session = self.db_session
-        original_log = session.get(WorkLog, original_log_id)
+        session: Session = self.db_session
+        original_log: WorkLog | None = session.get(WorkLog, original_log_id)
         if not original_log:
             return
 
-        resolution_log = WorkLog(
+        resolution_log: WorkLog = WorkLog(
             work_item_id=original_log.work_item_id,
             task_item_id=original_log.task_item_id,
             log_type=original_log.log_type,
@@ -354,7 +364,7 @@ class InventorySystem(BaseSystem):
         """
         Provides a simplified stock level view for the ReportSystem.
         """
-        stock_records = db_session.exec(select(MaterialStock)).all()
+        stock_records: Any = db_session.exec(select(MaterialStock)).all()
         return [
             {
                 "id": stock.id,
@@ -372,9 +382,13 @@ class InventorySystem(BaseSystem):
         """
         Query method for material usage history blocks.
         """
-        row_limit = report_params.get("limit", 50)
-        statement = select(MaterialAudit).order_by(MaterialAudit.created_at.desc()).limit(row_limit)  # type: ignore[attr-defined]
-        audit_items = db_session.exec(statement).all()
+        row_limit: int = report_params.get("limit", 50)
+        statement: Any = (
+            select(MaterialAudit)
+            .order_by(MaterialAudit.created_at.desc())  # type: ignore[attr-defined]
+            .limit(row_limit)
+        )
+        audit_items: Any = db_session.exec(statement).all()
         return [
             {
                 "operation": item.operation,
@@ -386,7 +400,7 @@ class InventorySystem(BaseSystem):
             for item in audit_items
         ]
 
-    async def on_startup(self):
+    async def on_startup(self) -> None:
         """Lifecycle hook to register inventory reporting data blocks and settings."""
         from docuflow.domain.settings import registry as settings_registry
 
@@ -394,7 +408,7 @@ class InventorySystem(BaseSystem):
 
         if not self.sdk:
             return
-        registry = await self.sdk.resolve_system_by_type(ReportRegistry)
+        registry: ReportRegistry = await self.sdk.resolve_system_by_type(ReportRegistry)
 
         registry.register(
             ReportDataBlock(
