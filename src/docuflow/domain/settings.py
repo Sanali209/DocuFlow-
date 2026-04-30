@@ -36,7 +36,7 @@ class SettingsRegistry:
     _schemas: ClassVar[dict[str, type[BaseModuleSettings]]] = {}
     _admin: ClassVar[Any | None] = None  # AdminSystem reference for DB access
 
-    def __new__(cls):
+    def __new__(cls) -> "SettingsRegistry":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -44,10 +44,10 @@ class SettingsRegistry:
     def init(self, admin_system: Any) -> None:
         """Initialize registry with admin system for database access."""
         self._admin = admin_system  # type: ignore[misc]
-        logger = logging.getLogger(__name__)
+        logger: logging.Logger = logging.getLogger(__name__)
         logger.info(f"SettingsRegistry.init: admin_system set to {type(admin_system).__name__}")
 
-    def register(self, module_name: str, schema: type[BaseModuleSettings]):
+    def register(self, module_name: str, schema: type[BaseModuleSettings]) -> None:
         """Register a module's settings model."""
         self._schemas[module_name] = schema
 
@@ -61,15 +61,15 @@ class SettingsRegistry:
 
     def get_fields_by_scope(self, module_name: str, scope: str) -> list[str]:
         """Filter a module's fields based on their declared scope (global/local)."""
-        schema = self.get_schema(module_name)
+        schema: type[BaseModuleSettings] | None = self.get_schema(module_name)
         if not schema:
             return []
 
-        filtered_fields = []
+        filtered_fields: list[str] = []
         for name, field in schema.model_fields.items():
             # Check for scope in json_schema_extra
-            extra_raw = field.json_schema_extra
-            extra = extra_raw if isinstance(extra_raw, dict) else {}
+            extra_raw: Any = field.json_schema_extra
+            extra: dict[str, Any] = extra_raw if isinstance(extra_raw, dict) else {}
             if extra.get("scope") == scope:
                 filtered_fields.append(name)
         return filtered_fields
@@ -87,11 +87,11 @@ class SettingsRegistry:
 
     def get_settings_object(self, node_id: str, module: str) -> BaseModuleSettings | None:
         """Get settings object populated with values from database."""
-        schema = self.get_schema(module)
+        schema: type[BaseModuleSettings] | None = self.get_schema(module)
         if not schema:
             return None
 
-        data = self.get_module_settings(node_id, module)
+        data: dict[str, str] = self.get_module_settings(node_id, module)
         if not data:
             # No data from database - return None instead of defaults
             return None
