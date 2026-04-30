@@ -282,17 +282,20 @@ class FileBusSystem(BaseSystem):
             return False
 
         # Parse filename: {PREFIX}{FROM}{DELIM}{TO}{DELIM}{ID}.json
-        # Strip prefix and extension to get the stem, e.g. "SENDER_STATION_A_001"
+        # The ID is always a pure numeric millisecond timestamp (no delimiter inside).
+        # Strip prefix and extension to get the stem, e.g. "STATION_B_STATION_A_1746000000000"
         stem: str = filename[len(prefix) : -len(constants.BUS_EXTENSION)]
-        # Remove ID (rightmost segment) first so node IDs containing the delimiter
-        # are handled correctly (unique IDs are ms timestamps — no delimiter).
+        # Remove the rightmost segment (the numeric ID)
         without_id: str
-        without_id, _, _ = stem.rpartition(constants.BUS_DELIMITER)
-        # Remaining: "{FROM}{DELIM}{TO}" — split once from the left to get FROM, TO
-        _from: str
-        to_id: str
-        _from, _, to_id = without_id.partition(constants.BUS_DELIMITER)
-        return to_id == self._node_id
+        id_part: str
+        without_id, _, id_part = stem.rpartition(constants.BUS_DELIMITER)
+        if not without_id or not id_part.isdigit():
+            return False
+        # The TO field is at the end of without_id, preceded by DELIM.
+        # Check with endswith so that node IDs containing the delimiter are handled
+        # correctly (e.g. "STATION_A" correctly matches the TO field in
+        # "STATION_B_STATION_A" without being confused with longer suffixes).
+        return without_id.endswith(f"{constants.BUS_DELIMITER}{self._node_id}")
 
     async def _try_read_message(self, file_path: Path) -> dict[str, Any] | None:
         """Attempt to read and parse a JSON message from disk."""
