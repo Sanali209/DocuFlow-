@@ -36,50 +36,51 @@ def test_station_name_not_parsed_as_datetime(tmp_path):
 
 
 def test_iso_datetime_string_is_parsed(tmp_path):
-    """Valid ISO 8601 datetime strings must be parsed to datetime objects."""
+    """ISO 8601 strings in datetime-typed fields must be parsed to datetime objects."""
+    from docuflow.domain.entities.identity import NodeSetting
+
     sync = make_sync(tmp_path)
-    row_copy = {"updated_at": "2024-01-15T10:30:00", "name": "test"}
+    engine = create_engine("sqlite:///:memory:")
+    SQLModel.metadata.create_all(engine)
 
-    # Invoke the datetime-conversion logic directly via _process_remote_row
-    # by replicating the loop that was extracted
-    import datetime as dt
-
-    for key, value in list(row_copy.items()):
-        if (
-            isinstance(value, str)
-            and len(value) >= 10
-            and value[4:5] == "-"
-            and value[7:8] == "-"
-        ):
-            try:
-                row_copy[key] = dt.datetime.fromisoformat(value)
-            except ValueError:
-                pass
-
-    assert isinstance(row_copy.get("updated_at"), dt.datetime), (
-        "ISO 8601 datetime string must be parsed to datetime"
-    )
-    assert row_copy.get("name") == "test", "non-datetime string must remain unchanged"
+    iso_str = "2024-01-15T10:30:00"
+    row_data = {
+        "node_id": "STATION_A",
+        "module": "CONFIG",
+        "key": "last_sync",
+        "value": "true",
+        "updated_at": iso_str,
+    }
+    with Session(engine) as session:
+        sync._process_remote_row(session, NodeSetting, row_data, ["id"])
+        result = session.exec(select(NodeSetting)).first()
+        assert result is not None
+        assert isinstance(result.updated_at, datetime.datetime), (
+            "ISO 8601 datetime string must be parsed to datetime"
+        )
+        assert result.updated_at == datetime.datetime.fromisoformat(iso_str), (
+            "parsed datetime must match the original ISO string"
+        )
 
 
 def test_status_change_not_corrupted(tmp_path):
     """'STATUS_CHANGE' contains 'T' — must not be corrupted by datetime parsing."""
+    from docuflow.domain.entities.identity import NodeSetting
+
     sync = make_sync(tmp_path)
-    import datetime as dt
+    engine = create_engine("sqlite:///:memory:")
+    SQLModel.metadata.create_all(engine)
 
-    row_copy = {"module": "STATUS_CHANGE", "value": "active"}
-    for key, value in list(row_copy.items()):
-        if (
-            isinstance(value, str)
-            and len(value) >= 10
-            and value[4:5] == "-"
-            and value[7:8] == "-"
-        ):
-            try:
-                row_copy[key] = dt.datetime.fromisoformat(value)
-            except ValueError:
-                pass
-
-    assert row_copy["module"] == "STATUS_CHANGE", (
-        "'STATUS_CHANGE' must not be altered by datetime detection"
-    )
+    row_data = {
+        "node_id": "STATION_A",
+        "module": "STATUS_CHANGE",
+        "key": "active",
+        "value": "true",
+    }
+    with Session(engine) as session:
+        sync._process_remote_row(session, NodeSetting, row_data, ["id"])
+        result = session.exec(select(NodeSetting)).first()
+        assert result is not None
+        assert result.module == "STATUS_CHANGE", (
+            "'STATUS_CHANGE' must not be altered by datetime detection"
+        )

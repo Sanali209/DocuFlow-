@@ -187,6 +187,7 @@ class DataSyncSystem(BaseSystem):
         row_copy: dict[str, Any] = dict(row_data)
         key: str
         value: Any
+        # Cheap ISO 8601 date pre-filter (YYYY-MM-DD…) before attempting full parse.
         for key, value in row_copy.items():
             if (
                 isinstance(value, str)
