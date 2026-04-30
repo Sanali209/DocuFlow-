@@ -29,11 +29,11 @@ class DataSyncSystem(BaseSystem):
         >>> await sync.apply_remote_snapshot(snap_path)
     """
 
-    def __init__(self, config: Config, engine: Any):
+    def __init__(self, config: Config, engine: Any) -> None:
         super().__init__(config)
-        self._engine = engine
-        self._node_id = config.node_id
-        self._snapshots_dir = Path(config.shared_path) / constants.SYNC_SNAPSHOTS_DIR
+        self._engine: Any = engine
+        self._node_id: str = config.node_id
+        self._snapshots_dir: Path = Path(config.shared_path) / constants.SYNC_SNAPSHOTS_DIR
         self._orchestrator: Any | None = None
 
         # Registry of domain entities involved in synchronization
@@ -54,13 +54,13 @@ class DataSyncSystem(BaseSystem):
         """
         self._ensure_snapshots_dir_exists()
 
-        timestamp = datetime.datetime.now().isoformat().replace(":", "-")
-        filename = (
+        timestamp: str = datetime.datetime.now().isoformat().replace(":", "-")
+        filename: str = (
             f"{constants.SYNC_PREFIX_SNAP}{self._node_id}_{timestamp}{constants.SYNC_EXTENSION}"
         )
-        target_path = self._snapshots_dir / filename
+        target_path: Path = self._snapshots_dir / filename
 
-        captured_data = await self._gather_registry_data()
+        captured_data: dict[str, list[dict[str, Any]]] = await self._gather_registry_data()
         await self._write_snapshot_atomically(target_path, captured_data)
 
         logger.info(f"DataSync: Created master snapshot {filename}")
@@ -76,8 +76,8 @@ class DataSyncSystem(BaseSystem):
             logger.error(f"DataSync: Snapshot file missing: {snapshot_path}")
             return
 
-        snapshot_content = await anyio.Path(snapshot_path).read_text()
-        snapshot_data = json.loads(snapshot_content)
+        snapshot_content: str = await anyio.Path(snapshot_path).read_text()
+        snapshot_data: Any = json.loads(snapshot_content)
 
         await anyio.to_thread.run_sync(self._merge_snapshot_data, snapshot_data)  # type: ignore[attr-defined]
         logger.info(f"DataSync: Applied snapshot {snapshot_path.name}")
@@ -103,8 +103,10 @@ class DataSyncSystem(BaseSystem):
 
         # We use UPSERT_USER as a generic placeholder or dynamic mapping for Iteration 3
         # In a full system, we'd map type(entity) to a specific command.
-        data = entity.model_dump()
+        data: dict[str, Any] = entity.model_dump()
         # Ensure datetime is serializable
+        key: str
+        val: Any
         for key, val in data.items():
             if isinstance(val, datetime.datetime):
                 data[key] = val.isoformat()
@@ -113,7 +115,7 @@ class DataSyncSystem(BaseSystem):
             f"DataSync: Broadcasting delta for {type(entity).__name__} "
             f"(ID: {getattr(entity, 'id', 'unknown')})"
         )
-        await self._orchestrator.broadcast_request(CommandType.UPSERT_USER, data)
+        await self._orchestrator.broadcast_command(CommandType.UPSERT_USER, data)
 
     # --- Private Helpers: Complexity Decomposition ---
 
@@ -124,12 +126,13 @@ class DataSyncSystem(BaseSystem):
     async def _gather_registry_data(self) -> dict[str, list[dict[str, Any]]]:
         """Extract all registry-defined entities from the local database."""
 
-        def _sync_extract():
-            data_map = {}
+        def _sync_extract() -> dict[str, list[dict[str, Any]]]:
+            data_map: dict[str, list[dict[str, Any]]] = {}
             with Session(self._engine) as session:
+                entity_cls: type[SQLModel]
                 for entity_cls in self._sync_registry:
-                    table_name = entity_cls.__tablename__
-                    records = session.exec(select(entity_cls)).all()
+                    table_name: Any = entity_cls.__tablename__
+                    records: Any = session.exec(select(entity_cls)).all()
                     data_map[table_name] = [r.model_dump() for r in records]
             return data_map
 
@@ -138,26 +141,28 @@ class DataSyncSystem(BaseSystem):
     async def _write_snapshot_atomically(self, path: Path, data: dict) -> None:
         """Serialize data to JSON and write to the shared drive."""
 
-        def _json_serial(obj):
+        def _json_serial(obj: Any) -> Any:
             if isinstance(obj, datetime.datetime):
                 return obj.isoformat()
             raise TypeError(f"Type {type(obj)} is not serializable")
 
-        serialized_json = json.dumps(data, default=_json_serial, indent=2)
+        serialized_json: str = json.dumps(data, default=_json_serial, indent=2)
         await anyio.Path(path).write_text(serialized_json)
 
     def _merge_snapshot_data(self, snapshot_data: dict) -> None:
         """Internal synchronous logic for database merging."""
         with Session(self._engine) as session:
+            entity_cls: type[SQLModel]
             for entity_cls in self._sync_registry:
-                table_name = entity_cls.__tablename__
-                remote_rows = snapshot_data.get(table_name, [])
+                table_name: Any = entity_cls.__tablename__
+                remote_rows: Any = snapshot_data.get(table_name, [])
 
                 if not remote_rows:
                     continue
 
-                pk_names = [c.name for c in entity_cls.__table__.primary_key]  # type: ignore[attr-defined]
+                pk_names: list[str] = [c.name for c in entity_cls.__table__.primary_key]  # type: ignore[attr-defined]
 
+                row_dict: dict
                 for row_dict in remote_rows:
                     self._process_remote_row(session, entity_cls, row_dict, pk_names)
 
@@ -167,7 +172,9 @@ class DataSyncSystem(BaseSystem):
         self, session: Session, entity_cls: type[SQLModel], row_data: dict, pk_names: list[str]
     ) -> None:
         """Process an individual remote record and resolve local conflicts."""
-        row_copy = dict(row_data)
+        row_copy: dict[str, Any] = dict(row_data)
+        key: str
+        value: Any
         for key, value in row_copy.items():
             if isinstance(value, str) and "T" in value:
                 try:
@@ -175,10 +182,10 @@ class DataSyncSystem(BaseSystem):
                 except ValueError:
                     pass
 
-        remote_obj = entity_cls.model_validate(row_copy)
+        remote_obj: SQLModel = entity_cls.model_validate(row_copy)
 
-        pk_values = tuple(getattr(remote_obj, pk) for pk in pk_names)
-        local_obj = session.get(entity_cls, pk_values)
+        pk_values: tuple[Any, ...] = tuple(getattr(remote_obj, pk) for pk in pk_names)
+        local_obj: SQLModel | None = session.get(entity_cls, pk_values)
 
         if not local_obj:
             session.add(remote_obj)
@@ -191,5 +198,7 @@ class DataSyncSystem(BaseSystem):
 
     def _update_local_stale_record(self, local_obj: Any, row_data: dict) -> None:
         """Apply remote dictionary fields to an existing local object."""
+        key: str
+        value: Any
         for key, value in row_data.items():
             setattr(local_obj, key, value)

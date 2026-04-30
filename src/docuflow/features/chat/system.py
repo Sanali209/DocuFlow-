@@ -1,9 +1,11 @@
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 from loguru import logger
 from sqlmodel import Session, select
+from sqlmodel.sql.expression import SelectOfScalar
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import ChatMessage, ChatMessageType
@@ -22,7 +24,7 @@ class ChatSystem(BaseSystem):
     # Storage Directory within the cluster's shared path
     ATTACHMENTS_SUBDIR = "chat_attachments"
 
-    def __init__(self, config: Config, session: Session, sdk: Any = None):
+    def __init__(self, config: Config, session: Session, sdk: Any = None) -> None:
         """
         Initialize the communication engine.
 
@@ -54,17 +56,17 @@ class ChatSystem(BaseSystem):
         """
         Create and record a new message, then broadcast to peers via FileBus.
         """
-        session = self.db_session
+        session: Session = self.db_session
 
         # Perform context inheritance if replying to a thread
         if parent_message_id and not any([ref_project_id, ref_work_item_id, ref_task_item_id]):
-            parent_msg = session.get(ChatMessage, parent_message_id)
+            parent_msg: ChatMessage | None = session.get(ChatMessage, parent_message_id)
             if parent_msg:
                 ref_project_id = parent_msg.ref_project_id
                 ref_work_item_id = parent_msg.ref_work_item_id
                 ref_task_item_id = parent_msg.ref_task_item_id
 
-        new_message = ChatMessage(
+        new_message: ChatMessage = ChatMessage(
             author=author,
             node_id=self.config.node_id,
             message_type=message_type,
@@ -86,8 +88,8 @@ class ChatSystem(BaseSystem):
             try:
                 from docuflow.infrastructure.bus import FileBusSystem
 
-                bus = await self.sdk.resolve_system_by_type(FileBusSystem)
-                await bus.broadcast_message(
+                bus: Any = await self.sdk.resolve_system_by_type(FileBusSystem)
+                await bus.write_message(
                     {
                         "action": "CHAT_MESSAGE_NEW",
                         "id": new_message.id,
@@ -123,7 +125,7 @@ class ChatSystem(BaseSystem):
             ref_task_item_id=task_item_id,
         )
 
-    async def reply(self, parent_id: int, author: str, content: str, **kwargs) -> ChatMessage:
+    async def reply(self, parent_id: int, author: str, content: str, **kwargs: Any) -> ChatMessage:
         """
         Threaded reply convenience. Inherits project/task context from parent.
 
@@ -144,8 +146,8 @@ class ChatSystem(BaseSystem):
             ref_type: One of 'project', 'work_item', 'task_item'.
             ref_id: Database identity of the linked entity.
         """
-        session = self.db_session
-        FIELD_MAP = {
+        session: Session = self.db_session
+        FIELD_MAP: dict[str, Any] = {
             "project": ChatMessage.ref_project_id,
             "work_item": ChatMessage.ref_work_item_id,
             "task_item": ChatMessage.ref_task_item_id,
@@ -154,7 +156,7 @@ class ChatSystem(BaseSystem):
         if ref_type not in FIELD_MAP:
             raise ValueError(f"Unknown reference type mapping: {ref_type}")
 
-        statement = (
+        statement: SelectOfScalar[ChatMessage] = (
             select(ChatMessage)
             .where(FIELD_MAP[ref_type] == ref_id)
             .order_by(ChatMessage.created_at.asc())  # type: ignore[attr-defined]
@@ -167,21 +169,22 @@ class ChatSystem(BaseSystem):
         """
         Assembles all children of a message into a single linear discussion list.
         """
-        session = self.db_session
-        root_msg = session.get(ChatMessage, root_message_id)
+        session: Session = self.db_session
+        root_msg: ChatMessage | None = session.get(ChatMessage, root_message_id)
         if not root_msg:
             return []
 
-        results = [root_msg]
+        results: list[ChatMessage] = [root_msg]
 
-        def _fetch_children(parent_id: int):
-            children_statement = (
+        def _fetch_children(parent_id: int) -> None:
+            children_statement: SelectOfScalar[ChatMessage] = (
                 select(ChatMessage)
                 .where(ChatMessage.parent_message_id == parent_id)
                 .order_by(ChatMessage.created_at.asc())  # type: ignore[attr-defined]
             )
 
-            children = session.exec(children_statement).all()
+            children: Sequence[ChatMessage] = session.exec(children_statement).all()
+            child: ChatMessage
             for child in children:
                 results.append(child)
                 if child.id is not None:
@@ -194,8 +197,8 @@ class ChatSystem(BaseSystem):
         """
         Retrieves the most recent broadcast messages that are not linked to a project or task.
         """
-        session = self.db_session
-        statement = (
+        session: Session = self.db_session
+        statement: SelectOfScalar[ChatMessage] = (
             select(ChatMessage)
             .where(ChatMessage.ref_project_id.is_(None))  # type: ignore[union-attr]
             .where(ChatMessage.ref_work_item_id.is_(None))  # type: ignore[union-attr]
@@ -212,8 +215,8 @@ class ChatSystem(BaseSystem):
         """
         Permanently store a physical file attached to a chat message.
         """
-        message_storage_path = self._prepare_message_dir(message_id)
-        full_file_path = message_storage_path / filename
+        message_storage_path: Path = self._prepare_message_dir(message_id)
+        full_file_path: Path = message_storage_path / filename
         full_file_path.write_bytes(content)
 
         self._link_attachment_to_db(message_id, filename, full_file_path, len(content))
@@ -221,22 +224,22 @@ class ChatSystem(BaseSystem):
 
     def _prepare_message_dir(self, message_id: int) -> Path:
         """Internal: Ensure unique file directory for the given message."""
-        message_dir = self.attachments_root / str(message_id)
+        message_dir: Path = self.attachments_root / str(message_id)
         message_dir.mkdir(parents=True, exist_ok=True)
         return message_dir
 
     def _link_attachment_to_db(
         self, message_id: int, filename: str, full_path: Path, size_bytes: int
-    ):
+    ) -> None:
         """Internal: Update ChatMessage metadata with file pointer."""
-        session = self.db_session
-        chat_msg = session.get(ChatMessage, message_id)
+        session: Session = self.db_session
+        chat_msg: ChatMessage | None = session.get(ChatMessage, message_id)
         if not chat_msg:
             return
 
-        existing_attachments = json.loads(chat_msg.attachments or "[]")
+        existing_attachments: list[dict[str, Any]] = json.loads(chat_msg.attachments or "[]")
         # Relative path for cross-node resolution via shared_path
-        relative_storage_path = str(full_path.relative_to(self.attachments_root))
+        relative_storage_path: str = str(full_path.relative_to(self.attachments_root))
 
         existing_attachments.append(
             {"name": filename, "path": relative_storage_path, "size": size_bytes}

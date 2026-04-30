@@ -69,7 +69,7 @@ class TaskBoardSystem(BaseSystem):
         inventory_system: InventorySystem | None = None,
         production_system: ProductionSystem | None = None,
         sdk: Any = None,
-    ):
+    ) -> None:
         super().__init__(config, session)
         self.db_engine = db_engine
         self.ns_mirror = ns_mirror
@@ -93,7 +93,7 @@ class TaskBoardSystem(BaseSystem):
         else:
             raise RuntimeError(f"{self.__class__.__name__}: No session or db_engine available")
 
-    def _sync(self, session: Session):
+    def _sync(self, session: Session) -> None:
         """Internal helper to flush or commit based on session ownership."""
         if self.session is not None:
             session.flush()
@@ -131,13 +131,13 @@ class TaskBoardSystem(BaseSystem):
                 session.add(task_item)
                 bucket_entries.append(bucket_entry)
 
-                # Audit trail
-                log = WorkLog(
-                    log_type=WorkLogType.INFO,
-                    message=f"TaskGroup {task_group_id} locked by {operator} on {node_id}",
-                    node_id=self.config.node_id,
-                )
-            session.add(log)
+            # Audit trail
+            audit_log = WorkLog(
+                log_type=WorkLogType.INFO,
+                message=f"TaskGroup {task_group_id} locked by {operator} on {node_id}",
+                node_id=self.config.node_id,
+            )
+            session.add(audit_log)
             self._sync(session)
 
             # Note: NSMirrorService doesn't have on_bucket_add method
@@ -284,7 +284,7 @@ class TaskBoardSystem(BaseSystem):
 
     def _check_and_auto_close_work_item(self, work_item_id: int, session: Session) -> None:
         """Checks if all tasks for a work item are completed and closes it if so."""
-        all_tasks = list(
+        all_tasks: list[TaskItem] = list(
             session.exec(select(TaskItem).where(TaskItem.work_item_id == work_item_id)).all()
         )
 
@@ -357,11 +357,6 @@ class TaskBoardSystem(BaseSystem):
             task_id_val = task.id
             if task_id_val is None:
                 raise ValueError(f"Task {task_id} has no ID")
-
-            # Создаем уникальный ID батча для этой задачи (сингл-батч)
-            import uuid
-
-            single_batch_id = str(uuid.uuid4())
 
             bucket_entry = WorkerBucketEntry(
                 node_id=node_id,
@@ -601,14 +596,14 @@ class TaskBoardSystem(BaseSystem):
         self, task_id: int, target_status: TaskItemStatus, session: Session
     ) -> TaskItem:
         """Проверяет корректность перехода статуса (TDD)."""
-        task = session.get(TaskItem, task_id)
+        task: TaskItem | None = session.get(TaskItem, task_id)
         if not task:
             raise ValueError(f"Task {task_id} not found")
 
-        current = task.status
+        current: TaskItemStatus = task.status
         if target_status == current:
             return task
-        allowed = self.VALID_TASK_TRANSITIONS.get(current, [])
+        allowed: list[TaskItemStatus] = self.VALID_TASK_TRANSITIONS.get(current, [])
         if target_status not in allowed:
             raise ValueError(
                 f"Invalid transition from {current.name} to {target_status.name}. "
@@ -624,10 +619,10 @@ class TaskBoardSystem(BaseSystem):
         message: str,
         payload: dict | None = None,
         session: Session | None = None,
-    ):
+    ) -> None:
         """Создает запись в WorkLog."""
-        target_session = session or self.db_session
-        work_log = WorkLog(
+        target_session: Session = session or self.db_session
+        work_log: WorkLog = WorkLog(
             work_item_id=task.work_item_id,
             task_item_id=task.id,
             log_type=log_type,
@@ -639,3 +634,66 @@ class TaskBoardSystem(BaseSystem):
         target_session.add(work_log)
         if not session and not self.session:
             target_session.commit()
+
+    # --- Project Management (migrated from ProjectSystem) ---
+
+    def get_all_active_projects(self) -> list[Project]:
+        with self.get_db_session() as session:
+            return list(session.exec(select(Project)).all())
+
+    def register_new_project(self, project_name: str, description: str | None = None) -> Project:
+        with self.get_db_session() as session:
+            project = Project(name=project_name, description=description)
+            session.add(project)
+            session.flush()
+            session.refresh(project)
+            return project
+
+    def resolve_default_workshop_project(self) -> Project:
+        with self.get_db_session() as session:
+            project = session.exec(select(Project).where(Project.name == "Default")).first()
+            if not project:
+                project = Project(name="Default", is_default=True)
+                session.add(project)
+                session.flush()
+                session.refresh(project)
+            return project
+
+    # --- WorkItem helpers (migrated from WorkItemSystem) ---
+
+    def get_tasks_for_work_item(self, work_item_id: int) -> list[TaskItem]:
+        with self.get_db_session() as session:
+            return list(
+                session.exec(select(TaskItem).where(TaskItem.work_item_id == work_item_id)).all()
+            )
+
+    def get_logs_for_work_item(self, work_item_id: int) -> list[WorkLog]:
+        with self.get_db_session() as session:
+            return list(
+                session.exec(
+                    select(WorkLog)
+                    .where(WorkLog.work_item_id == work_item_id)
+                    .order_by(WorkLog.created_at.desc())  # type: ignore[attr-defined]
+                ).all()
+            )
+
+    def register_document(self, work_item_id: int, author: str) -> WorkItem:
+        """Register physical document arrival for a WorkItem."""
+        with self.get_db_session() as session:
+            wi = session.get(WorkItem, work_item_id)
+            if wi is None:
+                raise ValueError(f"WorkItem {work_item_id} not found")
+            wi.doc_received_at = datetime.datetime.now()
+            if wi.status in (WorkItemStatus.NEW, WorkItemStatus.PENDING_CUTS):
+                wi.status = WorkItemStatus.REGISTERED
+            audit = WorkLog(
+                work_item_id=wi.id,
+                log_type=WorkLogType.STATUS_CHANGE,
+                message=f"Physical document registered by {author}",
+                created_at=datetime.datetime.now(),
+                node_id=self.config.node_id,
+            )
+            session.add(wi)
+            session.add(audit)
+            self._sync(session)
+            return wi
