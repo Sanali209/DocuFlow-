@@ -277,7 +277,10 @@ class AdminSystem(BaseSystem):
     def upsert_role(self, role_name: str, permissions_list: list[str]) -> Role:
         s: Session = self.db_session
         if self._is_admin(role_name):
-            admin_role: Role | None = s.exec(select(Role).where(Role.name == "admin")).first()
+            # Check both Cyrillic and English admin role names
+            admin_role: Role | None = s.exec(
+                select(Role).where(Role.name.in_(["Админ", "Admin", "admin"]))  # type: ignore[union-attr]
+            ).first()
             if admin_role:
                 return admin_role
             raise RuntimeError("Admin role not found")
