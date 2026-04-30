@@ -106,7 +106,7 @@ class TestGetOrCreateAdmin:
 
     def test_creates_admin_role_when_missing(self, auth_system):
         auth_system.get_or_create_admin("adminpass")
-        role = auth_system.db_session.exec(select(Role).where(Role.name == "Admin")).first()
+        role = auth_system.db_session.exec(select(Role).where(Role.name == "Админ")).first()
         assert role is not None
         assert role.permissions == '["*:full"]'
 

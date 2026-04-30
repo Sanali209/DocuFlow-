@@ -490,7 +490,8 @@ class AdminSyncSystem:
         dispatcher.register_handler(CommandType("FORCE_STEP_DOWN"), self.handle_force_step_down)
 
     def _is_admin(self, name: str) -> bool:
-        return name.strip().lower() == "admin"
+        n: str = name.strip().lower()
+        return n in ("admin", "админ")
 
     def handle_force_step_down(self, data: dict[str, Any]) -> None:
         # This is a special command handled by orchestrator logic,

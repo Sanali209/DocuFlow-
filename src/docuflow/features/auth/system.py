@@ -16,7 +16,7 @@ class AuthSystem(BaseSystem):
     locally using the synchronized distributed database state.
     """
 
-    def __init__(self, config: Config, db_session: Session):
+    def __init__(self, config: Config, db_session: Session) -> None:
         """
         Initialize the authentication engine.
 
@@ -42,7 +42,7 @@ class AuthSystem(BaseSystem):
         Example:
             user = await system.authenticate_user("admin", "secret123")
         """
-        user = self.find_one(User, username=username)
+        user: User | None = self.find_one(User, username=username)
 
         if not user or not self.verify_password(password, user.password_hash):
             return None
@@ -57,13 +57,16 @@ class AuthSystem(BaseSystem):
         Args:
             default_password: Admin password. Falls back to 'admin' if not provided.
         """
-        # 1. Ensure Admin role exists
-        admin_role = self.find_one(Role, name="Admin")
+        # 1. Ensure Admin role exists — use Cyrillic name consistent with seed_default_roles
+        admin_role: Role | None = self.find_one(Role, name="Админ")
         if not admin_role:
-            admin_role = self.save(Role(name="Admin", permissions=json.dumps(["*:full"])))
+            # Fallback: check English name for backwards compatibility with older clusters
+            admin_role = self.find_one(Role, name="Admin")
+        if not admin_role:
+            admin_role = self.save(Role(name="Админ", permissions=json.dumps(["*:full"])))
 
         # 2. Ensure admin user exists
-        admin_user = self.find_one(User, username="admin")
+        admin_user: User | None = self.find_one(User, username="admin")
         if not admin_user:
             admin_user = self.save(
                 User(
@@ -74,6 +77,7 @@ class AuthSystem(BaseSystem):
                 )
             )
 
+        assert admin_user is not None  # save() always returns the persisted entity
         return admin_user
 
     def bootstrap_admin(self, default_password: str | None = None) -> User | None:
@@ -90,10 +94,12 @@ class AuthSystem(BaseSystem):
         from docuflow.domain.entities.identity import Workplace
         from docuflow.infrastructure import constants
 
-        existing = self.find_one(Workplace, node_id=constants.DEFAULT_WORKPLACE_ID)
+        existing: Workplace | None = self.find_one(
+            Workplace, node_id=constants.DEFAULT_WORKPLACE_ID
+        )
 
         if not existing:
-            workplace = Workplace(
+            workplace: Workplace = Workplace(
                 node_id=constants.DEFAULT_WORKPLACE_ID,
                 name=constants.DEFAULT_WORKPLACE_NAME,
                 allowed_modules="",
