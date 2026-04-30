@@ -95,7 +95,10 @@ class SecureDispatcher(BaseSystem):
             f"from {message.sender_id} (seq: {message.sequence})"
         )
 
-        # 4. Execute handler — update sequence ONLY after successful execution
+        # 4. Execute handler — sequence is recorded only after the handler
+        #    completes without error. This ensures that if a remote node
+        #    re-sends the same message (e.g. after a transient failure), it
+        #    will not be rejected as a replay attack.
         result = handler(message.payload.data)
         self._last_sequences[message.sender_id] = message.sequence
         return result
