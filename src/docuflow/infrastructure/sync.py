@@ -139,7 +139,12 @@ class DataSyncSystem(BaseSystem):
         return await anyio.to_thread.run_sync(_sync_extract)  # type: ignore[attr-defined]
 
     async def _write_snapshot_atomically(self, path: Path, data: dict) -> None:
-        """Serialize data to JSON and write to the shared drive."""
+        """Serialize data to JSON using temp+rename for crash safety.
+
+        Writes to a TEMP_ staging file first, then atomically replaces the
+        target via os.replace. If the write fails, the original file is untouched.
+        """
+        import os
 
         def _json_serial(obj: Any) -> Any:
             if isinstance(obj, datetime.datetime):
@@ -147,7 +152,14 @@ class DataSyncSystem(BaseSystem):
             raise TypeError(f"Type {type(obj)} is not serializable")
 
         serialized_json: str = json.dumps(data, default=_json_serial, indent=2)
-        await anyio.Path(path).write_text(serialized_json)
+        temp_path: Path = path.with_name(f"TEMP_{path.name}")
+        try:
+            await anyio.Path(temp_path).write_text(serialized_json)
+            os.replace(temp_path, path)
+        except Exception:
+            if temp_path.exists():
+                temp_path.unlink(missing_ok=True)
+            raise
 
     def _merge_snapshot_data(self, snapshot_data: dict) -> None:
         """Internal synchronous logic for database merging."""
