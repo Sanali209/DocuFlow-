@@ -90,3 +90,28 @@ def test_non_numeric_id_rejected(tmp_path):
         f"{constants.BUS_DELIMITER}abc{constants.BUS_EXTENSION}"
     )
     assert bus._is_relevant_message(filename, constants.BUS_INBOX_DIR) is False
+
+
+def test_node_id_not_false_positive_substring_known_limitation(tmp_path):
+    """Known limitation: short node IDs that are trailing-suffix fragments of
+    compound node IDs cannot be distinguished using filename alone.
+
+    BUS_DELIMITER is '_' and node IDs like 'STATION_A' also contain '_'.
+    The filename SENDER_STATION_A cannot be unambiguously split into
+    FROM='SENDER' TO='STATION_A' vs FROM='SENDER_STATION' TO='A' without
+    a node registry. The endswith approach chosen here prioritises real-world
+    compound IDs (STATION_A, STATION_B) over the degenerate case of a node
+    called 'A' coexisting with 'STATION_A'. The constraint documented in the
+    module docstring applies: avoid node IDs that are trailing-underscore
+    suffixes of other node IDs.
+    """
+    bus = make_bus("A", tmp_path)
+    filename = (
+        f"{constants.BUS_PREFIX_REQ}SENDER"
+        f"{constants.BUS_DELIMITER}STATION_A"
+        f"{constants.BUS_DELIMITER}1746000000001{constants.BUS_EXTENSION}"
+    )
+    # Current behaviour: True (false positive). This is the documented limitation.
+    # Ideal behaviour would be False, but requires format change or node registry.
+    result = bus._is_relevant_message(filename, constants.BUS_INBOX_DIR)
+    assert result is True  # known limitation — see docstring
