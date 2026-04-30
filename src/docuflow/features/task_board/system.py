@@ -470,11 +470,15 @@ class TaskBoardSystem(BaseSystem):
     def get_node_drift(self, node_id: str) -> float:
         """Calculates the average Drift % for all completed tasks on a node."""
         with self.get_db_session() as session:
-            bucket_entries = self.get_bucket(node_id)
-            total_estimated = 0
-            total_actual = 0
+            bucket_entries = list(
+                session.exec(
+                    select(WorkerBucketEntry).where(WorkerBucketEntry.node_id == node_id)
+                ).all()
+            )
+            total_estimated: int = 0
+            total_actual: int = 0
             for entry in bucket_entries:
-                task = session.get(TaskItem, entry.task_item_id)
+                task: TaskItem | None = session.get(TaskItem, entry.task_item_id)
                 if task and task.status == TaskItemStatus.DONE:
                     total_estimated += task.estimated_minutes or 0
                     total_actual += task.actual_minutes or 0
