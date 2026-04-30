@@ -39,13 +39,9 @@ def test_request_material_reorder_no_fk_violation(inventory_system):
     )
     inventory_system.db_session.commit()
 
-    # Verify no MaterialAudit with stock_item_id=0 was created
+    # Verify zero MaterialAudit rows were created (reorder uses WorkLog, not MaterialAudit)
     from docuflow.domain.entities.production import MaterialAudit
     from sqlmodel import select
 
-    bad_audits = list(
-        inventory_system.db_session.exec(
-            select(MaterialAudit).where(MaterialAudit.stock_item_id == 0)
-        ).all()
-    )
-    assert len(bad_audits) == 0, "No MaterialAudit with stock_item_id=0 should exist"
+    all_audits = list(inventory_system.db_session.exec(select(MaterialAudit)).all())
+    assert len(all_audits) == 0, "Reorder must not create any MaterialAudit rows"

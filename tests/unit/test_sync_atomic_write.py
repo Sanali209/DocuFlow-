@@ -49,3 +49,7 @@ async def test_write_snapshot_atomically_no_corrupt_on_failure(tmp_path):
 
     # Original file must be untouched
     assert json.loads(target.read_text()) == original_data
+
+    # Temp file must be cleaned up on failure
+    temp = tmp_path / f"TEMP_{target.name}"
+    assert not temp.exists(), "Temp file must be removed even when write fails"

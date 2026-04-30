@@ -316,7 +316,7 @@ class InventorySystem(BaseSystem):
 
         audit_log: WorkLog = WorkLog(
             log_type=WorkLogType.INFO,
-            message=f"[REORDER_REQUEST] {mat_label} qty={quantity} note={note}",
+            message=f"[LOGISTICS_REQUEST] {mat_label} qty={quantity} note={note}",
             author=author,
             node_id=self.config.node_id,
         )
