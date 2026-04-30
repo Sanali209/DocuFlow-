@@ -47,16 +47,16 @@ class P2POrchestrator(BaseSystem):
         dispatcher: "SecureDispatcher" = None,  # type: ignore[assignment]
         signer: "HMACSigner" = None,  # type: ignore[assignment]
         admin_sync: "AdminSyncSystem" = None,  # type: ignore[assignment]
-    ):
+    ) -> None:
         """Initialize the orchestrator with its required infrastructure systems."""
         super().__init__(config)
-        self._coordination = coordination
-        self._bus = bus
-        self._sync = sync
-        self._housekeeping = housekeeping
-        self._dispatcher = dispatcher
-        self._signer = signer
-        self._admin_sync = admin_sync
+        self._coordination: CoordinationSystem = coordination  # type: ignore[assignment]
+        self._bus: FileBusSystem = bus  # type: ignore[assignment]
+        self._sync: DataSyncSystem = sync  # type: ignore[assignment]
+        self._housekeeping: HousekeepingSystem = housekeeping  # type: ignore[assignment]
+        self._dispatcher: SecureDispatcher = dispatcher  # type: ignore[assignment]
+        self._signer: HMACSigner = signer  # type: ignore[assignment]
+        self._admin_sync: AdminSyncSystem = admin_sync  # type: ignore[assignment]
 
         if self._admin_sync and self._dispatcher:
             self._admin_sync.register_handlers(self._dispatcher)
@@ -169,21 +169,21 @@ class P2POrchestrator(BaseSystem):
             )
             try:
                 # In Iteration 3, we route these messages to domain handlers
-                messages = await self._bus.poll_messages()
+                messages: list[dict[str, Any]] = await self._bus.poll_messages()
                 for msg_data in messages:
-                    filename = msg_data.get("_filename")
+                    filename: str | None = msg_data.get("_filename")
                     try:
                         # 1. Parse raw message
-                        p2p_msg = P2PMessage.model_validate(msg_data)
+                        p2p_msg: P2PMessage = P2PMessage.model_validate(msg_data)
 
                         # 2. Dispatch to domain handlers (includes security check)
                         self._dispatcher.dispatch(p2p_msg)
-
-                        # 3. Delete successfully processed message
-                        if filename:
-                            await self._bus.delete_message(constants.BUS_INBOX_DIR, filename)
                     except Exception as msg_error:
                         logger.warning(f"Orchestrator: Failed to process message: {msg_error}")
+                    finally:
+                        # 3. Always delete processed/failed message to prevent infinite retry
+                        if filename:
+                            await self._bus.delete_message(constants.BUS_INBOX_DIR, filename)
 
                 await anyio.sleep(self.config.bus_poll_interval)
             except Exception as e:
@@ -204,7 +204,7 @@ class P2POrchestrator(BaseSystem):
         self._outbound_sequence += 1
 
         # 1. Create message envelope
-        msg = P2PMessage(
+        msg: P2PMessage = P2PMessage(
             sender_id=self.config.node_id,
             sequence=self._outbound_sequence,
             timestamp=time.time(),
@@ -257,7 +257,7 @@ class P2POrchestrator(BaseSystem):
         if self._coordination is None:
             logger.warning("Orchestrator: Cannot step down, coordination not initialized.")
             return
-        cooldown = data.get("cooldown", 30.0)
+        cooldown: Any = data.get("cooldown", 30.0)
         logger.warning(f"[{self.config.node_id}] Orchestrator: Received FORCE_STEP_DOWN command.")
         await self._coordination.step_down(cooldown=float(cooldown))
 
