@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_send_message_calls_write_message(tmp_path):
+async def test_send_message_calls_write_message_not_broadcast(tmp_path):
     """send_message must call write_message on FileBusSystem, not broadcast_message."""
     from sqlmodel import Session, SQLModel, create_engine
 
