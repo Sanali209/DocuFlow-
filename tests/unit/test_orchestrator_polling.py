@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from docuflow.application.bus.orchestrator import P2POrchestrator
 from docuflow.infrastructure import constants
@@ -12,6 +12,17 @@ def orchestrator(tmp_path):
     return orch
 
 
+async def _run_one_cycle(orchestrator):
+    """Run exactly one poll cycle of _polling_worker."""
+
+    async def stop_after_sleep(*args, **kwargs):
+        orchestrator._is_running = False
+
+    with patch("docuflow.application.bus.orchestrator.anyio.sleep", side_effect=stop_after_sleep):
+        orchestrator._is_running = True
+        await orchestrator._polling_worker()
+
+
 @pytest.mark.asyncio
 async def test_failed_message_deleted_on_parse_error(orchestrator):
     """A message that fails parsing must be deleted from inbox to prevent infinite retry."""
@@ -20,22 +31,8 @@ async def test_failed_message_deleted_on_parse_error(orchestrator):
     orchestrator._bus.poll_messages = AsyncMock(return_value=[bad_msg])
     orchestrator._bus.delete_message = AsyncMock()
     orchestrator._dispatcher = MagicMock()
-    orchestrator._is_running = True
 
-    # Manually execute one polling cycle
-    messages = await orchestrator._bus.poll_messages()
-    for msg_data in messages:
-        filename = msg_data.get("_filename")
-        try:
-            from docuflow.domain.messages import P2PMessage
-            p2p_msg = P2PMessage.model_validate(msg_data)
-            orchestrator._dispatcher.dispatch(p2p_msg)
-            if filename:
-                await orchestrator._bus.delete_message(constants.BUS_INBOX_DIR, filename)
-        except Exception:
-            # After fix: delete even on error
-            if filename:
-                await orchestrator._bus.delete_message(constants.BUS_INBOX_DIR, filename)
+    await _run_one_cycle(orchestrator)
 
     orchestrator._bus.delete_message.assert_called_once_with(
         constants.BUS_INBOX_DIR, "REQ_SENDER_TEST_001.json"
@@ -67,21 +64,14 @@ async def test_successful_message_deleted_after_dispatch(orchestrator):
     from docuflow.application.bus.dispatcher import SecureDispatcher
     from docuflow.infrastructure.config import Config
     from docuflow.infrastructure.security import HMACSigner as HS
+
     config = Config(node_id="TEST")
     dispatcher = SecureDispatcher(config, HS("test_secret"))
     dispatcher.register_handler(CommandType.UPSERT_USER, lambda d: None)
     orchestrator._dispatcher = dispatcher
 
-    messages = await orchestrator._bus.poll_messages()
-    for msg_data in messages:
-        filename = msg_data.get("_filename")
-        try:
-            p2p_msg = P2PMessage.model_validate(msg_data)
-            orchestrator._dispatcher.dispatch(p2p_msg)
-            if filename:
-                await orchestrator._bus.delete_message(constants.BUS_INBOX_DIR, filename)
-        except Exception:
-            if filename:
-                await orchestrator._bus.delete_message(constants.BUS_INBOX_DIR, filename)
+    await _run_one_cycle(orchestrator)
 
-    orchestrator._bus.delete_message.assert_called_once()
+    orchestrator._bus.delete_message.assert_called_once_with(
+        constants.BUS_INBOX_DIR, "BROADCAST_NODE_B_001.json"
+    )
