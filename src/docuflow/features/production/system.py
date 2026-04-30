@@ -88,14 +88,17 @@ class ProductionSystem(BaseSystem):
         db.flush()
         db.refresh(pallet_unit)
 
-        # Broadcast discovery of new physical unit
+        # Broadcast discovery of new physical unit — best-effort, skipped outside async context
         if self.sdk and hasattr(self.sdk, "orchestrator") and self.sdk.orchestrator:
-            asyncio.get_running_loop().create_task(
-                self.sdk.orchestrator.broadcast_command(
-                    command="SYNC_PALLET",
-                    data={"label_id": unique_label, "qty": quantity, "task_id": task_item_id},
+            try:
+                asyncio.get_running_loop().create_task(
+                    self.sdk.orchestrator.broadcast_command(
+                        command="SYNC_PALLET",
+                        data={"label_id": unique_label, "qty": quantity, "task_id": task_item_id},
+                    )
                 )
-            )
+            except RuntimeError:
+                pass  # No running event loop (e.g. CLI/test context); broadcast skipped
 
         return pallet_unit
 

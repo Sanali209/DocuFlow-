@@ -48,7 +48,11 @@ class AdminSystem(BaseSystem):
         self._background_tasks: list[asyncio.Task] = []
 
     def _create_background_task(self, coro: Any, name: str = "") -> asyncio.Task:
-        """Create a tracked background task with exception handling."""
+        """Create a tracked background task with exception handling.
+
+        Must be called from within an async context (a running event loop must exist).
+        Raises RuntimeError if called outside an async context.
+        """
         task: asyncio.Task = asyncio.get_running_loop().create_task(
             self._safe_background_task(coro, name)
         )
