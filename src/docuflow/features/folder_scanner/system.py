@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from anyio.to_thread import run_sync as run_sync_in_thread
 from sqlalchemy import Engine
 from sqlmodel import Session, select
 
@@ -337,7 +338,7 @@ class FolderScannerSystem(BaseSystem):
         """Parses a specific GNC file and synchronizes its nested tasks and parts."""
         meta = self.task_filename_parser.parse_task_filename(gnc_path.name)
         relative_path = str(gnc_path.relative_to(root_path))
-        file_hash = self._calculate_file_checksum(gnc_path)
+        file_hash = await run_sync_in_thread(self._calculate_file_checksum, gnc_path)
 
         # Check if hash changed WITHOUT keeping a session open during parsing
         with Session(self.db_engine) as db_session:
