@@ -2,19 +2,17 @@ import asyncio
 import hashlib
 import logging
 import shutil
-from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, BinaryIO
 
+import anyio
 from sqlalchemy import Engine
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import (
     TaskItem,
     WorkerBucketEntry,
-    WorkItem,
-    WorkItemType,
     WorkLog,
     WorkLogType,
 )
@@ -35,15 +33,6 @@ class NSMirrorService(BaseSystem):
     def __init__(
         self, config: Config, sdk: Any, engine: Engine, session: Session | None = None
     ) -> None:
-        """
-        Initialize the network synchronization service.
-
-        Args:
-            config: System configuration.
-            sdk: SDK facade.
-            engine: SQLAlchemy database engine.
-            session: Optional SQLModel session.
-        """
         super().__init__(config, session)
         self.sdk = sdk
         self.db_engine = engine
@@ -86,67 +75,73 @@ class NSMirrorService(BaseSystem):
             await asyncio.sleep(interval)
 
     async def on_bucket_add(self, bucket_entry: Any) -> None:
-        """
-        Stub for future bucket→NS sync integration.
-
-        Currently not implemented - reserved for future use.
-        """
         logger.debug(f"NSMirrorService.on_bucket_add called (not implemented): {bucket_entry}")
-        pass
+
+    def _db_load_bucket_tasks(self, node_id: str) -> list[TaskItem]:
+        """Sync: load all TaskItems for this node's bucket entries in one JOIN query."""
+        with Session(self.db_engine) as session:
+            return list(
+                session.exec(
+                    select(TaskItem)
+                    .join(
+                        WorkerBucketEntry,
+                        col(TaskItem.id) == col(WorkerBucketEntry.task_item_id),
+                    )
+                    .where(col(WorkerBucketEntry.node_id) == node_id)
+                ).all()
+            )
+
+    def _db_commit_logs(self, logs: list[WorkLog]) -> None:
+        """Sync: persist a batch of WorkLog entries."""
+        if not logs:
+            return
+        with Session(self.db_engine) as session:
+            for log in logs:
+                session.add(log)
+            session.commit()
 
     async def _sync_bucket(self, settings: FolderScannerSettings) -> None:
         """Fetch tasks in bucket and mirror them."""
-        # 1. Get entries for this node
-        db_session: Session
-        with Session(self.db_engine) as db_session:
-            entries: Sequence[WorkerBucketEntry] = db_session.exec(
-                select(WorkerBucketEntry).where(WorkerBucketEntry.node_id == self.config.node_id)
-            ).all()
+        active_tasks: list[TaskItem] = await anyio.to_thread.run_sync(  # type: ignore[attr-defined]
+            self._db_load_bucket_tasks, self.config.node_id
+        )
 
-            active_tasks: list[TaskItem] = []
-            entry: WorkerBucketEntry
-            for entry in entries:
-                task: TaskItem | None = db_session.get(TaskItem, entry.task_item_id)
-                if task:
-                    active_tasks.append(task)
-                    await self._mirror_task(task, settings, db_session)
+        pending_logs: list[WorkLog] = []
+        task: TaskItem
+        for task in active_tasks:
+            task_logs: list[WorkLog] = await self._mirror_task(task, settings)
+            pending_logs.extend(task_logs)
 
-            # Commit mutations to persist logs
-            db_session.commit()
+        await anyio.to_thread.run_sync(self._db_commit_logs, pending_logs)  # type: ignore[attr-defined]
 
-    async def _mirror_task(
-        self, task: TaskItem, settings: FolderScannerSettings, session: Session
-    ) -> None:
-        """Ensure a single task is correctly mirrored."""
-        # 1. Resolve source path
-        src_path: Path | None = self._resolve_source_path(task, settings, session)
+    async def _mirror_task(self, task: TaskItem, settings: FolderScannerSettings) -> list[WorkLog]:
+        """Ensure a single task is correctly mirrored. Returns WorkLog entries to persist."""
+        logs: list[WorkLog] = []
+
+        src_path: Path | None = self._resolve_source_path_no_session(task, settings)
         if not src_path or not src_path.exists():
             logger.error(f"Source file not found for task {task.file_name}: {src_path}")
-            return
+            return logs
 
-        # 2. Resolve destination path (preserving hierarchy)
-        # destination = local_ns_path / relative_path_from_scan_root
         dst_path: Path = Path(settings.local_ns_path) / task.file_path
 
-        # 3. Check if update is needed
         if not dst_path.exists():
             await self._copy_file(src_path, dst_path, settings.ns_mirror_copy_timeout_s)
-            self._log_event(task, f"Copied to NS: {task.file_name}", session)
-            return
+            logs.append(self._make_log(task, f"Copied to NS: {task.file_name}"))
+            return logs
 
-        # 4. Content Verification (MD5)
-        # We check network MD5 vs local MD5
-        local_md5: str = self._calculate_md5(dst_path)
+        local_md5: str = await anyio.to_thread.run_sync(self._calculate_md5, dst_path)  # type: ignore[attr-defined]
         if task.file_hash and local_md5 != task.file_hash:
-            # Significant hash change detected!
             logger.warning(f"MD5 Mismatch for {task.file_name}: Network MD5 has changed.")
-            self._log_event(
-                task,
-                "⚠️ Сетевой файл обновился. Локальная копия устарела!",
-                session,
-                log_type=WorkLogType.FILE_CHANGED,
+            logs.append(
+                self._make_log(
+                    task,
+                    "⚠️ Сетевой файл обновился. Локальная копия устарела!",
+                    log_type=WorkLogType.FILE_CHANGED,
+                )
             )
-            # Note: We do NOT overwrite automatically to avoid CNC reading conflicts.
+
+        return logs
 
     async def _copy_file(self, src: Path, dst: Path, timeout: float) -> None:
         """Perform a thread-safe copy with timeout."""
@@ -162,35 +157,42 @@ class NSMirrorService(BaseSystem):
         except Exception as e:
             logger.error(f"Failed to mirror file: {e}")
 
-    def _resolve_source_path(
-        self, task: TaskItem, settings: FolderScannerSettings, session: Session
+    def _resolve_source_path_no_session(
+        self, task: TaskItem, settings: FolderScannerSettings
     ) -> Path | None:
-        """Determine absolute network path for a relative TaskItem.file_path."""
-        # Get WorkItem to know the type
-        wi: WorkItem | None = session.get(WorkItem, task.work_item_id)
-        if not wi:
-            return None
+        """Determine network path for a TaskItem (uses already-loaded task, no DB needed)."""
+        roots: list[str | None] = [
+            settings.sidra_scan_path,
+            settings.mihtav_scan_path,
+            settings.other_scan_path,
+            self.config.shared_path,
+        ]
+        for root in roots:
+            if root:
+                candidate = Path(root) / task.file_path
+                if candidate.exists():
+                    return candidate
+        return None
 
-        # Map type to configured scan root
-        scan_root_str: str | None = None
-        if wi.work_item_type == WorkItemType.SIDRA:
-            scan_root_str = settings.sidra_scan_path
-        elif wi.work_item_type == WorkItemType.MIHTAV:
-            scan_root_str = settings.mihtav_scan_path
-        elif wi.work_item_type == WorkItemType.REWORK:
-            scan_root_str = settings.other_scan_path
-
-        if not scan_root_str:
-            # Fallback to shared_path if specific root not found
-            scan_root_str = self.config.shared_path
-
-        return Path(scan_root_str) / task.file_path
+    def _make_log(
+        self,
+        task: TaskItem,
+        message: str,
+        log_type: WorkLogType = WorkLogType.NS_MIRROR,
+    ) -> WorkLog:
+        """Create a WorkLog entry (not yet persisted)."""
+        return WorkLog(
+            task_item_id=task.id,
+            work_item_id=task.work_item_id,
+            log_type=log_type,
+            message=message,
+            node_id=self.config.node_id,
+        )
 
     def _calculate_md5(self, path: Path) -> str:
         """Calculate MD5 checksum for file deduplication and change detection.
 
-        Note: MD5 is used here only for fast file comparison and deduplication,
-        not for cryptographic security. For this use case, MD5 is acceptable.
+        Note: MD5 is used here only for fast file comparison, not cryptographic security.
         """
         h: hashlib._Hash = hashlib.md5()  # noqa: S324
         f: BinaryIO
@@ -199,20 +201,3 @@ class NSMirrorService(BaseSystem):
             for chunk in iter(lambda: f.read(4096), b""):
                 h.update(chunk)
         return h.hexdigest()
-
-    def _log_event(
-        self,
-        task: TaskItem,
-        message: str,
-        db_session: Session,
-        log_type: WorkLogType = WorkLogType.NS_MIRROR,
-    ) -> None:
-        log: WorkLog = WorkLog(
-            task_item_id=task.id,
-            work_item_id=task.work_item_id,
-            log_type=log_type,
-            message=message,
-            node_id=self.config.node_id,
-        )
-        db_session.add(log)
-        db_session.flush()
