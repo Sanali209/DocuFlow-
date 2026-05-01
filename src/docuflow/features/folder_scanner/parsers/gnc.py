@@ -1,10 +1,13 @@
 import datetime
+import logging
 import re
 from pathlib import Path
 
 from pydantic import BaseModel
 
 from docuflow.domain.entities.production import MaterialType
+
+logger = logging.getLogger(__name__)
 
 
 class ContourCommand(BaseModel):
@@ -74,20 +77,23 @@ class GncParser:
         Returns GncSheet object with extracted data.
         Does not raise on parsing errors (graceful fallback).
         """
-        sheet = GncSheet()
+        sheet: GncSheet = GncSheet()
         try:
-            content = file_path.read_text(encoding="utf-8", errors="ignore")
-        except Exception:
+            content: str = file_path.read_text(encoding="utf-8", errors="ignore")
+        except Exception as exc:
+            logger.error(f"GncParser: cannot read {file_path}: {exc}")
             return sheet
 
-        lines = content.splitlines()
+        lines: list[str] = content.splitlines()
 
-        last_x, last_y = 0.0, 0.0
-        is_laser_on = False
+        last_x: float = 0.0
+        last_y: float = 0.0
+        is_laser_on: bool = False
 
         current_part: GncPartData | None = None
         current_contour: Contour | None = None
 
+        line: str
         for line in lines:
             line = line.strip()
             if not line:
@@ -95,7 +101,7 @@ class GncParser:
 
             # 1. Metadata Parsing
             if not sheet.sheet_x:
-                m = self.RE_SHEET.search(line)
+                m: re.Match[str] | None = self.RE_SHEET.search(line)
                 if m:
                     sheet.sheet_x = float(m.group(1))
                     sheet.sheet_y = float(m.group(2))
@@ -119,9 +125,12 @@ class GncParser:
             # 2. Part Detection
             m = self.RE_PART_NAME.search(line)
             if m:
+                sku: str
+                version: str
                 sku, version = self.extract_sku(m.group(1))
                 # Check if we already have this SKU-Version in this sheet to increment qty
-                found = False
+                found: bool = False
+                p: GncPartData
                 for p in sheet.parts:
                     if p.sku == sku and p.version == version:
                         p.qty += 1
@@ -144,41 +153,45 @@ class GncParser:
 
             # 4. G-Code Path Calculation & Command Collection
             # Find coordinates
-            coords = self.RE_COORD.findall(line)
+            coords: list[tuple[str, str]] = self.RE_COORD.findall(line)
 
             # Identify command type
-            cmd_type = "MODAL"
+            cmd_type: str = "MODAL"
             if self.RE_G00.search(line):
                 cmd_type = "G00"
             elif self.RE_G01_3.search(line):
-                m_cmd = self.RE_G01_3.search(line)
+                m_cmd: re.Match[str] | None = self.RE_G01_3.search(line)
                 if m_cmd:
-                    cmd_val = m_cmd.group(1)
+                    cmd_val: str = m_cmd.group(1)
                     cmd_type = f"G{int(cmd_val):02d}"
 
             if coords or cmd_type != "MODAL":
-                new_x, new_y = last_x, last_y
-                new_i, new_j = None, None
+                new_x: float = last_x
+                new_y: float = last_y
+                new_i: float | None = None
+                new_j: float | None = None
 
                 # Extract I/J if present (for arcs)
-                m_i = re.search(r"I([+-]?\d*\.?\d+)", line, re.I)
-                m_j = re.search(r"J([+-]?\d*\.?\d+)", line, re.I)
+                m_i: re.Match[str] | None = re.search(r"I([+-]?\d*\.?\d+)", line, re.I)
+                m_j: re.Match[str] | None = re.search(r"J([+-]?\d*\.?\d+)", line, re.I)
                 if m_i:
                     new_i = float(m_i.group(1))
                 if m_j:
                     new_j = float(m_j.group(1))
 
+                axis: str
+                val: str
                 for axis, val in coords:
                     if axis.upper() == "X":
                         new_x = float(val)
                     if axis.upper() == "Y":
                         new_y = float(val)
 
-                dist = ((new_x - last_x) ** 2 + (new_y - last_y) ** 2) ** 0.5
+                dist: float = ((new_x - last_x) ** 2 + (new_y - last_y) ** 2) ** 0.5
 
                 # Logic for metrics
-                is_idle = cmd_type == "G00"
-                is_cut = cmd_type in ["G01", "G02", "G03"]
+                is_idle: bool = cmd_type == "G00"
+                is_cut: bool = cmd_type in ["G01", "G02", "G03"]
 
                 if "LASER_ON" in line:
                     is_laser_on = True
@@ -202,7 +215,8 @@ class GncParser:
                         )
                     )
 
-                last_x, last_y = new_x, new_y
+                last_x = new_x
+                last_y = new_y
 
         return sheet
 
@@ -216,10 +230,10 @@ class GncParser:
            - "SIMPLE"          -> SKU="SIMPLE", Version="A"
         """
         # Strip path and extension
-        name = raw.strip().split("\\")[-1]
-        name = re.sub(r"\.\w+$", "", name).strip()
+        name: str = raw.strip().split("\\")[-1]
+        clean_name: str = re.sub(r"\.\w+$", "", name).strip()
 
-        parts = name.split("-")
+        parts: list[str] = clean_name.split("-")
 
         # 1. Pop trailing meaningless digit (nesting ordinal)
         if len(parts) > 1 and parts[-1].isdigit():
@@ -227,11 +241,11 @@ class GncParser:
 
         # 2. Extract Version (last remaining segment)
         if len(parts) > 1:
-            version = parts.pop()
-            sku = "-".join(parts)
+            version: str = parts.pop()
+            sku: str = "-".join(parts)
             return sku, version
 
-        return name, "A"
+        return clean_name, "A"
 
     def estimate_time(self, sheet: GncSheet, mat_type: MaterialType) -> int:
         """
@@ -239,13 +253,13 @@ class GncParser:
         Formula: (pierce + cut + idle) * sheet_qty
         """
         # Seconds calculation
-        pierce_sec = sheet.total_contours * mat_type.pierce_time_sec
-        cut_sec = (sheet.cut_length_mm / mat_type.cut_speed_mm_per_min) * 60
-        idle_sec = (sheet.idle_length_mm / mat_type.idle_speed_mm_per_min) * 60
+        pierce_sec: float = sheet.total_contours * mat_type.pierce_time_sec
+        cut_sec: float = (sheet.cut_length_mm / mat_type.cut_speed_mm_per_min) * 60
+        idle_sec: float = (sheet.idle_length_mm / mat_type.idle_speed_mm_per_min) * 60
 
-        total_sec = (pierce_sec + cut_sec + idle_sec) * (sheet.sheet_qty or 1)
+        total_sec: float = (pierce_sec + cut_sec + idle_sec) * (sheet.sheet_qty or 1)
 
         # Apply tolerance and convert to minutes
-        total_min = (total_sec / 60) * (1 + mat_type.time_tolerance_pct / 100)
+        total_min: float = (total_sec / 60) * (1 + mat_type.time_tolerance_pct / 100)
 
         return max(1, int(total_min))
