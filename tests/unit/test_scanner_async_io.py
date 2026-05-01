@@ -56,3 +56,25 @@ async def test_process_task_file_offloads_checksum_to_thread(tmp_path):
     assert mock_cs in run_sync_calls, (
         "_calculate_file_checksum must be dispatched via anyio.to_thread.run_sync, not called directly"
     )
+
+
+def test_trigger_manual_ingestion_uses_running_loop(tmp_path):
+    """trigger_manual_ingestion must not call asyncio.get_event_loop()."""
+    import inspect
+    from docuflow.features.folder_scanner.system import FolderScannerSystem
+
+    source = inspect.getsource(FolderScannerSystem.trigger_manual_ingestion)
+    assert "get_event_loop" not in source, (
+        "trigger_manual_ingestion must not use deprecated asyncio.get_event_loop()"
+    )
+
+
+def test_scan_all_uses_running_loop(tmp_path):
+    """_scan_all must not call asyncio.get_event_loop()."""
+    import inspect
+    from docuflow.features.folder_scanner.system import FolderScannerSystem
+
+    source = inspect.getsource(FolderScannerSystem._scan_all)
+    assert "get_event_loop" not in source, (
+        "_scan_all must not use deprecated asyncio.get_event_loop()"
+    )

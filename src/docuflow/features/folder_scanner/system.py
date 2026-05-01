@@ -141,8 +141,7 @@ class FolderScannerSystem(BaseSystem):
         if args and isinstance(args[0], FolderScannerSettings):
             settings = args[0]
 
-        loop = asyncio.get_event_loop()
-        return loop.create_task(self.run_full_scan_cycle(settings))
+        return asyncio.create_task(self.run_full_scan_cycle(settings))
 
     @property
     def _is_master(self) -> bool:
@@ -159,8 +158,7 @@ class FolderScannerSystem(BaseSystem):
         Example:
             scanner.trigger_manual_ingestion()
         """
-        loop = asyncio.get_event_loop()
-        return loop.create_task(self._trigger_manual_ingestion_async())
+        return asyncio.create_task(self._trigger_manual_ingestion_async())
 
     async def _trigger_manual_ingestion_async(self) -> None:
         is_leader = self.sdk.orchestrator.is_leader
