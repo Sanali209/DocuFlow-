@@ -76,8 +76,12 @@ class DataSyncSystem(BaseSystem):
             logger.error(f"DataSync: Snapshot file missing: {snapshot_path}")
             return
 
-        snapshot_content: str = await anyio.Path(snapshot_path).read_text()
-        snapshot_data: Any = json.loads(snapshot_content)
+        try:
+            snapshot_content: str = await anyio.Path(snapshot_path).read_text()  # type: ignore[attr-defined]
+            snapshot_data: Any = json.loads(snapshot_content)
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.error(f"DataSync: Failed to read/parse snapshot {snapshot_path.name}: {exc}")
+            return
 
         await anyio.to_thread.run_sync(self._merge_snapshot_data, snapshot_data)  # type: ignore[attr-defined]
         logger.info(f"DataSync: Applied snapshot {snapshot_path.name}")
