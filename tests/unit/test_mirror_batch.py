@@ -71,8 +71,8 @@ async def test_sync_bucket_does_not_n_plus_one(tmp_path: Path) -> None:
     ):
         await mirror._sync_bucket(settings)
 
-    assert query_count[0] <= 2, (
-        f"Expected at most 2 DB queries (1 for bucket+tasks, 1 optional), got {query_count[0]}"
+    assert query_count[0] == 1, (
+        f"Expected exactly 1 DB query (one JOIN), got {query_count[0]}"
     )
 
 
@@ -112,8 +112,13 @@ async def test_mirror_task_offloads_md5_to_thread(tmp_path: Path) -> None:
         patch("anyio.to_thread.run_sync", side_effect=fake_run_sync),
         patch.object(mirror, "_resolve_source_path_no_session", return_value=dst),
     ):
-        await mirror._mirror_task(task, settings)
+        result = await mirror._mirror_task(task, settings)
 
     assert any(getattr(f, "__name__", None) == "_calculate_md5" for f in run_sync_calls), (
         "_calculate_md5 must go through anyio.to_thread.run_sync"
     )
+
+    # Also verify behavioral outcome: FILE_CHANGED log returned when hashes differ
+    assert len(result) == 1, "Expected one FILE_CHANGED log when MD5 differs"
+    from docuflow.domain.entities.production import WorkLogType
+    assert result[0].log_type == WorkLogType.FILE_CHANGED

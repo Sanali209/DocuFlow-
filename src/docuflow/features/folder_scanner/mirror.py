@@ -109,10 +109,17 @@ class NSMirrorService(BaseSystem):
         pending_logs: list[WorkLog] = []
         task: TaskItem
         for task in active_tasks:
-            task_logs: list[WorkLog] = await self._mirror_task(task, settings)
-            pending_logs.extend(task_logs)
+            try:
+                task_logs: list[WorkLog] = await self._mirror_task(task, settings)
+                pending_logs.extend(task_logs)
+            except Exception as exc:
+                logger.error(
+                    f"NSMirrorService: failed to mirror task {task.file_name}: {exc}",
+                    exc_info=True,
+                )
 
-        await anyio.to_thread.run_sync(self._db_commit_logs, pending_logs)  # type: ignore[attr-defined]
+        if pending_logs:
+            await anyio.to_thread.run_sync(self._db_commit_logs, pending_logs)  # type: ignore[attr-defined]
 
     async def _mirror_task(self, task: TaskItem, settings: FolderScannerSettings) -> list[WorkLog]:
         """Ensure a single task is correctly mirrored. Returns WorkLog entries to persist."""
