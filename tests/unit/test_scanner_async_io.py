@@ -1,7 +1,8 @@
+import asyncio
+
 import anyio
 import pytest
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 
 def make_scanner(tmp_path):
@@ -20,33 +21,21 @@ async def test_process_task_file_offloads_checksum_to_thread(tmp_path):
     """_calculate_file_checksum must be called via anyio.to_thread.run_sync."""
     scanner = make_scanner(tmp_path)
 
-    calls_via_thread = []
-    real_run_sync = anyio.to_thread.run_sync
+    run_sync_calls: list = []
 
-    async def spy_run_sync(func, *args, **kwargs):
-        # MagicMock replaces _calculate_file_checksum; __name__ raises AttributeError.
-        # We detect the checksum offload by checking the func is callable and its
-        # class name indicates it is the mock standing in for _calculate_file_checksum,
-        # OR by checking that ANY call goes through run_sync (since the only blocking
-        # I/O in process_task_file is the checksum read).
-        try:
-            name = func.__name__
-        except AttributeError:
-            # MagicMock replacing _calculate_file_checksum has no __name__; treat
-            # that as a positive signal — it IS the patched checksum callable.
-            name = "_calculate_file_checksum"
-        if callable(func) and name == "_calculate_file_checksum":
-            calls_via_thread.append(func)
-        return await real_run_sync(func, *args, **kwargs)
+    async def fake_run_sync(func, *args, **kwargs):
+        run_sync_calls.append(func)
+        if asyncio.iscoroutinefunction(func):
+            return await func(*args, **kwargs)
+        return func(*args, **kwargs)
 
     gnc_file = tmp_path / "part.GNC"
     gnc_file.write_bytes(b"")
-
     work_item = MagicMock()
     work_item.id = 1
 
-    with patch("docuflow.features.folder_scanner.system.run_sync_in_thread", side_effect=spy_run_sync):
-        with patch.object(scanner, "_calculate_file_checksum", return_value="abc123"):
+    with patch("anyio.to_thread.run_sync", side_effect=fake_run_sync):
+        with patch.object(scanner, "_calculate_file_checksum", return_value="abc123") as mock_cs:
             with patch.object(scanner, "gnc_content_parser") as mock_parser:
                 mock_parser.parse.return_value = MagicMock(parts=[], mat_code=None)
                 with patch.object(scanner, "task_filename_parser") as mock_tf:
@@ -64,6 +53,6 @@ async def test_process_task_file_offloads_checksum_to_thread(tmp_path):
                         except Exception:
                             pass
 
-    assert len(calls_via_thread) > 0, (
-        "_calculate_file_checksum must be called via anyio.to_thread.run_sync, not directly"
+    assert mock_cs in run_sync_calls, (
+        "_calculate_file_checksum must be dispatched via anyio.to_thread.run_sync, not called directly"
     )
