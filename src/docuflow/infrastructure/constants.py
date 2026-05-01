@@ -52,3 +52,7 @@ OBSERVER_POLLING_INTERVAL = 2.0
 DEFAULT_WORKPLACE_ID = "LASER_1"
 DEFAULT_WORKPLACE_NAME = "Лазер 1"
 DEFAULT_PROJECT_NAME = "Default"
+
+# --- Domain Sentinels ---
+LOGISTICS_REQUEST_TAG: str = "[LOGISTICS_REQUEST]"
+ADMIN_ROLE_NAMES: tuple[str, ...] = ("Админ", "Admin", "admin")

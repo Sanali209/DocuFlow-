@@ -11,6 +11,7 @@ from loguru import logger
 from nicegui import ui
 
 from docuflow.domain.entities.production import TaskItem, TaskItemStatus, WorkLog, WorkLogType
+from docuflow.infrastructure import constants
 from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.ui_utils import NotifyHelper, get_action_color
 
@@ -240,7 +241,7 @@ class BatchCard(BaseDocuWidget):
                 wi_name = self.tasks[0].work_item.folder_name
 
             message = (
-                f"[LOGISTICS_REQUEST] Требуется подача металла для {wi_name} "
+                f"{constants.LOGISTICS_REQUEST_TAG} Требуется подача металла для {wi_name} "
                 f"на {self.node_id}. Оператор: {self.user}"
             )
 

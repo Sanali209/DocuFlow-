@@ -17,6 +17,7 @@ from docuflow.domain.entities.production import (
 )
 from docuflow.features.inventory.settings import InventorySettings
 from docuflow.features.reports.system import BlockParam, ReportDataBlock, ReportRegistry
+from docuflow.infrastructure import constants
 from docuflow.infrastructure.config import Config
 
 
@@ -113,7 +114,7 @@ class InventorySystem(BaseSystem):
         statement: Any = (
             select(WorkLog)
             .where(
-                WorkLog.message.contains("[LOGISTICS_REQUEST]"),  # type: ignore[attr-defined]
+                WorkLog.message.contains(constants.LOGISTICS_REQUEST_TAG),  # type: ignore[attr-defined]
                 WorkLog.created_at >= since,
             )
             .order_by(WorkLog.created_at.desc())  # type: ignore[attr-defined]
@@ -316,7 +317,7 @@ class InventorySystem(BaseSystem):
 
         audit_log: WorkLog = WorkLog(
             log_type=WorkLogType.INFO,
-            message=f"[LOGISTICS_REQUEST] {mat_label} qty={quantity} note={note}",
+            message=f"{constants.LOGISTICS_REQUEST_TAG} {mat_label} qty={quantity} note={note}",
             author=author,
             node_id=self.config.node_id,
         )
@@ -346,13 +347,15 @@ class InventorySystem(BaseSystem):
         if not original_log:
             return
 
+        tag: str = constants.LOGISTICS_REQUEST_TAG
+        fulfilled_msg: str = f"FULFILLED: {original_log.message.replace(tag, '').strip()}"
         resolution_log: WorkLog = WorkLog(
             work_item_id=original_log.work_item_id,
             task_item_id=original_log.task_item_id,
             log_type=original_log.log_type,
             author=author,
             node_id=self.config.node_id,
-            message=f"FULFILLED: {original_log.message.replace('[LOGISTICS_REQUEST]', '').strip()}",
+            message=fulfilled_msg,
         )
         session.add(resolution_log)
         session.commit()

@@ -5,6 +5,7 @@ from sqlmodel import Session
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.identity import Role, User
+from docuflow.infrastructure import constants
 from docuflow.infrastructure.config import Config
 
 
@@ -58,12 +59,14 @@ class AuthSystem(BaseSystem):
             default_password: Admin password. Falls back to 'admin' if not provided.
         """
         # 1. Ensure Admin role exists — use Cyrillic name consistent with seed_default_roles
-        admin_role: Role | None = self.find_one(Role, name="Админ")
+        admin_role: Role | None = self.find_one(Role, name=constants.ADMIN_ROLE_NAMES[0])
         if not admin_role:
             # Fallback: check English name for backwards compatibility with older clusters
-            admin_role = self.find_one(Role, name="Admin")
+            admin_role = self.find_one(Role, name=constants.ADMIN_ROLE_NAMES[1])
         if not admin_role:
-            admin_role = self.save(Role(name="Админ", permissions=json.dumps(["*:full"])))
+            admin_role = self.save(
+                Role(name=constants.ADMIN_ROLE_NAMES[0], permissions=json.dumps(["*:full"]))
+            )
 
         # 2. Ensure admin user exists
         admin_user: User | None = self.find_one(User, username="admin")

@@ -70,7 +70,7 @@ class AdminSystem(BaseSystem):
     def _is_admin(self, name: str) -> bool:
         """Robust normalization for core identity checks."""
         n: str = name.strip().lower()
-        return n == "admin" or n == "админ"
+        return n in {r.lower() for r in constants.ADMIN_ROLE_NAMES}
 
     def get_cluster_nodes(self) -> list[dict[str, Any]]:
         """Aggregating the health status of all nodes in the decentralized cluster."""
@@ -279,7 +279,7 @@ class AdminSystem(BaseSystem):
         if self._is_admin(role_name):
             # Check both Cyrillic and English admin role names
             admin_role: Role | None = s.exec(
-                select(Role).where(Role.name.in_(["Админ", "Admin", "admin"]))  # type: ignore[union-attr]
+                select(Role).where(Role.name.in_(constants.ADMIN_ROLE_NAMES))  # type: ignore[union-attr]
             ).first()
             if admin_role:
                 return admin_role
@@ -494,7 +494,7 @@ class AdminSyncSystem:
 
     def _is_admin(self, name: str) -> bool:
         n: str = name.strip().lower()
-        return n in ("admin", "админ")
+        return n in {r.lower() for r in constants.ADMIN_ROLE_NAMES}
 
     def handle_force_step_down(self, data: dict[str, Any]) -> None:
         # This is a special command handled by orchestrator logic,
