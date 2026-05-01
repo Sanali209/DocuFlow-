@@ -72,5 +72,8 @@ class Config(BaseSettings):
         return f"{self.shared_path}/{constants.SYNC_SNAPSHOTS_DIR}"
 
     model_config = SettingsConfigDict(
-        env_prefix="DOCUFLOW_", env_file_encoding="utf-8", extra="ignore"
+        env_prefix="DOCUFLOW_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
     )
