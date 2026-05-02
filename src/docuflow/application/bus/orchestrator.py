@@ -117,7 +117,10 @@ class P2POrchestrator(BaseSystem):
         except ImportError:
             # Fallback for non-asyncio anyio backends (e.g. Trio)
             # In a real production system, we'd have a more robust backend-agnostic starter
-            pass
+            logger.warning(
+                "asyncio module not available; orchestration background task could not be started. "
+                "Non-asyncio anyio backends (e.g. Trio) require a backend-agnostic task starter."
+            )
 
         logger.info(f"[{self.config.node_id}] P2P Orchestrator background loops initialized.")
 

@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterable
+from typing import Any
 
 from dishka import AsyncContainer, Provider, Scope, provide
 from loguru import logger
@@ -21,11 +22,9 @@ from docuflow.features.inventory.system import InventorySystem
 from docuflow.features.notifications.system import NotificationService
 from docuflow.features.parts.system import PartLibrarySystem
 from docuflow.features.production.system import ProductionSystem
-from docuflow.features.projects.system import ProjectSystem
 from docuflow.features.reports.system import ReportRegistry, ReportSystem
 from docuflow.features.task_board.system import TaskBoardSystem
 from docuflow.features.view_presets.system import ViewPresetSystem
-from docuflow.features.work_items.system import WorkItemSystem
 from docuflow.infrastructure.bus import FileBusSystem
 from docuflow.infrastructure.config import Config
 from docuflow.infrastructure.coordination import CoordinationSystem
@@ -36,19 +35,14 @@ from docuflow.sdk import SDK
 
 
 class AppProvider(Provider):
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         super().__init__()
-        self.config = config
+        self.config: Config = config
 
     @provide(scope=Scope.REQUEST)
     def get_search_system(self, session: Session) -> SearchSystem:
         """Provide global search system."""
         return SearchSystem(session)
-
-    @provide(scope=Scope.REQUEST)
-    def get_projects_system(self, config: Config, session: Session) -> ProjectSystem:
-        """Provide project management system."""
-        return ProjectSystem(config, session)
 
     @provide(scope=Scope.REQUEST)
     def get_parts_system(self, config: Config, session: Session) -> PartLibrarySystem:
@@ -84,11 +78,11 @@ class AppProvider(Provider):
         - synchronous=NORMAL: Reduces disk I/O while maintaining safety in WAL mode.
         - busy_timeout=30000: Wait up to 30s for locked database.
         """
-        db_file = f"{config.node_id}.db"
-        sqlite_url = f"sqlite:///{db_file}"
+        db_file: str = f"{config.node_id}.db"
+        sqlite_url: str = f"sqlite:///{db_file}"
         logger.info(f"Identity [{config.node_id}]: Initialized local database at {sqlite_url}")
 
-        engine = create_engine(
+        engine: Engine = create_engine(
             sqlite_url,
             connect_args={
                 "check_same_thread": False,
@@ -97,9 +91,9 @@ class AppProvider(Provider):
         )
 
         @event.listens_for(engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, _connection_record):
+        def set_sqlite_pragma(dbapi_connection: Any, _connection_record: Any) -> None:
             """Apply performance-tuning PRAGMAs to each new SQLite connection."""
-            cursor = dbapi_connection.cursor()
+            cursor: Any = dbapi_connection.cursor()
             try:
                 cursor.execute("PRAGMA journal_mode=WAL")
                 cursor.execute("PRAGMA synchronous=NORMAL")
@@ -114,6 +108,7 @@ class AppProvider(Provider):
 
     @provide(scope=Scope.REQUEST)
     async def get_session(self, engine: Engine) -> AsyncIterable[Session]:
+        session: Session
         with Session(engine) as session:
             try:
                 yield session
@@ -182,9 +177,7 @@ class AppProvider(Provider):
             logger.debug(f"AppProvider: created SDK instance id={id(self._sdk)}")
         except Exception as e:
             # Loguru import failed - continue without debug logging
-            import sys
-
-            print(f"Warning: SDK debug logging unavailable: {e}", file=sys.stderr)
+            logger.warning(f"SDK debug logging unavailable: {e}")
         return self._sdk
 
     @provide(scope=Scope.REQUEST)
@@ -196,11 +189,6 @@ class AppProvider(Provider):
     def get_auth_service(self, config: Config, session: Session) -> AuthSystem:
         """Provide authentication service."""
         return AuthSystem(config, session)
-
-    @provide(scope=Scope.REQUEST)
-    def get_work_item_system(self, config: Config, session: Session, sdk: SDK) -> WorkItemSystem:
-        """Provide work item management system."""
-        return WorkItemSystem(config, session, sdk)
 
     @provide(scope=Scope.REQUEST)
     def get_view_preset_system(self, config: Config, session: Session) -> ViewPresetSystem:

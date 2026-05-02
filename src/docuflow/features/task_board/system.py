@@ -425,7 +425,7 @@ class TaskBoardSystem(BaseSystem):
         """Ищет неназначенные задачи с таким же материалом и толщиной."""
         with self.get_db_session() as session:
             statement = select(TaskItem).where(
-                TaskItem.assigned_to_node == None,  # noqa: E711  # type: ignore[attr-defined]
+                TaskItem.assigned_to_node.is_(None),  # type: ignore[attr-defined]
                 TaskItem.mat_type_id == mat_type_id,
                 TaskItem.thickness == thickness,
                 TaskItem.status.in_([TaskItemStatus.PLANNED]),  # type: ignore[attr-defined]
@@ -511,7 +511,7 @@ class TaskBoardSystem(BaseSystem):
         """Retrieves tasks that haven't been assigned to any node."""
         with self.get_db_session() as session:
             statement = select(TaskItem).where(
-                TaskItem.assigned_to_node == None,  # noqa: E711  # type: ignore[attr-defined]
+                TaskItem.assigned_to_node.is_(None),  # type: ignore[attr-defined]
                 TaskItem.status == TaskItemStatus.PLANNED,
             )
 
