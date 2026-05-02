@@ -1,9 +1,8 @@
 import asyncio
-import hashlib
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any
 
 import anyio
 from sqlalchemy import Engine
@@ -199,12 +198,9 @@ class NSMirrorService(BaseSystem):
     def _calculate_md5(self, path: Path) -> str:
         """Calculate MD5 checksum for file deduplication and change detection.
 
-        Note: MD5 is used here only for fast file comparison, not cryptographic security.
+        Delegates to the shared infrastructure utility.
+        Called via anyio.to_thread.run_sync to avoid blocking the event loop.
         """
-        h: hashlib._Hash = hashlib.md5()  # noqa: S324
-        f: BinaryIO
-        with open(path, "rb") as f:
-            chunk: bytes
-            for chunk in iter(lambda: f.read(4096), b""):
-                h.update(chunk)
-        return h.hexdigest()
+        from docuflow.infrastructure.file_utils import calculate_file_md5
+
+        return calculate_file_md5(path)

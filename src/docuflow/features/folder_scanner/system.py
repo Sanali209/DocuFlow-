@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import hashlib
 import logging
 from pathlib import Path
 from typing import Any
@@ -44,7 +43,6 @@ class FolderScannerSystem(BaseSystem):
 
     # Internal Scanner Constants
     LEADER_POLL_INTERVAL_SECONDS = 5
-    MD5_CHUNK_SIZE = 4096
 
     def __init__(
         self,
@@ -449,12 +447,14 @@ class FolderScannerSystem(BaseSystem):
                 db_session.commit()
 
     def _calculate_file_checksum(self, file_path: Path) -> str:
-        """Calculate MD5 checksum for file deduplication and change detection."""
-        md5 = hashlib.md5()  # noqa: S324
-        with open(file_path, "rb") as f:
-            for chunk in iter(lambda: f.read(self.MD5_CHUNK_SIZE), b""):
-                md5.update(chunk)
-        return md5.hexdigest()
+        """Calculate MD5 checksum for a GNC file.
+
+        Delegates to the shared infrastructure utility.
+        Called via anyio.to_thread.run_sync to avoid blocking the event loop.
+        """
+        from docuflow.infrastructure.file_utils import calculate_file_md5
+
+        return calculate_file_md5(file_path)
 
     def _log_ingestion_event(self, message: str):
         with Session(self.db_engine) as db_session:
