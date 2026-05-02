@@ -1,7 +1,38 @@
 import math
 import os
+from pathlib import Path
+from typing import Any
 
 from docuflow.features.folder_scanner.parsers.gnc import GncPartData
+
+
+def write_placeholder_svg(
+    path: Path | str,
+    label: str = "",
+    width: int = 200,
+    height: int = 200,
+) -> None:
+    """Write a minimal dark-background placeholder SVG to *path*.
+
+    This is the single shared helper used by :class:`SVGGenerator` whenever a
+    part has no geometry to render.  Callers that previously duplicated the
+    inline SVG string should call this function instead.
+
+    Args:
+        path: Destination file path (created with parents as needed).
+        label: Text to display in the centre of the SVG (e.g. "No Data").
+        width: Canvas width in pixels.
+        height: Canvas height in pixels.
+    """
+    svg_content: str = (
+        f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">\n'
+        f'  <rect width="100%" height="100%" fill="#1e1e1e"/>\n'
+        f'  <text x="50%" y="50%" text-anchor="middle" fill="#666" font-size="12">{label}</text>\n'
+        f"</svg>"
+    )
+    dest = Path(path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(svg_content, encoding="utf-8")
 
 
 class SVGGenerator:
@@ -15,17 +46,19 @@ class SVGGenerator:
         Calculate the bounding box of a GNC part.
         Returns (min_x, min_y, max_x, max_y)
         """
-        min_x = float("inf")
-        min_y = float("inf")
-        max_x = float("-inf")
-        max_y = float("-inf")
+        min_x: float = float("inf")
+        min_y: float = float("inf")
+        max_x: float = float("-inf")
+        max_y: float = float("-inf")
 
-        has_points = False
+        has_points: bool = False
 
+        contour: Any
         for contour in part.contours:
-            current_x = 0.0
-            current_y = 0.0
+            current_x: float = 0.0
+            current_y: float = 0.0
 
+            cmd: Any
             for cmd in contour.commands:
                 # Update current position
                 if cmd.x is not None:
@@ -59,45 +92,37 @@ class SVGGenerator:
         """
         if part is None or not part.contours:
             # Create minimal SVG for empty data
-            svg_content = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" fill="#1e1e1e"/>
-  <text x="50%" y="50%" text-anchor="middle" fill="#666" font-size="12">No Data</text>
-</svg>'''
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(svg_content)
+            write_placeholder_svg(output_path, label="No Data", width=width, height=height)
             return (0, 0)
 
+        min_x: float
+        min_y: float
+        max_x: float
+        max_y: float
         min_x, min_y, max_x, max_y = self.calculate_bounds(part)
 
-        data_w = max_x - min_x
-        data_h = max_y - min_y
+        data_w: float = max_x - min_x
+        data_h: float = max_y - min_y
 
         if data_w == 0 and data_h == 0:
             # Empty part, create minimal SVG
-            svg_content = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" fill="#1e1e1e"/>
-  <text x="50%" y="50%" text-anchor="middle" fill="#666" font-size="12">Empty</text>
-</svg>'''
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(svg_content)
+            write_placeholder_svg(output_path, label="Empty", width=width, height=height)
             return (0, 0)
 
         # Calculate scale to fit within canvas
-        padding = 10
-        avail_w = width - padding * 2
-        avail_h = height - padding * 2
+        padding: int = 10
+        avail_w: int = width - padding * 2
+        avail_h: int = height - padding * 2
 
-        scale_x = avail_w / data_w if data_w > 0 else 1
-        scale_y = avail_h / data_h if data_h > 0 else 1
-        scale = min(scale_x, scale_y) * 0.95  # 0.95 safety factor
+        scale_x: float = avail_w / data_w if data_w > 0 else 1
+        scale_y: float = avail_h / data_h if data_h > 0 else 1
+        scale: float = min(scale_x, scale_y) * 0.95  # 0.95 safety factor
 
         # Calculate centering offset
-        content_w = data_w * scale
-        content_h = data_h * scale
-        offset_x = (width - content_w) / 2
-        offset_y = (height - content_h) / 2
+        content_w: float = data_w * scale
+        content_h: float = data_h * scale
+        offset_x: float = (width - content_w) / 2
+        offset_y: float = (height - content_h) / 2
 
         # Transform functions
         def tx(x: float) -> float:
@@ -108,13 +133,15 @@ class SVGGenerator:
             return height - (offset_y + (y - min_y) * scale)
 
         # Generate SVG path data
-        path_data = []
+        path_data: list[str] = []
 
+        contour: Any
         for contour in part.contours:
-            current_x = None
-            current_y = None
-            is_first_point = True
+            current_x: float | None = None
+            current_y: float | None = None
+            is_first_point: bool = True
 
+            cmd: Any
             for cmd in contour.commands:
                 # Store previous position for arc calculations
                 prev_x: float | None = current_x
@@ -146,21 +173,21 @@ class SVGGenerator:
                     # Arc
                     if prev_x is not None and prev_y is not None:
                         # I and J are relative to the start point (prev_x, prev_y)
-                        i_val = cmd.i if cmd.i is not None else 0.0
-                        j_val = cmd.j if cmd.j is not None else 0.0
+                        i_val: float = cmd.i if cmd.i is not None else 0.0
+                        j_val: float = cmd.j if cmd.j is not None else 0.0
 
-                        center_x = prev_x + i_val
-                        center_y = prev_y + j_val
+                        center_x: float = prev_x + i_val
+                        center_y: float = prev_y + j_val
 
-                        radius = math.sqrt(i_val**2 + j_val**2)
-                        is_clockwise = cmd.type == "G02"
+                        radius: float = math.sqrt(i_val**2 + j_val**2)
+                        is_clockwise: bool = cmd.type == "G02"
 
                         # Calculate angles
-                        start_angle = math.atan2(prev_y - center_y, prev_x - center_x)
-                        end_angle = math.atan2(current_y - center_y, current_x - center_x)
+                        start_angle: float = math.atan2(prev_y - center_y, prev_x - center_x)
+                        end_angle: float = math.atan2(current_y - center_y, current_x - center_x)
 
                         # Normalize angles
-                        def normalize_angle(angle):
+                        def normalize_angle(angle: float) -> float:
                             while angle < 0:
                                 angle += 2 * math.pi
                             while angle >= 2 * math.pi:
@@ -171,6 +198,7 @@ class SVGGenerator:
                         end_angle = normalize_angle(end_angle)
 
                         # Calculate arc sweep
+                        angle_diff: float
                         if is_clockwise:
                             angle_diff = start_angle - end_angle
                             if angle_diff < 0:
@@ -180,18 +208,15 @@ class SVGGenerator:
                             if angle_diff < 0:
                                 angle_diff += 2 * math.pi
 
-                        large_arc_flag = 1 if angle_diff > math.pi else 0
+                        large_arc_flag: int = 1 if angle_diff > math.pi else 0
                         # SVG sweep: 0=counterclockwise (G03), 1=clockwise (G02)
                         # Wait, SVG arc sweep flag: 1 means rotation from start to end
                         # in positive angle direction.
-                        # SVG standard: sweep-flag=1 for clockwise?
-                        # Actually: sweep-flag=1 means the arc will be drawn in a
-                        # "positive-angle" direction.
                         # In SVG (Y down), positive angle is clockwise.
                         # So G02 -> 1, G03 -> 0.
-                        sweep_flag = 1 if is_clockwise else 0
+                        sweep_flag: int = 1 if is_clockwise else 0
 
-                        scaled_radius = radius * scale
+                        scaled_radius: float = radius * scale
                         if scaled_radius > 0:
                             path_data.append(
                                 f"A {scaled_radius:.2f} {scaled_radius:.2f} 0 "
@@ -203,9 +228,9 @@ class SVGGenerator:
                             path_data.append(f"L {tx(current_x):.2f} {ty(current_y):.2f}")
 
         # Create SVG
-        path_str = " ".join(path_data)
+        path_str: str = " ".join(path_data)
         # Deep blue strokes for high premium look
-        svg_content = (
+        svg_output: str = (
             f'<svg xmlns="http://www.w3.org/2000/svg" '
             f'viewBox="0 0 {width} {height}" width="100%" height="100%">\n'
             f'  <rect width="100%" height="100%" fill="#0f172a"/>\n'
@@ -216,6 +241,6 @@ class SVGGenerator:
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write(svg_content)
+            f.write(svg_output)
 
         return (round(data_w, 2), round(data_h, 2))
