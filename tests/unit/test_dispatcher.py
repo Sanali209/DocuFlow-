@@ -1,5 +1,7 @@
 import time
+
 import pytest
+
 from docuflow.application.bus.dispatcher import SecureDispatcher
 from docuflow.domain.messages import CommandType, P2PMessage, P2PPayload
 from docuflow.infrastructure.config import Config

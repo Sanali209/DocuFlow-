@@ -1,5 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 from sqlmodel import Session, select
 
@@ -17,7 +18,7 @@ from docuflow.domain.entities.production import (
 class ReworkGenerator:
     """Generates rework nests from a list of parts."""
 
-    def __init__(self, session: Session, shared_path: str):
+    def __init__(self, session: Session, shared_path: str) -> None:
         self.session = session
         self.shared_path = shared_path
 
@@ -28,18 +29,21 @@ class ReworkGenerator:
         3. Save to rework/<sidra_name>/
         4. Register WorkItem + TaskItems
         """
-        by_material: dict[tuple[int, float], list] = defaultdict(list)
+        by_material: dict[tuple[int | None, float], list] = defaultdict(list)
 
+        item: Any
         for item in items:
-            part = self.session.exec(select(PartLibrary).where(PartLibrary.sku == item.sku)).first()
+            part: PartLibrary | None = self.session.exec(
+                select(PartLibrary).where(PartLibrary.sku == item.sku)
+            ).first()
             if part and part.mat_type_id:
-                mat = self.session.get(MaterialType, part.mat_type_id)
+                mat: MaterialType | None = self.session.get(MaterialType, part.mat_type_id)
                 if mat is None:
                     continue
-                key = (part.mat_type_id, mat.thickness or 0)
+                key: tuple[int | None, float] = (part.mat_type_id, mat.thickness or 0)
                 by_material[key].append((part, item.qty))
 
-        work_item = WorkItem(
+        work_item: WorkItem = WorkItem(
             project_id=project_id,
             folder_name=sidra_name,
             folder_path=f"rework/{sidra_name}/",
@@ -52,19 +56,19 @@ class ReworkGenerator:
         assert work_item.id is not None
 
         for (mat_id, thickness), parts in by_material.items():
-            mat = self.session.get(MaterialType, mat_id)
-            if mat is None:
+            material: MaterialType | None = self.session.get(MaterialType, mat_id)
+            if material is None:
                 continue
-            gnc_content = self._generate_gnc_content(mat, parts)
-            gnc_path = (
-                Path(self.shared_path) / f"rework/{sidra_name}/Sheet_{mat.code}_{thickness}.GNC"
+            gnc_content: str = self._generate_gnc_content(material, parts)
+            gnc_path: Path = Path(self.shared_path) / (
+                f"rework/{sidra_name}/Sheet_{material.code}_{thickness}.GNC"
             )
             gnc_path.parent.mkdir(parents=True, exist_ok=True)
             gnc_path.write_text(gnc_content, encoding="utf-8")
-            task = TaskItem(
+            task: TaskItem = TaskItem(
                 work_item_id=work_item.id,
-                file_name=f"Sheet_{mat.code}_{thickness}.GNC",
-                file_path=f"rework/{sidra_name}/Sheet_{mat.code}_{thickness}.GNC",
+                file_name=f"Sheet_{material.code}_{thickness}.GNC",
+                file_path=f"rework/{sidra_name}/Sheet_{material.code}_{thickness}.GNC",
                 mat_type_id=mat_id,
                 thickness=thickness,
                 sheet_qty=self._estimate_sheets(parts),
@@ -85,26 +89,28 @@ class ReworkGenerator:
 
     def _generate_gnc_content(self, mat: MaterialType, parts: list) -> str:
         """Generate GNC file content for a sheet with parts."""
-        lines = []
+        lines: list[str] = []
 
         # Sheet header
+        sheet_x: float
+        sheet_y: float
         sheet_x, sheet_y = self._get_standard_sheet_size(mat.code)
         lines.append(f"(*SHEET {sheet_x:.1f} {sheet_y:.1f} {mat.thickness or 0:.1f} 1)")
         lines.append(f"(Material: {mat.code} {mat.thickness or 0:.1f})")
         lines.append("")
 
         # Place parts in grid
-        x_pos = 10
-        y_pos = 10
-        row_height = 0
+        x_pos: float = 10.0
+        y_pos: float = 10.0
+        row_height: float = 0.0
 
         for part, qty in parts:
             for i in range(qty):
                 lines.append(f"(PART NAME: {part.sku})")
 
                 # Simple rectangle contour
-                pw = part.bbox_x or 100
-                ph = part.bbox_y or 100
+                pw: float = part.bbox_x or 100
+                ph: float = part.bbox_y or 100
 
                 lines.append(f"(==== CONTOUR {i + 1} ====)")
                 lines.append(f"G00 X{x_pos:.3f} Y{y_pos:.3f}")

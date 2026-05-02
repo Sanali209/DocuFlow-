@@ -2,6 +2,7 @@ from typing import Any
 
 from loguru import logger
 from sqlmodel import Session, col, select
+from sqlmodel.sql.expression import SelectOfScalar
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import (
@@ -22,7 +23,7 @@ class ConsumableSystem(BaseSystem):
     - Self-Explaining: Descriptive identifiers (db_session, consumable_name).
     """
 
-    def __init__(self, config: Config, session: Session, sdk: Any = None):
+    def __init__(self, config: Config, session: Session, sdk: Any = None) -> None:
         """
         Initialize the consumables management system.
 
@@ -44,7 +45,9 @@ class ConsumableSystem(BaseSystem):
         Example:
             item = supplies.create_consumable(name="Nozzle 1.5mm", category="Laser")
         """
-        consumable = Consumable(name=name, category=category, unit=unit, min_quantity=min_quantity)
+        consumable: Consumable = Consumable(
+            name=name, category=category, unit=unit, min_quantity=min_quantity
+        )
         self.db_session.add(consumable)
         self.db_session.flush()
         self.db_session.commit()
@@ -58,7 +61,7 @@ class ConsumableSystem(BaseSystem):
         Example:
             low_stock = supplies.list_consumables(with_critical=True)
         """
-        statement = select(Consumable)
+        statement: SelectOfScalar[Consumable] = select(Consumable)
         if with_critical:
             statement = statement.where(Consumable.quantity <= Consumable.min_quantity)
         return list(self.db_session.exec(statement).all())
@@ -67,7 +70,7 @@ class ConsumableSystem(BaseSystem):
         """
         Retrieve a consumable entry by its exact name.
         """
-        statement = select(Consumable).where(Consumable.name == name)
+        statement: SelectOfScalar[Consumable] = select(Consumable).where(Consumable.name == name)
         return self.db_session.exec(statement).first()
 
     # --- Operations ---
@@ -84,14 +87,14 @@ class ConsumableSystem(BaseSystem):
         Example:
             supplies.restock(consumable_id=1, quantity_delta=100)
         """
-        consumable = self.db_session.get(Consumable, consumable_id)
+        consumable: Consumable | None = self.db_session.get(Consumable, consumable_id)
         if not consumable:
             raise ValueError(f"Consumable ID {consumable_id} not found in cluster registry.")
 
         consumable.quantity += quantity_delta
         self.db_session.add(consumable)
 
-        log_entry = ConsumableLog(
+        log_entry: ConsumableLog = ConsumableLog(
             consumable_id=consumable_id,
             operation="restock",
             qty_delta=quantity_delta,
@@ -119,14 +122,14 @@ class ConsumableSystem(BaseSystem):
         Example:
             supplies.use(consumable_id=2, quantity_used=1, user="operator-5")
         """
-        consumable = self.db_session.get(Consumable, consumable_id)
+        consumable: Consumable | None = self.db_session.get(Consumable, consumable_id)
         if not consumable:
             raise ValueError(f"Consumable ID {consumable_id} not found in cluster registry.")
 
         consumable.quantity -= quantity_used
         self.db_session.add(consumable)
 
-        usage_log = ConsumableLog(
+        usage_log: ConsumableLog = ConsumableLog(
             consumable_id=consumable_id,
             operation="use",
             qty_delta=-quantity_used,
@@ -144,7 +147,7 @@ class ConsumableSystem(BaseSystem):
         self.db_session.refresh(consumable)
         return consumable
 
-    def use_consumable(self, *args, **kwargs):
+    def use_consumable(self, *args: Any, **kwargs: Any) -> Consumable:
         """Legacy alias for use()."""
         return self.use(*args, **kwargs)
 
@@ -154,14 +157,14 @@ class ConsumableSystem(BaseSystem):
         """
         Manually decrement stock for non-production reasons (damage, loss).
         """
-        consumable = self.db_session.get(Consumable, consumable_id)
+        consumable: Consumable | None = self.db_session.get(Consumable, consumable_id)
         if not consumable:
             raise ValueError(f"Consumable ID {consumable_id} not found.")
 
         consumable.quantity -= quantity_lost
         self.db_session.add(consumable)
 
-        write_off_log = ConsumableLog(
+        write_off_log: ConsumableLog = ConsumableLog(
             consumable_id=consumable_id,
             operation="write_off",
             qty_delta=-quantity_lost,
@@ -178,7 +181,7 @@ class ConsumableSystem(BaseSystem):
         """
         Retrieve chronological movement history for a specific consumable item.
         """
-        statement = (
+        statement: SelectOfScalar[ConsumableLog] = (
             select(ConsumableLog)
             .where(ConsumableLog.consumable_id == consumable_id)
             .order_by(col(ConsumableLog.id).desc())  # type: ignore[union-attr]
@@ -186,7 +189,7 @@ class ConsumableSystem(BaseSystem):
         )
         return list(self.db_session.exec(statement).all())
 
-    def get_movement_history(self, *args, **kwargs):
+    def get_movement_history(self, *args: Any, **kwargs: Any) -> list[ConsumableLog]:
         """Legacy alias for get_log()."""
         return self.get_log(*args, **kwargs)
 
@@ -194,7 +197,7 @@ class ConsumableSystem(BaseSystem):
         """
         Internal: Dispatch a critical low-stock warning message to the workshop chat.
         """
-        alert_entry = ChatMessage(
+        alert_entry: ChatMessage = ChatMessage(
             author="System",
             node_id=self.config.node_id,
             message_type=ChatMessageType.WARNING,

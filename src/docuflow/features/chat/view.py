@@ -12,7 +12,7 @@ from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
-def register_chat_view():
+def register_chat_view() -> None:
     """Register the chat portal view."""
     ViewRegistry.register(
         ViewInfo(
@@ -29,9 +29,11 @@ def register_chat_view():
     )
 
 
-async def chat_view_wrapper(system: ChatSystem, user: str, system_scope: Callable, layout: Any):
+async def chat_view_wrapper(
+    system: ChatSystem, user: str, system_scope: Callable, layout: Any
+) -> None:
     """Wrapper to instantiate and render the ChatView."""
-    view = ChatView(system, current_user=user, system_scope=system_scope, layout=layout)
+    view: ChatView = ChatView(system, current_user=user, system_scope=system_scope, layout=layout)
     await view.render_portal()
 
 
@@ -58,7 +60,7 @@ class ChatView(BaseDocuWidget):
         current_user: str = "operator",
         system_scope: Callable | None = None,
         layout: Any = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.chat_system = chat_system
         self.current_user = current_user
@@ -67,7 +69,7 @@ class ChatView(BaseDocuWidget):
         self.active_channel = "global"  # global thread by default
         self.user_input_area: Any = None
 
-    async def render_portal(self):
+    async def render_portal(self) -> None:
         """
         Builds the complete multi-pane chat interface.
         """
@@ -93,7 +95,7 @@ class ChatView(BaseDocuWidget):
 
                 self._build_footer_input()
 
-    def _build_navigation_sidebar(self):
+    def _build_navigation_sidebar(self) -> None:
         """Internal helper to render the side channel-switcher."""
         with ui.column().classes(self.UI_STYLING["sidebar_bg"]).classes("w-64"):
             ui.label("WORKSHOP CHANNELS").classes(self.UI_STYLING["label_header"])
@@ -110,11 +112,11 @@ class ChatView(BaseDocuWidget):
                 "w-full mt-2 normal-case text-xs"
             ).props("flat color=red")
 
-    def _render_channel_link(self, label: str, icon: str, channel_key: str):
+    def _render_channel_link(self, label: str, icon: str, channel_key: str) -> None:
         """Renders an individual sidebar navigation button."""
-        is_active = self.active_channel == channel_key
-        bg_style = "bg-white/5" if is_active else ""
-        text_style = "text-white font-bold" if is_active else "text-slate-400 font-medium"
+        is_active: bool = self.active_channel == channel_key
+        bg_style: str = "bg-white/5" if is_active else ""
+        text_style: str = "text-white font-bold" if is_active else "text-slate-400 font-medium"
 
         with (
             ui.row()
@@ -127,7 +129,7 @@ class ChatView(BaseDocuWidget):
             ui.icon(icon, size="20px", color="primary" if is_active else "slate-400")
             ui.label(label).classes(f"text-sm {text_style}")
 
-    def _build_chat_header(self):
+    def _build_chat_header(self) -> None:
         with ui.row().classes("w-full p-6 border-b border-white/5 items-center justify-between"):
             ui.label(f"Channel: {self.active_channel.title()}").classes(
                 "text-lg font-bold text-slate-100 uppercase tracking-tighter"
@@ -136,7 +138,7 @@ class ChatView(BaseDocuWidget):
                 "flat round size=sm color=slate-500"
             )
 
-    def _build_footer_input(self):
+    def _build_footer_input(self) -> None:
         with ui.row().classes(self.UI_STYLING["input_bar"]):
             self.user_input_area = (
                 ui.textarea(placeholder="Write a message...")
@@ -149,19 +151,19 @@ class ChatView(BaseDocuWidget):
 
     # --- Discussion Flow Logic ---
 
-    async def _switch_channel(self, channel_key: str):
+    async def _switch_channel(self, channel_key: str) -> None:
         self.active_channel = channel_key
         await self.refresh_discussion_feed()
 
-    async def refresh_discussion_feed(self):
+    async def refresh_discussion_feed(self) -> None:
         """Reload and clear the feed based on the active selection."""
         if not self.message_feed_container:
             return
         self.message_feed_container.clear()
 
         async with self.scope() as req:
-            fresh_chat = await req.get(ChatSystem)
-            relevant_messages = self._query_messages_for_channel(fresh_chat)
+            fresh_chat: ChatSystem = await req.get(ChatSystem)
+            relevant_messages: list[ChatMessage] = self._query_messages_for_channel(fresh_chat)
 
             if not relevant_messages:
                 with self.message_feed_container:
@@ -180,15 +182,17 @@ class ChatView(BaseDocuWidget):
             return chat_system.get_global_messages()
 
         # Mapping channel keys to Database message types
-        TYPE_MAP = {
+        TYPE_MAP: dict[str, ChatMessageType] = {
             "order": ChatMessageType.ORDER,
             "incident": ChatMessageType.INCIDENT,
             "handover": ChatMessageType.HANDOVER,
-            "production": ChatMessageType.HANDOVER,  # Production channel shows HANDOVER + task events
+            "production": (
+                ChatMessageType.HANDOVER
+            ),  # Production channel shows HANDOVER + task events
         }
-        target_type = TYPE_MAP.get(self.active_channel)
+        target_type: ChatMessageType | None = TYPE_MAP.get(self.active_channel)
 
-        statement = (
+        statement: Any = (
             select(ChatMessage)
             .where(ChatMessage.message_type == target_type)
             .order_by(ChatMessage.created_at.desc())  # type: ignore[attr-defined]
@@ -196,11 +200,11 @@ class ChatView(BaseDocuWidget):
 
         return list(chat_system.db_session.exec(statement).all())
 
-    def _render_message_bubble(self, msg: ChatMessage):
+    def _render_message_bubble(self, msg: ChatMessage) -> None:
         """Displays a single colored message component."""
         with self.message_feed_container:
             # 1. Determine Visual Theme based on type
-            THEME_MAP = {
+            THEME_MAP: dict[ChatMessageType, dict[str, str]] = {
                 ChatMessageType.ORDER: {
                     "bg": "bg-emerald-950/20",
                     "border": "border-emerald-500/20",
@@ -226,7 +230,9 @@ class ChatView(BaseDocuWidget):
                     "color": "primary",
                 },
             }
-            theme = THEME_MAP.get(msg.message_type, THEME_MAP[ChatMessageType.MESSAGE])
+            theme: dict[str, str] = THEME_MAP.get(
+                msg.message_type, THEME_MAP[ChatMessageType.MESSAGE]
+            )
 
             # 2. Render Bubble
             with ui.row().classes(
@@ -242,30 +248,33 @@ class ChatView(BaseDocuWidget):
 
                     self._render_message_content(msg.content)
 
-    def _render_message_content(self, content: str):
+    def _render_message_content(self, content: str) -> None:
         """Parse #<number> patterns and render them as clickable task links."""
         with ui.row().classes("flex-wrap gap-1 items-baseline mt-1 leading-relaxed"):
-            parts = re.split(r"(#\d+)", content)
+            parts: list[str] = re.split(r"(#\d+)", content)
             for part in parts:
                 if re.match(r"#\d+", part):
-                    task_id = int(part[1:])
+                    task_id: int = int(part[1:])
                     ui.link(part, f"/task_board?task_id={task_id}").classes(
                         "text-blue-400 underline text-sm"
                     )
                 else:
                     ui.label(part).classes("text-sm text-slate-300")
 
-    async def handle_message_submission(self):
+    async def handle_message_submission(self) -> None:
         """Submit and clear the user input."""
-        content = self.user_input_area.value.strip()
+        content: str = self.user_input_area.value.strip()
         if not content:
             return
 
         # Default mapping for quick entry from specific channels
-        TYPE_MAP = {"order": ChatMessageType.ORDER, "incident": ChatMessageType.INCIDENT}
+        TYPE_MAP: dict[str, ChatMessageType] = {
+            "order": ChatMessageType.ORDER,
+            "incident": ChatMessageType.INCIDENT,
+        }
 
         async with self.scope() as req:
-            fresh_system = await req.get(ChatSystem)
+            fresh_system: ChatSystem = await req.get(ChatSystem)
             await fresh_system.send_message(
                 author=self.current_user,
                 content=content,
@@ -277,8 +286,9 @@ class ChatView(BaseDocuWidget):
 
     # --- Interaction Dialogs ---
 
-    def open_incident_dialog(self):
+    def open_incident_dialog(self) -> None:
         """Modal for formal workshop breakdown reporting."""
+        dialog: Any
         with (
             ui.dialog() as dialog,
             ui.card().classes("bg-slate-900 border border-red-500/20 w-96 p-6"),
@@ -287,19 +297,19 @@ class ChatView(BaseDocuWidget):
                 "text-sm font-black text-red-400 mb-4 tracking-widest"
             )
 
-            task_ref = ui.number(label="Task Reference (ID)", format="%d").classes("w-full")
-            description = ui.textarea(
+            task_ref: Any = ui.number(label="Task Reference (ID)", format="%d").classes("w-full")
+            description: Any = ui.textarea(
                 label="Failure Description", placeholder="Laser tube power loss..."
             ).classes("w-full")
 
-            async def submit():
+            async def submit() -> None:
                 if not description.value:
                     return
                 # Refactored incident system call
                 from docuflow.features.chat.incidents import IncidentSystem
 
                 async with self.scope() as req:
-                    incident_sys = await req.get(IncidentSystem)
+                    incident_sys: Any = await req.get(IncidentSystem)
                     await incident_sys.report_incident(
                         incident_sys.TYPE_BREAKDOWN,
                         description.value,

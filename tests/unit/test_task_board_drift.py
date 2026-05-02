@@ -1,5 +1,5 @@
 import pytest
-from sqlmodel import Session, create_engine, SQLModel
+from sqlmodel import Session, SQLModel, create_engine
 
 # Import models before fixtures so SQLModel.metadata is populated for create_all
 import docuflow.domain.entities.production  # noqa: F401
@@ -14,8 +14,8 @@ def engine():
 
 @pytest.fixture
 def task_board(engine, tmp_path):
-    from docuflow.infrastructure.config import Config
     from docuflow.features.task_board.system import TaskBoardSystem
+    from docuflow.infrastructure.config import Config
     config = Config(node_id="TEST", shared_path=str(tmp_path))
     return TaskBoardSystem(config, engine)
 
@@ -28,12 +28,16 @@ def test_get_node_drift_empty_bucket(task_board):
 
 def test_get_node_drift_with_completed_tasks(engine, tmp_path):
     """get_node_drift correctly calculates drift without nested session errors."""
-    import datetime
+
     from docuflow.domain.entities.production import (
-        Project, WorkItem, TaskItem, TaskItemStatus, WorkerBucketEntry,
+        Project,
+        TaskItem,
+        TaskItemStatus,
+        WorkerBucketEntry,
+        WorkItem,
     )
-    from docuflow.infrastructure.config import Config
     from docuflow.features.task_board.system import TaskBoardSystem
+    from docuflow.infrastructure.config import Config
 
     # Seed data
     with Session(engine) as session:

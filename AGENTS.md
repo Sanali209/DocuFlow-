@@ -2,7 +2,7 @@
 
 ## Quick orientation
 - **Product**: decentralized workshop orchestration over a shared folder (no central DB), per-node SQLite + file-based sync
-- **Ground truth order**: code → `docs/architecture_2/*` → `docs/superpowers/specs/` → older docs
+- **Ground truth order**: code → `docs/arhitecture_2/*` → `docs/superpowers/specs/` → older docs
 - **App entrypoint**: `src/docuflow/main.py`; startup orchestration: `src/docuflow/sdk.py`, `src/docuflow/application/bus/orchestrator.py`
 - **Task Board v2**: unified production center with 2 tabs (Производство, Моя корзина), hierarchy Project→WorkItem→TaskGroup→TaskItem
 
@@ -14,9 +14,15 @@ DocuFlow/
 │       ├── domain/entities/     # TaskGroup, ViewState, ViewPreset added
 │       ├── features/
 │       │   ├── task_board/      # v2: system.py, task_group_service.py, view.py
-│       │   ├── projects/        # deprecated (merged into Task Board)
-│       │   └── work_items/      # deprecated (merged into Task Board)
-│       ├── lib/widgets/         # New: hierarchy_table, hierarchy_row, filter_panel, handover_form, handover_banner
+│       │   ├── admin/           # cluster health, identity, settings
+│       │   ├── folder_scanner/  # GNC scanning + NS mirror
+│       │   ├── inventory/       # material stock + reservations
+│       │   ├── parts/           # part library + order cart + rework
+│       │   ├── production/      # pallet tracking
+│       │   ├── chat/            # workshop chat + incidents
+│       │   ├── reports/         # Jinja2/weasyprint PDF reports
+│       │   └── analytics/       # KPI metrics
+│       ├── lib/widgets/         # hierarchy_table, hierarchy_row, filter_panel, handover_form, handover_banner
 │       └── infrastructure/      # batch_engine.py removed (replaced by TaskGroupService)
 ├── tests/                      # Strictly categorized — no loose test_*.py in root
 │   ├── unit/                   # domain, features, infrastructure, lib
@@ -76,7 +82,6 @@ uv run python scripts/ops/port_killer.py       # kill process on DOCUFLOW_PORT
 - **New entities**: `TaskGroup`, `ViewState`, `ViewPreset` in `src/docuflow/domain/entities/`
 - **TaskGroupService**: replaces `BatchEngine` (`src/docuflow/features/task_board/task_group_service.py`)
 - **New widgets**: `hierarchy_table`, `hierarchy_row`, `filter_panel`, `handover_form`, `handover_banner` in `src/docuflow/lib/widgets/`
-- **Deprecated**: `features/projects/`, `features/work_items/` (merged into Task Board)
 - **Pallet tracking**: TaskItem ↔ ProductionUnit linkage, auto-calculated `qty_produced`
 - **Material reservation**: soft/hard reserves via Warehouse, auto write-off on DONE
 
@@ -110,7 +115,7 @@ uv run python scripts/ops/port_killer.py       # kill process on DOCUFLOW_PORT
 - **TaskGroupService**: replaces BatchEngine — all batch operations now go through TaskGroupService
 
 ## Refactoring & consolidation
-- See `docs/analysis/reports/CODE_CONSOLIDATION_ANALYSIS.md` for identified duplication patterns and proposed helpers
+- See `docs/analysis/reports/CODE_AUDIT_2026_PROFESSIONAL.md` for identified duplication patterns and proposed helpers
 - High-impact targets: `BaseSystem` CRUD helpers, `@register_view` decorator, `styles.py` tokens, `confirm_dialog` helper
 - 151+ inline Tailwind classes in views — use shared constants
 
@@ -119,3 +124,11 @@ uv run python scripts/ops/port_killer.py       # kill process on DOCUFLOW_PORT
 - Tests enforce named constants (no magic values): see `tests/unit/test_code_quality.py`
 - Public/provider methods require docstrings
 - Add tests under `tests/unit` or integration area before implementing new features
+
+## Agent coding conventions
+- **All local variables MUST have explicit type annotations**, even when the type seems obvious from the right-hand side.  
+  Good: `engine: Engine = await request_container.get(Engine)`  
+  Bad: `engine = await request_container.get(Engine)`
+- Function signatures MUST be fully annotated (arguments + return type).
+- Avoid bare `Any` when a narrower type is known; use `Any` only for genuine dynamicity.
+- Prefer `|` union syntax (PEP 604) over `typing.Union` / `Optional`.

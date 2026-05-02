@@ -50,17 +50,17 @@ class StatusBadge(BaseDocuWidget):
 
     def __init__(
         self, status: WorkItemStatus | TaskItemStatus, size: str = "md", system_scope: Any = None
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.status = status
         self.size = size
 
     def render(self) -> ui.badge:
         """Рендерит бейдж с цветом и текстом."""
-        color = self._get_color()
-        label = self._get_label()
+        color: str = self._get_color()
+        label: str = self._get_label()
 
-        size_classes = {
+        size_classes: dict[str, str] = {
             "sm": "text-xs px-1.5 py-0.5",
             "md": "text-sm px-2 py-1",
             "lg": "text-base px-3 py-1.5",
@@ -78,7 +78,7 @@ class StatusBadge(BaseDocuWidget):
 
     def _get_label(self) -> str:
         """Возвращает текстовую метку для статуса."""
-        labels = {
+        labels: dict[Any, str] = {
             WorkItemStatus.NEW: "Новый",
             WorkItemStatus.PENDING_CUTS: "Ожидание раскроя",
             WorkItemStatus.FOLDER_NO_DOC: "Нет документа",

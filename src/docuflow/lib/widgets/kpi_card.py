@@ -27,7 +27,7 @@ class KPICard:
         icon: str = "",
         icon_color: str = "teal",
         accent_color: str = "",
-    ):
+    ) -> None:
         self.label = label
         self.value = value
         self.subtitle = subtitle
@@ -37,7 +37,7 @@ class KPICard:
 
     def render(self) -> None:
         """Рендерит KPI карточку."""
-        base_classes = "card p-6 relative overflow-hidden"
+        base_classes: str = "card p-6 relative overflow-hidden"
         if self.accent_color:
             base_classes += f" border-l-4 border-{self.accent_color}"
 
@@ -69,7 +69,7 @@ class KPIGrid:
         gap: str — gap класс (default: "gap-4")
     """
 
-    def __init__(self, kpis: list["KPICard"] | None = None, gap: str = "gap-4"):
+    def __init__(self, kpis: list["KPICard"] | None = None, gap: str = "gap-4") -> None:
         self.kpis = kpis or []
         self.gap = gap
 

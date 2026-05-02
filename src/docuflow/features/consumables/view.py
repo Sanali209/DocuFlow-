@@ -9,7 +9,7 @@ from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
-def register_consumables_view():
+def register_consumables_view() -> None:
     ViewRegistry.register(
         ViewInfo(
             name="consumables",
@@ -25,10 +25,10 @@ def register_consumables_view():
 
 
 async def consumables_view_wrapper(
-    system: ConsumableSystem, system_scope: Any, layout: Any, **kwargs
-):
+    system: ConsumableSystem, system_scope: Any, layout: Any, **kwargs: Any
+) -> None:
     """Wrapper to instantiate and render the ConsumableView."""
-    view = ConsumableView(system, system_scope, layout=layout)
+    view: ConsumableView = ConsumableView(system, system_scope, layout=layout)
     await view.render()
 
 
@@ -37,7 +37,7 @@ class ConsumableView(BaseDocuWidget):
     Workshop supply and consumable dashboard.
     """
 
-    def __init__(self, system: ConsumableSystem, system_scope: Any, layout: Any = None):
+    def __init__(self, system: ConsumableSystem, system_scope: Any, layout: Any = None) -> None:
         super().__init__(system_scope)
         self.system = system
         self.layout = layout
@@ -45,7 +45,7 @@ class ConsumableView(BaseDocuWidget):
         self.log_container: Any = None
         self.active_consumable: Consumable | None = None
 
-    async def render(self):
+    async def render(self) -> None:
         """Render the consumables management dashboard."""
         with ui.column().classes("w-full gap-6 p-4"):
             # --- Header ---
@@ -80,9 +80,9 @@ class ConsumableView(BaseDocuWidget):
                     )
                     await self.refresh_logs()
 
-    async def _render_status_table(self):
+    async def _render_status_table(self) -> None:
         """Build the main supply status table."""
-        columns = [
+        columns: list[dict[str, Any]] = [
             {"name": "status", "label": "", "field": "status", "align": "left"},
             {
                 "name": "name",
@@ -166,11 +166,11 @@ class ConsumableView(BaseDocuWidget):
 
         await self.refresh_table()
 
-    async def refresh_table(self):
+    async def refresh_table(self) -> None:
         """Update table data."""
         async with self.scope() as req:
-            system = await req.get(ConsumableSystem)
-            consumables = system.list_consumables()
+            system: ConsumableSystem = await req.get(ConsumableSystem)
+            consumables: list[Consumable] = system.list_consumables()
 
         self.table.rows = [
             {
@@ -184,7 +184,7 @@ class ConsumableView(BaseDocuWidget):
             for c in consumables
         ]
 
-    async def refresh_logs(self, consumable_id: int | None = None):
+    async def refresh_logs(self, consumable_id: int | None = None) -> None:
         """Reload the log panel."""
         if not self.log_container:
             return
@@ -199,7 +199,7 @@ class ConsumableView(BaseDocuWidget):
             return
 
         async with self.scope() as req:
-            system = await req.get(ConsumableSystem)
+            system: ConsumableSystem = await req.get(ConsumableSystem)
             logs = system.get_log(consumable_id, limit=20)
 
         if not logs:
@@ -209,7 +209,7 @@ class ConsumableView(BaseDocuWidget):
 
         with self.log_container:
             for log in logs:
-                color = (
+                color: str = (
                     "emerald-500"
                     if log.operation == "restock"
                     else "red-500"
@@ -236,12 +236,13 @@ class ConsumableView(BaseDocuWidget):
                         "text-[8px] text-zinc-700 text-right w-full"
                     )
 
-    def open_op_dialog(self, row: dict, op_type: str):
+    def open_op_dialog(self, row: dict, op_type: str) -> None:
         """Dialog for adding/removing stock."""
-        title = "Расход (Использование)" if op_type == "use" else "Поступление (Пополнение)"
-        icon = "remove" if op_type == "use" else "add"
-        color = "red" if op_type == "use" else "emerald"
+        title: str = "Расход (Использование)" if op_type == "use" else "Поступление (Пополнение)"
+        icon: str = "remove" if op_type == "use" else "add"
+        color: str = "red" if op_type == "use" else "emerald"
 
+        d: Any
         with ui.dialog() as d, ui.card().classes("bg-zinc-900 border border-zinc-800 w-80"):
             with ui.row().classes("items-center gap-2 mb-4"):
                 ui.icon(icon, color=color, size="24px")
@@ -249,16 +250,16 @@ class ConsumableView(BaseDocuWidget):
 
             ui.label(f"Материал: {row['name']}").classes("text-sm text-zinc-400 mb-4")
 
-            qty = ui.number(
+            qty: Any = ui.number(
                 label="Количество", placeholder=f"ед. ({row['unit']})", format="%.2f"
             ).classes("w-full")
-            note = ui.input(label="Примечание (Задание / Номер заказа)").classes("w-full")
+            note: Any = ui.input(label="Примечание (Задание / Номер заказа)").classes("w-full")
 
-            async def submit():
+            async def submit() -> None:
                 if qty.value is None or qty.value <= 0:
                     return
                 async with self.scope() as req:
-                    system = await req.get(ConsumableSystem)
+                    system: ConsumableSystem = await req.get(ConsumableSystem)
                     if op_type == "use":
                         system.use(row["id"], qty.value, user="operator", note=note.value)
                     else:
@@ -274,27 +275,30 @@ class ConsumableView(BaseDocuWidget):
 
         d.open()
 
-    def create_dialog(self):
+    def create_dialog(self) -> None:
         """Dialog to create a new catalog item."""
+        d: Any
         with ui.dialog() as d, ui.card().classes("bg-zinc-900 border border-zinc-800 w-96"):
             ui.label("Новая позиция каталога").classes("text-lg font-bold text-zinc-100 mb-4")
 
-            name = ui.input(label="Наименование", placeholder="Напр: Сопло 1.5мм").classes("w-full")
-            cat = ui.select(
+            name: Any = ui.input(label="Наименование", placeholder="Напр: Сопло 1.5мм").classes(
+                "w-full"
+            )
+            cat: Any = ui.select(
                 ["nozzle", "lens", "shield", "gas", "tape", "filter", "other"],
                 label="Категория",
                 value="nozzle",
             ).classes("w-full")
-            unit = ui.select(
+            unit: Any = ui.select(
                 ["pcs", "kg", "m", "pack", "liter"], label="Ед. изм.", value="pcs"
             ).classes("w-full")
-            min_q = ui.number(label="Мин. критический остаток", value=5).classes("w-full")
+            min_q: Any = ui.number(label="Мин. критический остаток", value=5).classes("w-full")
 
-            async def submit():
+            async def submit() -> None:
                 if not name.value:
                     return
                 async with self.scope() as req:
-                    system = await req.get(ConsumableSystem)
+                    system: ConsumableSystem = await req.get(ConsumableSystem)
                     system.create_consumable(name.value, cat.value, unit.value, min_q.value)
                 d.close()
                 await self.refresh_all()
@@ -305,7 +309,7 @@ class ConsumableView(BaseDocuWidget):
                 ui.button("Создать", on_click=submit).props("flat color=primary")
         d.open()
 
-    async def refresh_all(self):
+    async def refresh_all(self) -> None:
         await self.refresh_table()
         # Full refresh of logs is tricky without last ID, so we just clear sidebar header
         if self.log_container:

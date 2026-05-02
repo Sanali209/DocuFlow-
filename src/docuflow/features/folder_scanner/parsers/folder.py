@@ -36,10 +36,10 @@ class FolderNameParser:
         Never raises; returns MIHTAV fallback on failure.
         """
         # 1. Check for SIDRA standard
-        match = self.SIDRA_REGEX.match(name)
+        match: re.Match[str] | None = self.SIDRA_REGEX.match(name)
         if match:
             try:
-                doc_date = date(
+                doc_date: date = date(
                     int(match.group("year")), int(match.group("month")), int(match.group("day"))
                 )
                 return FolderMeta(

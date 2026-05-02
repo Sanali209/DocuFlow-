@@ -1,15 +1,19 @@
-import logging
+import json
 from typing import Any
 
+from loguru import logger
 from nicegui import ui
 
+from docuflow.domain.entities.identity import Role, User, Workplace
+from docuflow.domain.entities.production import NotificationTemplate, WorkLog
 from docuflow.features.admin.system import AdminSystem
 from docuflow.features.core.views import ViewInfo, ViewRegistry
+from docuflow.features.view_presets.system import ViewPresetSystem
 from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
-def register_admin_view():
+def register_admin_view() -> None:
     """Register the admin view in the global registry."""
     ViewRegistry.register(
         ViewInfo(
@@ -25,19 +29,16 @@ def register_admin_view():
     )
 
 
-async def admin_view_wrapper(admin_system: AdminSystem, system_scope: Any, layout: Any):
+async def admin_view_wrapper(admin_system: AdminSystem, system_scope: Any, layout: Any) -> None:
     """Wrapper to instantiate and render the AdminView."""
-    view = AdminView(admin_system, system_scope, layout)
+    view: AdminView = AdminView(admin_system, system_scope, layout)
     await view.render()
-
-
-logger = logging.getLogger("docuflow.admin.view")
 
 
 class AdminView(BaseDocuWidget):
     """Cluster Control Plane — tabbed admin dashboard."""
 
-    def __init__(self, admin_system: AdminSystem, system_scope: Any, layout: Any):
+    def __init__(self, admin_system: AdminSystem, system_scope: Any, layout: Any) -> None:
         super().__init__(system_scope)
         self.admin_system = admin_system
         self.layout = layout
@@ -47,8 +48,8 @@ class AdminView(BaseDocuWidget):
         """Renders the Identity Registry list."""
         try:
             async with self.scope() as req:
-                admin_system = await req.get(AdminSystem)
-                users = admin_system.get_all_users()
+                admin_system: AdminSystem = await req.get(AdminSystem)
+                users: list[User] = admin_system.get_all_users()
                 logger.debug(f"AdminView [USERS]: fetched count={len(users)}")
 
                 if not users:
@@ -59,7 +60,7 @@ class AdminView(BaseDocuWidget):
 
                 with ui.column().classes("w-full gap-2"):
                     for u in users:
-                        is_root_admin = u.username.strip().lower() == "admin"
+                        is_root_admin: bool = u.username.strip().lower() == "admin"
                         with ui.row().classes(
                             "w-full items-center justify-between p-4 bg-white/5 "
                             "rounded-xl border border-white/5 "
@@ -71,16 +72,16 @@ class AdminView(BaseDocuWidget):
                                 )
                                 with ui.column().classes("gap-0"):
                                     ui.label(u.username).classes("text-slate-200 font-bold")
-                                    role_name = u.role.name if u.role else "None"
+                                    role_name: str = u.role.name if u.role else "None"
                                     ui.label(f"Role: {role_name}").classes(
                                         "text-[10px] text-slate-400"
                                     )
 
                             if not is_root_admin:
 
-                                async def _remove(un=u.username):
+                                async def _remove(un: str = u.username) -> None:
                                     async with self.scope() as r:
-                                        fresh_system = await r.get(AdminSystem)
+                                        fresh_system: AdminSystem = await r.get(AdminSystem)
                                         fresh_system.delete_user(un)
                                     await self.render_user_registry.refresh()
                                     NotifyHelper.warning(f"User {un} deleted")
@@ -94,7 +95,7 @@ class AdminView(BaseDocuWidget):
     @ui.refreshable_method
     async def render_role_matrix(self) -> None:
         """Renders the Permission Matrix."""
-        MODULES = [
+        MODULES: list[str] = [
             "bucket",
             "board",
             "chat",
@@ -111,8 +112,8 @@ class AdminView(BaseDocuWidget):
         ]
         try:
             async with self.scope() as req:
-                admin_system = await req.get(AdminSystem)
-                roles = admin_system.get_all_roles()
+                admin_system: AdminSystem = await req.get(AdminSystem)
+                roles: list[Role] = admin_system.get_all_roles()
                 logger.debug(f"AdminView [ROLES]: fetched count={len(roles)}")
 
                 if not roles:
@@ -121,14 +122,14 @@ class AdminView(BaseDocuWidget):
 
                 with ui.column().classes("w-full gap-4"):
                     for r in roles:
-                        is_admin_role = r.name.strip().lower() == "admin"
-                        border = "border-indigo-500/40" if is_admin_role else "border-white/5"
+                        is_admin_role: bool = r.name.strip().lower() == "admin"
+                        border: str = "border-indigo-500/40" if is_admin_role else "border-white/5"
                         with ui.column().classes(
                             f"w-full p-6 bg-white/5 rounded-2xl border {border}"
                         ):
                             with ui.row().classes("w-full justify-between items-center mb-4"):
                                 with ui.column().classes("gap-0"):
-                                    label_color = (
+                                    label_color: str = (
                                         "text-indigo-400" if is_admin_role else "text-white"
                                     )
                                     ui.label(r.name).classes(f"text-xl font-bold {label_color}")
@@ -138,9 +139,9 @@ class AdminView(BaseDocuWidget):
 
                                 if not is_admin_role:
 
-                                    async def _del_role(rn=r.name):
+                                    async def _del_role(rn: str = r.name) -> None:
                                         async with self.scope() as req2:
-                                            fresh_system = await req2.get(AdminSystem)
+                                            fresh_system: AdminSystem = await req2.get(AdminSystem)
                                             fresh_system.delete_role(rn)
                                         await self.render_role_matrix.refresh()
                                         NotifyHelper.warning(f"Role {rn} deleted")
@@ -149,34 +150,39 @@ class AdminView(BaseDocuWidget):
 
                             with ui.row().classes("gap-2 flex-wrap"):
                                 for mod in MODULES:
-                                    current_perms = r.permissions_list
-                                    module_perm = next(
-                                        (p for p in current_perms if p.startswith(f"{mod}:")), None
+                                    current_perms: list[str] = r.permissions_list
+                                    module_perm: str | None = next(
+                                        (p for p in current_perms if p.startswith(f"{mod}:")),
+                                        None,
                                     )
-                                    is_on = module_perm is not None
-                                    perm_type = module_perm.split(":")[1] if is_on else "none"
+                                    is_on: bool = module_perm is not None
+                                    perm_type: str = module_perm.split(":")[1] if is_on else "none"
 
                                     async def _toggle(
-                                        m=mod, r_name=r.name, active=is_on, mp=module_perm
-                                    ):
+                                        m: str = mod,
+                                        r_name: str = r.name,
+                                        active: bool = is_on,
+                                        mp: str | None = module_perm,
+                                    ) -> None:
                                         if r_name.strip().lower() == "admin":
                                             return
 
                                         async with self.scope() as req3:
-                                            fresh_system = await req3.get(AdminSystem)
+                                            fresh_system: AdminSystem = await req3.get(AdminSystem)
                                             # Fetch fresh role object within scope
                                             from sqlmodel import select
 
                                             from docuflow.domain.entities.identity import Role
 
-                                            r_ref = fresh_system.session.exec(
+                                            assert fresh_system.session is not None
+                                            r_ref: Role | None = fresh_system.session.exec(
                                                 select(Role).where(Role.name == r_name)
                                             ).first()
 
                                             if not r_ref:
                                                 return
 
-                                            remaining = [
+                                            remaining: list[str] = [
                                                 p
                                                 for p in r_ref.permissions_list
                                                 if not p.startswith(f"{m}:")
@@ -189,7 +195,7 @@ class AdminView(BaseDocuWidget):
                                             fresh_system.upsert_role(r_ref.name, remaining)
                                         await self.render_role_matrix.refresh()
 
-                                    color = (
+                                    color: str = (
                                         "emerald"
                                         if perm_type == "full"
                                         else "indigo"
@@ -218,21 +224,23 @@ class AdminView(BaseDocuWidget):
             from docuflow.domain.settings import registry
 
             async with self.scope() as req:
-                admin_system = await req.get(AdminSystem)
+                admin_system: AdminSystem = await req.get(AdminSystem)
 
                 # DEBUG: Log all registered modules
-                all_modules = registry.get_all_modules()
+                all_modules: list[str] = registry.get_all_modules()
                 logger.debug(f"render_settings_form: module={module}, all_modules={all_modules}")
 
-                schema = registry.get_schema(module)
+                schema: Any = registry.get_schema(module)
                 if not schema:
                     logger.warning(f"No schema registered for module: {module}")
                     ui.label(f"No schema registered for: {module}").classes("text-red-400")
                     return
 
-                scope_type = "global" if node_id is None else "local"
-                fields = registry.get_fields_by_scope(module, scope_type)
-                current = admin_system.get_node_settings(node_id or "global", module)
+                scope_type: str = "global" if node_id is None else "local"
+                fields: list[str] | None = registry.get_fields_by_scope(module, scope_type)
+                current: dict[str, str] = admin_system.get_node_settings(
+                    node_id or "global", module
+                )
 
                 logger.debug(
                     f"render_settings_form: scope={scope_type}, "
@@ -253,8 +261,8 @@ class AdminView(BaseDocuWidget):
                         "text-xs font-bold text-indigo-300/50 mb-4 uppercase tracking-widest"
                     )
                     for field_name in fields:
-                        fi = schema.model_fields[field_name]
-                        display_val = current.get(field_name, str(fi.default))
+                        fi: Any = schema.model_fields[field_name]
+                        display_val: str = current.get(field_name, str(fi.default))
                         with ui.row().classes("w-full items-center justify-between mb-4"):
                             with ui.column():
                                 ui.label(field_name.replace("_", " ")).classes(
@@ -263,15 +271,18 @@ class AdminView(BaseDocuWidget):
                                 if fi.description:
                                     ui.label(fi.description).classes("text-[10px] text-slate-500")
 
-                            async def _push(e, f=field_name):
+                            async def _push(e: Any, f: str = field_name) -> None:
                                 async with self.scope() as req2:
-                                    fresh_system = await req2.get(AdminSystem)
+                                    fresh_system: AdminSystem = await req2.get(AdminSystem)
                                     fresh_system.update_node_setting(
                                         node_id or "global", module, f, str(e.value)
                                     )
 
                             if fi.annotation is bool:
-                                ui.switch(value=str(display_val).lower() == "true", on_change=_push)
+                                ui.switch(
+                                    value=str(display_val).lower() == "true",
+                                    on_change=_push,
+                                )
                             elif fi.annotation is int:
                                 ui.number(value=int(display_val), on_change=_push).props(
                                     "dark dense standout"
@@ -290,8 +301,8 @@ class AdminView(BaseDocuWidget):
         """Renders the notification templates form."""
         try:
             async with self.scope() as req:
-                admin_system = await req.get(AdminSystem)
-                tmpls = admin_system.get_notification_templates()
+                admin_system: AdminSystem = await req.get(AdminSystem)
+                tmpls: list[NotificationTemplate] = admin_system.get_notification_templates()
                 if not tmpls:
                     ui.label("No Notification Templates defined.").classes(
                         "text-slate-500 italic p-4"
@@ -300,6 +311,7 @@ class AdminView(BaseDocuWidget):
 
                 with ui.column().classes("w-full mt-4 gap-4"):
                     for tmpl in tmpls:
+                        assert tmpl.id is not None
                         with ui.row().classes(
                             "w-full items-center justify-between p-4 bg-white/5 "
                             "rounded-xl border border-white/10"
@@ -307,16 +319,20 @@ class AdminView(BaseDocuWidget):
                             with ui.column().classes("gap-1 flex-1"):
                                 ui.label(tmpl.key).classes("text-lg font-bold text-indigo-400")
 
-                                async def update_text(e, tmpl_id=tmpl.id, enabled=tmpl.enabled):
+                                async def update_text(
+                                    e: Any,
+                                    tmpl_id: int = tmpl.id,
+                                    enabled: bool = tmpl.enabled,
+                                ) -> None:
                                     async with self.scope() as req2:
-                                        fresh_system = await req2.get(AdminSystem)
+                                        fresh_system: AdminSystem = await req2.get(AdminSystem)
                                         fresh_system.update_notification_template(
                                             tmpl_id, text=e.value, enabled=enabled
                                         )
                                         NotifyHelper.warning("Шаблон уведомления сохранен")
 
                                 # Use lazy binding via on_change
-                                txt_input = (
+                                txt_input: ui.input = (
                                     ui.input(value=tmpl.text)
                                     .props("dark standout rounded")
                                     .classes("w-full text-slate-300")
@@ -328,9 +344,14 @@ class AdminView(BaseDocuWidget):
 
                             with ui.column().classes("ml-8 items-end w-32"):
 
-                                async def update_toggle(e, tmpl_id=tmpl.id, text=tmpl.text):
+                                async def update_toggle(
+                                    e: Any,
+                                    tmpl_id: int = tmpl.id,
+                                    text: str = tmpl.text,
+                                    **_: Any,
+                                ) -> None:
                                     async with self.scope() as req3:
-                                        fresh_system = await req3.get(AdminSystem)
+                                        fresh_system: AdminSystem = await req3.get(AdminSystem)
                                         fresh_system.update_notification_template(
                                             tmpl_id, text=text, enabled=e.value
                                         )
@@ -344,9 +365,8 @@ class AdminView(BaseDocuWidget):
         """Renders the global view presets form."""
         try:
             async with self.scope() as req:
-                admin_system = await req.get(AdminSystem)
-                # Only global presets
-                presets = admin_system.get_view_presets(owner="global")
+                preset_system: ViewPresetSystem = await req.get(ViewPresetSystem)
+                presets: list[Any] = preset_system.list_global()
 
                 with ui.row().classes("w-full mt-4 gap-4 justify-between items-center"):
                     ui.label("Глобальные Пресеты (View Presets)").classes(
@@ -356,28 +376,31 @@ class AdminView(BaseDocuWidget):
                     with ui.dialog().classes("glass-card p-4 rounded-3xl") as dialog:
                         with ui.column().classes("gap-4 w-[350px] p-6"):
                             ui.label("Новый Пресет").classes("text-xl font-bold text-indigo-400")
-                            p_mod = (
+                            p_mod: ui.input = (
                                 ui.input("Модуль (напр. work_items)")
                                 .props("dark rounded standout")
                                 .classes("w-full")
                             )
-                            p_name = (
+                            p_name: ui.input = (
                                 ui.input("Название")
                                 .props("dark rounded standout")
                                 .classes("w-full")
                             )
-                            p_json = (
+                            p_json: ui.input = (
                                 ui.input("Пресет (JSON)", value="{}")
                                 .props("dark rounded standout")
                                 .classes("w-full")
                             )
 
-                            async def _create(dlg=dialog):
+                            async def _create(dlg: Any = dialog) -> None:
                                 try:
                                     async with self.scope() as req2:
-                                        fresh_system = await req2.get(AdminSystem)
-                                        fresh_system.create_view_preset(
-                                            p_mod.value, p_name.value, p_json.value
+                                        p_sys: ViewPresetSystem = await req2.get(ViewPresetSystem)
+                                        p_sys.create(
+                                            view_name=p_mod.value,
+                                            user_id="global",
+                                            name=p_name.value,
+                                            filters_json=json.loads(p_json.value),
                                         )
                                     dlg.close()
                                     await self.render_presets_form.refresh()
@@ -408,10 +431,10 @@ class AdminView(BaseDocuWidget):
                                     "text-xs text-slate-500 font-mono"
                                 )
 
-                            async def _del(p_id=preset.id):
+                            async def _del(p_id: int = preset.id) -> None:
                                 async with self.scope() as req3:
-                                    fresh_system = await req3.get(AdminSystem)
-                                    fresh_system.delete_view_preset(p_id)
+                                    p_sys: ViewPresetSystem = await req3.get(ViewPresetSystem)
+                                    p_sys.delete_preset(p_id, user_id="global")
                                 await self.render_presets_form.refresh()
 
                             ui.button(icon="delete", color="red", on_click=_del).props("flat dense")
@@ -423,8 +446,8 @@ class AdminView(BaseDocuWidget):
         """Displays all workplace bindings."""
         try:
             async with self.scope() as req:
-                admin_system = await req.get(AdminSystem)
-                workplaces = admin_system.get_all_workplaces()
+                admin_system: AdminSystem = await req.get(AdminSystem)
+                workplaces: list[Workplace] = admin_system.get_all_workplaces()
                 if not workplaces:
                     ui.label("No workplaces configured.").classes("text-slate-500 italic p-4")
                 for w in workplaces:
@@ -441,18 +464,21 @@ class AdminView(BaseDocuWidget):
                                 ui.label(f"Configure {w.name}").classes(
                                     "text-xl font-bold text-indigo-400"
                                 )
-                                new_nid = ui.input("Hardware Node ID", value=w.node_id).props(
-                                    "dark rounded standout"
-                                )
-                                allowed = ui.input(
-                                    "Allowed Modules (comma-sep)", value=w.allowed_modules or ""
+                                new_nid: ui.input = ui.input(
+                                    "Hardware Node ID", value=w.node_id
+                                ).props("dark rounded standout")
+                                allowed: ui.input = ui.input(
+                                    "Allowed Modules (comma-sep)",
+                                    value=w.allowed_modules or "",
                                 ).props("dark rounded standout")
 
                                 async def _update_binding(
-                                    wp_name=w.name, nid=new_nid, allow=allowed
-                                ):
+                                    wp_name: str = w.name,
+                                    nid: Any = new_nid,
+                                    allow: Any = allowed,
+                                ) -> None:
                                     async with self.scope() as req2:
-                                        fresh_system = await req2.get(AdminSystem)
+                                        fresh_system: AdminSystem = await req2.get(AdminSystem)
                                         fresh_system.upsert_workplace(
                                             {
                                                 "name": wp_name,
@@ -475,9 +501,11 @@ class AdminView(BaseDocuWidget):
                                 )
                                 ui.label("This action cannot be undone.").classes("text-slate-400")
 
-                                async def _confirm_delete(node_id=w.node_id):
+                                async def _confirm_delete(
+                                    node_id: str = w.node_id,
+                                ) -> None:
                                     async with self.scope() as req3:
-                                        fresh_system = await req3.get(AdminSystem)
+                                        fresh_system: AdminSystem = await req3.get(AdminSystem)
                                         fresh_system.delete_workplace(node_id)
                                     delete_confirm.close()
                                     NotifyHelper.success("Binding deleted")
@@ -508,8 +536,8 @@ class AdminView(BaseDocuWidget):
         """Renders a global timeline of system events."""
         try:
             async with self.scope() as req:
-                fresh_system = await req.get(AdminSystem)
-                logs = fresh_system.get_system_audit_logs(limit=100)
+                fresh_system: AdminSystem = await req.get(AdminSystem)
+                logs: list[WorkLog] = fresh_system.get_system_audit_logs(limit=100)
 
                 if not logs:
                     ui.label("No events recorded yet.").classes("text-slate-500 italic p-4")
@@ -562,14 +590,14 @@ class AdminView(BaseDocuWidget):
         ui.label("Cluster Control Plane").classes("text-3xl font-bold text-white mb-4")
 
         with ui.tabs().classes("w-full bg-white/5 rounded-t-2xl p-2") as tabs:
-            t_health = ui.tab("HEALTH", icon="monitor_heart")
-            t_users = ui.tab("USERS", icon="person")
-            t_roles = ui.tab("ROLES", icon="security")
-            t_bind = ui.tab("BINDINGS", icon="settings_remote")
-            t_conf = ui.tab("CONFIGURATION", icon="tune")
-            t_notif = ui.tab("NOTIFICATIONS", icon="notifications")
-            t_preset = ui.tab("PRESETS", icon="view_list")
-            t_audit = ui.tab("SYSTEM LOG", icon="history")
+            t_health: ui.tab = ui.tab("HEALTH", icon="monitor_heart")
+            t_users: ui.tab = ui.tab("USERS", icon="person")
+            t_roles: ui.tab = ui.tab("ROLES", icon="security")
+            t_bind: ui.tab = ui.tab("BINDINGS", icon="settings_remote")
+            t_conf: ui.tab = ui.tab("CONFIGURATION", icon="tune")
+            t_notif: ui.tab = ui.tab("NOTIFICATIONS", icon="notifications")
+            t_preset: ui.tab = ui.tab("PRESETS", icon="view_list")
+            t_audit: ui.tab = ui.tab("SYSTEM LOG", icon="history")
 
         health_grid_ref: list[ui.table] = []  # mutable container avoids NameError
 
@@ -577,9 +605,19 @@ class AdminView(BaseDocuWidget):
             # ── HEALTH ─────────────────────────────────────────────
             with ui.tab_panel(t_health):
                 ui.label("Active Node Heartbeats").classes("text-xl font-bold text-indigo-400 mb-6")
-                cols = [
-                    {"name": "node_id", "label": "Identifier", "field": "node_id", "align": "left"},
-                    {"name": "status", "label": "State", "field": "status", "align": "center"},
+                cols: list[dict[str, Any]] = [
+                    {
+                        "name": "node_id",
+                        "label": "Identifier",
+                        "field": "node_id",
+                        "align": "left",
+                    },
+                    {
+                        "name": "status",
+                        "label": "State",
+                        "field": "status",
+                        "align": "center",
+                    },
                     {
                         "name": "is_leader",
                         "label": "Leader",
@@ -593,16 +631,16 @@ class AdminView(BaseDocuWidget):
                         "align": "right",
                     },
                 ]
-                hg = ui.table(columns=cols, rows=[], row_key="node_id").classes(
+                hg: ui.table = ui.table(columns=cols, rows=[], row_key="node_id").classes(
                     "w-full bg-transparent text-slate-300"
                 )
                 health_grid_ref.append(hg)  # store reference for CONF tab
 
-                async def _refresh_health():
+                async def _refresh_health() -> None:
                     try:
                         async with self.scope() as req:
-                            fresh_system = await req.get(AdminSystem)
-                            nodes = fresh_system.get_cluster_nodes()
+                            fresh_system: AdminSystem = await req.get(AdminSystem)
+                            nodes: list[dict[str, Any]] = fresh_system.get_cluster_nodes()
                             hg.rows[:] = nodes
                             hg.update()
                     except Exception as exc:
@@ -611,9 +649,9 @@ class AdminView(BaseDocuWidget):
                 self.layout.register_timer(ui.timer(0.5, _refresh_health, once=True))
                 self.layout.register_timer(ui.timer(5.0, _refresh_health))
 
-                async def force_step_down_action():
+                async def force_step_down_action() -> None:
                     async with self.scope() as req:
-                        fresh_system = await req.get(AdminSystem)
+                        fresh_system: AdminSystem = await req.get(AdminSystem)
                         fresh_system.force_global_step_down()
                         NotifyHelper.warning("Step down command broadcasted")
 
@@ -629,36 +667,38 @@ class AdminView(BaseDocuWidget):
                             ui.label("Register New Identity").classes(
                                 "text-xl font-bold text-white"
                             )
-                            u_name = (
+                            u_name: ui.input = (
                                 ui.input("Username")
                                 .props("dark rounded standout")
                                 .classes("w-full")
                             )
-                            u_pass = (
+                            u_pass: ui.input = (
                                 ui.input("Password", password=True)
                                 .props("dark rounded standout")
                                 .classes("w-full")
                             )
-                            u_role_sel = (
+                            u_role_sel: ui.select = (
                                 ui.select({}, label="Assign Role")
                                 .props("dark rounded standout")
                                 .classes("w-full")
                             )
 
-                            async def _load_roles():
+                            async def _load_roles() -> None:
                                 async with self.scope() as req:
-                                    fresh_system = await req.get(AdminSystem)
-                                    opts = {r.id: r.name for r in fresh_system.get_all_roles()}
+                                    fresh_system: AdminSystem = await req.get(AdminSystem)
+                                    opts: dict[int | None, str] = {
+                                        r.id: r.name for r in fresh_system.get_all_roles()
+                                    }
                                     u_role_sel.set_options(opts)
                                     if opts:
                                         u_role_sel.value = next(iter(opts.keys()))
 
                             user_dialog.on("show", _load_roles)
 
-                            async def _create_user():
+                            async def _create_user() -> None:
                                 if u_name.value and u_role_sel.value:
                                     async with self.scope() as req:
-                                        fresh_system = await req.get(AdminSystem)
+                                        fresh_system: AdminSystem = await req.get(AdminSystem)
                                         fresh_system.create_user(
                                             {
                                                 "username": u_name.value,
@@ -688,16 +728,16 @@ class AdminView(BaseDocuWidget):
                     with ui.dialog().classes("glass-card p-4 rounded-3xl") as role_dialog:
                         with ui.column().classes("gap-4 w-[350px] p-6"):
                             ui.label("Create Custom Role").classes("text-xl font-bold text-white")
-                            r_name = (
+                            r_name: ui.input = (
                                 ui.input("Role Name")
                                 .props("dark rounded standout")
                                 .classes("w-full")
                             )
 
-                            async def _create_role():
+                            async def _create_role() -> None:
                                 if r_name.value:
                                     async with self.scope() as req:
-                                        fresh_system = await req.get(AdminSystem)
+                                        fresh_system: AdminSystem = await req.get(AdminSystem)
                                         fresh_system.upsert_role(r_name.value, [])
                                     role_dialog.close()
                                     await self.render_role_matrix.refresh()
@@ -719,13 +759,17 @@ class AdminView(BaseDocuWidget):
                     with ui.dialog().classes("glass-card p-8 rounded-3xl") as create_wp:
                         with ui.column().classes("gap-4 w-[400px]"):
                             ui.label("Create New Binding").classes("text-xl font-bold text-white")
-                            wp_name = ui.input("Workplace Name").props("dark rounded standout")
-                            wp_node = ui.input("Hardware Node ID").props("dark rounded standout")
-                            wp_modules = ui.input("Allowed Modules (comma-sep)").props(
+                            wp_name: ui.input = ui.input("Workplace Name").props(
+                                "dark rounded standout"
+                            )
+                            wp_node: ui.input = ui.input("Hardware Node ID").props(
+                                "dark rounded standout"
+                            )
+                            wp_modules: ui.input = ui.input("Allowed Modules (comma-sep)").props(
                                 "dark rounded standout"
                             )
 
-                            async def _create_binding():
+                            async def _create_binding() -> None:
                                 if not wp_name.value or len(wp_name.value) < 3:
                                     NotifyHelper.warning(
                                         "Workplace name must be at least 3 characters"
@@ -736,7 +780,7 @@ class AdminView(BaseDocuWidget):
                                     return
 
                                 async with self.scope() as req:
-                                    fresh_system = await req.get(AdminSystem)
+                                    fresh_system: AdminSystem = await req.get(AdminSystem)
                                     fresh_system.upsert_workplace(
                                         {
                                             "name": wp_name.value,
@@ -771,7 +815,7 @@ class AdminView(BaseDocuWidget):
 
                 from docuflow.domain.settings import registry
 
-                modules = registry.get_all_modules()
+                modules: list[str] = registry.get_all_modules()
 
                 if not modules:
                     ui.label("No modules registered in SettingsRegistry.").classes(
@@ -779,26 +823,30 @@ class AdminView(BaseDocuWidget):
                     )
                 else:
                     with ui.row().classes("w-full gap-4"):
-                        mod_select = (
+                        mod_select: ui.select = (
                             ui.select(modules, value=modules[0], label="Select Module")
                             .classes("w-64")
                             .props("dark rounded standout")
                         )
-                        target_node = (
-                            ui.select({None: "Global"}, value=None, label="Scope (Node or Global)")
+                        target_node: ui.select = (
+                            ui.select(
+                                {None: "Global"},
+                                value=None,
+                                label="Scope (Node or Global)",
+                            )
                             .classes("w-64")
                             .props("dark rounded standout")
                         )
 
                     ui.separator().classes("my-4 opacity-10")
 
-                    async def _load_conf_nodes():
+                    async def _load_conf_nodes() -> None:
                         """Load cluster nodes for CONFIGURATION tab independently."""
                         try:
                             async with self.scope() as req:
-                                fresh_system = await req.get(AdminSystem)
-                                nodes = fresh_system.get_cluster_nodes()
-                                node_options = {None: "Global"}
+                                fresh_system: AdminSystem = await req.get(AdminSystem)
+                                nodes: list[dict[str, Any]] = fresh_system.get_cluster_nodes()
+                                node_options: dict[str | None, str] = {None: "Global"}
                                 for n in nodes:
                                     node_options[n["node_id"]] = (
                                         f"{n['node_id']} ({n.get('status', 'unknown')})"
@@ -810,9 +858,9 @@ class AdminView(BaseDocuWidget):
 
                     self.layout.register_timer(ui.timer(0.5, _load_conf_nodes, once=True))
 
-                    async def _refresh_settings():
-                        node_id = target_node.value
-                        scope = "global" if node_id is None else "local"
+                    async def _refresh_settings() -> None:
+                        node_id: Any = target_node.value
+                        scope: str = "global" if node_id is None else "local"
                         logger.debug(
                             f"Config refresh: module={mod_select.value}, "
                             f"scope={scope}, node={node_id}"

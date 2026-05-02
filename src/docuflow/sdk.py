@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, TypeVar
 
@@ -9,7 +10,6 @@ if TYPE_CHECKING:
     from docuflow.features.consumables.system import ConsumableSystem
     from docuflow.features.parts.system import PartLibrarySystem
     from docuflow.features.production.system import ProductionSystem
-    from docuflow.features.projects.system import ProjectSystem
     from docuflow.infrastructure.config import Config
 
 S = TypeVar("S", bound="BaseSystem")
@@ -36,7 +36,7 @@ class SDK:
         >>> await bus.send_message("node_2", {"action": "sync"})
     """
 
-    def __init__(self, container: AsyncContainer):
+    def __init__(self, container: AsyncContainer) -> None:
         """Initialize the SDK with a pre-configured Dishka container."""
         self._container = container
         self._config: Config | None = None
@@ -80,7 +80,7 @@ class SDK:
         return await self._container.get(system_class)
 
     @asynccontextmanager
-    async def request_scope(self):
+    async def request_scope(self) -> AsyncIterator[AsyncContainer]:
         """Context manager to create and use a request-scoped DI container."""
         # In dishka, calling the container instance creates a sub-container for the next scope
         async with self._container() as request_container:
@@ -90,13 +90,6 @@ class SDK:
                 yield request_container
             finally:
                 self._active_request_container = old_container
-
-    @property
-    def projects(self) -> "ProjectSystem":
-        """Access the Project Management System."""
-        if not hasattr(self, "_projects"):
-            raise RuntimeError("SDK.projects is uninitialized. Call on_startup first.")
-        return self._projects
 
     @property
     def parts(self) -> "PartLibrarySystem":
@@ -146,7 +139,7 @@ class SDK:
             from docuflow.features.notifications.system import NotificationService
             from docuflow.features.parts.system import PartLibrarySystem
             from docuflow.features.production.system import ProductionSystem
-            from docuflow.features.projects.system import ProjectSystem
+            from docuflow.features.task_board.system import TaskBoardSystem
 
             self._notifications = await req.get(NotificationService)
             self._notifications.seed_defaults()
@@ -157,9 +150,8 @@ class SDK:
 
             await req.get(FolderScannerSettings)
 
-            self._projects = await req.get(ProjectSystem)
-            self._projects.resolve_default_workshop_project()
-            await self._projects.on_startup()
+            tb_system = await req.get(TaskBoardSystem)
+            tb_system.resolve_default_workshop_project()
 
             self._parts = await req.get(PartLibrarySystem)
             await self._parts.on_startup()

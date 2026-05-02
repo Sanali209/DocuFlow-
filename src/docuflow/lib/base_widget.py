@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 
@@ -15,11 +15,11 @@ class BaseDocuWidget:
     Предоставляет унифицированные методы для выполнения действий и доступа к системам.
     """
 
-    def __init__(self, system_scope: Any = None):
-        self.system_scope = system_scope
+    def __init__(self, system_scope: Any = None) -> None:
+        self.system_scope: Any = system_scope
 
     @asynccontextmanager
-    async def scope(self):
+    async def scope(self) -> AsyncIterator[Any]:
         """Provides a safe request scope for resolving and using systems."""
         if not self.system_scope:
             raise RuntimeError("System scope is not set for this widget.")
@@ -34,8 +34,11 @@ class BaseDocuWidget:
             return await req.get(system_cls)
 
     def safe_action(
-        self, action_fn: Callable, success_msg: str | None = None, error_prefix: str = "Ошибка"
-    ):
+        self,
+        action_fn: Callable[[], Any],
+        success_msg: str | None = None,
+        error_prefix: str = "Ошибка",
+    ) -> None:
         """
         Безопасно выполняет асинхронное действие с уведомлением об успехе или ошибке.
 
@@ -45,7 +48,7 @@ class BaseDocuWidget:
             error_prefix: Префикс для сообщения об ошибке.
         """
 
-        async def wrapped_action():
+        async def wrapped_action() -> None:
             from docuflow.lib.widgets.ui_utils import NotifyHelper
 
             try:

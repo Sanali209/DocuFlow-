@@ -26,8 +26,8 @@ class TaskFileParser:
         Returns True if the file is a variant/metadata file and should NOT
         be imported as a primary TaskItem.
         """
-        name = file_path.name.upper()
-        suffix = file_path.suffix.upper()
+        name: str = file_path.name
+        suffix: str = file_path.suffix
 
         # 1. Non-GNC files are variants or metadata
         if suffix != ".GNC":
@@ -47,7 +47,7 @@ class TaskFileParser:
         Parses the GNC filename to extract step and batch indices.
         Example: "01-02-SIDRA-353203-..." -> step=1, batch=2
         """
-        match = self.TASK_FILE_REGEX.match(name)
+        match: re.Match[str] | None = self.TASK_FILE_REGEX.match(name)
         if match:
             return TaskFileMeta(
                 gnc_name=name,

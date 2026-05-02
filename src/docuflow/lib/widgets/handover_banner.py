@@ -19,7 +19,7 @@ class HandoverBanner(BaseDocuWidget):
         note: str,
         on_accept: Callable[[], Any],
         system_scope: Any,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.from_operator = from_operator
         self.note = note

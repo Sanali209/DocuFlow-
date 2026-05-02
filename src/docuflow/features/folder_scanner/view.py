@@ -1,4 +1,4 @@
-import logging
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from nicegui import ui
@@ -18,7 +18,7 @@ from docuflow.lib.widgets.ui_utils import (
 )
 
 
-def register_scanner_view():
+def register_scanner_view() -> None:
     from docuflow.sdk import SDK
 
     ViewRegistry.register(
@@ -38,21 +38,19 @@ def register_scanner_view():
 if TYPE_CHECKING:
     from docuflow.sdk import SDK
 
-logger = logging.getLogger("docuflow.folder_scanner.view")
-
 
 async def folder_scanner_view_wrapper(
-    sdk: "SDK", config: Config, engine: Engine, system_scope: Any, layout: Any, **kwargs
-):
+    sdk: "SDK", config: Config, engine: Engine, system_scope: Any, layout: Any, **kwargs: Any
+) -> None:
     """Wrapper to instantiate and render the ScannerView."""
-    view = ScannerView(sdk, config, engine, system_scope, layout=layout)
+    view: ScannerView = ScannerView(sdk, config, engine, system_scope, layout=layout)
     await view.render()
 
 
 class ScannerView(BaseDocuWidget):
     def __init__(
         self, sdk: "SDK", config: Config, engine: Engine, system_scope: Any, layout: Any = None
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.sdk = sdk
         self.config = config
@@ -60,10 +58,11 @@ class ScannerView(BaseDocuWidget):
         self.layout = layout
 
     @ui.refreshable_method
-    async def render(self):
+    async def render(self) -> None:
         """Render the scanner management interface."""
+        req: Any
         async with self.scope() as req:
-            scanner = await req.get(FolderScannerSystem)
+            scanner: FolderScannerSystem = await req.get(FolderScannerSystem)
 
         with ui.column().classes("w-full gap-8"):
             # --- HEADER SECTION ---
@@ -74,18 +73,18 @@ class ScannerView(BaseDocuWidget):
                     )
                     with ui.row().classes("items-center gap-2"):
                         # Pulsing indicator for Master status
-                        is_master = self.sdk.orchestrator.is_leader
-                        color = get_role_indicator_color(is_master)
-                        pulse_class = "animate-pulse" if is_master else ""
+                        is_master: bool = self.sdk.orchestrator.is_leader
+                        color: str = get_role_indicator_color(is_master)
+                        pulse_class: str = "animate-pulse" if is_master else ""
                         ui.icon("circle", color=color, size="12px").classes(pulse_class)
                         ui.label(
                             f"{'MASTER' if is_master else 'SLAVE'} NODE: {self.config.node_id}"
                         ).classes(f"text-xs font-mono font-bold text-{color}")
 
                 # Everyone can "Scan Now" as requested
-                async def force_scan():
+                async def force_scan() -> None:
                     NotifyHelper.info("Manual Scan Triggered...")
-                    result = scanner.scan_now()
+                    result: Any = scanner.scan_now()
                     if result and hasattr(result, "__await__"):
                         await result
                     NotifyHelper.info("Scan request processed by Master")
@@ -104,8 +103,8 @@ class ScannerView(BaseDocuWidget):
                         "text-xs font-bold text-slate-500 uppercase tracking-widest mb-4"
                     )
                     async with self.scope() as req:
-                        fresh_scanner = await req.get(FolderScannerSystem)
-                        status = fresh_scanner.get_ingestion_status()
+                        fresh_scanner: FolderScannerSystem = await req.get(FolderScannerSystem)
+                        status: dict[str, Any] = fresh_scanner.get_ingestion_status()
 
                     color = get_sync_indicator_color(status["is_active"])
                     pulse_class = "animate-pulse" if status["is_active"] else ""
@@ -141,10 +140,10 @@ class ScannerView(BaseDocuWidget):
 
                         from docuflow.domain.entities.production import WorkLog, WorkLogType
 
-                        session = await req.get(Session)
+                        session: Session = await req.get(Session)
 
                         # Get latest NS Mirror log
-                        latest_mirror_log = session.exec(
+                        latest_mirror_log: WorkLog | None = session.exec(
                             select(WorkLog)
                             .where(WorkLog.log_type == WorkLogType.NS_MIRROR)
                             .where(WorkLog.node_id == self.config.node_id)
@@ -152,7 +151,7 @@ class ScannerView(BaseDocuWidget):
                         ).first()
 
                         # Count mirrored files
-                        mirrored_count = session.exec(
+                        mirrored_count: Sequence[WorkLog] = session.exec(
                             select(WorkLog)
                             .where(WorkLog.log_type == WorkLogType.NS_MIRROR)
                             .where(WorkLog.node_id == self.config.node_id)
@@ -184,7 +183,7 @@ class ScannerView(BaseDocuWidget):
                     ui.label("CURRENT BUCKET STATUS").classes(
                         "text-xs font-bold text-slate-500 uppercase tracking-widest mb-4"
                     )
-                    mirror_status = NSMirrorStatus(
+                    mirror_status: NSMirrorStatus = NSMirrorStatus(
                         self.engine, self.config.node_id, system_scope=self.system_scope
                     )
                     mirror_status.render()
@@ -198,8 +197,10 @@ class ScannerView(BaseDocuWidget):
                     )
                     # Read settings from database for this node
                     async with self.scope() as req:
+                        from docuflow.features.folder_scanner.settings import FolderScannerSettings
+
                         fresh_scanner = await req.get(FolderScannerSystem)
-                        settings = fresh_scanner.fetch_scanner_settings()
+                        settings: FolderScannerSettings = fresh_scanner.fetch_scanner_settings()
 
                     with ui.column().classes("gap-2"):
                         with ui.row().classes("w-full justify-between items-center text-xs"):
@@ -256,5 +257,5 @@ class ScannerView(BaseDocuWidget):
                 ui.label("Real-time synchronization logs").classes(
                     "text-lg font-medium text-slate-400 ml-2 mb-2"
                 )
-                log_panel = ScanLogPanel(self.engine, system_scope=self.system_scope)
+                log_panel: ScanLogPanel = ScanLogPanel(self.engine, system_scope=self.system_scope)
                 log_panel.render()

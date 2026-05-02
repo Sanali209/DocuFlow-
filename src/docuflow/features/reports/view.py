@@ -10,7 +10,7 @@ from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
-def register_reports_view():
+def register_reports_view() -> None:
     ViewRegistry.register(
         ViewInfo(
             name="reports",
@@ -25,9 +25,11 @@ def register_reports_view():
     )
 
 
-async def reports_view_wrapper(system: ReportSystem, system_scope: Any, layout: Any, **kwargs):
+async def reports_view_wrapper(
+    system: ReportSystem, system_scope: Any, layout: Any, **kwargs: Any
+) -> None:
     """Wrapper to instantiate and render the ReportsView."""
-    view = ReportsView(system, system_scope, layout=layout)
+    view: ReportsView = ReportsView(system, system_scope, layout=layout)
     await view.render_portal()
 
 
@@ -46,7 +48,7 @@ class ReportsView(BaseDocuWidget):
         "btn_export": "w-full bg-emerald-600 font-bold py-3",
     }
 
-    def __init__(self, report_system: ReportSystem, system_scope: Any, layout: Any = None):
+    def __init__(self, report_system: ReportSystem, system_scope: Any, layout: Any = None) -> None:
         super().__init__(system_scope)
         self.report_system = report_system
         self.layout = layout
@@ -57,7 +59,7 @@ class ReportsView(BaseDocuWidget):
             "date_to": date.today().strftime("%Y-%m-%d"),
         }
 
-    async def render_portal(self):
+    async def render_portal(self) -> None:
         """
         Builds the analytics and report generation portal.
 
@@ -94,7 +96,7 @@ class ReportsView(BaseDocuWidget):
                     )
                     await self.refresh_preview_html()
 
-    def _render_header(self):
+    def _render_header(self) -> None:
         """Render the top branding and help bar."""
         with ui.row().classes("w-full items-center justify-between mb-4"):
             with ui.column().classes("gap-1"):
@@ -111,12 +113,12 @@ class ReportsView(BaseDocuWidget):
                 on_click=lambda: NotifyHelper.info("Analytics documentation is being compiled."),
             ).props("flat color=slate-500")
 
-    def _build_template_picker(self):
+    def _build_template_picker(self) -> None:
         """Logic to fetch and display available report layouts."""
         with ui.column().classes(self.UI_THEME["card_config"]):
             ui.label("1. Select Layout").classes(self.UI_THEME["label_step"])
 
-            async def load_templates():
+            async def load_templates() -> None:
                 async with self.scope() as req:
                     r_sys = await req.get(ReportSystem)
                     templates = r_sys.get_all_templates()
@@ -132,7 +134,7 @@ class ReportsView(BaseDocuWidget):
             self.template_selector = ui.select({}, label="Template Type").classes("w-full")
             ui.timer(0.1, load_templates, once=True)
 
-    def _build_parameter_inputs(self):
+    def _build_parameter_inputs(self) -> None:
         """Builds inputs for report filtering (dates, IDs, etc)."""
         with ui.column().classes(self.UI_THEME["card_config"]):
             ui.label("2. Filter Period").classes(self.UI_THEME["label_step"])
@@ -146,7 +148,7 @@ class ReportsView(BaseDocuWidget):
 
     # --- Analytics Generation Flow ---
 
-    async def refresh_preview_html(self):
+    async def refresh_preview_html(self) -> None:
         """Renders the HTML version of the report into the UI viewport."""
         if not self.html_preview_slot or not self.template_selector.value:
             return
@@ -171,7 +173,7 @@ class ReportsView(BaseDocuWidget):
             """
             NotifyHelper.success(f"Engine Failure: {e}")
 
-    async def download_pdf_document(self):
+    async def download_pdf_document(self) -> None:
         """Generates the PDF binary and triggers a client-side download."""
         try:
             async with self.scope() as req:

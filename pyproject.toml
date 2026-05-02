@@ -49,12 +49,14 @@ target-version = "py312"
 select = [
     "E", "F", "W", "I", "B", "S", "UP", "RUF", "TID",
     "ASYNC", "C4", "SIM", "PERF",
+    "ANN",  # Require type annotations for all defs
 ]
 ignore = [
     "S101", "S106",
     "RUF001", "RUF002", "RUF003",
     "ASYNC240", "ASYNC230",  # Sync file I/O is intentional in background loops
     "SIM105",  # try/except/pass is used intentionally (reservation fallback, etc.)
+    "ANN401",  # Allow typing.Any when genuinely needed
 ]
 exclude = ["._archive/**"]
 
@@ -65,6 +67,8 @@ exclude = ["._archive/**"]
 "src/docuflow/features/core/layout.py" = ["SIM117"]
 "src/docuflow/features/chat/incident_view.py" = ["SIM117"]
 "src/docuflow/features/folder_scanner/mirror.py" = ["ASYNC109"]
+"src/docuflow/application/bus/orchestrator.py" = ["UP037"]
+"src/docuflow/infrastructure/bus.py" = ["UP037"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 15

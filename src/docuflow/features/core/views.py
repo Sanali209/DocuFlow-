@@ -27,7 +27,7 @@ class ViewRegistry:
     _views: ClassVar[dict[str, ViewInfo]] = {}
 
     @classmethod
-    def register(cls, info: ViewInfo):
+    def register(cls, info: ViewInfo) -> None:
         cls._views[info.name] = info
 
     @classmethod
@@ -49,7 +49,7 @@ def register_view(
     pass_layout: bool = True,
     is_async: bool = True,
     **extra: Any,
-):
+) -> Callable[[type[Any]], type[Any]]:
     """Decorator to register a view class in the ViewRegistry.
 
     Usage:
@@ -60,8 +60,8 @@ def register_view(
     """
 
     def decorator(view_class: type[Any]) -> type[Any]:
-        async def render_fn(system, system_scope, layout):
-            view = view_class(system, system_scope, layout)
+        async def render_fn(system: Any, system_scope: Any, layout: Any) -> None:
+            view: Any = view_class(system, system_scope, layout)
             await view.render()
 
         ViewRegistry.register(

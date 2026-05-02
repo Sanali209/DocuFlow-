@@ -16,12 +16,17 @@ class PartPreview(BaseDocuWidget):
     - consistent sizing for grids and modals.
     """
 
-    def __init__(self, svg_path: str | None = None, size: str = "120px", system_scope: Any = None):
+    def __init__(
+        self,
+        svg_path: str | None = None,
+        size: str = "120px",
+        system_scope: Any = None,
+    ) -> None:
         super().__init__(system_scope)
         self.svg_path = svg_path
         self.size = size
 
-    def render(self):
+    def render(self) -> Any:
         """Render the thumbnail or placeholder."""
         if not self.svg_path:
             return self._render_placeholder()
@@ -37,7 +42,7 @@ class PartPreview(BaseDocuWidget):
         except Exception:
             return self._render_placeholder("Render Error")
 
-    def _render_placeholder(self, label: str = "No Preview"):
+    def _render_placeholder(self, label: str = "No Preview") -> None:
         """Render a consistent placeholder style."""
         with (
             ui.card()

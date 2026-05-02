@@ -27,13 +27,15 @@ class PartLibrarySystem(BaseSystem):
 
     DEFAULT_GEOMETRIC_TOLERANCE_PCT = 5.0
 
-    def __init__(self, config: Config, db_session: Session, sdk: Any = None):
+    def __init__(self, config: Config, db_session: Session, sdk: Any = None) -> None:
         super().__init__(config, db_session)
         self.sdk = sdk
 
     # --- Part Definition Logic ---
 
-    def synchronize_part_definition(self, sku: str, version: str = "A", **kwargs) -> PartLibrary:
+    def synchronize_part_definition(
+        self, sku: str, version: str = "A", **kwargs: Any
+    ) -> PartLibrary:
         """
         Idempotently creates or updates a part specification in the global library.
 
@@ -42,13 +44,13 @@ class PartLibrarySystem(BaseSystem):
                 sku="BASE-001", version="B", bbox_x=100.5, bbox_y=200.0
             )
         """
-        db = self.db_session
-        statement = select(PartLibrary).where(
+        db: Session = self.db_session
+        statement: Any = select(PartLibrary).where(
             PartLibrary.sku == sku, PartLibrary.version == version
         )
-        part_record = db.exec(statement).first()
+        part_record: PartLibrary | None = db.exec(statement).first()
 
-        now = datetime.datetime.now()
+        now: datetime.datetime = datetime.datetime.now()
         if part_record:
             # Update existing metadata
             for field, value in kwargs.items():
@@ -70,10 +72,14 @@ class PartLibrarySystem(BaseSystem):
         """
         Retrieves a specific part from the library by its unique SKU/Version identifier.
         """
-        statement = select(PartLibrary).where(
+        statement: Any = select(PartLibrary).where(
             PartLibrary.sku == sku, PartLibrary.version == version
         )
         return self.db_session.exec(statement).first()
+
+    def get_part(self, part_id: int) -> PartLibrary | None:
+        """Retrieve a part by its database ID."""
+        return self.db_session.get(PartLibrary, part_id)
 
     def search_part_library(
         self, sku_filter: str | None = None, mat_type_id: int | None = None, limit: int = 100
@@ -81,7 +87,7 @@ class PartLibrarySystem(BaseSystem):
         """
         Filters and lists parts in the global library.
         """
-        statement = select(PartLibrary)
+        statement: Any = select(PartLibrary)
         if sku_filter:
             statement = statement.where(PartLibrary.sku.contains(sku_filter))  # type: ignore[attr-defined]
         if mat_type_id:
@@ -103,15 +109,15 @@ class PartLibrarySystem(BaseSystem):
         Example:
             matches = system.find_parts_by_geometric_similarity(100.0, 200.0, 2.0)
         """
-        db = self.db_session
-        actual_tolerance = (
+        db: Session = self.db_session
+        actual_tolerance: float = (
             tolerance_percent
             if tolerance_percent is not None
             else self.DEFAULT_GEOMETRIC_TOLERANCE_PCT
         )
-        tolerance_factor = actual_tolerance / 100.0
+        tolerance_factor: float = actual_tolerance / 100.0
 
-        statement = select(PartLibrary).where(
+        statement: Any = select(PartLibrary).where(
             PartLibrary.bbox_x.between(  # type: ignore[union-attr]
                 x_dimension * (1 - tolerance_factor), x_dimension * (1 + tolerance_factor)
             ),
@@ -127,8 +133,8 @@ class PartLibrarySystem(BaseSystem):
         """
         Retrieves all production WorkItems that have utilized this part SKU.
         """
-        db = self.db_session
-        statement = (
+        db: Session = self.db_session
+        statement: Any = (
             select(WorkItem)
             .join(TaskItem, WorkItem.id == TaskItem.work_item_id)  # type: ignore[arg-type]
             .join(TaskPart, TaskItem.id == TaskPart.task_item_id)  # type: ignore[arg-type]
@@ -141,8 +147,8 @@ class PartLibrarySystem(BaseSystem):
         """
         Locates all finished ProductionUnits (pallets) containing this specific part SKU.
         """
-        db = self.db_session
-        statement = (
+        db: Session = self.db_session
+        statement: Any = (
             select(ProductionUnit)
             .join(TaskItem, ProductionUnit.task_item_id == TaskItem.id)  # type: ignore[arg-type]
             .join(TaskPart, TaskItem.id == TaskPart.task_item_id)  # type: ignore[arg-type]
@@ -164,8 +170,8 @@ class PartLibrarySystem(BaseSystem):
                 sku="A1", note_message="Sharp edges", severity_level="caution"
             )
         """
-        db = self.db_session
-        template = PartTemplate(
+        db: Session = self.db_session
+        template: PartTemplate = PartTemplate(
             part_sku=sku, message=note_message, severity=severity_level, created_by=author
         )
         db.add(template)
@@ -176,14 +182,14 @@ class PartLibrarySystem(BaseSystem):
         """
         Retrieves all linked knowledge/warning templates for a specific part SKU.
         """
-        statement = select(PartTemplate).where(PartTemplate.part_sku == sku)
+        statement: Any = select(PartTemplate).where(PartTemplate.part_sku == sku)
         return list(self.db_session.exec(statement).all())
 
-    def remove_part_template(self, template_id: int):
+    def remove_part_template(self, template_id: int) -> None:
         """
         Deletes a linked knowledge template from the library.
         """
-        template_record = self.db_session.get(PartTemplate, template_id)
+        template_record: PartTemplate | None = self.db_session.get(PartTemplate, template_id)
         if template_record:
             self.db_session.delete(template_record)
             self.db_session.flush()

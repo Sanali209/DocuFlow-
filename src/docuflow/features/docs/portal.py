@@ -1,11 +1,12 @@
 from pathlib import Path
+from typing import Any
 
 from nicegui import ui
 
 from docuflow.features.core.views import ViewInfo, ViewRegistry
 
 
-def register_docs_view():
+def register_docs_view() -> None:
     """Register the documentation portal view."""
     ViewRegistry.register(
         ViewInfo(
@@ -18,7 +19,7 @@ def register_docs_view():
     )
 
 
-def docs_view_wrapper(**kwargs):
+def docs_view_wrapper(**kwargs: Any) -> None:
     """Wrapper to instantiate and render the DocumentationPortal."""
     DocumentationPortal().build_portal()
 
@@ -29,14 +30,14 @@ class DocumentationPortal:
     Serves operational manuals and setup guides directly from the feature slice.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._docs_path = Path(__file__).parent / "content"
         self._docs_path.mkdir(exist_ok=True)
         self._ensure_default_docs()
 
-    def _ensure_default_docs(self):
+    def _ensure_default_docs(self) -> None:
         """Seeding initial support manuals if they don't exist."""
-        admin_manual = self._docs_path / "admin_guide.md"
+        admin_manual: Path = self._docs_path / "admin_guide.md"
         if not admin_manual.exists():
             admin_manual.write_text("""
 # DocuFlow System Administration Guide
@@ -54,7 +55,7 @@ Registry** are broadcast across the P2P bus using HMAC signatures.
 In case of leader failure, utilize the 'EMERGENCY STEP DOWN' command to trigger a new election.
             """)
 
-        user_manual = self._docs_path / "user_guide.md"
+        user_manual: Path = self._docs_path / "user_guide.md"
         if not user_manual.exists():
             user_manual.write_text("""
 # DocuFlow Warehouse User Manual
@@ -68,7 +69,7 @@ Your sidebar will dynamicall update based on your **Role** and the
 **Workplace** binding of the current node.
             """)
 
-    def build_portal(self):
+    def build_portal(self) -> None:
         """Constructing the interactive documentation reader."""
         ui.label("Support Portal & Documentation").classes("text-3xl font-bold text-white mb-6")
 
@@ -79,9 +80,9 @@ Your sidebar will dynamicall update based on your **Role** and the
                     "text-[10px] tracking-widest text-slate-500 font-bold mb-4"
                 )
 
-                def load_doc(name):
+                def load_doc(name: str) -> None:
                     content.clear()
-                    doc_file = self._docs_path / f"{name}.md"
+                    doc_file: Path = self._docs_path / f"{name}.md"
                     if doc_file.exists():
                         with content:
                             ui.markdown(doc_file.read_text()).classes(
@@ -96,7 +97,7 @@ Your sidebar will dynamicall update based on your **Role** and the
                 ).props("flat color=slate-300")
 
             # Content Viewer
-            content = ui.column().classes(
+            content: Any = ui.column().classes(
                 "flex-1 glass-card p-10 h-[600px] shadow-2xl overflow-y-auto bg-slate-900/10"
             )
             load_doc("admin_guide")  # Default

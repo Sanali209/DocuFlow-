@@ -16,7 +16,7 @@ class CompleteTaskDialog(BaseDocuWidget):
         on_complete: Callable[..., None],
         existing_pallets: list[dict[str, Any]] | None = None,
         system_scope: Any = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.task_id = task_id
         self.qty_produced = qty_produced
@@ -64,5 +64,5 @@ class CompleteTaskDialog(BaseDocuWidget):
         dialog.open()
 
     def _on_radio_change(self, e: Any) -> None:
-        is_new = e.value is True
+        is_new: bool = e.value is True
         self._pallet_select.set_visibility(not is_new)

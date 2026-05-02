@@ -1,18 +1,20 @@
 import json
 from collections.abc import Callable
+from typing import Any
 
 from nicegui import app as nicegui_app
 from nicegui import ui
 
+from docuflow.domain.entities.identity import User, Workplace
 from docuflow.features.admin.system import AdminSystem
 from docuflow.features.auth.system import AuthSystem
 from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
-def login_view(system_scope: Callable, node_id: str):
+def login_view(system_scope: Callable, node_id: str) -> None:
     """Providing the centralized, glassmorphic login screen for the DocuFlow node."""
-    view = LoginView(system_scope, node_id)
+    view: LoginView = LoginView(system_scope, node_id)
     view.render()
 
 
@@ -21,23 +23,27 @@ class LoginView(BaseDocuWidget):
     Providing the centralized, glassmorphic login screen for the DocuFlow node.
     """
 
-    def __init__(self, system_scope: Callable, node_id: str):
+    def __init__(self, system_scope: Callable, node_id: str) -> None:
         super().__init__(system_scope)
         self.node_id = node_id
 
-    def render(self):
+    def render(self) -> None:
         """Render the login UI."""
 
-        async def try_login():
+        async def try_login() -> None:
             async with self.scope() as req:
-                auth_system = await req.get(AuthSystem)
-                admin_system = await req.get(AdminSystem)
+                auth_system: AuthSystem = await req.get(AuthSystem)
+                admin_system: AdminSystem = await req.get(AdminSystem)
 
-                user = await auth_system.authenticate_user(username.value, password.value)
+                user: User | None = await auth_system.authenticate_user(
+                    username.value, password.value
+                )
                 if user:
                     # 1. Retrieve Workplace capabilities for this node
-                    workplace_modules = []
-                    workplace = admin_system.get_workplace_by_node_id(self.node_id)
+                    workplace_modules: list[Any] = []
+                    workplace: Workplace | None = admin_system.get_workplace_by_node_id(
+                        self.node_id
+                    )
                     if workplace:
                         try:
                             workplace_modules = json.loads(workplace.allowed_modules)
@@ -73,12 +79,12 @@ class LoginView(BaseDocuWidget):
                     )
 
                 with ui.column().classes("w-full gap-5"):
-                    username = (
+                    username: ui.input = (
                         ui.input("Username")
                         .classes("w-full")
                         .props("dark rounded standout color=teal")
                     )
-                    password = (
+                    password: ui.input = (
                         ui.input("Password", password=True)
                         .classes("w-full")
                         .props("dark rounded standout color=indigo")

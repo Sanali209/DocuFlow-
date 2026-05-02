@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlalchemy import func
+from sqlalchemy import Select, func
 from sqlmodel import Session, select
 
 from docuflow.infrastructure.config import Config
@@ -17,9 +17,9 @@ class BaseSystem:
     - They are managed by the DI container but unified via this base class.
     """
 
-    def __init__(self, config: Config, session: Session | None = None):
-        self._config = config
-        self.session = session
+    def __init__(self, config: Config, session: Session | None = None) -> None:
+        self._config: Config = config
+        self.session: Session | None = session
 
     @property
     def config(self) -> Config:
@@ -46,16 +46,16 @@ class BaseSystem:
 
     # --- CRUD Helpers ---
 
-    def find_one(self, model: type[Any], **filters) -> Any | None:
+    def find_one(self, model: type[Any], **filters: Any) -> Any | None:
         """Return the first row matching all filters, or None."""
-        stmt = select(model)
+        stmt: Select = select(model)
         for key, value in filters.items():
             stmt = stmt.where(getattr(model, key) == value)
         return self.db_session.exec(stmt).first()
 
-    def find_all(self, model: type[Any], **filters) -> list[Any]:
+    def find_all(self, model: type[Any], **filters: Any) -> list[Any]:
         """Return all rows matching the filters."""
-        stmt = select(model)
+        stmt: Select = select(model)
         for key, value in filters.items():
             stmt = stmt.where(getattr(model, key) == value)
         return list(self.db_session.exec(stmt).all())
@@ -73,9 +73,9 @@ class BaseSystem:
         self.db_session.delete(obj)
         self.db_session.commit()
 
-    def count(self, model: type[Any], **filters) -> int:
+    def count(self, model: type[Any], **filters: Any) -> int:
         """Return the number of rows matching the filters."""
-        stmt = select(func.count()).select_from(model)
+        stmt: Select = select(func.count()).select_from(model)
         for key, value in filters.items():
             stmt = stmt.where(getattr(model, key) == value)
         return self.db_session.exec(stmt).one() or 0

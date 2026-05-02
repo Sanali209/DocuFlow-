@@ -31,7 +31,7 @@ class ExplorerButton(BaseDocuWidget):
         label: str = "📂",
         tooltip: str = "Открыть в Explorer",
         system_scope: Any = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.path = Path(path) if isinstance(path, str) else path
         self.label = label

@@ -19,7 +19,7 @@ class HandoverForm(BaseDocuWidget):
         on_submit: Callable[..., Any],
         system_scope: Any,
         on_toggle: Callable[[], Any] | None = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.node_id = node_id
         self.on_submit = on_submit
@@ -29,7 +29,7 @@ class HandoverForm(BaseDocuWidget):
     def render(self) -> ui.column:
         with ui.column().classes("w-full gap-2") as container:
             with ui.row().classes("w-full justify-end"):
-                toggle_label = "Свернуть ▲" if self.is_visible else "Сдать смену ▼"
+                toggle_label: str = "Свернуть ▲" if self.is_visible else "Сдать смену ▼"
                 ui.button(toggle_label, on_click=self._toggle).props("flat color=orange")
 
             if self.is_visible:
@@ -53,8 +53,8 @@ class HandoverForm(BaseDocuWidget):
             self.on_toggle()
 
     async def _submit(self) -> None:
-        recv = self.recv_input.value.strip() if hasattr(self, "recv_input") else ""
-        note = self.note_input.value.strip() if hasattr(self, "note_input") else ""
+        recv: str = self.recv_input.value.strip() if hasattr(self, "recv_input") else ""
+        note: str = self.note_input.value.strip() if hasattr(self, "note_input") else ""
         if not recv:
             ui.notify("Укажите кому сдаете смену", type="warning")
             return

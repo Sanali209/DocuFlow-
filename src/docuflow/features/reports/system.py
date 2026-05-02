@@ -1,9 +1,9 @@
 import datetime
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from jinja2 import BaseLoader, Environment, select_autoescape
+from jinja2 import BaseLoader, Environment, Template, select_autoescape
 from loguru import logger
 from sqlmodel import Session, func, select
 
@@ -44,10 +44,10 @@ class ReportRegistry:
     In a distributed cluster, each node maintains its own registry instances.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._blocks: dict[str, ReportDataBlock] = {}
 
-    def register(self, block: ReportDataBlock):
+    def register(self, block: ReportDataBlock) -> None:
         """Add a new queryable data block to the registry."""
         self._blocks[block.name] = block
         logger.debug(f"ReportRegistry: Registered block '{block.name}'")
@@ -71,20 +71,20 @@ class BlockProxy:
 
     def __init__(
         self, registry: ReportRegistry, db_session: Session, global_params: dict[str, Any]
-    ):
+    ) -> None:
         self._registry = registry
         self._db_session = db_session
         self._global_params = global_params
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Callable[..., Any]:
         # Resolve the block from the registry
-        block = self._registry.get_block(name)
+        block: ReportDataBlock | None = self._registry.get_block(name)
         if not block:
             raise AttributeError(f"Report Engine: Unknown data block: {name}")
 
-        def _call_query(**kwargs):
+        def _call_query(**kwargs: Any) -> Any:
             # Combine template-level args with global report params
-            merged_params = {**self._global_params, **kwargs}
+            merged_params: dict[str, Any] = {**self._global_params, **kwargs}
             return block.query_fn(self._db_session, merged_params)
 
         return _call_query
@@ -104,7 +104,7 @@ class ReportSystem(BaseSystem):
     TEMPLATE_MATERIAL_AUDIT = "material_audit"
     TEMPLATE_INCIDENT_LOG = "incident_log"
 
-    def __init__(self, config: Config, session: Session, registry: ReportRegistry):
+    def __init__(self, config: Config, session: Session, registry: ReportRegistry) -> None:
         """
         Initialize the reporting engine.
 
@@ -127,7 +127,7 @@ class ReportSystem(BaseSystem):
         Example:
             html = system.generate_html_preview("shift_by_date", {"date_from": "2024-05-01"})
         """
-        report_template = self.db_session.exec(
+        report_template: ReportTemplate | None = self.db_session.exec(
             select(ReportTemplate).where(ReportTemplate.name == template_name)
         ).first()
 
@@ -135,16 +135,18 @@ class ReportSystem(BaseSystem):
             raise ValueError(f"Report Engine: Template '{template_name}' not found.")
 
         # Initialize the 'magic' proxy that calls other systems
-        proxy = BlockProxy(self.registry, self.db_session, params)
-        rendering_context = {
+        proxy: BlockProxy = BlockProxy(self.registry, self.db_session, params)
+        rendering_context: dict[str, Any] = {
             "blocks": proxy,
             "params": params,
             "current_time": datetime.datetime.now(),
             "node_id": self._config.node_id,
         }
 
-        env = Environment(loader=BaseLoader(), autoescape=select_autoescape(["html", "xml"]))
-        jinja_template = env.from_string(report_template.template_html)
+        env: Environment = Environment(
+            loader=BaseLoader(), autoescape=select_autoescape(["html", "xml"])
+        )
+        jinja_template: Template = env.from_string(report_template.template_html)
         return jinja_template.render(**rendering_context)
 
     def generate_pdf_document(self, template_name: str, params: dict[str, Any]) -> bytes:
@@ -154,7 +156,7 @@ class ReportSystem(BaseSystem):
         Example:
             pdf_bytes = system.generate_pdf_document("material_audit", {})
         """
-        html_rendered = self.generate_html_preview(template_name, params)
+        html_rendered: str = self.generate_html_preview(template_name, params)
 
         try:
             from weasyprint import HTML  # type: ignore[import-not-found]
@@ -165,19 +167,20 @@ class ReportSystem(BaseSystem):
             logger.error(f"Reports: PDF Engine failure ({e}). Falling back to HTML bytes.")
             return html_rendered.encode("utf-8")
 
-    async def on_startup(self):
+    async def on_startup(self) -> None:
         """Lifecycle: Seed default factory templates and register data blocks."""
         await self._seed_factory_templates()
         self._register_data_blocks()
 
-    async def _seed_factory_templates(self):
+    async def _seed_factory_templates(self) -> None:
         """Internal helper to populate the database with default report layouts."""
-        factory_names = [
+        factory_names: list[str] = [
             self.TEMPLATE_SHIFT_SUMMARY,
             self.TEMPLATE_MATERIAL_AUDIT,
             self.TEMPLATE_INCIDENT_LOG,
         ]
 
+        name: str
         for name in factory_names:
             existing = self.db_session.exec(
                 select(ReportTemplate).where(ReportTemplate.name == name)
@@ -190,7 +193,7 @@ class ReportSystem(BaseSystem):
 
     def _get_factory_template(self, name: str) -> ReportTemplate | None:
         """Retrieves built-in HTML layouts for initial deployment."""
-        TEMPLATES = {
+        TEMPLATES: dict[str, ReportTemplate] = {
             self.TEMPLATE_SHIFT_SUMMARY: ReportTemplate(
                 name=self.TEMPLATE_SHIFT_SUMMARY,
                 description="Daily production, downtime, and material audit summary.",
@@ -326,7 +329,7 @@ class ReportSystem(BaseSystem):
             "{% endfor %}\n"
         )
 
-    def _register_data_blocks(self):
+    def _register_data_blocks(self) -> None:
         """Register built-in report data blocks for cross-feature queries."""
         self.registry.register(
             ReportDataBlock(
@@ -365,7 +368,7 @@ class ReportSystem(BaseSystem):
         self, db_session: Session, params: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Return summary of all task groups with task counts."""
-        groups = db_session.exec(select(TaskGroup)).all()
+        groups: Sequence[TaskGroup] = db_session.exec(select(TaskGroup)).all()
         return [
             {
                 "id": g.id,
@@ -381,7 +384,7 @@ class ReportSystem(BaseSystem):
         self, db_session: Session, params: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Return current material reservations with stock context."""
-        reservations = db_session.exec(select(Reservation)).all()
+        reservations: Sequence[Reservation] = db_session.exec(select(Reservation)).all()
         return [
             {
                 "id": r.id,
@@ -403,7 +406,7 @@ class ReportSystem(BaseSystem):
         self, db_session: Session, params: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Return production units with linked work item context."""
-        units = db_session.exec(select(ProductionUnit)).all()
+        units: Sequence[ProductionUnit] = db_session.exec(select(ProductionUnit)).all()
         return [
             {
                 "label_id": u.label_id,
@@ -422,7 +425,7 @@ class ReportSystem(BaseSystem):
     ) -> dict[str, dict[str, int]]:
         """Return active/queued/done task counts per node."""
         result: dict[str, dict[str, int]] = {}
-        rows = db_session.exec(
+        rows: Sequence[Any] = db_session.exec(
             select(TaskItem.assigned_to_node, TaskItem.status, func.count(TaskItem.id))  # type: ignore[arg-type]
             .where(TaskItem.assigned_to_node.is_not(None))  # type: ignore[union-attr]
             .group_by(TaskItem.assigned_to_node, TaskItem.status)

@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from sqlmodel import Session, col, select
@@ -28,7 +29,7 @@ class SearchSystem:
     Объединяет результаты из WorkItems, PartLibrary и ProductionUnits.
     """
 
-    def __init__(self, session: Session):
+    def __init__(self, session: Session) -> None:
         self.session = session
 
     async def search(self, query: str, limit: int = 10) -> list[SearchResult]:
@@ -45,11 +46,11 @@ class SearchSystem:
         if not query or len(query) < 2:
             return []
 
-        results = []
-        pattern = f"%{query}%"
+        results: list[SearchResult] = []
+        pattern: str = f"%{query}%"
 
         # 1. Поиск по Нарядам (WorkItems)
-        items = self.session.exec(
+        items: Sequence[WorkItem] = self.session.exec(
             select(WorkItem)
             .where(
                 (col(WorkItem.folder_name).ilike(pattern))
@@ -58,6 +59,7 @@ class SearchSystem:
             .limit(limit)
         ).all()
 
+        item: WorkItem
         for item in items:
             if item.id is None:
                 continue
@@ -74,7 +76,7 @@ class SearchSystem:
             )
 
         # 2. Поиск по Деталям (PartLibrary)
-        parts = self.session.exec(
+        parts: Sequence[PartLibrary] = self.session.exec(
             select(PartLibrary)
             .where(
                 (col(PartLibrary.sku).ilike(pattern))  # type: ignore[attr-defined]
@@ -83,6 +85,7 @@ class SearchSystem:
             .limit(limit)
         ).all()
 
+        part: PartLibrary
         for part in parts:
             if part.id is None:
                 continue
@@ -99,10 +102,11 @@ class SearchSystem:
             )
 
         # 3. Поиск по Паллетам (ProductionUnits)
-        units = self.session.exec(
+        units: Sequence[ProductionUnit] = self.session.exec(
             select(ProductionUnit).where(col(ProductionUnit.label_id).ilike(pattern)).limit(limit)  # type: ignore[attr-defined]
         ).all()
 
+        unit: ProductionUnit
         for unit in units:
             if unit.id is None:
                 continue

@@ -25,7 +25,7 @@ class InfoRow:
         value: str | Any,
         value_color: str = "text-white",
         layout: str = "row",
-    ):
+    ) -> None:
         self.label = label
         self.value = str(value) if value is not None else "-"
         self.value_color = value_color
@@ -50,7 +50,7 @@ class InfoGrid:
         rows: list[tuple[str, str]] — список (label, value)
     """
 
-    def __init__(self, rows: list[tuple[str, str]] | None = None):
+    def __init__(self, rows: list[tuple[str, str]] | None = None) -> None:
         self.rows = rows or []
 
     def render(self) -> None:
@@ -73,7 +73,7 @@ class InfoPair:
         value: str
     """
 
-    def __init__(self, label: str, value: str | Any):
+    def __init__(self, label: str, value: str | Any) -> None:
         self.label = label
         self.value = value
 

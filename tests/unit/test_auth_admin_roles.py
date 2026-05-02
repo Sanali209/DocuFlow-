@@ -1,9 +1,11 @@
 from unittest.mock import MagicMock
+
 import pytest
-from sqlmodel import Session, create_engine, SQLModel
-from docuflow.infrastructure.config import Config
-from docuflow.features.auth.system import AuthSystem
+from sqlmodel import Session, SQLModel, create_engine
+
 from docuflow.features.admin.system import AdminSyncSystem
+from docuflow.features.auth.system import AuthSystem
+from docuflow.infrastructure.config import Config
 
 
 @pytest.fixture

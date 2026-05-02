@@ -35,7 +35,7 @@ class BucketPanel(BaseDocuWidget):
         node_id: str,
         user: str,
         system_scope: Any,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.node_id = node_id
         self.user = user
@@ -53,9 +53,9 @@ class BucketPanel(BaseDocuWidget):
         logger.debug(f"BucketPanel.render: node_id={self.node_id!r}")
 
         async with self.scope() as req:
-            session = await req.get(Session)
-            system = await req.get(TaskBoardSystem)
-            bucket_entries = system.get_bucket(self.node_id)
+            session: Session = await req.get(Session)
+            system: TaskBoardSystem = await req.get(TaskBoardSystem)
+            bucket_entries: list[WorkerBucketEntry] = system.get_bucket(self.node_id)
 
             if not bucket_entries:
                 self._render_empty_bucket()
@@ -65,8 +65,8 @@ class BucketPanel(BaseDocuWidget):
             batches = self._group_by_task_group(session, bucket_entries)
 
             # Разделяем на Активные (есть хоть одна задача IN_PROGRESS) и Предстоящие
-            active_batches = {}
-            upcoming_batches = {}
+            active_batches: dict[str, list[TaskItem]] = {}
+            upcoming_batches: dict[str, list[TaskItem]] = {}
 
             for bid, tasks in batches.items():
                 if any(t.status == TaskItemStatus.IN_PROGRESS for t in tasks):
@@ -103,14 +103,14 @@ class BucketPanel(BaseDocuWidget):
         is_active: bool = False,
     ) -> None:
         """Вспомогательный метод для рендера карточки группы задач."""
-        drift = self._calculate_batch_drift(tasks)
+        drift: float = self._calculate_batch_drift(tasks)
 
         # Ленивый импорт
         from .batch_card import BatchCard
 
         with ui.column().classes("w-full relative"):
             # Добавляем визуальный акцент для активного батча
-            card_classes = (
+            card_classes: str = (
                 "border-l-8 border-orange-500 shadow-xl scale-[1.02]" if is_active else ""
             )
 
@@ -154,10 +154,13 @@ class BucketPanel(BaseDocuWidget):
         """
         batches: dict[str, list[TaskItem]] = {}
 
+        entry: WorkerBucketEntry
         for entry in entries:
-            task = session.get(TaskItem, entry.task_item_id)
+            task: TaskItem | None = session.get(TaskItem, entry.task_item_id)
             if task:
-                group_id = str(task.task_group_id) if task.task_group_id else f"single_{task.id}"
+                group_id: str = (
+                    str(task.task_group_id) if task.task_group_id else f"single_{task.id}"
+                )
                 if group_id not in batches:
                     batches[group_id] = []
                 batches[group_id].append(task)
@@ -166,8 +169,8 @@ class BucketPanel(BaseDocuWidget):
 
     def _calculate_batch_drift(self, tasks: list[TaskItem]) -> float:
         """Вычисляет drift для батча."""
-        total_estimated = sum(t.estimated_minutes or 0 for t in tasks)
-        total_actual = sum(t.actual_minutes or 0 for t in tasks)
+        total_estimated: int = sum(t.estimated_minutes or 0 for t in tasks)
+        total_actual: int = sum(t.actual_minutes or 0 for t in tasks)
 
         if total_estimated == 0:
             return 0.0
@@ -179,9 +182,9 @@ class BucketPanel(BaseDocuWidget):
     def _on_start_task(self, task_id: int) -> None:
         """Обработчик кнопки 'Начать'."""
 
-        async def do_start():
+        async def do_start() -> None:
             async with self.scope() as req:
-                system = await req.get(TaskBoardSystem)
+                system: TaskBoardSystem = await req.get(TaskBoardSystem)
                 system.start_task(task_id)
             self.render.refresh()
 
@@ -191,7 +194,7 @@ class BucketPanel(BaseDocuWidget):
         """Обработчик кнопки 'Пауза' — открывает диалог причины."""
         from .bucket_panel_dialogs import PauseDialog
 
-        async def show():
+        async def show() -> None:
             await PauseDialog(
                 task_id,
                 on_success=self.render.refresh,
@@ -203,9 +206,9 @@ class BucketPanel(BaseDocuWidget):
     def _on_resume_task(self, task_id: int) -> None:
         """Обработчик кнопки 'Возобновить'."""
 
-        async def do_resume():
+        async def do_resume() -> None:
             async with self.scope() as req:
-                system = await req.get(TaskBoardSystem)
+                system: TaskBoardSystem = await req.get(TaskBoardSystem)
                 system.resume_task(task_id)
             await self.render.refresh()
 
@@ -215,7 +218,7 @@ class BucketPanel(BaseDocuWidget):
         """Обработчик кнопки 'Завершить' — открывает диалог."""
         from .bucket_panel_dialogs import CompleteDialog
 
-        async def show():
+        async def show() -> None:
             await CompleteDialog(
                 task_id,
                 on_success=self.render.refresh,
@@ -228,7 +231,7 @@ class BucketPanel(BaseDocuWidget):
         """Обработчик кнопки 'Заблокировать' — открывает диалог причины."""
         from .bucket_panel_dialogs import BlockDialog
 
-        async def show():
+        async def show() -> None:
             await BlockDialog(
                 task_id,
                 on_success=self.render.refresh,

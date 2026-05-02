@@ -21,7 +21,7 @@ class HierarchyRow(BaseDocuWidget):
         on_toggle: Callable[[bool], None] | None = None,
         indent: int = 0,
         system_scope: Any = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.icon = icon
         self.title = title

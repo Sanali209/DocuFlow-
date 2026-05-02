@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 
 from sqlmodel import Field, Relationship
 
@@ -58,7 +57,7 @@ class User(BaseEntity, table=True):
     allowed_workplaces: str = Field(default="[]")  # JSON list of Workplace IDs
 
     # Relation: User belongs to a Role
-    role: Optional["Role"] = Relationship(back_populates="users")
+    role: Role = Relationship(back_populates="users")
 
     @property
     def workplace_ids(self) -> list[int]:

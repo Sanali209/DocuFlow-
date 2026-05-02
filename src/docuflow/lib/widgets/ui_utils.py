@@ -13,14 +13,14 @@ from nicegui import ui
 class LoadingSpinner:
     """Simple loading spinner with optional text."""
 
-    def __init__(self, text: str = "Loading...", size: str = "md"):
+    def __init__(self, text: str = "Loading...", size: str = "md") -> None:
         self.text = text
         self.size = size
 
     def render(self) -> None:
         """Renders loading state."""
-        size_map = {"sm": "24px", "md": "48px", "lg": "64px"}
-        icon_size = size_map.get(self.size, size_map["md"])
+        size_map: dict[str, str] = {"sm": "24px", "md": "48px", "lg": "64px"}
+        icon_size: str = size_map.get(self.size, size_map["md"])
 
         with ui.column().classes("items-center justify-center gap-4 p-8"):
             ui.spinner(size=icon_size, color="teal").classes("")
@@ -36,7 +36,7 @@ class LoadingSkeleton:
         lines: int = 3,
         line_class: str = "h-4 rounded",
         gap: str = "gap-2",
-    ):
+    ) -> None:
         self.lines = lines
         self.line_class = line_class
         self.gap = gap
@@ -45,7 +45,7 @@ class LoadingSkeleton:
         """Renders skeleton animation."""
         with ui.column().classes(f"w-full {self.gap}"):
             for i in range(self.lines):
-                width = "w-full" if i == 0 else f"w-{(100 - (i * 15))}%"
+                width: str = "w-full" if i == 0 else f"w-{(100 - (i * 15))}%"
                 ui.element("div").classes(
                     f"{self.line_class} {width} bg-slate-700/50 animate-pulse"
                 )
@@ -54,7 +54,7 @@ class LoadingSkeleton:
 class SkeletonCard:
     """Skeleton card for dashboard KPIs."""
 
-    def __init__(self, label: str = ""):
+    def __init__(self, label: str = "") -> None:
         self.label = label
 
     def render(self) -> None:
@@ -76,7 +76,7 @@ class EmptyState:
         subtitle: str = "",
         action_label: str = "",
         on_action: Callable | None = None,
-    ):
+    ) -> None:
         self.icon = icon
         self.title = title
         self.subtitle = subtitle
@@ -103,7 +103,7 @@ class ErrorState:
         self,
         message: str = "Error loading data",
         on_retry: Callable | None = None,
-    ):
+    ) -> None:
         self.message = message
         self.on_retry = on_retry
 
@@ -130,7 +130,7 @@ class ConfirmDialog:
         confirm_color: str = "red",
         on_confirm: Callable | None = None,
         on_cancel: Callable | None = None,
-    ):
+    ) -> None:
         self.title = title
         self.message = message
         self.confirm_label = confirm_label
@@ -192,8 +192,9 @@ def get_kpi_color(value: float, thresholds: dict[float, str] | None = None) -> s
     - < 20: orange (warning)
     - >= 20: red (critical)
     """
-    t = thresholds or {0: "emerald", 5: "orange", 20: "red"}
+    t: dict[float, str] = thresholds or {0: "emerald", 5: "orange", 20: "red"}
     # Sort keys descending to check from highest threshold
+    limit: float
     for limit in sorted(t.keys(), reverse=True):
         if value >= limit:
             return t[limit]
@@ -202,7 +203,7 @@ def get_kpi_color(value: float, thresholds: dict[float, str] | None = None) -> s
 
 def get_node_status_color(status: str) -> str:
     """Returns a Quasar color string for node status (Cyrillic)."""
-    colors = {
+    colors: dict[str, str] = {
         "Свободен": "gray",
         "Режет": "green",
         "На паузе": "orange",
@@ -213,7 +214,7 @@ def get_node_status_color(status: str) -> str:
 
 def get_action_color(action: str) -> str:
     """Returns a Quasar color string for standard action buttons."""
-    colors = {
+    colors: dict[str, str] = {
         "start": "green",
         "pause": "orange",
         "complete": "green",

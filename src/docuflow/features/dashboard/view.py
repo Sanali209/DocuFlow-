@@ -12,7 +12,7 @@ from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.activity_stream import ActivityStream
 
 
-def register_dashboard_view():
+def register_dashboard_view() -> None:
     """Register the dashboard view in the global registry."""
     ViewRegistry.register(
         ViewInfo(
@@ -30,9 +30,9 @@ def register_dashboard_view():
 
 async def dashboard_view_wrapper(
     orchestrator: P2POrchestrator, admin_system: AdminSystem, system_scope: Callable, layout: Any
-):
+) -> None:
     """Wrapper to instantiate and render the DashboardView."""
-    view = DashboardView(orchestrator, admin_system, system_scope, layout)
+    view: DashboardView = DashboardView(orchestrator, admin_system, system_scope, layout)
     await view.render()
 
 
@@ -45,25 +45,26 @@ class DashboardView(BaseDocuWidget):
         admin_system: AdminSystem,
         system_scope: Callable,
         layout: Any,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.orchestrator = orchestrator
         self.admin_system = admin_system
         self.layout = layout
 
-    async def render(self):
+    async def render(self) -> None:
         """Render the dashboard UI."""
         # 0. FETCH DATA
+        req: Any
         async with self.scope() as req:
-            fresh_admin = await req.get(AdminSystem)
-            nodes = fresh_admin.get_cluster_nodes()
-            analytics = await req.get(AnalyticsSystem)
-            metrics = analytics.get_cluster_overview_metrics()
+            fresh_admin: AdminSystem = await req.get(AdminSystem)
+            nodes: list[dict[str, Any]] = fresh_admin.get_cluster_nodes()
+            analytics: AnalyticsSystem = await req.get(AnalyticsSystem)
+            metrics: dict[str, Any] = analytics.get_cluster_overview_metrics()
 
-            wi_count = metrics["work_item_count"]
-            incident_count = metrics["incident_count"]
-            pallet_count = metrics["stock_pallet_count"]
-            session = await req.get(Session)
+            wi_count: Any = metrics["work_item_count"]
+            incident_count: Any = metrics["incident_count"]
+            pallet_count: Any = metrics["stock_pallet_count"]
+            session: Session = await req.get(Session)
 
         ui.label("Cluster Management Hub").classes("text-3xl font-bold text-white mb-4")
 
@@ -92,7 +93,7 @@ class DashboardView(BaseDocuWidget):
                 )
 
             # 3. CRITICAL ALERTS
-            alert_color = "red" if incident_count > 0 else "teal"
+            alert_color: str = "red" if incident_count > 0 else "teal"
             with ui.column().classes("flex-1 p-6 rounded-2xl card"):
                 ui.label("ACTIVE INCIDENTS").classes(
                     "text-slate-400 font-bold text-xs tracking-tighter"
@@ -116,8 +117,10 @@ class DashboardView(BaseDocuWidget):
                     ui.label("CURRENT MASTER").classes(
                         "text-slate-400 font-bold text-xs tracking-tighter mb-4"
                     )
-                    leader_node = next((n for n in nodes if n.get("is_leader")), None)
-                    leader_id = (
+                    leader_node: dict[str, Any] | None = next(
+                        (n for n in nodes if n.get("is_leader")), None
+                    )
+                    leader_id: str = (
                         leader_node.get("node_id", "ELECTION...") if leader_node else "ELECTION..."
                     )
 

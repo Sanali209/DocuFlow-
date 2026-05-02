@@ -51,7 +51,7 @@ class P2PMessage(BaseModel):
         # We exclude signature for hashing.
         # Using model_dump_json ensures stable ordering if configured,
         # but for simplicity, we'll use a controlled dictionary exclusion.
-        data = self.model_dump(exclude={"signature"})
+        data: dict[str, Any] = self.model_dump(exclude={"signature"})
         # Sort keys to ensure consistent hashing across different platforms/versions
         import json
 

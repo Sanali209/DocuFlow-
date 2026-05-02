@@ -47,7 +47,7 @@ class HierarchyTable(BaseDocuWidget):
         view_name: str,
         system_scope: Any,
         filters: dict | None = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.user_id = user_id
         self.view_name = view_name
@@ -57,14 +57,14 @@ class HierarchyTable(BaseDocuWidget):
     async def render(self) -> None:
         with ui.column().classes("w-full gap-2"):
             async with self.scope() as req:
-                session = await req.get(Session)
-                tb_system = await req.get(TaskBoardSystem)
+                session: Session = await req.get(Session)
+                tb_system: TaskBoardSystem = await req.get(TaskBoardSystem)
 
                 if self.filters.get("project_id"):
-                    project = session.get(Project, self.filters["project_id"])
-                    projects = [project] if project else []
+                    project: Project | None = session.get(Project, self.filters["project_id"])
+                    projects: list[Project] = [project] if project else []
                 else:
-                    projects = list(session.exec(select(Project)).all())
+                    projects: list[Project] = list(session.exec(select(Project)).all())
 
                 for project in projects:
                     self._render_project(session, tb_system, project)
@@ -72,23 +72,23 @@ class HierarchyTable(BaseDocuWidget):
     def _render_project(
         self, session: Session, tb_system: TaskBoardSystem, project: Project
     ) -> None:
-        work_items = list(
+        work_items: list[WorkItem] = list(
             session.exec(select(WorkItem).where(WorkItem.project_id == project.id)).all()
         )
 
-        is_expanded = self._get_expansion_state(session, "project", project.id or 0)
+        is_expanded: bool = self._get_expansion_state(session, "project", project.id or 0)
 
-        project_id = project.id or 0
+        project_id: int = project.id or 0
 
         def toggle(expanded: bool) -> None:
             async def _save() -> None:
                 async with self.scope() as req:
-                    s = await req.get(Session)
+                    s: Session = await req.get(Session)
                     self._save_expansion_state(s, "project", project_id, expanded)
 
             asyncio.get_event_loop().create_task(_save())
 
-        row = HierarchyRow(
+        row: HierarchyRow = HierarchyRow(
             icon="folder",
             title=project.name,
             badges=[(f"{len(work_items)} нарядов", "blue")],
@@ -107,10 +107,10 @@ class HierarchyTable(BaseDocuWidget):
     def _render_workitem(
         self, session: Session, tb_system: TaskBoardSystem, wi: WorkItem, indent: int
     ) -> None:
-        task_groups = list(
+        task_groups: list[TaskGroup] = list(
             session.exec(select(TaskGroup).where(TaskGroup.work_item_id == wi.id)).all()
         )
-        ungrouped = list(
+        ungrouped: list[TaskItem] = list(
             session.exec(
                 select(TaskItem).where(
                     TaskItem.work_item_id == wi.id,
@@ -119,18 +119,18 @@ class HierarchyTable(BaseDocuWidget):
             ).all()
         )
 
-        total_tasks = sum(len(g.tasks) for g in task_groups) + len(ungrouped)
-        is_expanded = self._get_expansion_state(session, "workitem", wi.id or 0)
+        total_tasks: int = sum(len(g.tasks) for g in task_groups) + len(ungrouped)
+        is_expanded: bool = self._get_expansion_state(session, "workitem", wi.id or 0)
 
         def toggle(expanded: bool) -> None:
             async def _save() -> None:
                 async with self.scope() as req:
-                    s = await req.get(Session)
+                    s: Session = await req.get(Session)
                     self._save_expansion_state(s, "workitem", wi.id or 0, expanded)
 
             asyncio.get_event_loop().create_task(_save())
 
-        row = HierarchyRow(
+        row: HierarchyRow = HierarchyRow(
             icon="inventory_2",
             title=wi.folder_name,
             badges=[(wi.status.value, "gray"), (f"{total_tasks} задач", "teal")],
@@ -147,8 +147,10 @@ class HierarchyTable(BaseDocuWidget):
         row.render()
 
         if row.is_expanded:
-            all_projects = list(session.exec(select(Project)).all())
-            project_options = {p.id: p.name for p in all_projects if p.id != wi.project_id}
+            all_projects: list[Project] = list(session.exec(select(Project)).all())
+            project_options: dict[int | None, str] = {
+                p.id: p.name for p in all_projects if p.id != wi.project_id
+            }
 
             def do_move(project_id: int) -> None:
                 if project_id is None:
@@ -178,18 +180,20 @@ class HierarchyTable(BaseDocuWidget):
         self, session: Session, tb_system: TaskBoardSystem, tg: TaskGroup
     ) -> str:
         """Build the line2 metadata string for a TaskGroup row."""
-        total_sheets = sum(t.sheet_qty or 0 for t in tg.tasks)
-        done_sheets = sum(t.sheets_done or 0 for t in tg.tasks)
+        total_sheets: int = sum(t.sheet_qty or 0 for t in tg.tasks)
+        done_sheets: int = sum(t.sheets_done or 0 for t in tg.tasks)
 
-        line2 = f"Листов: {done_sheets}/{total_sheets}"
-        done_tasks = [t for t in tg.tasks if t.status == TaskItemStatus.DONE and t.id is not None]
+        line2: str = f"Листов: {done_sheets}/{total_sheets}"
+        done_tasks: list[TaskItem] = [
+            t for t in tg.tasks if t.status == TaskItemStatus.DONE and t.id is not None
+        ]
         if done_tasks:
             pallets: list[ProductionUnit] = []
             for t in done_tasks:
                 if t.id is not None:
                     pallets.extend(tb_system.find_pallets_by_task(t.id, session))
             if pallets:
-                pallet_details = " | ".join(
+                pallet_details: str = " | ".join(
                     f"📦 {p.label_id} ({p.qty_produced} шт)" for p in pallets
                 )
                 line2 += f" | {pallet_details}"
@@ -198,23 +202,23 @@ class HierarchyTable(BaseDocuWidget):
     def _render_taskgroup(
         self, session: Session, tb_system: TaskBoardSystem, tg: TaskGroup, indent: int
     ) -> None:
-        tg_service = TaskGroupService(session)
-        status = tg_service.get_group_status(tg)
-        status_color = STATUS_COLORS.get(status, "gray")
+        tg_service: TaskGroupService = TaskGroupService(session)
+        status: str = tg_service.get_group_status(tg)
+        status_color: str = STATUS_COLORS.get(status, "gray")
 
-        line2 = self._build_taskgroup_line2(session, tb_system, tg)
+        line2: str = self._build_taskgroup_line2(session, tb_system, tg)
 
-        is_expanded = self._get_expansion_state(session, "taskgroup", tg.id or 0)
+        is_expanded: bool = self._get_expansion_state(session, "taskgroup", tg.id or 0)
 
         def toggle(expanded: bool) -> None:
             async def _save() -> None:
                 async with self.scope() as req:
-                    s = await req.get(Session)
+                    s: Session = await req.get(Session)
                     self._save_expansion_state(s, "taskgroup", tg.id or 0, expanded)
 
             asyncio.get_event_loop().create_task(_save())
 
-        row = HierarchyRow(
+        row: HierarchyRow = HierarchyRow(
             icon="layers",
             title=tg.name or f"Группа {tg.id}",
             badges=[(f"{len(tg.tasks)} задач", status_color), (status, status_color)],
@@ -227,7 +231,7 @@ class HierarchyTable(BaseDocuWidget):
         row.render()
 
         if row.is_expanded:
-            nodes = ["node1", "node2", "node3"]  # TODO: load from config
+            nodes: list[str] = ["node1", "node2", "node3"]  # TODO: load from config
 
             def do_assign(node_id: str) -> None:
                 if node_id is None:
@@ -250,7 +254,7 @@ class HierarchyTable(BaseDocuWidget):
 
     def _get_expansion_state(self, session: Session, entity_type: str, entity_id: int) -> bool:
         """Load expansion state from ViewState or default to True."""
-        vs = session.exec(
+        vs: ViewState | None = session.exec(
             select(ViewState).where(
                 ViewState.user_id == self.user_id,
                 ViewState.view_name == self.view_name,
@@ -264,7 +268,7 @@ class HierarchyTable(BaseDocuWidget):
         self, session: Session, entity_type: str, entity_id: int, is_expanded: bool
     ) -> None:
         """Persist expansion state to ViewState."""
-        vs = session.exec(
+        vs: ViewState | None = session.exec(
             select(ViewState).where(
                 ViewState.user_id == self.user_id,
                 ViewState.view_name == self.view_name,
@@ -288,11 +292,11 @@ class HierarchyTable(BaseDocuWidget):
     def _render_taskitem(
         self, session: Session, tb_system: TaskBoardSystem, task: TaskItem, indent: int
     ) -> None:
-        progress_str = f"{task.sheets_done}/{task.sheet_qty} листов"
+        progress_str: str = f"{task.sheets_done}/{task.sheet_qty} листов"
 
-        status_color = TASK_STATUS_COLORS.get(task.status, "gray")
+        status_color: str = TASK_STATUS_COLORS.get(task.status, "gray")
 
-        actions = []
+        actions: list[tuple[str, Any]] = []
         if task.id is None:
             return
         task_id: int = task.id
@@ -303,14 +307,14 @@ class HierarchyTable(BaseDocuWidget):
             actions.append(("⏸ Пауза", partial(tb_system.pause_task, task_id, "Оператор")))
 
             def _open_complete_dialog() -> None:
-                existing = tb_system.find_pallets_by_task(task_id, session)
-                pallet_options = [
+                existing: list[ProductionUnit] = tb_system.find_pallets_by_task(task_id, session)
+                pallet_options: list[dict[str, Any]] = [
                     {"id": p.id, "label": p.label_id} for p in existing if p.id is not None
                 ]
 
                 def _on_complete(**kwargs: Any) -> None:
-                    create_new = kwargs.get("create_new", True)
-                    selected_id = kwargs.get("selected_pallet_id")
+                    create_new: bool = kwargs.get("create_new", True)
+                    selected_id: int | None = kwargs.get("selected_pallet_id")
                     if create_new:
                         tb_system.complete_task(
                             task_id, sheets_done=task.sheet_qty or 0, create_pallet=True
@@ -340,17 +344,17 @@ class HierarchyTable(BaseDocuWidget):
                 )
             )
 
-        line2 = (
+        line2: str = (
             f"{progress_str} | Узел: {task.assigned_to_node or '-'} | "
             f"Материал: {task.mat_type_id or '-'}"
         )
         if task.status == TaskItemStatus.DONE:
-            pallets = tb_system.find_pallets_by_task(task_id, session)
+            pallets: list[ProductionUnit] = tb_system.find_pallets_by_task(task_id, session)
             if pallets:
-                pallet_labels = ", ".join(p.label_id for p in pallets)
+                pallet_labels: str = ", ".join(p.label_id for p in pallets)
                 line2 += f" | 📦 Паллеты: {pallet_labels}"
 
-        row = HierarchyRow(
+        row: HierarchyRow = HierarchyRow(
             icon="description",
             title=task.file_name,
             badges=[(task.status.value, status_color)],
@@ -362,7 +366,9 @@ class HierarchyTable(BaseDocuWidget):
         row.render()
 
         # Show parts with deeplink to Part Library
-        parts = list(session.exec(select(TaskPart).where(TaskPart.task_item_id == task_id)).all())
+        parts: list[TaskPart] = list(
+            session.exec(select(TaskPart).where(TaskPart.task_item_id == task_id)).all()
+        )
         if parts:
             with ui.row().classes(f"gap-2 items-center ml-{12 + indent * 4} mb-1"):
                 ui.label("Детали:").classes("text-xs text-slate-400")

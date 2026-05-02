@@ -29,7 +29,7 @@ class PrimaryBtn:
         on_click: Callable | None = None,
         size: str = "md",
         disabled: bool = False,
-    ):
+    ) -> None:
         self.text = text
         self.icon = icon
         self.on_click = on_click
@@ -38,13 +38,15 @@ class PrimaryBtn:
 
     def render(self) -> ui.button:
         """Рендерит primary кнопку."""
-        size_map = {
+        size_map: dict[str, str] = {
             "sm": "text-sm px-3 py-1",
             "md": "text-base px-4 py-2",
             "lg": "text-lg px-6 py-3",
         }
 
-        classes = f"btn-primary {size_map.get(self.size, size_map['md'])} rounded-lg font-semibold"
+        classes: str = (
+            f"btn-primary {size_map.get(self.size, size_map['md'])} rounded-lg font-semibold"
+        )
 
         if self.icon:
             return (
@@ -76,7 +78,7 @@ class SecondaryBtn:
         icon: str = "",
         on_click: Callable | None = None,
         size: str = "md",
-    ):
+    ) -> None:
         self.text = text
         self.icon = icon
         self.on_click = on_click
@@ -84,13 +86,13 @@ class SecondaryBtn:
 
     def render(self) -> ui.button:
         """Рендерит secondary кнопку."""
-        size_map = {
+        size_map: dict[str, str] = {
             "sm": "text-sm px-3 py-1",
             "md": "text-base px-4 py-2",
             "lg": "text-lg px-6 py-3",
         }
 
-        classes = (
+        classes: str = (
             f"btn-secondary {size_map.get(self.size, size_map['md'])} rounded-lg font-semibold"
         )
 
@@ -122,14 +124,14 @@ class GhostBtn:
         text: str = "",
         icon: str = "",
         on_click: Callable | None = None,
-    ):
+    ) -> None:
         self.text = text
         self.icon = icon
         self.on_click = on_click
 
     def render(self) -> ui.button:
         """Renders ghost button."""
-        classes = "text-slate-300 hover:text-white hover:bg-white/5 px-3 py-2 rounded-lg"
+        classes: str = "text-slate-300 hover:text-white hover:bg-white/5 px-3 py-2 rounded-lg"
 
         if self.icon:
             return (

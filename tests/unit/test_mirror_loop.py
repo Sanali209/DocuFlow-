@@ -1,12 +1,13 @@
 import asyncio
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 
 @pytest.fixture
 def mirror_service(tmp_path):
-    from docuflow.infrastructure.config import Config
     from docuflow.features.folder_scanner.mirror import NSMirrorService
+    from docuflow.infrastructure.config import Config
     config = Config(node_id="TEST", shared_path=str(tmp_path))
     engine = MagicMock()
     sdk = AsyncMock()

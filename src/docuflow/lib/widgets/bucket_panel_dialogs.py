@@ -20,7 +20,7 @@ class PauseDialog(BaseDocuWidget):
         task_id: int,
         on_success: Any = None,
         system_scope: Any = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.task_id = task_id
         self.on_success = on_success
@@ -52,13 +52,15 @@ class PauseDialog(BaseDocuWidget):
 
         dialog.open()
 
-    def _confirm(self, reason: str, is_mat_issue: bool, is_breakdown: bool, dialog) -> None:
+    def _confirm(
+        self, reason: str, is_mat_issue: bool, is_breakdown: bool, dialog: ui.dialog
+    ) -> None:
         """Подтверждает паузу и сообщает об инциденте если нужно."""
         if not reason:
             NotifyHelper.warning("Укажите причину паузы")
             return
 
-        async def do_confirm():
+        async def do_confirm() -> None:
             async with self.scope() as req:
                 system = await req.get(TaskBoardSystem)
                 system.pause_task(self.task_id, reason)
@@ -87,7 +89,7 @@ class CompleteDialog(BaseDocuWidget):
         task_id: int,
         on_success: Any = None,
         system_scope: Any = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.task_id = task_id
         self.on_success = on_success
@@ -135,10 +137,12 @@ class CompleteDialog(BaseDocuWidget):
 
             dialog.open()
 
-    def _confirm(self, sheets_done: int, qty_produced: int, create_pallet: bool, dialog) -> None:
+    def _confirm(
+        self, sheets_done: int, qty_produced: int, create_pallet: bool, dialog: ui.dialog
+    ) -> None:
         """Подтверждает завершение."""
 
-        async def do_confirm():
+        async def do_confirm() -> None:
             async with self.scope() as req:
                 system = await req.get(TaskBoardSystem)
                 system.complete_task(
@@ -162,7 +166,7 @@ class BlockDialog(BaseDocuWidget):
         task_id: int,
         on_success: Any = None,
         system_scope: Any = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.task_id = task_id
         self.on_success = on_success
@@ -186,13 +190,13 @@ class BlockDialog(BaseDocuWidget):
 
         dialog.open()
 
-    def _confirm(self, reason: str, dialog) -> None:
+    def _confirm(self, reason: str, dialog: ui.dialog) -> None:
         """Подтверждает блокировку."""
         if not reason:
             NotifyHelper.warning("Укажите причину блокировки")
             return
 
-        async def do_confirm():
+        async def do_confirm() -> None:
             async with self.scope() as req:
                 system = await req.get(TaskBoardSystem)
                 system.block_task(self.task_id, reason)

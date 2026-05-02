@@ -1,5 +1,6 @@
 """TaskGroupService — manages TaskGroup lifecycle, replaces BatchEngine."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from sqlmodel import Session, select
@@ -29,17 +30,18 @@ class TaskGroupService:
 
     def auto_group_by_material(self, work_item_id: int) -> list[TaskGroup]:
         """Group tasks by material+thickness."""
-        tasks = list(
+        tasks: list[TaskItem] = list(
             self.session.exec(select(TaskItem).where(TaskItem.work_item_id == work_item_id)).all()
         )
 
         # Group by (mat_type_id, thickness)
         groups: dict[tuple[int | None, float | None], list[TaskItem]] = {}
+        task: TaskItem
         for task in tasks:
             key = (task.mat_type_id, task.thickness)
             groups.setdefault(key, []).append(task)
 
-        result = []
+        result: list[TaskGroup] = []
         for (mat_id, thickness), task_list in groups.items():
             name = self._generate_group_name(mat_id, thickness)
             tg = TaskGroup(
@@ -68,7 +70,8 @@ class TaskGroupService:
 
     def create_manual_group(self, task_ids: list[int], name: str | None = None) -> TaskGroup:
         """Create manual group from task IDs."""
-        tasks = []
+        tasks: list[TaskItem] = []
+        tid: int
         for tid in task_ids:
             task = self.session.get(TaskItem, tid)
             if task:
@@ -77,7 +80,7 @@ class TaskGroupService:
         if not tasks:
             raise ValueError("No tasks found")
 
-        tg = TaskGroup(
+        tg: TaskGroup = TaskGroup(
             name=name or f"Group ({len(tasks)} tasks)",
             work_item_id=tasks[0].work_item_id,
             grouping_rule="manual",
@@ -85,16 +88,17 @@ class TaskGroupService:
         self.session.add(tg)
         self.session.flush()
 
-        for task in tasks:
-            task.task_group_id = tg.id
-            self.session.add(task)
+        t: TaskItem
+        for t in tasks:
+            t.task_group_id = tg.id
+            self.session.add(t)
 
         self.session.commit()
         return tg
 
     def get_group_status(self, group: TaskGroup) -> str:
         """Aggregate status from tasks."""
-        statuses = {t.status for t in group.tasks}
+        statuses: set[TaskItemStatus] = {t.status for t in group.tasks}
         if TaskItemStatus.IN_PROGRESS in statuses:
             return "in_progress"
         if statuses == {TaskItemStatus.DONE}:
@@ -104,10 +108,10 @@ class TaskGroupService:
         return "mixed"
 
     def move_task_to_group(self, task_id: int, group_id: int) -> None:
-        task = self.session.get(TaskItem, task_id)
+        task: TaskItem | None = self.session.get(TaskItem, task_id)
         if not task:
             raise ValueError(f"Task {task_id} not found")
-        group = self.session.get(TaskGroup, group_id)
+        group: TaskGroup | None = self.session.get(TaskGroup, group_id)
         if not group:
             raise ValueError(f"Group {group_id} not found")
         task.task_group_id = group_id
@@ -115,11 +119,11 @@ class TaskGroupService:
         self.session.commit()
 
     def split_group(self, group_id: int, task_ids_to_separate: list[int]) -> TaskGroup:
-        original = self.session.get(TaskGroup, group_id)
+        original: TaskGroup | None = self.session.get(TaskGroup, group_id)
         if not original:
             raise ValueError(f"Group {group_id} not found")
 
-        new_group = TaskGroup(
+        new_group: TaskGroup = TaskGroup(
             name=f"{original.name} (split)",
             work_item_id=original.work_item_id,
             grouping_rule="manual",
@@ -127,6 +131,7 @@ class TaskGroupService:
         self.session.add(new_group)
         self.session.flush()
 
+        tid: int
         for tid in task_ids_to_separate:
             task = self.session.get(TaskItem, tid)
             if task and task.task_group_id == group_id:
@@ -137,7 +142,8 @@ class TaskGroupService:
         return new_group
 
     def merge_groups(self, group_ids: list[int]) -> TaskGroup:
-        groups = []
+        groups: list[TaskGroup] = []
+        gid: int
         for gid in group_ids:
             g = self.session.get(TaskGroup, gid)
             if g:
@@ -146,7 +152,7 @@ class TaskGroupService:
         if len(groups) < 2:
             raise ValueError("Need at least 2 groups to merge")
 
-        merged = TaskGroup(
+        merged: TaskGroup = TaskGroup(
             name=f"Merged ({len(groups)} groups)",
             work_item_id=groups[0].work_item_id,
             grouping_rule="manual",
@@ -154,8 +160,9 @@ class TaskGroupService:
         self.session.add(merged)
         self.session.flush()
 
-        for g in groups:
-            for task in g.tasks:
+        grp: TaskGroup
+        for grp in groups:
+            for task in grp.tasks:
                 task.task_group_id = merged.id
                 self.session.add(task)
 
@@ -168,7 +175,7 @@ class TaskGroupService:
 
         from sqlalchemy.orm import selectinload
 
-        in_stock = self.session.exec(
+        in_stock: Sequence[ProductionUnit] = self.session.exec(
             select(ProductionUnit)
             .where(ProductionUnit.is_stock.is_(True))  # type: ignore[attr-defined]
             .options(selectinload(ProductionUnit.task_item).selectinload(TaskItem.parts))  # type: ignore[arg-type]
@@ -176,11 +183,13 @@ class TaskGroupService:
 
         stock_map: dict[str, list[ProductionUnit]] = {}
 
+        u: ProductionUnit
         for u in in_stock:
             if u.task_item:
                 for tp in u.task_item.parts:
                     stock_map.setdefault(tp.part_sku, []).append(u)
 
+        task: TaskItem
         for task in tasks:
             for part in task.parts:
                 matching_units = stock_map.get(part.part_sku, [])

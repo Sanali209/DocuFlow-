@@ -2,7 +2,7 @@ from loguru import logger
 from rich.logging import RichHandler
 
 
-def setup_logging(level: str = "INFO"):
+def setup_logging(level: str = "INFO") -> None:
     """Configures loguru to use RichHandler for pretty console output."""
     logger.remove()  # Remove default handler
     logger.add(

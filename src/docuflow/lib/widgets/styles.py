@@ -9,12 +9,19 @@ Usage:
 
 
 class Styles:
-    """Reusable Tailwind class combinations."""
+    """Reusable Tailwind class combinations.
+
+    Design System: Teal Industrial (v4.0)
+    - Primary: teal-500 (#14b8a6)
+    - Surfaces: slate-900/800/700
+    - Semantic: emerald/amber/red
+    - No glassmorphism, flat surfaces only
+    """
 
     # Containers
     PAGE = "w-full h-full p-4 gap-4"
     CARD = "bg-white rounded-lg shadow-lg p-4"
-    CARD_DARK = "glass-card rounded-2xl p-6 border-zinc-800"
+    CARD_DARK = "bg-slate-800 rounded-2xl p-6 border border-slate-700/50"
     ROW = "flex items-center justify-between gap-4"
     ROW_END = "flex items-center justify-end gap-4"
     COLUMN = "flex flex-col gap-4"
@@ -29,7 +36,7 @@ class Styles:
 
     # Form elements
     INPUT = "w-full bg-zinc-900 text-white border-zinc-700 rounded-lg p-3"
-    BUTTON_PRIMARY = "bg-indigo-600 text-white rounded-lg px-4 py-2"
+    BUTTON_PRIMARY = "bg-teal-600 text-white rounded-lg px-4 py-2 hover:bg-teal-500"
     BUTTON_DANGER = "bg-red-600 text-white rounded-lg px-4 py-2"
     BUTTON_GHOST = "text-slate-400 hover:text-white"
 

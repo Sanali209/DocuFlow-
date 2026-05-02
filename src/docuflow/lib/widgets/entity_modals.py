@@ -16,7 +16,7 @@ from docuflow.lib.widgets.nest_preview import NestPreview
 class ProjectModal:
     """Modal dialog for viewing and editing a Project."""
 
-    def __init__(self, project: Project, on_save: Callable, system_scope: Any):
+    def __init__(self, project: Project, on_save: Callable, system_scope: Any) -> None:
         self.project = project
         self.on_save = on_save
         self.system_scope = system_scope
@@ -47,7 +47,7 @@ class WorkItemModal:
         projects: list[Project],
         on_save: Callable,
         system_scope: Any,
-    ):
+    ) -> None:
         self.work_item = work_item
         self.projects = projects
         self.on_save = on_save
@@ -102,7 +102,7 @@ class TaskGroupModal:
         on_assign: Callable,
         on_split: Callable,
         system_scope: Any,
-    ):
+    ) -> None:
         self.task_group = task_group
         self.nodes = nodes
         self.on_assign = on_assign
@@ -166,7 +166,7 @@ class TaskItemModal:
         on_complete: Callable[[int, bool, int | None], None] | None = None,
         on_incident: Callable[[int], None] | None = None,
         system_scope: Any = None,
-    ):
+    ) -> None:
         self.task_item = task_item
         self.on_action = on_action
         self.on_start = on_start
@@ -279,7 +279,7 @@ class TaskItemModal:
 class PalletModal:
     """Modal dialog for viewing a ProductionUnit (pallet) and shipping it."""
 
-    def __init__(self, pallet: ProductionUnit, on_ship: Callable, system_scope: Any):
+    def __init__(self, pallet: ProductionUnit, on_ship: Callable, system_scope: Any) -> None:
         self.pallet = pallet
         self.on_ship = on_ship
         self.system_scope = system_scope

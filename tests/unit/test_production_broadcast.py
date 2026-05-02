@@ -1,13 +1,15 @@
 import asyncio
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 
 @pytest.fixture
 def production_system(tmp_path):
-    from docuflow.infrastructure.config import Config
+    from sqlmodel import Session, SQLModel, create_engine
+
     from docuflow.features.production.system import ProductionSystem
-    from sqlmodel import Session, create_engine, SQLModel
+    from docuflow.infrastructure.config import Config
     engine = create_engine("sqlite:///:memory:")
     SQLModel.metadata.create_all(engine)
     config = Config(node_id="TEST", shared_path=str(tmp_path))
@@ -18,9 +20,9 @@ def production_system(tmp_path):
 @pytest.mark.asyncio
 async def test_broadcast_command_is_scheduled_not_dropped(production_system, tmp_path):
     """broadcast_command must be scheduled as a task, not silently dropped."""
-    from docuflow.domain.entities.production import TaskItem, WorkItem, Project
-    from docuflow.infrastructure.config import Config
-    from sqlmodel import Session, create_engine, SQLModel
+    from sqlmodel import Session, SQLModel, create_engine
+
+    from docuflow.domain.entities.production import Project, TaskItem, WorkItem
 
     # Set up DB with required entities
     engine = create_engine("sqlite:///:memory:")

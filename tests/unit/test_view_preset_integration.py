@@ -4,9 +4,8 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from docuflow.features.admin.system import AdminSystem
+from docuflow.features.view_presets.system import ViewPresetSystem
 from docuflow.infrastructure.config import Config
-from docuflow.infrastructure.security import HMACSigner
 
 
 @pytest.fixture(name="engine")
@@ -26,43 +25,39 @@ def session_fixture(engine):
         yield session
 
 
-@pytest.fixture(name="admin_system")
-def admin_system_fixture(session):
+@pytest.fixture(name="preset_system")
+def preset_system_fixture(session):
     config = Config(node_id="test_node")
-    signer = HMACSigner(config.storage_secret)
-    from unittest.mock import MagicMock
-
-    orch = MagicMock()
-    return AdminSystem(session, orch, signer, config)
+    return ViewPresetSystem(config, session)
 
 
-def test_create_view_preset(admin_system):
-    """AdminSystem should create and persist a ViewPreset."""
-    preset = admin_system.create_view_preset(
+def test_create_view_preset(preset_system):
+    """ViewPresetSystem should create and persist a ViewPreset."""
+    preset = preset_system.create(
         view_name="task_board",
         name="Срочные",
-        filters_json='{"urgent": true}',
+        filters_json={"urgent": True},
         user_id="u1",
     )
     assert preset.id is not None
     assert preset.name == "Срочные"
-    assert preset.filters_json == '{"urgent": true}'
+    assert "urgent" in preset.filters_json
 
 
-def test_get_view_presets(admin_system):
-    """AdminSystem should return presets for a user."""
-    admin_system.create_view_preset("task_board", "Preset 1", "{}", "u1")
-    admin_system.create_view_preset("task_board", "Preset 2", "{}", "u1")
-    admin_system.create_view_preset("task_board", "Other user", "{}", "u2")
+def test_list_view_presets(preset_system):
+    """ViewPresetSystem should return presets for a view and user."""
+    preset_system.create("task_board", "u1", "Preset 1", {})
+    preset_system.create("task_board", "u1", "Preset 2", {})
+    preset_system.create("task_board", "u2", "Other user", {})
 
-    presets = admin_system.get_view_presets(user_id="u1")
+    presets = preset_system.list(view_name="task_board", user_id="u1")
     assert len(presets) == 2
 
 
-def test_delete_view_preset(admin_system):
-    """AdminSystem should delete a preset by ID."""
-    preset = admin_system.create_view_preset("task_board", "ToDelete", "{}", "u1")
-    admin_system.delete_view_preset(preset.id)
+def test_delete_view_preset(preset_system):
+    """ViewPresetSystem should delete a preset by ID."""
+    preset = preset_system.create("task_board", "u1", "ToDelete", {})
+    preset_system.delete_preset(preset.id, user_id="u1")
 
-    presets = admin_system.get_view_presets(user_id="u1")
+    presets = preset_system.list(view_name="task_board", user_id="u1")
     assert len(presets) == 0

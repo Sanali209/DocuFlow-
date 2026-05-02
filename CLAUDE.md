@@ -28,10 +28,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Type checking: `uv run mypy src`
 
 ### Diagnostics & Scripts
-- Scanner diagnostics: `uv run python scripts/diagnose_scanner.py`
-- Check settings: `uv run python scripts/check_settings.py`
-- Reset cluster: `uv run python scripts/reset_cluster.py`
-- Seed test data: `uv run python scripts/seed_test_data.py`
+- Scanner diagnostics: `uv run python scripts/dev/diagnose_scanner.py`
+- Check settings: `uv run python scripts/dev/check_settings.py`
+- Reset cluster: `uv run python scripts/ops/reset_cluster.py`
+- Seed test data: `uv run python scripts/dev/seed_test_data.py`
 
 ## 🏗 High-Level Architecture
 

@@ -5,14 +5,14 @@ import time
 from loguru import logger
 
 
-def kill_port_process(port: int):
+def kill_port_process(port: int) -> None:
     """
     Utility to identify and terminate any process occupying a specific TCP port.
     Specifically optimized for Windows development workflows.
     """
     try:
         # Use a faster check for Windows
-        result = subprocess.run(
+        result: subprocess.CompletedProcess[str] = subprocess.run(
             ["netstat", "-ano", "-p", "TCP"],  # noqa: S607
             capture_output=True,
             text=True,
@@ -20,9 +20,9 @@ def kill_port_process(port: int):
         )
         for line in result.stdout.splitlines():
             if f":{port}" in line and "LISTENING" in line:
-                parts = line.split()
+                parts: list[str] = line.split()
                 if len(parts) >= 5:
-                    pid = parts[-1]
+                    pid: str = parts[-1]
                     if pid != str(os.getpid()) and pid != "0":
                         logger.info(f"Port {port} is busy. Killing PID {pid}...")
                         # Using taskkill /F to ensure the process is gone

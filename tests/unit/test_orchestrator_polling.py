@@ -1,5 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
+
 from docuflow.application.bus.orchestrator import P2POrchestrator
 from docuflow.infrastructure import constants
 
@@ -43,6 +45,7 @@ async def test_failed_message_deleted_on_parse_error(orchestrator):
 async def test_successful_message_deleted_after_dispatch(orchestrator):
     """Successfully processed message is deleted from inbox."""
     import time
+
     from docuflow.domain.messages import CommandType, P2PMessage, P2PPayload
     from docuflow.infrastructure.security import HMACSigner
 

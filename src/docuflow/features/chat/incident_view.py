@@ -10,7 +10,7 @@ from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
-def register_incidents_view():
+def register_incidents_view() -> None:
     """Register the workshop incidents dashboard."""
     ViewRegistry.register(
         ViewInfo(
@@ -29,9 +29,11 @@ def register_incidents_view():
 
 async def incidents_view_wrapper(
     system: IncidentSystem, user: str, system_scope: Callable, layout: Any
-):
+) -> None:
     """Wrapper to instantiate and render the IncidentView."""
-    view = IncidentView(system, current_user=user, system_scope=system_scope, layout=layout)
+    view: IncidentView = IncidentView(
+        system, current_user=user, system_scope=system_scope, layout=layout
+    )
     await view.render_dashboard()
 
 
@@ -58,7 +60,7 @@ class IncidentView(BaseDocuWidget):
         current_user: str = "foreman",
         system_scope: Callable | None = None,
         layout: Any = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.incident_system = incident_system
         self.current_user = current_user
@@ -70,7 +72,7 @@ class IncidentView(BaseDocuWidget):
         self.active_project_filter: int | None = None
         self.active_work_item_filter: int | None = None
 
-    async def render_dashboard(self):
+    async def render_dashboard(self) -> None:
         """
         Renders the complete workshop failure monitor.
         """
@@ -108,16 +110,17 @@ class IncidentView(BaseDocuWidget):
             else:
                 ui.timer(10.0, self.full_refresh)
 
-    def _render_group_tabs(self):
+    def _render_group_tabs(self) -> None:
         """Renders filtering tabs by responsible group."""
-        groups = ["ALL", "Foreman", "Maintenance", "Supply", "IT"]
+        groups: list[str] = ["ALL", "Foreman", "Maintenance", "Supply", "IT"]
+        tabs: Any
         with ui.tabs().classes("w-full text-indigo-400 bg-white/5 rounded-xl") as tabs:
             for g in groups:
                 ui.tab(g)
 
         tabs.on("change", lambda e: self._filter_by_group(e.value))  # type: ignore[attr-defined]
 
-    async def _filter_by_group(self, group_name: str):
+    async def _filter_by_group(self, group_name: str) -> None:
         self.active_group_filter = group_name
         await self.refresh_active_feed()
 
@@ -138,7 +141,7 @@ class IncidentView(BaseDocuWidget):
             and incident.work_item_id != self.active_work_item_filter
         )
 
-    def _render_header_section(self):
+    def _render_header_section(self) -> None:
         """Builds the top bar with title, metrics slot, and actions."""
         with ui.row().classes("w-full items-center justify-between mb-2"):
             with ui.column().classes("gap-1"):
@@ -160,21 +163,21 @@ class IncidentView(BaseDocuWidget):
 
     # --- Data Lifecycle & Rerendering ---
 
-    async def full_refresh(self):
+    async def full_refresh(self) -> None:
         """Complete UI data resync."""
         await self.refresh_active_feed()
         await self.refresh_history_feed()
         await self.refresh_metrics_summary()
 
-    async def refresh_active_feed(self):
+    async def refresh_active_feed(self) -> None:
         """Reload the list of unresolved failures."""
         if not self.active_failures_container:
             return
         self.active_failures_container.clear()
 
         async with self.scope() as req:
-            fresh_incident_sys = await req.get(IncidentSystem)
-            active_list = fresh_incident_sys.get_active_failures()
+            fresh_incident_sys: IncidentSystem = await req.get(IncidentSystem)
+            active_list: list[IncidentLog] = fresh_incident_sys.get_active_failures()
 
             if not active_list:
                 with self.active_failures_container:
@@ -187,15 +190,15 @@ class IncidentView(BaseDocuWidget):
                 if self._matches_filters(incident):
                     self._render_active_incident_card(incident)
 
-    async def refresh_history_feed(self):
+    async def refresh_history_feed(self) -> None:
         """Reload the list of recently resolved failures."""
         if not self.recent_history_container:
             return
         self.recent_history_container.clear()
 
         async with self.scope() as req:
-            fresh_incident_sys = await req.get(IncidentSystem)
-            resolution_history = fresh_incident_sys.get_recent_history()
+            fresh_incident_sys: IncidentSystem = await req.get(IncidentSystem)
+            resolution_history: list[IncidentLog] = fresh_incident_sys.get_recent_history()
 
             for incident in resolution_history:
                 with self.recent_history_container:
@@ -212,22 +215,24 @@ class IncidentView(BaseDocuWidget):
                                 "text-[9px] text-slate-600 mt-1 font-mono"
                             )
 
-    async def refresh_metrics_summary(self):
+    async def refresh_metrics_summary(self) -> None:
         """Updates the high-level metrics counters in the header."""
         if not self.metrics_summary_container:
             return
         self.metrics_summary_container.clear()
 
         async with self.scope() as req:
-            fresh_incident_sys = await req.get(IncidentSystem)
-            stats_map = fresh_incident_sys.get_summary_stats()
-            total_downtime_minutes = sum(stats_map.values())
-            active_blockers_count = len(fresh_incident_sys.get_active_failures())
+            fresh_incident_sys: IncidentSystem = await req.get(IncidentSystem)
+            stats_map: dict[str, float] = fresh_incident_sys.get_summary_stats()
+            total_downtime_minutes: float = sum(stats_map.values())
+            active_blockers_count: int = len(fresh_incident_sys.get_active_failures())
 
             with self.metrics_summary_container:
                 # Critical Count
                 with ui.column().classes("items-end justify-center"):
-                    color_cls = "text-red-500" if active_blockers_count > 0 else "text-slate-800"
+                    color_cls: str = (
+                        "text-red-500" if active_blockers_count > 0 else "text-slate-800"
+                    )
                     ui.label(str(active_blockers_count)).classes(f"text-3xl font-black {color_cls}")
                     ui.label("ACTIVE").classes(self.UI_THEME["stat_label"])
                 # Cumulative Downtime
@@ -237,8 +242,9 @@ class IncidentView(BaseDocuWidget):
                     )
                     ui.label("DOWNTIME").classes(self.UI_THEME["stat_label"])
 
-    def open_reporting_dialog(self):
+    def open_reporting_dialog(self) -> None:
         """Manual reporting interface for workshop operators."""
+        dialog: Any
         with (
             ui.dialog() as dialog,
             ui.card().classes("bg-slate-900 border border-red-500/20 w-96 p-6"),
@@ -248,19 +254,19 @@ class IncidentView(BaseDocuWidget):
             )
 
             # Use systemic constants for type selection
-            opts = [
+            opts: list[str] = [
                 self.incident_system.TYPE_BREAKDOWN,
                 self.incident_system.TYPE_DEFECT,
                 self.incident_system.TYPE_SUPPLY,
             ]
-            type_select = ui.select(opts, label="Failure Category").classes("w-full")
-            desc = ui.textarea(label="Issue Description").classes("w-full")
+            type_select: Any = ui.select(opts, label="Failure Category").classes("w-full")
+            desc: Any = ui.textarea(label="Issue Description").classes("w-full")
 
-            async def submit():
+            async def submit() -> None:
                 if not type_select.value or not desc.value:
                     return
                 async with self.scope() as req:
-                    fresh_incident_sys = await req.get(IncidentSystem)
+                    fresh_incident_sys: IncidentSystem = await req.get(IncidentSystem)
                     await fresh_incident_sys.report_incident(
                         type_select.value, desc.value, self.current_user
                     )
@@ -273,7 +279,7 @@ class IncidentView(BaseDocuWidget):
                 ui.button("PRIORITY BROADCAST", on_click=submit).props("unelevated color=red")
         dialog.open()
 
-    def _render_active_incident_card(self, incident: IncidentLog):
+    def _render_active_incident_card(self, incident: IncidentLog) -> None:
         """Render a single actionable card for a workshop breakdown."""
         # Filter logic
         if (
@@ -331,18 +337,20 @@ class IncidentView(BaseDocuWidget):
                         "flat rounded size=sm"
                     )
 
-    async def _claim_incident(self, incident: IncidentLog):
+    async def _claim_incident(self, incident: IncidentLog) -> None:
         """Assign incident to Maintenance by default when claiming."""
+        assert incident.id is not None
         async with self.scope() as req:
-            fresh_incident_sys = await req.get(IncidentSystem)
+            fresh_incident_sys: IncidentSystem = await req.get(IncidentSystem)
             fresh_incident_sys.assign_incident(incident.id, "Maintenance", self.current_user)
         NotifyHelper.info(f"Incident {incident.id} assigned to Maintenance")
         await self.refresh_active_feed()
 
     # --- Interaction Handlers ---
 
-    def open_resolution_dialog(self, incident: IncidentLog):
+    def open_resolution_dialog(self, incident: IncidentLog) -> None:
         """Dialog to close a failure log and record its fix."""
+        dialog: Any
         with (
             ui.dialog() as dialog,
             ui.card().classes("bg-slate-900 border border-emerald-500/20 w-96 p-6"),
@@ -351,20 +359,21 @@ class IncidentView(BaseDocuWidget):
                 "text-sm font-black text-emerald-400 mb-4 tracking-widest"
             )
 
-            note = ui.textarea(
+            note: Any = ui.textarea(
                 label="Resolution Note", placeholder="Replaced motor / Repaired leak..."
             ).classes("w-full")
-            tech_name = (
+            tech_name: Any = (
                 ui.input(label="Technician ID")
                 .classes("w-full")
                 .props(f'value="{self.current_user}"')
             )
 
-            async def submit():
+            async def submit() -> None:
                 if not note.value:
                     return
+                assert incident.id is not None
                 async with self.scope() as req:
-                    fresh_incident_sys = await req.get(IncidentSystem)
+                    fresh_incident_sys: IncidentSystem = await req.get(IncidentSystem)
                     await fresh_incident_sys.resolve_incident(
                         incident.id, tech_name.value, note.value
                     )

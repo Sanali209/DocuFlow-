@@ -6,8 +6,10 @@ ViewPresetSystem — управление пресетами видов (Notion-
 """
 
 import json
+from collections.abc import Sequence
 
 from sqlmodel import Session, select
+from sqlmodel.sql.expression import SelectOfScalar
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import ViewPreset
@@ -26,7 +28,7 @@ class ViewPresetSystem(BaseSystem):
     - delete — удаление пресета (с проверкой прав)
     """
 
-    def __init__(self, config: Config, session: Session):
+    def __init__(self, config: Config, session: Session) -> None:
         """
         Инициализация ViewPresetSystem.
 
@@ -57,7 +59,7 @@ class ViewPresetSystem(BaseSystem):
         Returns:
             ViewPreset — созданный пресет
         """
-        preset = ViewPreset(
+        preset: ViewPreset = ViewPreset(
             view_name=view_name,
             user_id=user_id,
             name=name,
@@ -71,7 +73,7 @@ class ViewPresetSystem(BaseSystem):
 
         return preset
 
-    def list(self, view_name: str, user_id: str) -> list[ViewPreset]:
+    def list_presets(self, view_name: str, user_id: str) -> list[ViewPreset]:
         """
         Возвращает список пресетов для вида и пользователя.
 
@@ -82,11 +84,16 @@ class ViewPresetSystem(BaseSystem):
         Returns:
             List[ViewPreset] — список пресетов (global + personal)
         """
-        stmt = select(ViewPreset).where(
+        stmt: SelectOfScalar[ViewPreset] = select(ViewPreset).where(
             ViewPreset.view_name == view_name,
             (ViewPreset.user_id == "global") | (ViewPreset.user_id == user_id),
         )
 
+        return list(self.db_session.exec(stmt).all())
+
+    def list_global(self) -> list[ViewPreset]:
+        """Returns all global presets across all views."""
+        stmt: SelectOfScalar[ViewPreset] = select(ViewPreset).where(ViewPreset.user_id == "global")
         return list(self.db_session.exec(stmt).all())
 
     def get_active(self, view_name: str, user_id: str) -> ViewPreset | None:
@@ -101,23 +108,23 @@ class ViewPresetSystem(BaseSystem):
             Optional[ViewPreset] — активный пресет или None
         """
         # Сначала ищем personal active
-        stmt = select(ViewPreset).where(
+        stmt: SelectOfScalar[ViewPreset] = select(ViewPreset).where(
             ViewPreset.view_name == view_name,
             ViewPreset.user_id == user_id,
             ViewPreset.is_default.is_(True),  # type: ignore[attr-defined]
         )
-        preset = self.db_session.exec(stmt).first()
+        preset: ViewPreset | None = self.db_session.exec(stmt).first()
 
         if preset:
             return preset
 
         # Если нет personal active, ищем global default
-        stmt = select(ViewPreset).where(
+        global_stmt: SelectOfScalar[ViewPreset] = select(ViewPreset).where(
             ViewPreset.view_name == view_name,
             ViewPreset.user_id == "global",
             ViewPreset.is_default.is_(True),  # type: ignore[attr-defined]
         )
-        return self.db_session.exec(stmt).first()
+        return self.db_session.exec(global_stmt).first()
 
     def set_active(self, view_name: str, user_id: str, preset_id: int) -> ViewPreset:
         """
@@ -135,17 +142,18 @@ class ViewPresetSystem(BaseSystem):
             ValueError: если пресет не найден
         """
         # Сбрасываем все default для этого вида и пользователя
-        stmt = select(ViewPreset).where(
+        stmt: SelectOfScalar[ViewPreset] = select(ViewPreset).where(
             ViewPreset.view_name == view_name,
             ViewPreset.user_id == user_id,
         )
-        presets = self.db_session.exec(stmt).all()
+        presets: Sequence[ViewPreset] = self.db_session.exec(stmt).all()
+        p: ViewPreset
         for p in presets:
             p.is_default = False
             self.db_session.add(p)
 
         # Устанавливаем новый default
-        preset = self.db_session.get(ViewPreset, preset_id)
+        preset: ViewPreset | None = self.db_session.get(ViewPreset, preset_id)
         if preset is None:
             raise ValueError(f"Пресет с ID {preset_id} не найден")
 
@@ -174,7 +182,7 @@ class ViewPresetSystem(BaseSystem):
             ValueError: если пресет не найден
             PermissionError: если нет прав на удаление
         """
-        preset = self.db_session.get(ViewPreset, preset_id)
+        preset: ViewPreset | None = self.db_session.get(ViewPreset, preset_id)
         if preset is None:
             raise ValueError(f"Пресет с ID {preset_id} не найден")
 

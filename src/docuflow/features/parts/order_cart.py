@@ -11,7 +11,7 @@ class CartItem:
 class OrderCart:
     """Session-based order cart for parts."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.items: dict[str, CartItem] = {}
 
     def add(self, sku: str, name: str | None = None, qty: int = 1) -> None:

@@ -9,7 +9,7 @@ from docuflow.lib.widgets.kpi_card import KPICard, KPIGrid
 from docuflow.lib.widgets.ui_utils import get_kpi_color
 
 
-def register_analytics_view():
+def register_analytics_view() -> None:
     """Register the analytics dashboard view."""
     ViewRegistry.register(
         ViewInfo(
@@ -24,16 +24,16 @@ def register_analytics_view():
     )
 
 
-async def analytics_view_wrapper(system_scope: Any, layout: Any, **kwargs):
+async def analytics_view_wrapper(system_scope: Any, layout: Any, **kwargs: Any) -> None:
     """Wrapper for the class-based AnalyticsView."""
-    view = AnalyticsView(system_scope, layout=layout)
+    view: AnalyticsView = AnalyticsView(system_scope, layout=layout)
     await view.render()
 
 
 class AnalyticsView(BaseDocuWidget):
     """Provides high-level KPI and performance analytics."""
 
-    def __init__(self, system_scope: Any, layout: Any = None):
+    def __init__(self, system_scope: Any, layout: Any = None) -> None:
         super().__init__(system_scope)
         self.layout = layout
 
@@ -44,21 +44,21 @@ class AnalyticsView(BaseDocuWidget):
 
             try:
                 async with self.scope() as req:
-                    system = await req.get(AnalyticsSystem)
-                    metrics = system.get_dashboard_metrics()
+                    system: AnalyticsSystem = await req.get(AnalyticsSystem)
+                    metrics: dict[str, Any] = system.get_dashboard_metrics()
 
-                    total_work_items = metrics["total_work_items"]
-                    total_pallets = metrics["total_pallets"]
-                    total_parts_produced = metrics["total_parts_produced"]
-                    avg_drift = metrics["avg_drift"]
-                    count_drift = metrics["count_drift"]
-                    completion_rate = metrics["completion_rate"]
-                    status_counts = metrics["status_counts"]
+                    total_work_items: int = metrics["total_work_items"]
+                    total_pallets: int = metrics["total_pallets"]
+                    total_parts_produced: int = metrics["total_parts_produced"]
+                    avg_drift: float = metrics["avg_drift"]
+                    count_drift: int = metrics["count_drift"]
+                    completion_rate: float = metrics["completion_rate"]
+                    status_counts: dict[str, int] = metrics["status_counts"]
             except Exception as e:
                 ui.label(f"Failed to load metrics: {e}").classes("text-red-400")
                 return
 
-            drift_color = get_kpi_color(avg_drift)
+            drift_color: str = get_kpi_color(avg_drift)
 
             KPIGrid(
                 kpis=[

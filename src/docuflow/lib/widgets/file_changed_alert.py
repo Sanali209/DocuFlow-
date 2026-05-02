@@ -4,6 +4,9 @@ FileChangedAlert — баннер "Файл изменился на сети".
 Показывает уведомление, когда файл изменился на сетевом диске.
 """
 
+from collections.abc import Callable
+from typing import Any
+
 from nicegui import ui
 
 
@@ -17,7 +20,9 @@ class FileChangedAlert:
         on_refresh: callable — callback для обновления
     """
 
-    def __init__(self, file_name: str, file_path: str, on_refresh=None):
+    def __init__(
+        self, file_name: str, file_path: str, on_refresh: Callable[[], Any] | None = None
+    ) -> None:
         self.file_name = file_name
         self.file_path = file_path
         self.on_refresh = on_refresh

@@ -59,10 +59,12 @@
   - Коротко: копирует GNC-файлы в локальную NS-папку (для станков), проверяет md5 и уведомляет оператора.
   - Где: `src/docuflow/features/folder_scanner/mirror.py`.
 
-- WorkItem / TaskItem / TaskPart
+- WorkItem / TaskItem / TaskGroup / TaskPart
   - WorkItem: «папка/наряд» — верхнеуровневая единица работы.
   - TaskItem: один GNC-файл (задача) внутри WorkItem.
+  - TaskGroup: группа TaskItem по материалу+толщине. НЕ имеет собственного статуса (агрегирует из задач). Заменяет `batch_group_id`.
   - TaskPart: деталь внутри TaskItem (связанная с PartLibrary).
+  - TaskItemStatus.SUSPENDED: статус длительной приостановки (отличается от кратковременного ON_HOLD).
   - Где: `src/docuflow/domain/entities/production.py`.
 
 - PartLibrary / PartTemplate
@@ -72,7 +74,7 @@
 
 - Project
   - Коротко: группировка WorkItem'ов (проект клиента или внутренний проект).
-  - Где: `src/docuflow/features/projects/*`.
+  - Где: `src/docuflow/features/task_board/` (ранее `features/projects/`).
 
 - WorkerBucket / lock_batch
   - Коротко: резерв задач (batch) за узлом; lock_batch — операция резервирования батча через FileBus.
@@ -89,13 +91,17 @@
   - Правило: повторный poll не должен создавать дубликатов — upsert по ключам `WorkItem.folder_name` и `TaskItem.file_path`.
   - Где: `src/docuflow/features/folder_scanner/system.py`.
 
+- ViewState
+  - Коротко: состояние раскрытия уровней иерархии в БД (пользователь + вид + сущность).
+  - Где: `src/docuflow/domain/entities/production.py`.
+
 - ViewPreset
   - Коротко: предустановки отображения (filters, sort, columns) — личные (owner=username) и глобальные (owner="global").
-  - Где: `src/docuflow/features/view_presets/`.
+  - Где: `src/docuflow/features/view_presets/system.py` и `src/docuflow/domain/entities/production.py`.
 
 - NotificationTemplate
   - Коротко: шаблоны уведомлений (ключ, текст, enabled) — например `scan.empty_folder`.
-  - Где: `src/docuflow/features/notifications/system.py` и domain entities.
+  - Где: `src/docuflow/domain/entities/production.py`.
 
 - HMACSigner / SecureDispatcher
   - HMACSigner: подписывает сообщения HMAC-SHA256; используется для верификации целостности сообщений.

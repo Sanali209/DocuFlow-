@@ -14,7 +14,7 @@ DocuFlow is built on the **"Symmetric Truth"** model as defined in our [Constitu
 2. **File Bus Protocol**: Communication happens via atomic file operations (`REQ`/`RES` files) on a shared drive, optimized for the latencies of network shares using `PollingObserver`.
 3. **Symmetric Truth**: There is no central database. Every node maintains a local SQLite database, which is synchronized via periodic JSON snapshots and incremental P2P deltas.
 4. **Hexagonal Architecture**: Strict separation between Domain logic, Infrastructure adapters, and Application orchestration.
-5. **Vertical Slices**: Features (Inventory, Admin, Auth) are organized into self-contained slices where UI logic (`view.py`) and business logic (`system.py`) live together.
+5. **Vertical Slices**: Features are organized into self-contained slices where UI logic (`view.py`) and business logic (`system.py`) live together.
 
 ---
 
@@ -37,13 +37,33 @@ DocuFlow is built on the **"Symmetric Truth"** model as defined in our [Constitu
 ├── application/           # Orchestration & Cross-system logic
 │   └── bus/               # P2P Orchestrator & Dispatcher
 ├── domain/                # Business entities & P2P message schemas
-├── infrastructure/        # Adapters (File Bus, Coordination, Sync)
-├── features/              # Vertical Slices (The "Functional" modules)
+├── infrastructure/        # Adapters (File Bus, Coordination, Sync, DI)
+├── features/              # Vertical Slices
+│   ├── task_board/        # Task Board v2: 2 tabs, hierarchy, filters
 │   ├── admin/             # Cluster health & Identity management
 │   ├── auth/              # RBAC & Session management
-│   └── inventory/         # Decentralized stock tracking
+│   ├── inventory/         # Decentralized stock tracking
+│   ├── folder_scanner/    # GNC file scanning & NS Mirror
+│   ├── chat/              # Workshop chat + incidents
+│   ├── parts/             # Part library, order cart, rework generation
+│   ├── production/        # Pallet tracking (ProductionUnit)
+│   ├── reports/           # Jinja2/weasyprint PDF reports
+│   ├── analytics/         # KPI metrics & charts
+│   ├── consumables/       # Nozzles, lenses, tape tracking
+│   ├── notifications/     # Notification templates
+│   └── view_presets/      # Saved filter presets
+├── lib/widgets/           # Reusable NiceGUI components
 └── main.py                # Application entry point & DI setup
 ```
+
+### Task Board v2 — Unified Production Center
+
+- **2 tabs**: "Производство" (full hierarchy) and "Моя корзина" (operator tasks + handover)
+- **Hierarchy**: Project → WorkItem → TaskGroup → TaskItem
+- **TaskGroup**: replaces old batch_group, status aggregated from TaskItems
+- **ViewState**: expansion state saved in DB per user/view
+- **ViewPreset**: saved filter presets
+- See [Task Board v2 Design](docs/superpowers/specs/2026-04-28-task-board-v2-design.md)
 
 ---
 
@@ -83,11 +103,8 @@ uv run python -m docuflow.main
 
 ## 📖 Internal Documentation
 
-- [**Project Audit**](docs/project_audit.md): Comprehensive analysis of the current state and concept catalog.
-* [**Knowledge Gaps**](docs/knowledge_gaps.md): Deep-dive into technical nuances and "unexpected" architectural solutions.
-* [**Obsidian Vault**](docs/obsidian/docuFlow): The conceptual design and "Long-term Vision" documents.
-
----
-
-> [!TIP]
-> Architecture visualization can be found in the [Obsidian Guides](docs/obsidian/docuFlow/sdk_and_modules_concept.md).
+- [**Knowledge Gaps**](docs/knowledge_gaps.md): Deep-dive into technical nuances and "unexpected" architectural solutions.
+- [**Architecture v2**](docs/arhitecture_2/01_design_document.md): Design doc, application architecture, data flow, C4 diagrams.
+- [**Code Audit**](docs/analysis/reports/CODE_AUDIT_2026_PROFESSIONAL.md): Identified duplication patterns and refactoring targets.
+- [**Glossary**](docs/glossary.md): Key terms used across codebase and docs.
+- [**Constitution**](docs/constitution.md): Coding standards and architectural principles.

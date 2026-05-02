@@ -23,11 +23,13 @@ class WorkItemCard(BaseDocuWidget):
 
     Props:
         work_item: WorkItem — объект наряда
-        system: WorkItemSystem — система для выполнения действий
+        system: TaskBoardSystem — система для выполнения действий
         user: str — имя текущего пользователя
         on_navigate: callable — функция переключения экранов
         system_scope: Any — провайдер для свежих систем
     """
+
+    work_item: WorkItem
 
     def __init__(
         self,
@@ -36,7 +38,7 @@ class WorkItemCard(BaseDocuWidget):
         user: str = "admin",
         on_navigate: Any = None,
         system_scope: Any = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.work_item = work_item
         self.user = user
@@ -47,13 +49,16 @@ class WorkItemCard(BaseDocuWidget):
         from sqlmodel import Session
 
         async with self.scope() as req:
-            session = await req.get(Session)
+            session: Session = await req.get(Session)
             # Re-fetch work_item to ensure it's attached to the fresh session
-            self.work_item = session.get(WorkItem, self.work_item.id)
+            assert self.work_item.id is not None
+            self.work_item = session.get(WorkItem, self.work_item.id)  # type: ignore[assignment]
 
             if not self.work_item:
                 NotifyHelper.error("Наряд не найден")
                 return
+
+            assert self.work_item.id is not None
 
             with (
                 ui.dialog() as dialog,
@@ -171,20 +176,21 @@ class WorkItemCard(BaseDocuWidget):
     async def _render_tasks_table(self) -> None:
         """Рендерит таблицу задач внутри наряда с возможностью захвата."""
         # Import deferred to avoid lib -> features dependency at module load
-        from docuflow.features.work_items.system import WorkItemSystem
+        from docuflow.features.task_board.system import TaskBoardSystem
 
-        columns = [
+        columns: list[dict[str, Any]] = [
             {"name": "file_name", "label": "Файл GNC", "field": "file_name", "align": "left"},
             {"name": "sheet_qty", "label": "Листов", "field": "sheet_qty"},
             {"name": "status", "label": "Статус", "field": "status"},
             {"name": "actions", "label": "", "field": "id", "align": "right"},
         ]
 
+        assert self.work_item.id is not None
         async with self.scope() as req:
-            wi_sys = await req.get(WorkItemSystem)
-            tasks = wi_sys.get_tasks_for_work_item(self.work_item.id)
+            tb_sys: TaskBoardSystem = await req.get(TaskBoardSystem)
+            tasks: list[Any] = tb_sys.get_tasks_for_work_item(self.work_item.id)
 
-            table = ui.table(columns=columns, rows=[t.model_dump() for t in tasks]).classes(
+            table: Any = ui.table(columns=columns, rows=[t.model_dump() for t in tasks]).classes(
                 "w-full"
             )
 
@@ -200,8 +206,8 @@ class WorkItemCard(BaseDocuWidget):
             """,
         )
 
-        async def handle_pull(task_row):
-            async def do_pull():
+        async def handle_pull(task_row: Any) -> None:
+            async def do_pull() -> None:
                 from docuflow.features.task_board.system import TaskBoardSystem
 
                 async with self.scope() as req:
@@ -221,11 +227,12 @@ class WorkItemCard(BaseDocuWidget):
     async def _render_work_log(self) -> None:
         """Рендерит лог аудита."""
         # Import deferred to avoid lib -> features dependency at module load
-        from docuflow.features.work_items.system import WorkItemSystem
+        from docuflow.features.task_board.system import TaskBoardSystem
 
+        assert self.work_item.id is not None
         async with self.scope() as req:
-            wi_sys = await req.get(WorkItemSystem)
-            logs = wi_sys.get_logs_for_work_item(self.work_item.id)
+            tb_sys: TaskBoardSystem = await req.get(TaskBoardSystem)
+            logs: list[Any] = tb_sys.get_logs_for_work_item(self.work_item.id)
 
         if not logs:
             ui.label("Log empty").classes("text-slate-400 italic")
@@ -239,42 +246,44 @@ class WorkItemCard(BaseDocuWidget):
                     if log.author:
                         ui.label(log.author).classes("text-blue-400")
 
-    def _go_to_task_board(self, dialog) -> None:
+    def _go_to_task_board(self, dialog: Any) -> None:
         """Переходит к доске задач с фильтром по текущему наряду."""
         dialog.close()
-        on_navigate = self.on_navigate
+        on_navigate: Any = self.on_navigate
         if on_navigate is not None:
+            assert self.work_item.id is not None
             ui.timer(
                 0.1,
                 lambda: on_navigate("task_board", filter_work_item=self.work_item.id),
                 once=True,
             )
 
-    def _register_document(self, dialog) -> None:
+    def _register_document(self, dialog: Any) -> None:
         """Действие: Регистрация получения документа."""
 
-        async def do_register():
+        async def do_register() -> None:
+            assert self.work_item.id is not None
             async with self.scope() as req:
                 # Import deferred to avoid lib -> features dependency at module load
-                from docuflow.features.work_items.system import WorkItemSystem
+                from docuflow.features.task_board.system import TaskBoardSystem
 
-                system = await req.get(WorkItemSystem)
-                # Ensure we update the instance within the fresh session
-                self.work_item = system.register_document(self.work_item.id, self.user)
+                tb_sys: TaskBoardSystem = await req.get(TaskBoardSystem)
+                self.work_item = tb_sys.register_document(self.work_item.id, self.user)  # type: ignore[assignment]
             dialog.close()
 
         self.safe_action(do_register, "Документ успешно зарегистрирован", "Ошибка регистрации")
 
-    def _block_work_item(self, dialog) -> None:
+    def _block_work_item(self, dialog: Any) -> None:
         """Действие: Блокировка наряда."""
 
-        async def do_block():
+        async def do_block() -> None:
+            assert self.work_item.id is not None
             async with self.scope() as req:
                 # Import deferred to avoid lib -> features dependency at module load
-                from docuflow.features.work_items.system import WorkItemSystem
+                from docuflow.features.task_board.system import TaskBoardSystem
 
-                system = await req.get(WorkItemSystem)
-                system.update_status(
+                tb_sys: TaskBoardSystem = await req.get(TaskBoardSystem)
+                tb_sys.update_status(
                     self.work_item.id,
                     WorkItemStatus.BLOCKED,
                     reason_note="Заблокировано вручную из карточки",

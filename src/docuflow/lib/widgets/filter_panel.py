@@ -17,7 +17,7 @@ class FilterPanel(BaseDocuWidget):
         initial_filters: dict[str, Any] | None = None,
         presets: list[dict[str, Any]] | None = None,
         on_save_preset: Callable[[str, dict[str, Any]], None] | None = None,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.on_apply = on_apply
         self.filters: dict[str, Any] = initial_filters or {}
@@ -35,7 +35,7 @@ class FilterPanel(BaseDocuWidget):
 
             # Presets selector
             if self.presets:
-                preset_options = {p["id"]: p["name"] for p in self.presets}
+                preset_options: dict[Any, str] = {p["id"]: p["name"] for p in self.presets}
                 ui.select(
                     label="Пресет",
                     options=preset_options,
@@ -79,13 +79,14 @@ class FilterPanel(BaseDocuWidget):
 
     def _load_preset(self, e: Any) -> None:
         """Load a preset by ID and apply its filters."""
-        preset_id = e.value
+        preset_id: Any = e.value
         if preset_id is None:
             return
+        p: dict[str, Any]
         for p in self.presets:
             if p["id"] == preset_id:
                 try:
-                    loaded = json.loads(p.get("filters_json", "{}"))
+                    loaded: dict[str, Any] = json.loads(p.get("filters_json", "{}"))
                     self.filters = loaded
                     self.on_apply(self.filters)
                 except json.JSONDecodeError:
@@ -120,7 +121,7 @@ class FilterPanel(BaseDocuWidget):
         if self.on_save_preset:
             with ui.dialog() as dialog, ui.card().classes("p-4 gap-4 w-80"):
                 ui.label("Сохранить пресет").classes("text-lg font-bold")
-                name_input = ui.input("Название пресета").classes("w-full")
+                name_input: ui.input = ui.input("Название пресета").classes("w-full")
                 with ui.row().classes("w-full justify-end gap-2"):
                     ui.button("Отмена", on_click=dialog.close).props("flat")
 

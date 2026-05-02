@@ -681,6 +681,30 @@ class TaskBoardSystem(BaseSystem):
                 ).all()
             )
 
+    def update_status(
+        self,
+        work_item_id: int,
+        new_status: WorkItemStatus,
+        reason_note: str | None = None,
+    ) -> WorkItem:
+        """Update the status of a WorkItem."""
+        with self.get_db_session() as session:
+            wi = session.get(WorkItem, work_item_id)
+            if wi is None:
+                raise ValueError(f"WorkItem {work_item_id} not found")
+            wi.status = new_status
+            audit = WorkLog(
+                work_item_id=wi.id,
+                log_type=WorkLogType.STATUS_CHANGE,
+                message=reason_note or f"Status changed to {new_status}",
+                created_at=datetime.datetime.now(),
+                node_id=self.config.node_id,
+            )
+            session.add(wi)
+            session.add(audit)
+            self._sync(session)
+            return wi
+
     def register_document(self, work_item_id: int, author: str) -> WorkItem:
         """Register physical document arrival for a WorkItem."""
         with self.get_db_session() as session:

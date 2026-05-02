@@ -29,7 +29,7 @@ class InputLabel:
         on_change: Callable | None = None,
         input_type: str = "text",
         disabled: bool = False,
-    ):
+    ) -> None:
         self.label = label
         self.placeholder = placeholder
         self.value = value
@@ -71,7 +71,7 @@ class TextareaLabel:
         placeholder: str = "",
         value: str = "",
         rows: int = 3,
-    ):
+    ) -> None:
         self.label = label
         self.placeholder = placeholder
         self.value = value
@@ -108,7 +108,7 @@ class SelectLabel:
         options: list[tuple[str, str]],
         value: str = "",
         on_change: Callable | None = None,
-    ):
+    ) -> None:
         self.label = label
         self.options = options
         self.value = value
@@ -144,7 +144,7 @@ class SwitchLabel:
         label: str,
         value: bool = False,
         on_change: Callable | None = None,
-    ):
+    ) -> None:
         self.label = label
         self.value = value
         self.on_change = on_change
@@ -168,7 +168,7 @@ class CheckboxLabel:
         label: str,
         value: bool = False,
         on_change: Callable | None = None,
-    ):
+    ) -> None:
         self.label = label
         self.value = value
         self.on_change = on_change

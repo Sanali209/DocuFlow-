@@ -3,7 +3,13 @@ from typing import Any
 from nicegui import ui
 from sqlmodel import select
 
-from docuflow.domain.entities.production import Reservation
+from docuflow.domain.entities.production import (
+    MaterialAudit,
+    MaterialStock,
+    MaterialType,
+    Reservation,
+    WorkLog,
+)
 from docuflow.features.core.views import register_view
 from docuflow.features.inventory.system import InventorySystem
 from docuflow.lib.base_widget import BaseDocuWidget
@@ -25,32 +31,32 @@ def register_warehouse_view() -> None:
 class WarehouseView(BaseDocuWidget):
     """Provides the decentralized material stock management grid."""
 
-    def __init__(self, inventory_system: InventorySystem, system_scope: Any, layout: Any):
+    def __init__(self, inventory_system: InventorySystem, system_scope: Any, layout: Any) -> None:
         super().__init__(system_scope)
         self.inventory_system = inventory_system
         self.layout = layout
 
-    async def render(self):
+    async def render(self) -> None:
         """Render the warehouse UI."""
         with ui.column().classes(S.PAGE):
             ui.label("Склад и Материалы").classes(S.HEADING_LARGE)
 
             with ui.tabs().classes("w-full text-indigo-400") as tabs:
-                catalog_tab = ui.tab("КАТАЛОГ")
-                stock_tab = ui.tab("ОСТАТКИ")
-                supply_tab = ui.tab("ОЧЕРЕДЬ ПОДАЧИ")
-                audit_tab = ui.tab("ИСТОРИЯ")
-                reservations_tab = ui.tab("РЕЗЕРВЫ")
+                catalog_tab: Any = ui.tab("КАТАЛОГ")
+                stock_tab: Any = ui.tab("ОСТАТКИ")
+                supply_tab: Any = ui.tab("ОЧЕРЕДЬ ПОДАЧИ")
+                audit_tab: Any = ui.tab("ИСТОРИЯ")
+                reservations_tab: Any = ui.tab("РЕЗЕРВЫ")
 
             with ui.tab_panels(tabs, value=catalog_tab).classes("w-full bg-transparent"):
                 # --- TAB: SUPPLY QUEUE (Live Requests) ---
                 with ui.tab_panel(supply_tab):
 
                     @ui.refreshable
-                    async def render_supply_requests():
+                    async def render_supply_requests() -> None:
                         async with self.scope() as req:
-                            fresh_system = await req.get(InventorySystem)
-                            requests = fresh_system.get_active_supply_requests()
+                            fresh_system: InventorySystem = await req.get(InventorySystem)
+                            requests: list[WorkLog] = fresh_system.get_active_supply_requests()
 
                         if not requests:
                             with ui.card().classes(f"w-full p-8 text-center {S.CARD_DARK}"):
@@ -70,15 +76,15 @@ class WarehouseView(BaseDocuWidget):
                                             )
                                             ui.badge("СРОЧНО").props("color=orange")
 
-                                        raw = req_log.message
-                                        msg = raw.replace("[LOGISTICS_REQUEST]", "").strip()
+                                        raw: str = req_log.message
+                                        msg: str = raw.replace("[LOGISTICS_REQUEST]", "").strip()
                                         ui.label(msg).classes(
                                             f"{S.BODY} font-bold text-white {S.MB_4}"
                                         )
 
                                         with ui.row().classes("w-full justify-end"):
 
-                                            async def _fulfill(r=req_log):
+                                            async def _fulfill(r: Any = req_log) -> None:
                                                 await self.handle_supply_fulfillment(
                                                     r, render_supply_requests
                                                 )
@@ -97,15 +103,15 @@ class WarehouseView(BaseDocuWidget):
                 # --- TAB: CATALOG (Material Types) ---
                 with ui.tab_panel(catalog_tab):
 
-                    async def refresh_catalog():
+                    async def refresh_catalog() -> None:
                         # H2 FIX: Fresh session for background/late refresh
                         async with self.scope() as req:
-                            fresh_system = await req.get(InventorySystem)
-                            types = fresh_system.get_material_catalog()
+                            fresh_system: InventorySystem = await req.get(InventorySystem)
+                            types: list[MaterialType] = fresh_system.get_material_catalog()
                             catalog_grid.rows[:] = [t.model_dump() for t in types]
                             catalog_grid.update()
 
-                    catalog_cols = [
+                    catalog_cols: list[dict[str, Any]] = [
                         {
                             "name": "code",
                             "label": "Код (Марка)",
@@ -139,9 +145,9 @@ class WarehouseView(BaseDocuWidget):
                         {"name": "actions", "label": "", "field": "id", "align": "right"},
                     ]
 
-                    catalog_grid = ui.table(columns=catalog_cols, rows=[], row_key="id").classes(
-                        "w-full glass-card text-white"
-                    )
+                    catalog_grid: Any = ui.table(
+                        columns=catalog_cols, rows=[], row_key="id"
+                    ).classes("w-full glass-card text-white")
                     catalog_grid.add_slot(
                         "body-cell-drift",
                         """
@@ -172,23 +178,23 @@ class WarehouseView(BaseDocuWidget):
                                 "text-xl font-bold text-indigo-400"
                             )
                             with ui.row().classes("w-full gap-4"):
-                                v_cut = (
+                                v_cut: Any = (
                                     ui.number("V резки (мм/мин)", value=3000)
                                     .classes("flex-1")
                                     .props("dark standout rounded")
                                 )
-                                t_pierce = (
+                                t_pierce: Any = (
                                     ui.number("T прокола (сек)", value=3.0)
                                     .classes("flex-1")
                                     .props("dark standout rounded")
                                 )
                             with ui.row().classes("w-full gap-4"):
-                                v_idle = (
+                                v_idle: Any = (
                                     ui.number("V холост. (мм/мин)", value=10000)
                                     .classes("flex-1")
                                     .props("dark standout rounded")
                                 )
-                                drift_limit = (
+                                drift_limit: Any = (
                                     ui.number(
                                         "Drift Limit %",
                                         value=InventorySystem.DEFAULT_TIME_TOLERANCE_PCT,
@@ -197,18 +203,20 @@ class WarehouseView(BaseDocuWidget):
                                     .props("dark standout rounded")
                                 )
 
-                            target_id = ui.number().classes("hidden")  # Hidden state
+                            target_id: Any = ui.number().classes("hidden")  # Hidden state
 
-                            async def save_settings():
+                            async def save_settings() -> None:
                                 # H2 FIX: Fresh session for DB update
                                 async with self.scope() as req:
-                                    fresh_system = await req.get(InventorySystem)
-                                    updated = fresh_system.update_material_settings(
-                                        target_id.value,
-                                        cut_speed_mm_per_min=v_cut.value,
-                                        pierce_time_sec=t_pierce.value,
-                                        idle_speed_mm_per_min=v_idle.value,
-                                        time_tolerance_pct=drift_limit.value,
+                                    fresh_system: InventorySystem = await req.get(InventorySystem)
+                                    updated: MaterialType | None = (
+                                        fresh_system.update_material_settings(
+                                            target_id.value,
+                                            cut_speed_mm_per_min=v_cut.value,
+                                            pierce_time_sec=t_pierce.value,
+                                            idle_speed_mm_per_min=v_idle.value,
+                                            time_tolerance_pct=drift_limit.value,
+                                        )
                                     )
                                     if updated:
                                         settings_dialog.close()
@@ -237,21 +245,21 @@ class WarehouseView(BaseDocuWidget):
                             ui.label("Сформировать заказ").classes(
                                 "text-xl font-bold text-orange-400"
                             )
-                            reorder_qty = (
+                            reorder_qty: Any = (
                                 ui.number("Количество листов", value=10)
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
-                            reorder_note = (
+                            reorder_note: Any = (
                                 ui.textarea("Примечание")
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
-                            reorder_mat_id = ui.number().classes("hidden")
+                            reorder_mat_id: Any = ui.number().classes("hidden")
 
-                            async def submit_reorder():
+                            async def submit_reorder() -> None:
                                 async with self.scope() as req:
-                                    fresh_system = await req.get(InventorySystem)
+                                    fresh_system: InventorySystem = await req.get(InventorySystem)
                                     fresh_system.request_material_reorder(
                                         reorder_mat_id.value,
                                         reorder_qty.value,
@@ -278,22 +286,22 @@ class WarehouseView(BaseDocuWidget):
                             ui.label("Регистрация Материала").classes(
                                 "text-xl font-bold text-emerald-400"
                             )
-                            mat_code = (
+                            mat_code: Any = (
                                 ui.input("Код/Название (напр. ALU 3.0)")
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
-                            mat_thk = (
+                            mat_thk: Any = (
                                 ui.number("Толщина (мм)", value=1.0)
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
-                            mat_unit = (
+                            mat_unit: Any = (
                                 ui.select(["pcs", "kg", "m2"], label="Ед. изм.", value="pcs")
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
-                            mat_type = (
+                            mat_type: Any = (
                                 ui.select(
                                     ["SHEET", "TUBE", "BAR", "OTHER"],
                                     label="Форм-фактор",
@@ -303,10 +311,12 @@ class WarehouseView(BaseDocuWidget):
                                 .props("dark standout rounded")
                             )
 
-                            async def handle_create_mat():
+                            async def handle_create_mat() -> None:
                                 if mat_code.value and mat_thk.value:
                                     async with self.scope() as req:
-                                        fresh_system = await req.get(InventorySystem)
+                                        fresh_system: InventorySystem = await req.get(
+                                            InventorySystem
+                                        )
                                         fresh_system.create_material_definition(
                                             code=mat_code.value,
                                             thickness=mat_thk.value,
@@ -334,10 +344,10 @@ class WarehouseView(BaseDocuWidget):
                 # --- TAB: STOCK (Batches) ---
                 with ui.tab_panel(stock_tab):
 
-                    async def refresh_stock():
+                    async def refresh_stock() -> None:
                         async with self.scope() as req:
-                            fresh_system = await req.get(InventorySystem)
-                            batches = fresh_system.get_all_stock()
+                            fresh_system: InventorySystem = await req.get(InventorySystem)
+                            batches: list[MaterialStock] = fresh_system.get_all_stock()
                             stock_grid.rows[:] = [
                                 {
                                     **b.model_dump(),
@@ -347,7 +357,7 @@ class WarehouseView(BaseDocuWidget):
                             ]
                             stock_grid.update()
 
-                    stock_cols = [
+                    stock_cols: list[dict[str, Any]] = [
                         {
                             "name": "mat_code",
                             "label": "Материал",
@@ -376,7 +386,7 @@ class WarehouseView(BaseDocuWidget):
                         {"name": "actions", "label": "", "field": "id", "align": "right"},
                     ]
 
-                    stock_grid = ui.table(columns=stock_cols, rows=[], row_key="id").classes(
+                    stock_grid: Any = ui.table(columns=stock_cols, rows=[], row_key="id").classes(
                         "w-full glass-card text-white"
                     )
                     stock_grid.add_slot(
@@ -397,12 +407,12 @@ class WarehouseView(BaseDocuWidget):
 
                             # Load catalog for selector
                             async with self.scope() as req:
-                                fresh_system = await req.get(InventorySystem)
-                                catalog_opts = {
+                                fresh_system: InventorySystem = await req.get(InventorySystem)
+                                catalog_opts: dict[int | None, str] = {
                                     m.id: m.code for m in fresh_system.get_material_catalog()
                                 }
 
-                            mat_selector = (
+                            mat_selector: Any = (
                                 ui.select(
                                     catalog_opts,
                                     label="Выбрать марку",
@@ -410,25 +420,25 @@ class WarehouseView(BaseDocuWidget):
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
-                            qty_income = (
+                            qty_income: Any = (
                                 ui.number("Кол-во", value=1.0)
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
-                            batch_input = (
+                            batch_input: Any = (
                                 ui.input("Код партии")
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
-                            loc_input = (
+                            loc_input: Any = (
                                 ui.input("Место хранения", value="MAIN")
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
 
-                            async def handle_income():
+                            async def handle_income() -> None:
                                 async with self.scope() as req:
-                                    fresh_system = await req.get(InventorySystem)
+                                    fresh_system: InventorySystem = await req.get(InventorySystem)
                                     fresh_system.receive_material_batch(
                                         mat_selector.value,
                                         qty_income.value,
@@ -447,19 +457,19 @@ class WarehouseView(BaseDocuWidget):
                     with ui.dialog().classes("glass-card p-6") as correct_dialog:
                         with ui.column().classes("w-[400px] gap-4"):
                             ui.label("Инвентаризация").classes("text-xl font-bold text-yellow-400")
-                            actual_qty = (
+                            actual_qty: Any = (
                                 ui.number("Фактический остаток")
                                 .classes("w-full")
                                 .props("dark standout rounded")
                             )
-                            corr_reason = (
+                            corr_reason: Any = (
                                 ui.input("Причина").classes("w-full").props("dark standout rounded")
                             )
-                            corr_stock_id = ui.number().classes("hidden")
+                            corr_stock_id: Any = ui.number().classes("hidden")
 
-                            async def apply_correction():
+                            async def apply_correction() -> None:
                                 async with self.scope() as req:
-                                    fresh_system = await req.get(InventorySystem)
+                                    fresh_system: InventorySystem = await req.get(InventorySystem)
                                     fresh_system.record_inventory_correction(
                                         corr_stock_id.value,
                                         actual_qty.value,
@@ -491,14 +501,14 @@ class WarehouseView(BaseDocuWidget):
                 # --- TAB: AUDIT (History) ---
                 with ui.tab_panel(audit_tab):
 
-                    async def refresh_audit():
+                    async def refresh_audit() -> None:
                         async with self.scope() as req:
-                            fresh_system = await req.get(InventorySystem)
-                            logs = fresh_system.get_audit_history(limit=100)
+                            fresh_system: InventorySystem = await req.get(InventorySystem)
+                            logs: list[MaterialAudit] = fresh_system.get_audit_history(limit=100)
                             audit_grid.rows[:] = [log.model_dump() for log in logs]
                             audit_grid.update()
 
-                    audit_cols = [
+                    audit_cols: list[dict[str, Any]] = [
                         {
                             "name": "created_at",
                             "label": "Дата/Время",
@@ -526,7 +536,7 @@ class WarehouseView(BaseDocuWidget):
                         {"name": "author", "label": "Автор", "field": "author"},
                         {"name": "node_id", "label": "Узел", "field": "node_id"},
                     ]
-                    audit_grid = ui.table(columns=audit_cols, rows=[], row_key="id").classes(
+                    audit_grid: Any = ui.table(columns=audit_cols, rows=[], row_key="id").classes(
                         "w-full glass-card text-white"
                     )
 
@@ -536,10 +546,11 @@ class WarehouseView(BaseDocuWidget):
                 with ui.tab_panel(reservations_tab):
 
                     @ui.refreshable
-                    async def render_reservations():
+                    async def render_reservations() -> None:
                         async with self.scope() as req:
-                            fresh_system = await req.get(InventorySystem)
-                            reservations = list(
+                            fresh_system: InventorySystem = await req.get(InventorySystem)
+                            assert fresh_system.session is not None
+                            reservations: list[Reservation] = list(
                                 fresh_system.session.exec(select(Reservation)).all()
                             )
 
@@ -547,22 +558,28 @@ class WarehouseView(BaseDocuWidget):
                             ui.label("Нет активных резервов").classes("text-slate-500")
                             return
 
+                        r: Reservation
                         for r in reservations:
+                            assert r.id is not None
                             with ui.card().classes("w-full mb-2 p-4"):
                                 with ui.row().classes("items-center justify-between"):
-                                    stock = r.stock_item
-                                    mat_label = (
+                                    stock: MaterialStock | None = r.stock_item
+                                    mat_label: str = (
                                         stock.material_type.code
                                         if stock and stock.material_type
                                         else "Unknown"
                                     )
-                                    label_text = (
+                                    label_text: str = (
                                         f"{mat_label} — {r.qty_reserved} листов "
                                         f"({r.reservation_type})"
                                     )
                                     ui.label(label_text).classes("font-medium")
 
-                                    def _cancel(r_id=r.id, refresh=render_reservations):
+                                    def _cancel(
+                                        *args: Any,
+                                        r_id: int = r.id,
+                                        refresh: Any = render_reservations,
+                                    ) -> None:
                                         ui.timer(
                                             0.1,
                                             lambda rid=r_id, ref=refresh: self._cancel_reservation(  # type: ignore[arg-type]
@@ -578,22 +595,22 @@ class WarehouseView(BaseDocuWidget):
 
                     await render_reservations()
 
-    async def _cancel_reservation(self, reservation_id: int, refresh_fn):
+    async def _cancel_reservation(self, reservation_id: int, refresh_fn: Any) -> None:
         try:
             async with self.scope() as req:
-                fresh_system = await req.get(InventorySystem)
+                fresh_system: InventorySystem = await req.get(InventorySystem)
                 fresh_system.cancel_reservation(reservation_id)
             NotifyHelper.info("Резерв снят")
             refresh_fn.refresh()
         except Exception as e:
             NotifyHelper.error(f"Ошибка снятия резерва: {e}")
 
-    async def handle_supply_fulfillment(self, request_log, refresh_fn):
+    async def handle_supply_fulfillment(self, request_log: Any, refresh_fn: Any) -> None:
         """Handle fulfillment of a supply request."""
         try:
             # H2 FIX: Always resolve a fresh system for actions to avoid DetachedInstanceError
             async with self.scope() as req:
-                fresh_system = await req.get(InventorySystem)
+                fresh_system: InventorySystem = await req.get(InventorySystem)
                 fresh_system.resolve_supply_request(request_log.id, "warehouse_op")
             NotifyHelper.info(f"Запрос {request_log.id} выполнен")
             refresh_fn.refresh()

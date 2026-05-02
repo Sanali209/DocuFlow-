@@ -16,6 +16,7 @@ from docuflow.features.admin.system import AdminSystem
 from docuflow.features.core.layout import SessionContext
 from docuflow.features.core.views import ViewInfo, ViewRegistry
 from docuflow.features.task_board.system import TaskBoardSystem
+from docuflow.features.view_presets.system import ViewPresetSystem
 from docuflow.lib.base_widget import BaseDocuWidget
 from docuflow.lib.widgets.bucket_panel import BucketPanel
 from docuflow.lib.widgets.filter_panel import FilterPanel
@@ -25,7 +26,7 @@ from docuflow.lib.widgets.hierarchy_table import HierarchyTable
 from docuflow.lib.widgets.ui_utils import NotifyHelper
 
 
-def register_task_board_view():
+def register_task_board_view() -> None:
     """Register the task board view in the global registry."""
     ViewRegistry.register(
         ViewInfo(
@@ -41,9 +42,9 @@ def register_task_board_view():
     )
 
 
-async def task_board_view_wrapper(user: str, system_scope: Any, layout: Any, **kwargs):
+async def task_board_view_wrapper(user: str, system_scope: Any, layout: Any, **kwargs: Any) -> None:
     """Wrapper to instantiate and render the TaskBoardView."""
-    view = TaskBoardView(system_scope, user=user, layout=layout, **kwargs)
+    view: TaskBoardView = TaskBoardView(system_scope, user=user, layout=layout, **kwargs)
     await view.render()  # type: ignore[call-arg]
 
 
@@ -56,8 +57,8 @@ class TaskBoardView(BaseDocuWidget):
         node_id: str | None = None,
         role: str = "operator",
         filter_work_item_id: int | None = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(system_scope)
         self.user = user
         self.layout = layout
@@ -73,16 +74,14 @@ class TaskBoardView(BaseDocuWidget):
         self.render.refresh()
 
     def _on_save_preset(self, name: str, filters: dict[str, Any]) -> None:
-        import json
-
         async def _save() -> None:
             async with self.scope() as req:
-                admin = await req.get(AdminSystem)
-                admin.create_view_preset(
+                preset_sys = await req.get(ViewPresetSystem)
+                preset_sys.create(
                     view_name="task_board_production",
-                    name=name,
-                    filters_json=json.dumps(filters),
                     user_id=self.user,
+                    name=name,
+                    filters_json=filters,
                 )
 
         asyncio.get_event_loop().create_task(_save())
@@ -95,6 +94,7 @@ class TaskBoardView(BaseDocuWidget):
 
         async with self.scope() as req:
             admin_system = await req.get(AdminSystem)
+            preset_system = await req.get(ViewPresetSystem)
             nodes = admin_system.get_workplace_node_ids()
 
             with ui.column().classes("w-full p-4"):
@@ -120,7 +120,9 @@ class TaskBoardView(BaseDocuWidget):
 
                 with ui.tab_panels(tabs, value=production_tab).classes("w-full"):
                     with ui.tab_panel(production_tab):
-                        presets = admin_system.get_view_presets(user_id=self.user)
+                        presets = preset_system.list(
+                            view_name="task_board_production", user_id=self.user
+                        )
                         preset_dicts = [
                             {"id": p.id, "name": p.name, "filters_json": p.filters_json}
                             for p in presets
@@ -189,9 +191,10 @@ class TaskBoardView(BaseDocuWidget):
         """Рендерит баннер входящей заметки о передаче смены."""
         if not self.node_id:
             return
-        tb_system = await req.get(TaskBoardSystem)
-        bucket_entries = tb_system.get_bucket(self.node_id)
+        tb_system: TaskBoardSystem = await req.get(TaskBoardSystem)
+        bucket_entries: list[WorkerBucketEntry] = tb_system.get_bucket(self.node_id)
 
+        entry: WorkerBucketEntry
         for entry in bucket_entries:
             if entry.handover_note and entry.assigned_user == self.user:
 
@@ -231,7 +234,7 @@ class TaskBoardView(BaseDocuWidget):
         NotifyHelper.success("Смена успешно передана")
         self.render.refresh()
 
-    def _render_node_selector(self, nodes) -> None:
+    def _render_node_selector(self, nodes: list[str]) -> None:
         """Рендерит выбор узла."""
         if not nodes:
             return
@@ -248,14 +251,14 @@ class TaskBoardView(BaseDocuWidget):
 
             SelectLabel(
                 label="",
-                options=nodes,
+                options=[(n, n) for n in nodes],
                 value=default_node,
                 on_change=lambda e: self._select_node(e.value),
             ).render().classes("w-48")
 
     async def _check_and_refresh(self) -> None:
         """Check if data changed and refresh if needed."""
-        current_hash = await self._get_data_hash()
+        current_hash: str = await self._get_data_hash()
         if self._last_data_hash is not None and current_hash != self._last_data_hash:
             self.render.refresh()
         self._last_data_hash = current_hash

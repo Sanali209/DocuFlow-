@@ -21,14 +21,14 @@ class StatusIndicator:
         status: str = "offline",
         size: str = "md",
         show_label: bool = False,
-    ):
+    ) -> None:
         self.status = status
         self.size = size
         self.show_label = show_label
 
     def render(self) -> None:
         """Renders indicator."""
-        color_map = {
+        color_map: dict[str, str] = {
             "online": "positive",
             "offline": "grey-6",
             "syncing": "info",
@@ -36,20 +36,20 @@ class StatusIndicator:
             "error": "negative",
         }
 
-        size_map = {
+        size_map: dict[str, str] = {
             "sm": "w-2 h-2",
             "md": "w-3 h-3",
             "lg": "w-4 h-4",
         }
 
-        color = color_map.get(self.status, "grey-6")
-        dot_size = size_map.get(self.size, size_map["md"])
+        color: str = color_map.get(self.status, "grey-6")
+        dot_size: str = size_map.get(self.size, size_map["md"])
 
         with ui.row().classes("items-center gap-2"):
             ui.badge().props(f"color={color} round").classes(f"bg-{color} {dot_size} p-0")
 
             if self.show_label:
-                label_map = {
+                label_map: dict[str, str] = {
                     "online": "Online",
                     "offline": "Offline",
                     "syncing": "Syncing",
@@ -69,13 +69,13 @@ class StatusDot:
         size: str - sm, md, lg
     """
 
-    def __init__(self, color: str = "teal", size: str = "md"):
+    def __init__(self, color: str = "teal", size: str = "md") -> None:
         self.color = color
         self.size = size
 
     def render(self) -> ui.badge:
         """Renders dot."""
-        size_map = {
+        size_map: dict[str, str] = {
             "sm": "w-2 h-2",
             "md": "w-3 h-3",
             "lg": "w-4 h-4",

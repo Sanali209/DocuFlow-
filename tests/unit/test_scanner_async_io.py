@@ -1,13 +1,12 @@
 import asyncio
-
-import anyio
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 def make_scanner(tmp_path):
-    from docuflow.infrastructure.config import Config
     from docuflow.features.folder_scanner.system import FolderScannerSystem
+    from docuflow.infrastructure.config import Config
 
     config = Config(node_id="TEST", shared_path=str(tmp_path))
     sdk = MagicMock()
@@ -61,6 +60,7 @@ async def test_process_task_file_offloads_checksum_to_thread(tmp_path):
 def test_trigger_manual_ingestion_uses_running_loop(tmp_path):
     """trigger_manual_ingestion must not call asyncio.get_event_loop()."""
     import inspect
+
     from docuflow.features.folder_scanner.system import FolderScannerSystem
 
     source = inspect.getsource(FolderScannerSystem.trigger_manual_ingestion)
@@ -72,6 +72,7 @@ def test_trigger_manual_ingestion_uses_running_loop(tmp_path):
 def test_scan_all_uses_running_loop(tmp_path):
     """_scan_all must not call asyncio.get_event_loop()."""
     import inspect
+
     from docuflow.features.folder_scanner.system import FolderScannerSystem
 
     source = inspect.getsource(FolderScannerSystem._scan_all)

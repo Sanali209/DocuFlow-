@@ -1,5 +1,5 @@
 import pytest
-from sqlmodel import Session, create_engine, SQLModel
+from sqlmodel import Session, SQLModel, create_engine
 
 from docuflow.domain.entities.production import IncidentLog
 from docuflow.features.chat.incidents import IncidentSystem

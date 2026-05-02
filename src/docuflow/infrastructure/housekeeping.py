@@ -25,10 +25,10 @@ class HousekeepingSystem(BaseSystem):
         ...     await gc.rotate_snapshots()
     """
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self._bus_path = Path(config.shared_path) / constants.BUS_DIR_NAME
-        self._snapshots_path = Path(config.shared_path) / constants.SYNC_SNAPSHOTS_DIR
+        self._bus_path: Path = Path(config.shared_path) / constants.BUS_DIR_NAME
+        self._snapshots_path: Path = Path(config.shared_path) / constants.SYNC_SNAPSHOTS_DIR
 
     async def purge_stale_messages(
         self, max_age_seconds: int = constants.GC_STALE_BUS_AGE_SECONDS
@@ -42,20 +42,22 @@ class HousekeepingSystem(BaseSystem):
         Returns:
             The number of deleted stale message files.
         """
-        deleted_count = 0
-        now = time.time()
+        deleted_count: int = 0
+        now: float = time.time()
 
-        folders = [
+        folders: list[Path] = [
             self._bus_path / constants.BUS_INBOX_DIR,
             self._bus_path / constants.BUS_OUTBOX_DIR,
         ]
 
+        folder: Path
         for folder in folders:
             if not folder.exists():
                 continue
 
+            filename: str
             for filename in os.listdir(folder):
-                file_path = folder / filename
+                file_path: Path = folder / filename
                 if self._is_stale_file(
                     file_path, now, max_age_seconds
                 ) and await self._try_delete_file(file_path):
@@ -78,8 +80,8 @@ class HousekeepingSystem(BaseSystem):
             return 0
 
         # Pattern matches snapshots (e.g., SNAP_*.json)
-        pattern = f"{constants.SYNC_PREFIX_SNAP}*{constants.SYNC_EXTENSION}"
-        snapshots = sorted(
+        pattern: str = f"{constants.SYNC_PREFIX_SNAP}*{constants.SYNC_EXTENSION}"
+        snapshots: list[Path] = sorted(
             [f for f in self._snapshots_path.glob(pattern) if f.is_file()],
             key=os.path.getmtime,
         )
@@ -88,9 +90,10 @@ class HousekeepingSystem(BaseSystem):
             return 0
 
         # Identify files older than the 'keep_count' most recent ones
-        to_delete = snapshots[: len(snapshots) - keep_count]
-        rotated_count = 0
+        to_delete: list[Path] = snapshots[: len(snapshots) - keep_count]
+        rotated_count: int = 0
 
+        file_path: Path
         for file_path in to_delete:
             if await self._try_delete_file(file_path):
                 rotated_count += 1
@@ -107,7 +110,7 @@ class HousekeepingSystem(BaseSystem):
             return False
 
         try:
-            mtime = os.path.getmtime(file_path)
+            mtime: float = os.path.getmtime(file_path)
             return (now - mtime) > max_age
         except OSError:
             return False

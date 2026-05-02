@@ -16,7 +16,7 @@ class ReservationModal(BaseDocuWidget):
         mat_type_id: int,
         on_reserve: Any,
         system_scope: Any,
-    ):
+    ) -> None:
         super().__init__(system_scope)
         self.task_group_id = task_group_id
         self.mat_type_id = mat_type_id
@@ -24,8 +24,8 @@ class ReservationModal(BaseDocuWidget):
 
     async def render(self) -> None:
         async with self.scope() as req:
-            session = await req.get(Session)
-            stocks = list(
+            session: Session = await req.get(Session)
+            stocks: list[MaterialStock] = list(
                 session.exec(
                     select(MaterialStock).where(
                         MaterialStock.mat_type_id == self.mat_type_id,
@@ -40,7 +40,7 @@ class ReservationModal(BaseDocuWidget):
             if not stocks:
                 ui.label("Нет доступных партий").classes("text-red-400")
             else:
-                options = {
+                options: dict[int | None, str] = {
                     s.id: f"{s.batch_code or s.id} — {s.quantity} листов ({s.location or 'MAIN'})"
                     for s in stocks
                 }
@@ -61,9 +61,9 @@ class ReservationModal(BaseDocuWidget):
         dialog.open()
 
     def _reserve(self, dialog: Any) -> None:
-        stock_id = self.stock_select.value if hasattr(self, "stock_select") else None
-        qty = self.qty_input.value if hasattr(self, "qty_input") else 0
-        is_hard = self.type_select.value == "hard" if hasattr(self, "type_select") else False
+        stock_id: Any = self.stock_select.value if hasattr(self, "stock_select") else None
+        qty: Any = self.qty_input.value if hasattr(self, "qty_input") else 0
+        is_hard: bool = self.type_select.value == "hard" if hasattr(self, "type_select") else False
         if stock_id and qty > 0:
             self.on_reserve(stock_id, qty, is_hard)
             dialog.close()

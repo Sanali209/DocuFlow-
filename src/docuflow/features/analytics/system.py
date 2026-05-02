@@ -1,5 +1,7 @@
+from collections.abc import Sequence
 from typing import Any
 
+from sqlalchemy import Select
 from sqlmodel import Session, col, func, select
 
 from docuflow.application.base import BaseSystem
@@ -19,20 +21,20 @@ class AnalyticsSystem(BaseSystem):
     High-level analytics engine for workshop performance monitoring.
     """
 
-    def __init__(self, config: Config, session: Session):
+    def __init__(self, config: Config, session: Session) -> None:
         super().__init__(config, session)
 
     def get_cluster_overview_metrics(self) -> dict[str, Any]:
         """
         Calculates basic metrics for the main cluster dashboard.
         """
-        session = self.db_session
+        session: Session = self.db_session
 
-        wi_count = session.exec(select(func.count(col(WorkItem.id)))).one()  # type: ignore[arg-type]
-        incident_count = session.exec(
+        wi_count: int = session.exec(select(func.count(col(WorkItem.id)))).one()  # type: ignore[arg-type]
+        incident_count: int = session.exec(
             select(func.count(col(IncidentLog.id))).where(col(IncidentLog.resolved).isnot(True))  # type: ignore[union-attr]
         ).one()  # type: ignore[arg-type]
-        pallet_count = session.exec(
+        pallet_count: int = session.exec(
             select(func.count(col(ProductionUnit.id))).where(
                 col(ProductionUnit.is_stock).isnot(False)
             )  # type: ignore[union-attr]
@@ -48,50 +50,58 @@ class AnalyticsSystem(BaseSystem):
         """
         Calculates key performance indicators for the main analytics dashboard.
         """
-        session = self.db_session
+        session: Session = self.db_session
 
         # 1. Volume Metrics
-        total_work_items = session.exec(select(func.count(col(WorkItem.id)))).one()  # type: ignore[arg-type]
-        total_tasks = session.exec(select(func.count(col(TaskItem.id)))).one()  # type: ignore[arg-type]
-        completed_tasks = session.exec(
+        total_work_items: int = session.exec(select(func.count(col(WorkItem.id)))).one()  # type: ignore[arg-type]
+        total_tasks: int = session.exec(select(func.count(col(TaskItem.id)))).one()  # type: ignore[arg-type]
+        completed_tasks: int = session.exec(
             select(func.count(col(TaskItem.id))).where(TaskItem.status == TaskItemStatus.DONE)  # type: ignore[arg-type]
         ).one()  # type: ignore[arg-type]
-        total_pallets = session.exec(select(func.count(col(ProductionUnit.id)))).one()  # type: ignore[arg-type]
+        total_pallets: int = session.exec(select(func.count(col(ProductionUnit.id)))).one()  # type: ignore[arg-type]
         total_parts_produced: int = (
             session.exec(select(func.sum(col(ProductionUnit.qty_produced)))).one() or 0  # type: ignore[arg-type]
         )
 
         # 2. Performance Metrics (Drift)
-        stmt_drift = select(TaskItem).where(TaskItem.status == TaskItemStatus.DONE)
-        done_tasks = session.exec(stmt_drift).all()
+        stmt_drift: Select = select(TaskItem).where(TaskItem.status == TaskItemStatus.DONE)
+        done_tasks: list[TaskItem] = list(session.exec(stmt_drift).all())
 
-        total_drift = 0.0
-        count_drift = 0
+        total_drift: float = 0.0
+        count_drift: int = 0
+        t: TaskItem
         for t in done_tasks:
             if t.estimated_minutes and t.actual_minutes:
                 # Drift = (Actual - Estimated) / Estimated
-                drift_pct = (t.actual_minutes - t.estimated_minutes) / t.estimated_minutes * 100
+                drift_pct: float = (
+                    (t.actual_minutes - t.estimated_minutes) / t.estimated_minutes * 100
+                )
                 total_drift += drift_pct
                 count_drift += 1
 
-        avg_drift = round(total_drift / count_drift, 1) if count_drift > 0 else 0.0
-        completion_rate = round(completed_tasks / total_tasks * 100, 1) if total_tasks > 0 else 0.0
+        avg_drift: float = round(total_drift / count_drift, 1) if count_drift > 0 else 0.0
+        completion_rate: float = (
+            round(completed_tasks / total_tasks * 100, 1) if total_tasks > 0 else 0.0
+        )
 
         # 3. Task Status Distribution
-        status_counts = {}
+        status_counts: dict[str, int] = {}
+        s: TaskItemStatus
         for s in TaskItemStatus:
-            count = session.exec(
+            count: int = session.exec(
                 select(func.count(col(TaskItem.id))).where(TaskItem.status == s)
             ).one()  # type: ignore[arg-type]
             if count > 0:
                 status_counts[s.value.upper()] = count
 
         # 4. Task Group Metrics
-        total_task_groups = session.exec(select(func.count(col(TaskGroup.id)))).one() or 0  # type: ignore[arg-type]
+        total_task_groups: int = session.exec(select(func.count(col(TaskGroup.id)))).one() or 0  # type: ignore[arg-type]
 
         groups_by_status: dict[str, int] = {}
+        group: TaskGroup
         for group in session.exec(select(TaskGroup)).all():
-            statuses = {t.status for t in group.tasks}
+            statuses: set[TaskItemStatus] = {t.status for t in group.tasks}
+            status: str
             if TaskItemStatus.IN_PROGRESS in statuses:
                 status = "in_progress"
             elif statuses == {TaskItemStatus.DONE}:
@@ -104,9 +114,11 @@ class AnalyticsSystem(BaseSystem):
 
         # 5. Node Utilization
         node_utilization: dict[str, dict[str, int]] = {}
-        node_rows = session.exec(
+        node_rows: Sequence[Any] = session.exec(
             select(
-                col(TaskItem.assigned_to_node), col(TaskItem.status), func.count(col(TaskItem.id))
+                col(TaskItem.assigned_to_node),
+                col(TaskItem.status),
+                func.count(col(TaskItem.id)),
             )  # type: ignore[arg-type]
             .where(col(TaskItem.assigned_to_node).isnot(None))  # type: ignore[union-attr]
             .group_by(col(TaskItem.assigned_to_node), col(TaskItem.status))
@@ -124,7 +136,7 @@ class AnalyticsSystem(BaseSystem):
 
         # 6. Pallets by Project
         pallet_by_project: dict[str, int] = {}
-        project_pallets = session.exec(
+        project_pallets: Sequence[Any] = session.exec(
             select(col(WorkItem.project_id), func.count(col(ProductionUnit.id)))  # type: ignore[arg-type]
             .join(TaskItem, WorkItem.id == TaskItem.work_item_id)  # type: ignore[arg-type]
             .join(ProductionUnit, TaskItem.id == ProductionUnit.task_item_id)  # type: ignore[arg-type]
@@ -134,8 +146,8 @@ class AnalyticsSystem(BaseSystem):
             if proj_id is not None:
                 from docuflow.domain.entities.production import Project
 
-                proj = session.get(Project, proj_id)
-                name = proj.name if proj else f"Project-{proj_id}"
+                proj: Project | None = session.get(Project, proj_id)
+                name: str = proj.name if proj else f"Project-{proj_id}"
                 pallet_by_project[name] = count
 
         return {

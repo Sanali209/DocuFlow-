@@ -25,7 +25,7 @@ class Surface:
         padding: str = "p-4",
         gap: str = "gap-4",
         layout: str = "col",
-    ):
+    ) -> None:
         self.content = content
         self.padding = padding
         self.gap = gap
@@ -33,7 +33,7 @@ class Surface:
 
     def render(self) -> None:
         """Рендерит surface."""
-        base_classes = f"surface {self.padding}"
+        base_classes: str = f"surface {self.padding}"
         if self.layout == "row":
             with ui.row().classes(f"{base_classes} {self.gap}"):
                 if self.content:
@@ -58,7 +58,7 @@ class SurfaceSection:
         title: str,
         icon: str = "",
         content: Callable | None = None,
-    ):
+    ) -> None:
         self.title = title
         self.icon = icon
         self.content = content
@@ -90,7 +90,7 @@ class SurfaceCard:
         self,
         content: Callable | None = None,
         title: str = "",
-    ):
+    ) -> None:
         self.content = content
         self.title = title
 

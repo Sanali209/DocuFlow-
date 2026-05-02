@@ -24,7 +24,7 @@ class Card:
         content: Callable[[], Any] | None = None,
         padding: str = "p-4",
         classes: str = "",
-    ):
+    ) -> None:
         self.content = content
         self.padding = padding
         self.classes = classes
@@ -38,7 +38,7 @@ class Card:
     def __enter__(self) -> "Card":
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         pass
 
 
@@ -49,7 +49,7 @@ class CardRow:
         classes: str - additional classes
     """
 
-    def __init__(self, classes: str = ""):
+    def __init__(self, classes: str = "") -> None:
         self.classes = classes
 
     def render(self) -> None:
@@ -59,7 +59,7 @@ class CardRow:
     def __enter__(self) -> "CardRow":
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         pass
 
     def is_empty(self) -> bool:
