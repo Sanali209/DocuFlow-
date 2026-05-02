@@ -1,6 +1,6 @@
-import logging
 from typing import Any, ClassVar, Optional
 
+from loguru import logger
 from pydantic import BaseModel
 
 
@@ -44,7 +44,6 @@ class SettingsRegistry:
     def init(self, admin_system: Any) -> None:
         """Initialize registry with admin system for database access."""
         self._admin = admin_system  # type: ignore[misc]
-        logger: logging.Logger = logging.getLogger(__name__)
         logger.info(f"SettingsRegistry.init: admin_system set to {type(admin_system).__name__}")
 
     def register(self, module_name: str, schema: type[BaseModuleSettings]) -> None:

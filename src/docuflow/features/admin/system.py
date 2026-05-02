@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import time
 from collections.abc import Sequence
 from pathlib import Path
@@ -25,7 +24,7 @@ from docuflow.infrastructure.security import HMACSigner
 if TYPE_CHECKING:
     from docuflow.application.bus.dispatcher import SecureDispatcher
 
-logger = logging.getLogger("docuflow.admin")
+from loguru import logger
 
 
 class AdminSystem(BaseSystem):

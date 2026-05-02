@@ -1,10 +1,9 @@
-import logging
 from pathlib import Path
+
+from loguru import logger
 
 from docuflow.features.folder_scanner.parsers.gnc import GncPartData
 from docuflow.infrastructure.graphics.svg_generator import SVGGenerator
-
-logger = logging.getLogger(__name__)
 
 
 class PartPreviewGenerator:
@@ -13,7 +12,7 @@ class PartPreviewGenerator:
     Handles file paths and graceful fallbacks.
     """
 
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path) -> None:
         """
         Args:
             output_dir: Absolute path where SVG files will be stored.

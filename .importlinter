@@ -29,10 +29,8 @@ source_modules =
     docuflow.features.inventory.system
     docuflow.features.parts.system
     docuflow.features.production.system
-    docuflow.features.projects.system
     docuflow.features.reports.system
     docuflow.features.task_board.system
-    docuflow.features.work_items.system
 forbidden_modules =
     docuflow.features.admin.view
     docuflow.features.analytics.view
@@ -43,10 +41,8 @@ forbidden_modules =
     docuflow.features.inventory.view
     docuflow.features.parts.view
     docuflow.features.production.view
-    docuflow.features.projects.view
     docuflow.features.reports.view
     docuflow.features.task_board.view
-    docuflow.features.work_items.view
 
 # Contract 3: Core must not depend on other features
 [importlinter:contract:core-independence]
@@ -71,8 +67,6 @@ forbidden_modules =
     docuflow.features.work_items
     docuflow.features.view_presets
 ignore_imports =
-    docuflow.lib.widgets.work_item_card -> docuflow.features.work_items.system
     docuflow.lib.widgets.work_item_card -> docuflow.features.task_board.system
     docuflow.features.core.layout -> docuflow.lib.widgets.work_item_card
-    docuflow.features.core.layout -> docuflow.features.work_items.system
-    docuflow.features.work_items.system -> docuflow.features.projects.system
+    docuflow.features.core.layout -> docuflow.features.task_board.system

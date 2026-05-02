@@ -1,13 +1,12 @@
-import logging
+from typing import Any
 
 from jinja2 import Template
+from loguru import logger
 from sqlmodel import Session, select
 
 from docuflow.application.base import BaseSystem
 from docuflow.domain.entities.production import ChatMessage, ChatMessageType, NotificationTemplate
 from docuflow.infrastructure.config import Config
-
-logger = logging.getLogger("docuflow.notifications")
 
 
 class NotificationService(BaseSystem):
@@ -15,7 +14,7 @@ class NotificationService(BaseSystem):
     Template-driven notification system for cluster-wide status messages.
     """
 
-    def __init__(self, config: Config, db_session: Session):
+    def __init__(self, config: Config, db_session: Session) -> None:
         """
         Initialize the notification service.
 
@@ -25,15 +24,15 @@ class NotificationService(BaseSystem):
         """
         super().__init__(config, db_session)
 
-    async def render(self, key: str, **vars) -> str | None:
+    async def render(self, key: str, **vars: Any) -> str | None:
         """
         Render a notification template using Jinja2.
 
         Example:
             text = await ns.render("scan.new_work_item", folder_name="Project-A")
         """
-        stmt = select(NotificationTemplate).where(NotificationTemplate.key == key)
-        tmpl = self.db_session.exec(stmt).first()
+        stmt: Any = select(NotificationTemplate).where(NotificationTemplate.key == key)
+        tmpl: NotificationTemplate | None = self.db_session.exec(stmt).first()
 
         if not tmpl or not tmpl.enabled:
             return None
@@ -49,7 +48,7 @@ class NotificationService(BaseSystem):
         key: str,
         ref_work_item_id: int | None = None,
         ref_task_item_id: int | None = None,
-        **vars,
+        **vars: Any,
     ) -> None:
         """
         Broadcasting: Render and persist a cluster-wide notification as a ChatMessage.
@@ -57,11 +56,11 @@ class NotificationService(BaseSystem):
         Example:
             await ns.emit("stock.alert", sku="ALU-3")
         """
-        content = await self.render(key, **vars)
+        content: str | None = await self.render(key, **vars)
         if not content:
             return
 
-        msg = ChatMessage(
+        msg: ChatMessage = ChatMessage(
             author="System",
             node_id=self.config.node_id,
             message_type=ChatMessageType.INFO,
@@ -73,9 +72,9 @@ class NotificationService(BaseSystem):
         self.db_session.flush()
         logger.info(f"Notification: Emitted '{key}' to cluster.")
 
-    def seed_defaults(self):
+    def seed_defaults(self) -> None:
         """Standard notification templates for the system."""
-        defaults = {
+        defaults: dict[str, str] = {
             "scan.empty_folder": "⚠️ {{ folder_name }}: папка пришла, нестов нет! Сходить в раскрой",
             "scan.new_work_item": "📋 Новый наряд: {{ folder_name }}",
             "scan.file_changed": "⚠️ Файл {{ file_name }} изменился на сети! Обновить NS?",
@@ -84,10 +83,10 @@ class NotificationService(BaseSystem):
             "ns_mirror.sync": "✓ {{ file_name }} синхронизирован на узел {{ node_id }}",
         }
 
-        s = self.db_session
+        s: Session = self.db_session
         for key, text in defaults.items():
-            stmt = select(NotificationTemplate).where(NotificationTemplate.key == key)
-            existing = s.exec(stmt).first()
+            stmt: Any = select(NotificationTemplate).where(NotificationTemplate.key == key)
+            existing: NotificationTemplate | None = s.exec(stmt).first()
             if not existing:
                 s.add(NotificationTemplate(key=key, text=text, enabled=True))
         s.flush()

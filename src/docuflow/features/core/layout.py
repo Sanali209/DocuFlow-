@@ -1,15 +1,13 @@
 import json
-import logging
 from collections.abc import Callable
 from typing import Any
 
+from loguru import logger
 from nicegui import app as nicegui_app
 from nicegui import ui
 
 from docuflow.domain.entities.identity import User, Workplace
 from docuflow.lib.widgets.ui_utils import NotifyHelper
-
-logger = logging.getLogger(__name__)
 
 
 def check_access(user: User, workplace: Workplace) -> bool:
@@ -23,7 +21,7 @@ def check_access(user: User, workplace: Workplace) -> bool:
 
     # 2. Check if workplace.id is in user's allowed_workplaces
     try:
-        allowed_ids = user.workplace_ids
+        allowed_ids: list[int] = user.workplace_ids
         return workplace.id in allowed_ids
     except (json.JSONDecodeError, TypeError, AttributeError):
         return False
@@ -34,7 +32,7 @@ def get_active_ui_modules(user: User, workplace: Workplace) -> set[str]:
     if not user.role:
         return set()
 
-    wp_mods = set(workplace.modules_list)
+    wp_mods: set[str] = set(workplace.modules_list)
 
     # Admins see everything available on the node
     if user.role.name.lower() in ["admin", "админ"]:
@@ -42,7 +40,7 @@ def get_active_ui_modules(user: User, workplace: Workplace) -> set[str]:
 
     # Intersection of Role permissions and Workplace modules
     try:
-        user_perms = set(user.role.permissions_list)
+        user_perms: set[str] = set(user.role.permissions_list)
         return user_perms.intersection(wp_mods)
     except (json.JSONDecodeError, TypeError, AttributeError):
         return set()
@@ -58,17 +56,17 @@ def double_filter_check(permission: str) -> bool:
 
     Administrator role bypasses all checks and has global access.
     """
-    user_data = get_current_user()
+    user_data: dict | None = get_current_user()
     if not user_data:
         return False
 
     # Administrator has all permissions (supporting English/Russian and case-insensitive check)
-    role = str(user_data.get("role", "")).lower()
+    role: str = str(user_data.get("role", "")).lower()
     if role in ["admin", "админ"]:
         return True
 
-    permissions = user_data.get("permissions", [])
-    allowed_workplace_modules = user_data.get("workplace_modules", [])
+    permissions: Any = user_data.get("permissions", [])
+    allowed_workplace_modules: Any = user_data.get("workplace_modules", [])
 
     # Check if the module is allowed on the physical workplace
     if permission not in allowed_workplace_modules:
@@ -79,7 +77,7 @@ def double_filter_check(permission: str) -> bool:
     return any(p.startswith(f"{permission}:") for p in permissions)
 
 
-def theme_setup():
+def theme_setup() -> None:
     """Initializing global design tokens and ensuring dark mode consistency across navigation."""
     ui.dark_mode().enable()
     ui.add_head_html("""
@@ -191,7 +189,9 @@ class MainLayout:
     Ensures consistent aesthetics (color matching) and decentralized authorization.
     """
 
-    def __init__(self, title: str, config, search_system: Any = None, system_scope: Any = None):
+    def __init__(
+        self, title: str, config: Any, search_system: Any = None, system_scope: Any = None
+    ) -> None:
         self.title = title
         self._config = config
         self.search_system = search_system
@@ -204,8 +204,9 @@ class MainLayout:
         self._active_timers.append(timer)
         return timer
 
-    def clear_timers(self):
+    def clear_timers(self) -> None:
         """Deactivate all timers registered for the current view session."""
+        t: ui.timer
         for t in self._active_timers:
             try:
                 t.active = False
@@ -214,9 +215,9 @@ class MainLayout:
                 logger.debug("Timer deactivation failed, ignoring")
         self._active_timers.clear()
 
-    def build(self, switch_view_fn: Callable):
+    def build(self, switch_view_fn: Callable) -> Any:
         """Constructing the unified shell with matched sidebar and header backgrounds."""
-        user = get_current_user()
+        user: dict | None = get_current_user()
         if not user:
             return
 
@@ -261,7 +262,7 @@ class MainLayout:
         ):
             with ui.column().classes("w-full gap-4"):
 
-                def nav_item(label, icon, view_name):
+                def nav_item(label: str, icon: str, view_name: str) -> Any:
                     # In this modular approach, we pass view_name to orchestrate routing
                     return (
                         ui.button(label, icon=icon, on_click=lambda: switch_view_fn(view_name))
@@ -275,9 +276,6 @@ class MainLayout:
 
                 nav_item("Dashboard", "dashboard", "dashboard")
 
-                if double_filter_check("workitems"):
-                    nav_item("Work Items", "work", "work_items")
-
                 if double_filter_check("board"):
                     nav_item("Task Board", "dashboard", "task_board")
 
@@ -288,8 +286,6 @@ class MainLayout:
                     nav_item("Warehouse", "inventory_2", "warehouse")
                     nav_item("Finished Pallets", "all_inbox", "production")
                     nav_item("Parts Library", "hub", "parts")
-                    if double_filter_check("projects"):
-                        nav_item("Projects", "folder_special", "projects")
                     nav_item("Supplies", "category", "consumables")
 
                 ui.separator().classes("bg-white/5 my-4")
@@ -312,23 +308,23 @@ class MainLayout:
     def _render_omnibar(self, switch_view_fn: Callable) -> None:
         """Рендерит Omnibar — строку глобального поиска."""
         with ui.row().classes("items-center w-[400px] relative"):
-            search_input = (
+            search_input: Any = (
                 ui.input(placeholder="Поиск по нарядам, деталям, паллетам...")
                 .props('rounded outlined dense dark prefix="search"')
                 .classes("w-full omnibar-input")
             )
 
-            results_menu = ui.menu().props("no-parent-event fit")
+            results_menu: Any = ui.menu().props("no-parent-event fit")
 
-            async def handle_search(e):
+            async def handle_search(e: Any) -> None:
                 if self.search_system is None:
                     return
-                query = e.value
+                query: Any = e.value
                 if not query or len(query) < 2:
                     results_menu.close()
                     return
 
-                results = await self.search_system.search(query)
+                results: list[Any] = await self.search_system.search(query)
                 if not results:
                     results_menu.clear()
                     with results_menu:
@@ -365,7 +361,7 @@ class MainLayout:
 
             search_input.on_value_change(handle_search)
 
-    async def _pull_to_current_node(self, result, switch_view_fn: Callable) -> None:
+    async def _pull_to_current_node(self, result: Any, switch_view_fn: Callable) -> None:
         """Быстрое назначение наряда на текущий физический узел."""
         try:
             NotifyHelper.warning(f"Наряд {result.title} передан на узел {self._config.node_id}")
@@ -373,7 +369,7 @@ class MainLayout:
         except Exception as e:
             NotifyHelper.info(f"Ошибка захвата: {e}")
 
-    def _on_search_select(self, result, switch_view_fn, menu) -> None:
+    def _on_search_select(self, result: Any, switch_view_fn: Callable, menu: Any) -> None:
         """Обработка выбора результата поиска с сохранением контекста и авто-открытием."""
         menu.close()
 
@@ -383,17 +379,17 @@ class MainLayout:
             SessionContext.set("last_search_query", result.title)
 
             # --- AUTO-OPEN WORK ITEM CARD ---
-            async def auto_open():
+            async def auto_open() -> None:
                 from docuflow.domain.entities.production import WorkItem
-                from docuflow.features.work_items.system import WorkItemSystem
+                from docuflow.features.task_board.system import TaskBoardSystem
                 from docuflow.lib.widgets.work_item_card import WorkItemCard
 
                 if self.system_scope:
                     async with self.system_scope() as req:
-                        system = await req.get(WorkItemSystem)
-                        work_item = system.db_session.get(WorkItem, result.id)
+                        tb_sys: Any = await req.get(TaskBoardSystem)
+                        work_item: Any = tb_sys.db_session.get(WorkItem, result.id)
                         if work_item:
-                            user_data = get_current_user()
+                            user_data: dict | None = get_current_user()
                             await WorkItemCard(
                                 work_item,
                                 None,
@@ -410,7 +406,7 @@ class MainLayout:
         NotifyHelper.info(f"Результат: {result.title}")
 
         # Передаем параметры в роутер
-        payload = {}
+        payload: dict[str, Any] = {}
         if result.type == "work_item":
             payload["filter_work_item"] = result.id
 
